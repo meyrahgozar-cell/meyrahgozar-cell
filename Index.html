@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RunTrack — داشبورد دویدن</title>
+  <meta name="description" content="ثبت دویدن، عادت‌های روزانه و داشبورد پیشرفت">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e6eaf0;
+      --primary:#2563eb;--primary2:#1d4ed8;--green:#16a34a;--orange:#f59e0b;
+      --red:#dc2626;--purple:#7c3aed;--shadow:0 12px 35px rgba(15,23,42,.08);--radius:20px
+    }
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f8fafc,#eef4ff);
+      color:var(--text);font-family:Tahoma,"Segoe UI",Arial,sans-serif;min-height:100vh}
+    button,input{font:inherit}button{cursor:pointer}
+    .app{max-width:1250px;margin:auto;padding:22px}.hidden{display:none!important}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:14px;
+      display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--purple));color:#fff;font-size:23px}
+    h1,h2,h3,p{margin-top:0}.brand h1{font-size:20px;margin:0}.brand small{color:var(--muted)}
+    .nav{display:flex;gap:8px;flex-wrap:wrap}.nav button,.ghost{border:1px solid var(--line);background:#fff;color:var(--text);
+      padding:10px 14px;border-radius:12px}.nav button.active,.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .danger{background:#fff;border:1px solid #fecaca;color:var(--red);padding:10px 14px;border-radius:12px}
+    .grid{display:grid;gap:16px}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+    .kpi .label{color:var(--muted);font-size:13px}.kpi .value{font-size:29px;font-weight:800;margin-top:9px}.kpi .sub{color:var(--muted);font-size:12px;margin-top:6px}
+    .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+    .section-title h2{font-size:18px;margin:0}.muted{color:var(--muted)}
+    .two{grid-template-columns:1.4fr 1fr}.three{grid-template-columns:repeat(3,1fr)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+    input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none}
+    input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px #dbeafe}
+    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form-grid{display:grid;gap:12px}
+    .btn{border:0;padding:12px 16px;border-radius:12px}.btn.primary{color:#fff}.btn.full{width:100%}
+    .auth-wrap{min-height:80vh;display:grid;place-items:center}.auth{width:min(440px,100%)}
+    .auth-tabs{display:flex;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:18px}
+    .auth-tabs button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px}.auth-tabs button.active{background:#fff;box-shadow:0 3px 12px #0000000b}
+    .check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .check{border:1px solid var(--line);border-radius:14px;padding:13px;display:flex;align-items:center;gap:9px}
+    .check input{width:auto}.status{font-size:12px;padding:5px 9px;border-radius:999px;display:inline-block}
+    .yes{background:#dcfce7;color:#166534}.no{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1e40af}
+    table{width:100%;border-collapse:collapse}th,td{text-align:right;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px}
+    th{color:var(--muted);font-weight:600}.scroll{overflow:auto}.empty{text-align:center;padding:35px;color:var(--muted)}
+    .toast{position:fixed;bottom:20px;left:20px;z-index:50;padding:13px 16px;border-radius:12px;color:#fff;background:#172033;box-shadow:var(--shadow)}
+    .toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+    .bar{height:11px;background:#eef2f7;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--purple));border-radius:999px}
+    .chart{height:230px;display:flex;align-items:end;gap:8px;padding:15px 4px 0}.col{flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:end}
+    .col i{display:block;width:100%;max-width:38px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:3px}.col span{font-size:10px;color:var(--muted)}
+    .notice{padding:13px 15px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;line-height:1.8}
+    .admin-badge{background:#ede9fe;color:#5b21b6;padding:5px 9px;border-radius:999px;font-size:11px}
+    .footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+    @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.two,.three{grid-template-columns:1fr}}
+    @media(max-width:600px){.app{padding:13px}.kpis{grid-template-columns:1fr 1fr}.row,.check-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav button{flex:1}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header id="topbar" class="topbar hidden">
+    <div class="brand"><div class="logo">🏃</div><div><h1>RunTrack</h1><small>دویدن، عادت‌ها و پیشرفت</small></div></div>
+    <div class="nav">
+      <button type="button" data-page="dashboard">داشبورد من</button>
+      <button type="button" data-page="log">ثبت روزانه</button>
+      <button type="button" data-page="public">گزارش عمومی</button>
+      <button type="button" id="adminNav" data-page="admin" class="hidden">مدیریت</button>
+      <button type="button" id="logout" class="danger">خروج</button>
+    </div>
+  </header>
+
+  <main id="authView" class="auth-wrap">
+    <section class="card auth">
+      <div class="brand" style="margin-bottom:20px"><div class="logo">🏃</div><div><h1>RunTrack</h1><small>داشبورد شخصی دویدن</small></div></div>
+      <div class="auth-tabs">
+        <button type="button" id="tabLogin" class="active">ورود</button>
+        <button type="button" id="tabSignup">ثبت‌نام</button>
+      </div>
+      <form id="authForm" class="form-grid">
+        <div><label>ایمیل</label><input id="email" type="email" required autocomplete="email"></div>
+        <div><label>رمز عبور</label><input id="password" type="password" minlength="6" required autocomplete="current-password"></div>
+        <div id="nameWrap" class="hidden"><label>نام نمایشی</label><input id="displayName" autocomplete="name"></div>
+        <button type="submit" class="btn primary full" id="authSubmit">ورود</button>
+      </form>
+      <p id="authMsg" class="muted" style="margin:14px 0 0;font-size:12px"></p>
+      <div class="notice" style="margin-top:16px">برای استفاده واقعی، مقادیر <b>SUPABASE_URL</b> و <b>SUPABASE_ANON_KEY</b> را در ابتدای فایل جایگزین کنید.</div>
+    </section>
+  </main>
+
+  <main id="siteView" class="hidden">
+    <section id="dashboardPage" class="page">
+      <div class="section-title"><div><h2>داشبورد من</h2><span id="welcome" class="muted"></span></div><span id="roleBadge"></span></div>
+      <div class="grid kpis">
+        <div class="card kpi"><div class="label">مجموع کیلومتر</div><div class="value" id="kKm">0</div><div class="sub">تمام رکوردها</div></div>
+        <div class="card kpi"><div class="label">کالری دویدن</div><div class="value" id="kCal">0</div><div class="sub">بر اساس وزن × کیلومتر</div></div>
+        <div class="card kpi"><div class="label">چربی معادل</div><div class="value" id="kFat">0</div><div class="sub">کیلوگرم، تبدیل تئوریک</div></div>
+        <div class="card kpi"><div class="label">میانگین وزن</div><div class="value" id="kWeight">—</div><div class="sub">کیلوگرم</div></div>
+      </div>
+      <div class="grid two" style="margin-top:16px">
+        <div class="card"><div class="section-title"><h2>روند ۱۴ رکورد اخیر</h2></div><div id="chart" class="chart"></div></div>
+        <div class="card"><div class="section-title"><h2>رعایت عادت‌ها</h2></div><div id="habits"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><div class="section-title"><h2>رکوردهای اخیر</h2><button type="button" class="ghost" data-page="log">+ ثبت رکورد</button></div><div id="recent" class="scroll"></div></div>
+    </section>
+
+    <section id="logPage" class="page hidden">
+      <div class="section-title"><h2>ثبت روزانه</h2><span class="muted">هر روز یک رکورد</span></div>
+      <div class="card">
+        <form id="logForm" class="form-grid">
+          <div class="row">
+            <div><label>تاریخ</label><input id="logDate" type="date" required></div>
+            <div><label>وزن (کیلوگرم)</label><input id="weight" type="number" min="1" step=".1" required></div>
+          </div>
+          <div><label>کیلومتر دویده‌شده</label><input id="km" type="number" min="0" step=".01" required></div>
+          <div class="check-grid">
+            <label class="check"><input id="dinner" type="checkbox"> شام ساعت ۸ رعایت شد</label>
+            <label class="check"><input id="sleep" type="checkbox"> خواب قبل از ۱۱:۳۰ رعایت شد</label>
+            <label class="check"><input id="sweet" type="checkbox"> شرط نخوردن شیرینی رعایت شد</label>
+          </div>
+          <div class="notice">کالری به‌صورت خودکار از <b>وزن × کیلومتر</b> محاسبه می‌شود و چربی معادل از <b>کالری ÷ ۷۷۰۰</b>.</div>
+          <button class="btn primary" type="submit">ذخیره رکورد</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="publicPage" class="page hidden">
+      <div class="section-title"><div><h2>گزارش عمومی</h2><span class="muted">بدون نمایش اطلاعات خصوصی کاربران</span></div></div>
+      <div class="grid kpis">
+        <div class="card kpi"><div class="label">کاربران ثبت‌نام‌شده</div><div class="value" id="pUsers">—</div></div>
+        <div class="card kpi"><div class="label">مجموع کیلومتر</div><div class="value" id="pKm">—</div></div>
+        <div class="card kpi"><div class="label">مجموع کالری</div><div class="value" id="pCal">—</div></div>
+        <div class="card kpi"><div class="label">چربی معادل</div><div class="value" id="pFat">—</div></div>
+      </div>
+      <div class="grid three" style="margin-top:16px">
+        <div class="card"><h3>شام ساعت ۸</h3><div id="pDinner">—</div></div>
+        <div class="card"><h3>خواب قبل از ۱۱:۳۰</h3><div id="pSleep">—</div></div>
+        <div class="card"><h3>نخوردن شیرینی</h3><div id="pSweet">—</div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h3>نکته حریم خصوصی</h3><p class="muted">گزارش عمومی فقط آمار تجمیعی را نشان می‌دهد؛ نام، وزن و رکوردهای شخصی کاربران در آن نمایش داده نمی‌شود.</p></div>
+    </section>
+
+    <section id="adminPage" class="page hidden">
+      <div class="section-title"><div><h2>پنل مدیریت</h2><span class="muted">فقط برای Super User</span></div><span class="admin-badge">ADMIN</span></div>
+      <div class="card">
+        <div class="section-title"><h2>کاربران</h2><button type="button" class="ghost" id="refreshAdmin">به‌روزرسانی</button></div>
+        <div id="adminUsers" class="scroll"></div>
+      </div>
+      <div class="card hidden" id="adminDetail" style="margin-top:16px">
+        <div class="section-title"><h2 id="adminDetailTitle">جزئیات کاربر</h2><button type="button" class="ghost" id="closeDetail">بستن</button></div>
+        <div id="adminRecords" class="scroll"></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <footer class="footer">RunTrack • طراحی شده برای ثبت ساده و شخصی پیشرفت</footer>
+</div>
+
+<script>
+/* =========================================================
+   1) SUPABASE CONFIG
+   Replace these strings with your Supabase URL and Anon Key.
+========================================================= */
+const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
+
+const ready = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_"));
+const sb = ready ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let currentUser = null, currentProfile = null, mode = "login";
+
+const $ = id => document.getElementById(id);
+const fmt = (n,d=0) => Number(n||0).toLocaleString("fa-IR",{maximumFractionDigits:d});
+
+function toast(msg, type=""){
+  $("toast").textContent=msg; $("toast").className="toast "+type;
+  setTimeout(()=>$("toast").classList.add("hidden"),3000);
+}
+
+function showPage(name){
+  document.querySelectorAll(".page").forEach(x=>x.classList.add("hidden"));
+  const p=$(name+"Page"); if(p) p.classList.remove("hidden");
+  document.querySelectorAll(".nav button[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===name));
+  if(name==="dashboard") loadDashboard();
+  if(name==="public") loadPublic();
+  if(name==="admin" && currentProfile?.role==="admin") loadAdmin();
+}
+
+function localDate(){
+  const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+
+function setAuthMode(m){
+  mode=m;
+  $("tabLogin").classList.toggle("active",m==="login");
+  $("tabSignup").classList.toggle("active",m==="signup");
+  $("nameWrap").classList.toggle("hidden",m==="login");
+  $("authSubmit").textContent=m==="login"?"ورود":"ساخت حساب";
+  $("authMsg").textContent="";
+}
+
+async function init(){
+  $("logDate").value=localDate();
+  if(!ready){$("authMsg").textContent="ابتدا تنظیمات Supabase را در ابتدای فایل وارد کنید.";return;}
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) await enter(session.user);
+  sb.auth.onAuthStateChange(async (event,session)=>{
+    if(session) await enter(session.user); else leave();
+  });
+}
+
+async function enter(user){
+  currentUser=user;
+  const {data:profile,error}=await sb.from("profiles").select("id,display_name,role").eq("id",user.id).single();
+  if(error){console.error(error);toast("پروفایل پیدا نشد؛ SQL راه‌اندازی را بررسی کنید.","err");return;}
+  currentProfile=profile;
+  $("authView").classList.add("hidden");$("topbar").classList.remove("hidden");$("siteView").classList.remove("hidden");
+  $("welcome").textContent=(profile.display_name||user.email||"")+" خوش آمدید";
+  $("adminNav").classList.toggle("hidden",profile.role!=="admin");
+  $("roleBadge").innerHTML=profile.role==="admin"?'<span class="admin-badge">Super User</span>':"";
+  showPage("dashboard");
+}
+
+function leave(){
+  currentUser=null;currentProfile=null;$("topbar").classList.add("hidden");$("siteView").classList.add("hidden");$("authView").classList.remove("hidden");
+}
+
+$("tabLogin").onclick=()=>setAuthMode("login");
+$("tabSignup").onclick=()=>setAuthMode("signup");
+
+$("authForm").onsubmit=async e=>{
+  e.preventDefault();
+  if(!ready){toast("تنظیمات Supabase کامل نشده.","err");return;}
+  const email=$("email").value.trim(),password=$("password").value;
+  $("authSubmit").disabled=true;
+  try{
+    if(mode==="login"){
+      const {error}=await sb.auth.signInWithPassword({email,password}); if(error) throw error;
+      toast("ورود موفق بود","ok");
+    }else{
+      const name=$("displayName").value.trim();
+      const {data,error}=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
+      if(error) throw error;
+      if(!data.session) $("authMsg").textContent="حساب ساخته شد. ایمیل خود را تأیید کنید.";
+      else toast("حساب ساخته شد","ok");
+    }
+  }catch(err){$("authMsg").textContent=err.message||"خطا در ورود";toast("عملیات ناموفق بود","err")}
+  finally{$("authSubmit").disabled=false}
+};
+
+$("logout").onclick=async()=>{if(sb) await sb.auth.signOut()};
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+
+async function loadDashboard(){
+  if(!currentUser)return;
+  const {data,error}=await sb.from("daily_logs").select("*").eq("user_id",currentUser.id).order("log_date",{ascending:false});
+  if(error){toast("خطا در دریافت اطلاعات","err");console.error(error);return;}
+  const rows=data||[];
+  const km=rows.reduce((a,r)=>a+Number(r.km||0),0),cal=rows.reduce((a,r)=>a+Number(r.calories||0),0),fat=cal/7700;
+  const weights=rows.map(r=>Number(r.weight)).filter(Boolean);
+  $("kKm").textContent=fmt(km,2);$("kCal").textContent=fmt(cal);$("kFat").textContent=fmt(fat,3);
+  $("kWeight").textContent=weights.length?fmt(weights.reduce((a,b)=>a+b,0)/weights.length,1):"—";
+  renderChart(rows.slice(0,14).reverse());renderHabits(rows);renderRecent(rows.slice(0,10));
+}
+
+function renderChart(rows){
+  const vals=rows.map(r=>Number(r.calories||0)), max=Math.max(...vals,1);
+  $("chart").innerHTML=rows.length?rows.map(r=>{
+    const h=Math.max(3,(Number(r.calories||0)/max)*180);
+    return `<div class="col"><i style="height:${h}px" title="${fmt(r.calories)} کالری"></i><span>${r.log_date.slice(5)}</span></div>`;
+  }).join(""):`<div class="empty">هنوز رکوردی ثبت نشده است.</div>`;
+}
+
+function renderHabits(rows){
+  const calc=key=>{let n=rows.length,b=rows.filter(r=>r[key]).length;return [b,n?Math.round(b/n*100):0]};
+  const items=[["شام ساعت ۸","dinner_ok"],["خواب قبل از ۱۱:۳۰","sleep_ok"],["نخوردن شیرینی","sweet_ok"]];
+  $("habits").innerHTML=items.map(([name,key])=>{
+    const [b,p]=calc(key);return `<div style="margin:16px 0"><div class="section-title"><span>${name}</span><b>${fmt(p)}%</b></div><div class="bar"><i style="width:${p}%"></i></div><small class="muted">${b} از ${rows.length} روز</small></div>`
+  }).join("");
+}
+
+function status(v){return `<span class="status ${v?"yes":"no"}">${v?"بله":"خیر"}</span>`}
+
+function renderRecent(rows){
+  $("recent").innerHTML=rows.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>چربی معادل</th><th>عادت‌ها</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.log_date}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${fmt(Number(r.calories)/7700,3)}</td><td>${status(r.dinner_ok)} ${status(r.sleep_ok)} ${status(r.sweet_ok)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">اولین رکوردت را ثبت کن.</div>`;
+}
+
+$("logForm").onsubmit=async e=>{
+  e.preventDefault();if(!currentUser)return;
+  const payload={
+    user_id:currentUser.id,log_date:$("logDate").value,weight:Number($("weight").value),km:Number($("km").value),
+    dinner_ok:$("dinner").checked,sleep_ok:$("sleep").checked,sweet_ok:$("sweet").checked
+  };
+  payload.calories=payload.weight*payload.km;
+  const {error}=await sb.from("daily_logs").upsert(payload,{onConflict:"user_id,log_date"});
+  if(error){toast(error.message,"err");return}
+  toast("رکورد ذخیره شد","ok");showPage("dashboard");
+};
+
+async function loadPublic(){
+  const {data,error}=await sb.rpc("get_public_summary");
+  if(error){console.error(error);toast("برای گزارش عمومی باید RPC راه‌اندازی شود.","err");return}
+  const x=data?.[0]||data||{};
+  $("pUsers").textContent=fmt(x.user_count);$("pKm").textContent=fmt(x.total_km,2);$("pCal").textContent=fmt(x.total_calories);$("pFat").textContent=fmt(Number(x.total_calories||0)/7700,3);
+  $("pDinner").innerHTML=publicPct(x.dinner_rate);$("pSleep").innerHTML=publicPct(x.sleep_rate);$("pSweet").innerHTML=publicPct(x.sweet_rate);
+}
+
+function publicPct(v){const p=Math.round(Number(v||0));return `<b style="font-size:27px">${fmt(p)}%</b><div class="bar" style="margin-top:9px"><i style="width:${p}%"></i></div>`}
+
+async function loadAdmin(){
+  const {data,error}=await sb.from("profiles").select("id,display_name,role,created_at").order("created_at",{ascending:false});
+  if(error){toast("دسترسی ادمین رد شد","err");return}
+  $("adminUsers").innerHTML=`<table><thead><tr><th>نام</th><th>نقش</th><th>تاریخ عضویت</th><th></th></tr></thead><tbody>${(data||[]).map(u=>`<tr><td>${u.display_name||"بدون نام"}</td><td>${u.role==="admin"?'<span class="admin-badge">Admin</span>':"User"}</td><td>${(u.created_at||"").slice(0,10)}</td><td><button type="button" class="ghost" onclick="openAdminUser('${u.id}','${(u.display_name||"کاربر").replace(/'/g,"")}')">مشاهده داده‌ها</button></td></tr>`).join("")}</tbody></table>`;
+}
+
+window.openAdminUser=async function(id,name){
+  const {data,error}=await sb.from("daily_logs").select("*").eq("user_id",id).order("log_date",{ascending:false});
+  if(error){toast("خطا در دریافت داده کاربر","err");return}
+  $("adminDetail").classList.remove("hidden");$("adminDetailTitle").textContent=`داده‌های ${name}`;
+  $("adminRecords").innerHTML=data?.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>شام</th><th>خواب</th><th>شیرینی</th><th></th></tr></thead><tbody>${data.map(r=>`<tr><td>${r.log_date}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${status(r.dinner_ok)}</td><td>${status(r.sleep_ok)}</td><td>${status(r.sweet_ok)}</td><td><button type="button" class="danger" onclick="deleteAdminRecord('${r.id}')">حذف</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">رکوردی ندارد.</div>`;
+};
+
+window.deleteAdminRecord=async function(id){
+  if(!confirm("این رکورد حذف شود؟"))return;
+  const {error}=await sb.from("daily_logs").delete().eq("id",id);
+  if(error){toast(error.message,"err");return}
+  toast("رکورد حذف شد","ok");loadAdmin();
+};
+
+$("refreshAdmin").onclick=loadAdmin;
+$("closeDetail").onclick=()=>$("adminDetail").classList.add("hidden");
+
+init();
+</script>
+</body>
+</html>
