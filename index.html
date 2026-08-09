@@ -3,62 +3,115 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RunTrack — داشبورد دویدن</title>
+  <title>HQL — زندگی با کیفیت</title>
   <meta name="description" content="ثبت دویدن، عادت‌های روزانه و داشبورد پیشرفت">
+  
+  <!-- Persian Font: Vazirmatn -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
     :root{
-      --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e6eaf0;
+      --bg:#f8fafc;--card:#ffffff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
       --primary:#2563eb;--primary2:#1d4ed8;--green:#16a34a;--orange:#f59e0b;
-      --red:#dc2626;--purple:#7c3aed;--shadow:0 12px 35px rgba(15,23,42,.08);--radius:20px
+      --red:#dc2626;--purple:#7c3aed;--shadow:0 10px 30px rgba(15,23,42,.06);--radius:16px
     }
-    *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f8fafc,#eef4ff);
-      color:var(--text);font-family:Tahoma,"Segoe UI",Arial,sans-serif;min-height:100vh}
-    button,input{font:inherit}button{cursor:pointer}
-    .app{max-width:1250px;margin:auto;padding:22px}.hidden{display:none!important}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
-    .brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:14px;
-      display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--purple));color:#fff;font-size:23px}
-    h1,h2,h3,p{margin-top:0}.brand h1{font-size:20px;margin:0}.brand small{color:var(--muted)}
-    .nav{display:flex;gap:8px;flex-wrap:wrap}.nav button,.ghost{border:1px solid var(--line);background:#fff;color:var(--text);
-      padding:10px 14px;border-radius:12px}.nav button.active,.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-    .danger{background:#fff;border:1px solid #fecaca;color:var(--red);padding:10px 14px;border-radius:12px}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(135deg,#f8fafc,#eef4ff);
+      color:var(--text);
+      font-family:'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
+      min-height:100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button,input{font:inherit}
+    button{cursor:pointer; touch-action: manipulation;}
+    .app{max-width:1250px;margin:auto;padding:16px}.hidden{display:none!important}
+    
+    /* Navigation & Topbar */
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--purple));color:#fff;font-size:23px}
+    h1,h2,h3,p{margin-top:0}.brand h1{font-size:20px;margin:0;font-weight:700}.brand small{color:var(--muted)}
+    
+    .nav{display:flex;gap:8px;flex-wrap:wrap}
+    .nav button,.ghost{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 16px;border-radius:12px;font-weight:500}
+    .nav button.active,.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .danger{background:#fff;border:1px solid #fecaca;color:var(--red);padding:10px 16px;border-radius:12px;font-weight:500}
+    
+    /* Layout Cards */
     .grid{display:grid;gap:16px}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
-    .kpi .label{color:var(--muted);font-size:13px}.kpi .value{font-size:29px;font-weight:800;margin-top:9px}.kpi .sub{color:var(--muted);font-size:12px;margin-top:6px}
+    .card{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+    .kpi .label{color:var(--muted);font-size:13px}.kpi .value{font-size:28px;font-weight:800;margin-top:6px}.kpi .sub{color:var(--muted);font-size:12px;margin-top:6px}
     .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
-    .section-title h2{font-size:18px;margin:0}.muted{color:var(--muted)}
+    .section-title h2{font-size:18px;margin:0;font-weight:700}.muted{color:var(--muted)}
     .two{grid-template-columns:1.4fr 1fr}.three{grid-template-columns:repeat(3,1fr)}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
-    input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none}
-    input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px #dbeafe}
-    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form-grid{display:grid;gap:12px}
-    .btn{border:0;padding:12px 16px;border-radius:12px}.btn.primary{color:#fff}.btn.full{width:100%}
-    .auth-wrap{min-height:80vh;display:grid;place-items:center}.auth{width:min(440px,100%)}
+    
+    /* Forms & Inputs */
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px;font-weight:500}
+    input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none;transition:all .2s;font-size:14px}
+    input:focus{border-color:var(--primary);box-shadow:0 0 0 3px #dbeafe}
+    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form-grid{display:grid;gap:14px}
+    .btn{border:0;padding:12px 18px;border-radius:12px;font-weight:600}.btn.primary{color:#fff;background:var(--primary)}.btn.full{width:100%}
+    
+    /* Authentication Wrap */
+    .auth-wrap{min-height:80vh;display:grid;place-items:center}
+    .auth{width:min(440px,100%)}
     .auth-tabs{display:flex;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:18px}
-    .auth-tabs button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px}.auth-tabs button.active{background:#fff;box-shadow:0 3px 12px #0000000b}
+    .auth-tabs button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px;font-weight:600}.auth-tabs button.active{background:#fff;box-shadow:0 3px 12px #0000000b}
+    
+    /* Habits Checkbox Grid */
     .check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    .check{border:1px solid var(--line);border-radius:14px;padding:13px;display:flex;align-items:center;gap:9px}
-    .check input{width:auto}.status{font-size:12px;padding:5px 9px;border-radius:999px;display:inline-block}
+    .check{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;align-items:center;gap:9px;font-size:13px;user-select:none;cursor:pointer}
+    .check input{width:18px;height:18px;accent-color:var(--primary)}
+    
+    .status{font-size:12px;padding:4px 10px;border-radius:999px;display:inline-block;font-weight:500}
     .yes{background:#dcfce7;color:#166534}.no{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1e40af}
-    table{width:100%;border-collapse:collapse}th,td{text-align:right;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px}
-    th{color:var(--muted);font-weight:600}.scroll{overflow:auto}.empty{text-align:center;padding:35px;color:var(--muted)}
-    .toast{position:fixed;bottom:20px;left:20px;z-index:50;padding:13px 16px;border-radius:12px;color:#fff;background:#172033;box-shadow:var(--shadow)}
+    
+    /* Tables Mobile Responsive Scroll */
+    table{width:100%;border-collapse:collapse;white-space:nowrap}
+    th,td{text-align:right;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .empty{text-align:center;padding:35px;color:var(--muted)}
+    
+    /* Toast & Progress Bar */
+    .toast{position:fixed;bottom:20px;left:20px;z-index:50;padding:12px 18px;border-radius:12px;color:#fff;background:#172033;box-shadow:var(--shadow);font-weight:500}
     .toast.ok{background:var(--green)}.toast.err{background:var(--red)}
-    .bar{height:11px;background:#eef2f7;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--purple));border-radius:999px}
-    .chart{height:230px;display:flex;align-items:end;gap:8px;padding:15px 4px 0}.col{flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:end}
-    .col i{display:block;width:100%;max-width:38px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:3px}.col span{font-size:10px;color:var(--muted)}
-    .notice{padding:13px 15px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;line-height:1.8}
-    .admin-badge{background:#ede9fe;color:#5b21b6;padding:5px 9px;border-radius:999px;font-size:11px}
-    .footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+    .bar{height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--purple));border-radius:999px}
+    
+    /* Visual Chart */
+    .chart{height:220px;display:flex;align-items:end;gap:8px;padding:15px 4px 0}
+    .col{flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:end}
+    .col i{display:block;width:100%;max-width:32px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:3px}
+    .col span{font-size:10px;color:var(--muted)}
+    
+    .notice{padding:13px 15px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;line-height:1.7}
+    .admin-badge{background:#ede9fe;color:#5b21b6;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600}
+    .footer{text-align:center;color:var(--muted);font-size:12px;padding:25px}
+
+    /* Mobile Enhancements */
     @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.two,.three{grid-template-columns:1fr}}
-    @media(max-width:600px){.app{padding:13px}.kpis{grid-template-columns:1fr 1fr}.row,.check-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav button{flex:1}}
+    @media(max-width:600px){
+      .app{padding:12px}
+      .kpis{grid-template-columns:1fr 1fr}
+      .row,.check-grid{grid-template-columns:1fr}
+      .topbar{align-items:stretch;flex-direction:column;gap:12px}
+      .nav{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .nav button{padding:10px;text-align:center;font-size:13px}
+      .card{padding:16px}
+      .kpi .value{font-size:22px}
+    }
   </style>
 </head>
 <body>
 <div class="app">
   <header id="topbar" class="topbar hidden">
-    <div class="brand"><div class="logo">🏃</div><div><h1>RunTrack</h1><small>دویدن، عادت‌ها و پیشرفت</small></div></div>
+    <div class="brand"><div class="logo">🏃</div><div><h1>HQL</h1><small>دویدن، عادت‌ها و پیشرفت</small></div></div>
     <div class="nav">
       <button type="button" data-page="dashboard">داشبورد من</button>
       <button type="button" data-page="log">ثبت روزانه</button>
@@ -70,7 +123,7 @@
 
   <main id="authView" class="auth-wrap">
     <section class="card auth">
-      <div class="brand" style="margin-bottom:20px"><div class="logo">🏃</div><div><h1>RunTrack</h1><small>داشبورد شخصی دویدن</small></div></div>
+      <div class="brand" style="margin-bottom:20px"><div class="logo">🏃</div><div><h1>HQL</h1><small>داشبورد شخصی دویدن</small></div></div>
       <div class="auth-tabs">
         <button type="button" id="tabLogin" class="active">ورود</button>
         <button type="button" id="tabSignup">ثبت‌نام</button>
@@ -82,7 +135,6 @@
         <button type="submit" class="btn primary full" id="authSubmit">ورود</button>
       </form>
       <p id="authMsg" class="muted" style="margin:14px 0 0;font-size:12px"></p>
-      <div class="notice" style="margin-top:16px">برای استفاده واقعی، مقادیر <b>SUPABASE_URL</b> و <b>SUPABASE_ANON_KEY</b> را در ابتدای فایل جایگزین کنید.</div>
     </section>
   </main>
 
@@ -90,9 +142,9 @@
     <section id="dashboardPage" class="page">
       <div class="section-title"><div><h2>داشبورد من</h2><span id="welcome" class="muted"></span></div><span id="roleBadge"></span></div>
       <div class="grid kpis">
-        <div class="card kpi"><div class="label">مجموع کیلومتر</div><div class="value" id="kKm">0</div><div class="sub">تمام رکوردها</div></div>
-        <div class="card kpi"><div class="label">کالری دویدن</div><div class="value" id="kCal">0</div><div class="sub">بر اساس وزن × کیلومتر</div></div>
-        <div class="card kpi"><div class="label">چربی معادل</div><div class="value" id="kFat">0</div><div class="sub">کیلوگرم، تبدیل تئوریک</div></div>
+        <div class="card kpi"><div class="label">مجموع کیلومتر</div><div class="value" id="kKm">۰</div><div class="sub">تمام رکوردها</div></div>
+        <div class="card kpi"><div class="label">کالری دویدن</div><div class="value" id="kCal">۰</div><div class="sub">بر اساس وزن × کیلومتر</div></div>
+        <div class="card kpi"><div class="label">چربی معادل</div><div class="value" id="kFat">۰</div><div class="sub">کیلوگرم، تبدیل تئوریک</div></div>
         <div class="card kpi"><div class="label">میانگین وزن</div><div class="value" id="kWeight">—</div><div class="sub">کیلوگرم</div></div>
       </div>
       <div class="grid two" style="margin-top:16px">
@@ -107,10 +159,10 @@
       <div class="card">
         <form id="logForm" class="form-grid">
           <div class="row">
-            <div><label>تاریخ</label><input id="logDate" type="date" required></div>
-            <div><label>وزن (کیلوگرم)</label><input id="weight" type="number" min="1" step=".1" required></div>
+            <div><label>تاریخ (شمسی)</label><input id="logDate" type="date" required></div>
+            <div><label>وزن (کیلوگرم)</label><input id="weight" type="number" min="1" step=".1" placeholder="مثلا 75.5" required></div>
           </div>
-          <div><label>کیلومتر دویده‌شده</label><input id="km" type="number" min="0" step=".01" required></div>
+          <div><label>کیلومتر دویده‌شده</label><input id="km" type="number" min="0" step=".01" placeholder="مثلا 5.2" required></div>
           <div class="check-grid">
             <label class="check"><input id="dinner" type="checkbox"> شام ساعت ۸ رعایت شد</label>
             <label class="check"><input id="sleep" type="checkbox"> خواب قبل از ۱۱:۳۰ رعایت شد</label>
@@ -135,7 +187,6 @@
         <div class="card"><h3>خواب قبل از ۱۱:۳۰</h3><div id="pSleep">—</div></div>
         <div class="card"><h3>نخوردن شیرینی</h3><div id="pSweet">—</div></div>
       </div>
-      <div class="card" style="margin-top:16px"><h3>نکته حریم خصوصی</h3><p class="muted">گزارش عمومی فقط آمار تجمیعی را نشان می‌دهد؛ نام، وزن و رکوردهای شخصی کاربران در آن نمایش داده نمی‌شود.</p></div>
     </section>
 
     <section id="adminPage" class="page hidden">
@@ -157,7 +208,6 @@
 <script>
 /* =========================================================
    1) SUPABASE CONFIG
-   Replace these strings with your Supabase URL and Anon Key.
 ========================================================= */
 const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
@@ -167,7 +217,15 @@ const sb = ready ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 let currentUser = null, currentProfile = null, mode = "login";
 
 const $ = id => document.getElementById(id);
+
+// Format Persian Numbers & Jalali Date Helpers
 const fmt = (n,d=0) => Number(n||0).toLocaleString("fa-IR",{maximumFractionDigits:d});
+
+function toJalaliDate(isoDateStr) {
+  if(!isoDateStr) return "—";
+  const date = new Date(isoDateStr);
+  return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
 
 function toast(msg, type=""){
   $("toast").textContent=msg; $("toast").className="toast "+type;
@@ -198,7 +256,7 @@ function setAuthMode(m){
 
 async function init(){
   $("logDate").value=localDate();
-  if(!ready){$("authMsg").textContent="ابتدا تنظیمات Supabase را در ابتدای فایل وارد کنید.";return;}
+  if(!ready){$("authMsg").textContent="تنظیمات Supabase یافت نشد.";return;}
   const {data:{session}}=await sb.auth.getSession();
   if(session) await enter(session.user);
   sb.auth.onAuthStateChange(async (event,session)=>{
@@ -238,7 +296,7 @@ $("authForm").onsubmit=async e=>{
       const name=$("displayName").value.trim();
       const {data,error}=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
       if(error) throw error;
-      if(!data.session) $("authMsg").textContent="حساب ساخته شد. ایمیل خود را تأیید کنید.";
+      if(!data.session) $("authMsg").textContent="حساب ساخته شد.";
       else toast("حساب ساخته شد","ok");
     }
   }catch(err){$("authMsg").textContent=err.message||"خطا در ورود";toast("عملیات ناموفق بود","err")}
@@ -263,8 +321,8 @@ async function loadDashboard(){
 function renderChart(rows){
   const vals=rows.map(r=>Number(r.calories||0)), max=Math.max(...vals,1);
   $("chart").innerHTML=rows.length?rows.map(r=>{
-    const h=Math.max(3,(Number(r.calories||0)/max)*180);
-    return `<div class="col"><i style="height:${h}px" title="${fmt(r.calories)} کالری"></i><span>${r.log_date.slice(5)}</span></div>`;
+    const h=Math.max(3,(Number(r.calories||0)/max)*170);
+    return `<div class="col"><i style="height:${h}px" title="${fmt(r.calories)} کالری"></i><span>${toJalaliDate(r.log_date).slice(-5)}</span></div>`;
   }).join(""):`<div class="empty">هنوز رکوردی ثبت نشده است.</div>`;
 }
 
@@ -272,14 +330,14 @@ function renderHabits(rows){
   const calc=key=>{let n=rows.length,b=rows.filter(r=>r[key]).length;return [b,n?Math.round(b/n*100):0]};
   const items=[["شام ساعت ۸","dinner_ok"],["خواب قبل از ۱۱:۳۰","sleep_ok"],["نخوردن شیرینی","sweet_ok"]];
   $("habits").innerHTML=items.map(([name,key])=>{
-    const [b,p]=calc(key);return `<div style="margin:16px 0"><div class="section-title"><span>${name}</span><b>${fmt(p)}%</b></div><div class="bar"><i style="width:${p}%"></i></div><small class="muted">${b} از ${rows.length} روز</small></div>`
+    const [b,p]=calc(key);return `<div style="margin:16px 0"><div class="section-title"><span>${name}</span><b>${fmt(p)}%</b></div><div class="bar"><i style="width:${p}%"></i></div><small class="muted">${fmt(b)} از ${fmt(rows.length)} روز</small></div>`
   }).join("");
 }
 
 function status(v){return `<span class="status ${v?"yes":"no"}">${v?"بله":"خیر"}</span>`}
 
 function renderRecent(rows){
-  $("recent").innerHTML=rows.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>چربی معادل</th><th>عادت‌ها</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.log_date}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${fmt(Number(r.calories)/7700,3)}</td><td>${status(r.dinner_ok)} ${status(r.sleep_ok)} ${status(r.sweet_ok)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">اولین رکوردت را ثبت کن.</div>`;
+  $("recent").innerHTML=rows.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>چربی معادل</th><th>عادت‌ها</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${toJalaliDate(r.log_date)}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${fmt(Number(r.calories)/7700,3)}</td><td>${status(r.dinner_ok)} ${status(r.sleep_ok)} ${status(r.sweet_ok)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">اولین رکوردت را ثبت کن.</div>`;
 }
 
 $("logForm").onsubmit=async e=>{
@@ -307,14 +365,14 @@ function publicPct(v){const p=Math.round(Number(v||0));return `<b style="font-si
 async function loadAdmin(){
   const {data,error}=await sb.from("profiles").select("id,display_name,role,created_at").order("created_at",{ascending:false});
   if(error){toast("دسترسی ادمین رد شد","err");return}
-  $("adminUsers").innerHTML=`<table><thead><tr><th>نام</th><th>نقش</th><th>تاریخ عضویت</th><th></th></tr></thead><tbody>${(data||[]).map(u=>`<tr><td>${u.display_name||"بدون نام"}</td><td>${u.role==="admin"?'<span class="admin-badge">Admin</span>':"User"}</td><td>${(u.created_at||"").slice(0,10)}</td><td><button type="button" class="ghost" onclick="openAdminUser('${u.id}','${(u.display_name||"کاربر").replace(/'/g,"")}')">مشاهده داده‌ها</button></td></tr>`).join("")}</tbody></table>`;
+  $("adminUsers").innerHTML=`<table><thead><tr><th>نام</th><th>نقش</th><th>تاریخ عضویت</th><th></th></tr></thead><tbody>${(data||[]).map(u=>`<tr><td>${u.display_name||"بدون نام"}</td><td>${u.role==="admin"?'<span class="admin-badge">Admin</span>':"User"}</td><td>${toJalaliDate(u.created_at)}</td><td><button type="button" class="ghost" onclick="openAdminUser('${u.id}','${(u.display_name||"کاربر").replace(/'/g,"")}')">مشاهده داده‌ها</button></td></tr>`).join("")}</tbody></table>`;
 }
 
 window.openAdminUser=async function(id,name){
   const {data,error}=await sb.from("daily_logs").select("*").eq("user_id",id).order("log_date",{ascending:false});
   if(error){toast("خطا در دریافت داده کاربر","err");return}
   $("adminDetail").classList.remove("hidden");$("adminDetailTitle").textContent=`داده‌های ${name}`;
-  $("adminRecords").innerHTML=data?.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>شام</th><th>خواب</th><th>شیرینی</th><th></th></tr></thead><tbody>${data.map(r=>`<tr><td>${r.log_date}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${status(r.dinner_ok)}</td><td>${status(r.sleep_ok)}</td><td>${status(r.sweet_ok)}</td><td><button type="button" class="danger" onclick="deleteAdminRecord('${r.id}')">حذف</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">رکوردی ندارد.</div>`;
+  $("adminRecords").innerHTML=data?.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>شام</th><th>خواب</th><th>شیرینی</th><th></th></tr></thead><tbody>${data.map(r=>`<tr><td>${toJalaliDate(r.log_date)}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${status(r.dinner_ok)}</td><td>${status(r.sleep_ok)}</td><td>${status(r.sweet_ok)}</td><td><button type="button" class="danger" onclick="deleteAdminRecord('${r.id}')">حذف</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">رکوردی ندارد.</div>`;
 };
 
 window.deleteAdminRecord=async function(id){
