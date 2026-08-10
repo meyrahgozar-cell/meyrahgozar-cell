@@ -178,7 +178,7 @@
       <div><h1>جدول رده‌بندی عمومی</h1></div>
     </div>
     <!-- Redirect Link Updated to home.html -->
-    <a href="index.html" class="btn-back">بازگشت به برنامه</a>
+    <a href="home.html" class="btn-back">بازگشت به برنامه</a>
   </header>
 
   <main class="card">
@@ -211,3 +211,131 @@
 
   <footer class="footer">HQL Public Leaderboard • v2.2.0</footer>
 </div>
+<script>
+  // --------------------------------------------------
+  // 1. SUPABASE CONFIGURATION (Insert your keys here)
+  // --------------------------------------------------
+const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
+  
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Helper: Get Jalali month details
+  function getCurrentJalaliMonthInfo() {
+    const now = new Date();
+    const gYear = now.getFullYear();
+    const gMonth = now.getMonth() + 1;
+    const gDay = now.getDate();
+    
+    const jDate = jalaali.toJalaali(gYear, gMonth, gDay);
+    const monthNames = [
+      "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+      "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
+    ];
+    
+    return {
+      year: jDate.jy,
+      month: jDate.jm,
+      monthName: monthNames[jDate.jm - 1]
+    };
+  }
+
+  // Helper: Format numbers to Persian digits
+  function toPersianDigits(n) {
+    const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return n.toString().replace(/\d/g, x => farsiDigits[x]);
+  }
+
+  async function loadLeaderboard() {
+    const loadingEl = document.getElementById('loading');
+    const monthBadgeEl = document.getElementById('monthBadge');
+    const podiumEl = document.getElementById('podiumWrapper');
+    const leaderboardWrapperEl = document.getElementById('leaderboardWrapper');
+    const leaderboardBodyEl = document.getElementById('leaderboardBody');
+
+    try {
+      const currentMonth = getCurrentJalaliMonthInfo();
+      monthBadgeEl.innerText = `کارکرد ماه ${currentMonth.monthName} ${toPersianDigits(currentMonth.year)}`;
+
+      // Fetch user activities for current month
+      // Assumes table structure: 'activities' with columns (user_name, calories, distance, j_month, j_year)
+      const { data, error } = await supabase
+        .from('activities')
+        .select('user_name, calories, distance')
+        .eq('j_year', currentMonth.year)
+        .eq('j_month', currentMonth.month);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        loadingEl.innerText = 'هنوز داده‌ای برای این ماه ثبت نشده است.';
+        return;
+      }
+
+      // Aggregate metrics per user
+      const userStats = {};
+      data.forEach(item => {
+        const name = item.user_name || 'کاربر ناشناس';
+        if (!userStats[name]) {
+          userStats[name] = { totalCalories: 0, totalDistance: 0, loggedDays: 0 };
+        }
+        userStats[name].totalCalories += Number(item.calories || 0);
+        userStats[name].totalDistance += Number(item.distance || 0);
+        userStats[name].loggedDays += 1;
+      });
+
+      // Convert to array & sort descending by calories
+      const sortedUsers = Object.keys(userStats)
+        .map(name => ({
+          name,
+          calories: userStats[name].totalCalories,
+          distance: userStats[name].totalDistance,
+          days: userStats[name].loggedDays
+        }))
+        .sort((a, b) => b.calories - a.calories);
+
+      loadingEl.classList.add('hidden');
+
+      // --------------------------------------------------
+      // Render Top 3 Podium Cards
+      // --------------------------------------------------
+      const top3 = sortedUsers.slice(0, 3);
+      const ranks = ['first', 'second', 'third'];
+      const rankLabels = ['🥇 مقام اول', '🥈 مقام دوم', '🥉 مقام سوم'];
+
+      podiumEl.innerHTML = top3.map((u, i) => `
+        <div class="podium-card ${ranks[i]}">
+          <div class="podium-badge">${rankLabels[i]}</div>
+          <div class="podium-name">${u.name}</div>
+          <div class="podium-val">${toPersianDigits(Math.round(u.calories).toLocaleString())} کالری</div>
+        </div>
+      `).join('');
+      
+      podiumEl.classList.remove('hidden');
+
+      // --------------------------------------------------
+      // Render Full Leaderboard Table
+      // --------------------------------------------------
+      leaderboardBodyEl.innerHTML = sortedUsers.map((u, index) => `
+        <tr>
+          <td style="text-align: center;"><span class="rank">${toPersianDigits(index + 1)}</span></td>
+          <td class="user-name">${u.name}</td>
+          <td class="calories-val">${toPersianDigits(Math.round(u.calories).toLocaleString())} kcal</td>
+          <td>${toPersianDigits(u.distance.toFixed(1))} کیلومتر</td>
+          <td>${toPersianDigits(u.days)} روز</td>
+        </tr>
+      `).join('');
+
+      leaderboardWrapperEl.classList.remove('hidden');
+
+    } catch (err) {
+      console.error('Leaderboard Fetch Error:', err);
+      loadingEl.innerText = 'خطا در بارگیری اطلاعات. لطفاً کلیدهای Supabase را بررسی کنید.';
+    }
+  }
+
+  // Initialize on DOM load
+  document.addEventListener('DOMContentLoaded', loadLeaderboard);
+</script>
+</body>
+</html>
