@@ -64,7 +64,9 @@
       color: #fff;
       font-size: 22px;
       flex-shrink: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    .topbar:hover .logo { transform: rotate(10deg) scale(1.05); }
     .brand h1 { font-size: 18px; margin: 0; font-weight: 800; }
     
     .btn-back {
@@ -77,6 +79,12 @@
       font-size: 13px;
       text-decoration: none;
       flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .card {
@@ -102,7 +110,7 @@
       margin-top: 8px;
     }
 
-    /* Podium Cards for Top 3 Fixes */
+    /* Podium Cards for Top 3 & Visual Hover Effects */
     .podium {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -121,16 +129,27 @@
       align-items: center;
       justify-content: center;
       min-height: 130px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: default;
+      position: relative;
+    }
+    .podium-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 12px 24px rgba(15,23,42,0.08);
     }
     .podium-card.first { border-color: #fde68a; background: linear-gradient(180deg, #fffdf2, #fff); }
+    .podium-card.first:hover { box-shadow: 0 12px 28px rgba(245, 158, 11, 0.18); }
     .podium-card.second { border-color: #e2e8f0; }
     .podium-card.third { border-color: #fed7aa; background: linear-gradient(180deg, #fffaf2, #fff); }
+    .podium-card.third:hover { box-shadow: 0 12px 28px rgba(217, 119, 6, 0.15); }
     
     .podium-badge {
       font-size: 24px;
       line-height: 1;
       margin-bottom: 6px;
+      transition: transform 0.2s ease;
     }
+    .podium-card:hover .podium-badge { transform: scale(1.2); }
 
     .podium-name {
       font-weight: 700;
@@ -145,10 +164,40 @@
     .podium-val { font-weight: 800; color: var(--primary); font-size: 15px; line-height: 1.2; }
     .podium-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
 
-    /* Table Styles */
+    /* Table Styles & Hover Visuals */
     table { width: 100%; border-collapse: collapse; white-space: nowrap; }
     th, td { text-align: right; padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
     th { color: var(--muted); font-weight: 600; background: #fafafa; }
+    
+    tbody tr {
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    /* Active User Highlight Styles */
+    tbody tr.active-user-row {
+      background-color: #eff6ff !important;
+      border-right: 4px solid var(--primary);
+      font-weight: 600;
+    }
+    tbody tr.active-user-row:hover {
+      background-color: #dbeafe !important;
+    }
+
+    .you-badge {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
     .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--line); }
 
     .rank {
@@ -162,6 +211,11 @@
       font-size: 12px;
       background: #f1f5f9;
       color: var(--muted);
+      transition: all 0.2s ease;
+    }
+    tbody tr:hover .rank {
+      background: var(--primary);
+      color: #fff;
     }
     .user-name { font-weight: 700; color: var(--text); }
     .calories-val { font-weight: 800; color: var(--primary); }
@@ -215,7 +269,7 @@
     </div>
   </main>
 
-  <footer class="footer">HQL Public Leaderboard • v2.2.1</footer>
+  <footer class="footer">HQL Public Leaderboard • v2.3.0</footer>
 </div>
 <script>
 const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
@@ -236,6 +290,17 @@ function getJalaliMonthStartISO() {
 async function loadLeaderboard() {
   const monthStartISO = getJalaliMonthStartISO();
   try {
+    // Detect active logged-in user session
+    let currentUserId = null;
+    let currentUserDisplayName = null;
+    
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      currentUserId = session.user.id;
+      const { data: profile } = await sb.from("profiles").select("display_name").eq("id", currentUserId).single();
+      if (profile) currentUserDisplayName = profile.display_name;
+    }
+
     const { data, error } = await sb.rpc("get_monthly_leaderboard", { month_start_date: monthStartISO });
     if (error) throw error;
     
@@ -246,14 +311,14 @@ async function loadLeaderboard() {
       days: u.days_count || 0
     }));
     
-    renderLeaderboard(formattedData);
+    renderLeaderboard(formattedData, currentUserDisplayName);
   } catch (err) {
     console.error(err);
     document.getElementById("loading").textContent = "خطا در بارگذاری اطلاعات عمومی.";
   }
 }
 
-function renderLeaderboard(users) {
+function renderLeaderboard(users, activeUserName) {
   document.getElementById("loading").classList.add("hidden");
   const podWrap = document.getElementById("podiumWrapper");
   const boardWrap = document.getElementById("leaderboardWrapper");
@@ -275,10 +340,13 @@ function renderLeaderboard(users) {
     const badges = ["🥇", "🥈", "🥉"];
 
     topThree.forEach((u, idx) => {
+      const isMe = activeUserName && u.name === activeUserName;
+      const meBadge = isMe ? `<span class="you-badge">شما</span>` : "";
+      
       podHtml += `
         <div class="podium-card ${classes[idx]}">
           <div class="podium-badge">${badges[idx]}</div>
-          <div class="podium-name">${u.name}</div>
+          <div class="podium-name">${u.name} ${meBadge}</div>
           <div class="podium-val">${fmt(u.calories)} کالری</div>
           <div class="podium-sub">${fmt(u.km, 1)} کیلومتر</div>
         </div>
@@ -287,14 +355,18 @@ function renderLeaderboard(users) {
     podWrap.innerHTML = podHtml;
   }
 
-  // Render Full Table
+  // Render Full Table with Active User Highlight
   boardWrap.classList.remove("hidden");
   tbody.innerHTML = users.map((u, index) => {
     const rank = index + 1;
+    const isMe = activeUserName && u.name === activeUserName;
+    const rowClass = isMe ? 'class="active-user-row"' : "";
+    const meBadge = isMe ? `<span class="you-badge">شما</span>` : "";
+
     return `
-      <tr>
+      <tr ${rowClass}>
         <td style="text-align: center;"><span class="rank">${rank}</span></td>
-        <td class="user-name">${u.name}</td>
+        <td class="user-name">${u.name} ${meBadge}</td>
         <td class="calories-val">${fmt(u.calories)} کالری</td>
         <td>${fmt(u.km, 2)} کیلومتر</td>
         <td>${fmt(u.days)} روز</td>
