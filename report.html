@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>HQL — جدول رده‌بندی عمومی</title>
   
-  <!-- Persian Font: Vazirmatn -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -36,7 +35,7 @@
       color: var(--text);
       font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px 40px;
+      padding: 16px 12px 40px;
     }
 
     .app { max-width: 950px; margin: auto; }
@@ -45,7 +44,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       padding: 12px 18px;
       background: rgba(255,255,255,0.9);
       backdrop-filter: blur(10px);
@@ -64,6 +63,7 @@
       background: linear-gradient(135deg, var(--primary), var(--purple));
       color: #fff;
       font-size: 22px;
+      flex-shrink: 0;
     }
     .brand h1 { font-size: 18px; margin: 0; font-weight: 800; }
     
@@ -71,83 +71,89 @@
       border: 1px solid var(--line);
       background: #fff;
       color: var(--text);
-      padding: 9px 18px;
+      padding: 8px 16px;
       border-radius: 12px;
       font-weight: 600;
       font-size: 13px;
       text-decoration: none;
-      transition: all 0.2s;
+      flex-shrink: 0;
     }
-    .btn-back:hover { background: #f1f5f9; }
 
     .card {
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 20px;
       box-shadow: var(--shadow);
     }
 
-    .header-box { text-align: center; margin-bottom: 24px; }
-    .header-box h2 { font-size: 22px; font-weight: 800; margin: 0 0 6px; }
+    .header-box { text-align: center; margin-bottom: 20px; }
+    .header-box h2 { font-size: 20px; font-weight: 800; margin: 0 0 6px; }
     .header-box p { color: var(--muted); font-size: 13px; margin: 0; }
 
     .month-badge {
       display: inline-block;
       background: #dbeafe;
       color: #1e40af;
-      padding: 5px 16px;
+      padding: 4px 14px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
-    /* Podium Cards for Top 3 */
+    /* Podium Cards for Top 3 Fixes */
     .podium {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       margin-bottom: 24px;
+      align-items: stretch;
     }
     .podium-card {
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 16px;
+      padding: 16px 10px;
       text-align: center;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 130px;
     }
-    .podium-card.first { border-color: #fde68a; background: linear-gradient(180deg, #fffdf5, #fff); }
+    .podium-card.first { border-color: #fde68a; background: linear-gradient(180deg, #fffdf2, #fff); }
     .podium-card.second { border-color: #e2e8f0; }
-    .podium-card.third { border-color: #fed7aa; background: linear-gradient(180deg, #fffaf5, #fff); }
+    .podium-card.third { border-color: #fed7aa; background: linear-gradient(180deg, #fffaf2, #fff); }
     
     .podium-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      font-size: 14px;
-      margin: 0 auto 8px;
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 6px;
     }
-    .first .podium-badge { background: #fef3c7; color: var(--gold); }
-    .second .podium-badge { background: #f1f5f9; color: var(--silver); }
-    .third .podium-badge { background: #ffedd5; color: var(--bronze); }
 
-    .podium-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .podium-val { font-weight: 800; color: var(--primary); font-size: 16px; }
+    .podium-name {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    .podium-val { font-weight: 800; color: var(--primary); font-size: 15px; line-height: 1.2; }
+    .podium-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
 
     /* Table Styles */
     table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-    th, td { text-align: right; padding: 14px; border-bottom: 1px solid var(--line); font-size: 13px; }
+    th, td { text-align: right; padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
     th { color: var(--muted); font-weight: 600; background: #fafafa; }
     .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--line); }
 
     .rank {
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
@@ -160,12 +166,13 @@
     .user-name { font-weight: 700; color: var(--text); }
     .calories-val { font-weight: 800; color: var(--primary); }
 
-    .empty, .loading { text-align: center; padding: 40px; color: var(--muted); font-weight: 500; }
+    .empty, .loading { text-align: center; padding: 30px; color: var(--muted); font-weight: 500; }
     .hidden { display: none !important; }
-    .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 25px 0 10px; }
+    .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0 10px; }
     
     @media(max-width: 600px) {
       .podium { grid-template-columns: 1fr; }
+      .podium-card { min-height: auto; padding: 12px; }
     }
   </style>
 </head>
@@ -177,7 +184,7 @@
       <div class="logo">🏆</div>
       <div><h1>جدول رده‌بندی عمومی</h1></div>
     </div>
-    <a href="index.html" class="btn-back">بازگشت به برنامه</a>
+    <a href="" class="btn-back">بازگشت به خانه</a>
   </header>
 
   <main class="card">
@@ -187,16 +194,16 @@
       <div id="monthBadge" class="month-badge">در حال محاسبه...</div>
     </div>
 
-    <!-- Top 3 Podium Cards Container -->
+    <!-- Top 3 Podium Container -->
     <div id="podiumWrapper" class="podium hidden"></div>
 
-    <div id="loading" class="loading">در حال دریافت و پردازش اطلاعات کاربران...</div>
+    <div id="loading" class="loading">در حال دریافت و پردازش اطلاعات...</div>
 
     <div id="leaderboardWrapper" class="scroll hidden">
       <table>
         <thead>
           <tr>
-            <th style="width: 60px; text-align: center;">رتبه</th>
+            <th style="width: 50px; text-align: center;">رتبه</th>
             <th>کاربر</th>
             <th>کالری سوزانده‌شده (ماه)</th>
             <th>مسافت دویده شده</th>
@@ -211,148 +218,92 @@
   <footer class="footer">HQL Public Leaderboard • v2.2.1</footer>
 </div>
 <script>
-  /* =========================================================
-     1) SUPABASE CONFIGURATION
-  ========================================================= */
-  const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
+const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const PERSIAN_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+const fmt = (n, d=0) => Number(n||0).toLocaleString("fa-IR", {maximumFractionDigits: d});
+
+function getJalaliMonthStartISO() {
+  const now = new Date();
+  const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  document.getElementById("monthBadge").textContent = `ماه جاری: ${PERSIAN_MONTHS[jNow.jm - 1]} ${jNow.jy}`;
+  const gStart = jalaali.toGregorian(jNow.jy, jNow.jm, 1);
+  return `${gStart.gy}-${String(gStart.gm).padStart(2,'0')}-${String(gStart.gd).padStart(2,'0')}`;
+}
+
+async function loadLeaderboard() {
+  const monthStartISO = getJalaliMonthStartISO();
+  try {
+    const { data, error } = await sb.rpc("get_monthly_leaderboard", { month_start_date: monthStartISO });
+    if (error) throw error;
+    
+    const formattedData = (data || []).map(u => ({
+      name: u.display_name || "کاربر بدون نام",
+      calories: u.total_calories || 0,
+      km: u.total_km || 0,
+      days: u.days_count || 0
+    }));
+    
+    renderLeaderboard(formattedData);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("loading").textContent = "خطا در بارگذاری اطلاعات عمومی.";
+  }
+}
+
+function renderLeaderboard(users) {
+  document.getElementById("loading").classList.add("hidden");
+  const podWrap = document.getElementById("podiumWrapper");
+  const boardWrap = document.getElementById("leaderboardWrapper");
+  const tbody = document.getElementById("leaderboardBody");
   
-  // استفاده از supabaseClient به جای supabase برای جلوگیری از Uncaught SyntaxError
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  function getCurrentJalaliMonthInfo() {
-    const now = new Date();
-    const gYear = now.getFullYear();
-    const gMonth = now.getMonth() + 1;
-    const gDay = now.getDate();
-    
-    const jDate = jalaali.toJalaali(gYear, gMonth, gDay);
-    const monthNames = [
-      "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-      "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
-    ];
-    
-    return {
-      year: jDate.jy,
-      month: jDate.jm,
-      monthName: monthNames[jDate.jm - 1]
-    };
+  if (!users.length) {
+    boardWrap.classList.remove("hidden");
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">هیچ داده‌ای برای این ماه ثبت نشده است.</td></tr>`;
+    return;
   }
 
-  function toPersianDigits(n) {
-    if (n === null || n === undefined) return '۰';
-    const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    return n.toString().replace(/\d/g, x => farsiDigits[x]);
-  }
+  // Render Podium for Top 3 Users
+  if (users.length > 0) {
+    podWrap.classList.remove("hidden");
+    let podHtml = "";
+    
+    const topThree = users.slice(0, 3);
+    const classes = ["first", "second", "third"];
+    const badges = ["🥇", "🥈", "🥉"];
 
-  async function loadLeaderboard() {
-    const loadingEl = document.getElementById('loading');
-    const monthBadgeEl = document.getElementById('monthBadge');
-    const podiumEl = document.getElementById('podiumWrapper');
-    const leaderboardWrapperEl = document.getElementById('leaderboardWrapper');
-    const leaderboardBodyEl = document.getElementById('leaderboardBody');
-
-    try {
-      const currentMonth = getCurrentJalaliMonthInfo();
-      monthBadgeEl.innerText = `کارکرد ماه ${currentMonth.monthName} ${toPersianDigits(currentMonth.year)}`;
-
-      // دریافت پروفایل‌ها
-      const { data: profiles, error: profErr } = await supabaseClient
-        .from('profiles')
-        .select('id, display_name');
-
-      if (profErr) throw profErr;
-
-      const profileMap = {};
-      (profiles || []).forEach(p => {
-        profileMap[p.id] = p.display_name || 'کاربر بدون نام';
-      });
-
-      // دریافت رکوردهای روزانه
-      const { data: logs, error: logsErr } = await supabaseClient
-        .from('daily_logs')
-        .select('user_id, log_date, calories, km');
-
-      if (logsErr) throw logsErr;
-
-      if (!logs || logs.length === 0) {
-        loadingEl.innerText = 'هنوز داده‌ای برای این ماه ثبت نشده است.';
-        return;
-      }
-
-      // فیلتر کردن داده‌ها بر اساس ماه جاری شمسی
-      const currentMonthLogs = logs.filter(item => {
-        if (!item.log_date) return false;
-        const d = new Date(item.log_date);
-        const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-        return j.jy === currentMonth.year && j.jm === currentMonth.month;
-      });
-
-      if (currentMonthLogs.length === 0) {
-        loadingEl.innerText = 'هنوز داده‌ای برای این ماه ثبت نشده است.';
-        return;
-      }
-
-      // تجمیع آمار بر اساس کاربر
-      const userStats = {};
-      currentMonthLogs.forEach(item => {
-        const userId = item.user_id;
-        const userName = profileMap[userId] || 'کاربر ناشناس';
-        
-        if (!userStats[userId]) {
-          userStats[userId] = { 
-            name: userName, 
-            totalCalories: 0, 
-            totalDistance: 0, 
-            loggedDays: 0 
-          };
-        }
-        userStats[userId].totalCalories += Number(item.calories || 0);
-        userStats[userId].totalDistance += Number(item.km || 0);
-        userStats[userId].loggedDays += 1;
-      });
-
-      // مرتب‌سازی بر اساس مجموع کالری نزولی
-      const sortedUsers = Object.values(userStats)
-        .sort((a, b) => b.totalCalories - a.totalCalories);
-
-      loadingEl.classList.add('hidden');
-
-      // سکوی ۳ نفر برتر
-      const top3 = sortedUsers.slice(0, 3);
-      const ranks = ['first', 'second', 'third'];
-      const rankLabels = ['🥇 مقام اول', '🥈 مقام دوم', '🥉 مقام سوم'];
-
-      podiumEl.innerHTML = top3.map((u, i) => `
-        <div class="podium-card ${ranks[i]}">
-          <div class="podium-badge">${rankLabels[i]}</div>
+    topThree.forEach((u, idx) => {
+      podHtml += `
+        <div class="podium-card ${classes[idx]}">
+          <div class="podium-badge">${badges[idx]}</div>
           <div class="podium-name">${u.name}</div>
-          <div class="podium-val">${toPersianDigits(Math.round(u.totalCalories).toLocaleString())} کالری</div>
+          <div class="podium-val">${fmt(u.calories)} کالری</div>
+          <div class="podium-sub">${fmt(u.km, 1)} کیلومتر</div>
         </div>
-      `).join('');
-      
-      podiumEl.classList.remove('hidden');
-
-      // جدول کامل رده‌بندی
-      leaderboardBodyEl.innerHTML = sortedUsers.map((u, index) => `
-        <tr>
-          <td style="text-align: center;"><span class="rank">${toPersianDigits(index + 1)}</span></td>
-          <td class="user-name">${u.name}</td>
-          <td class="calories-val">${toPersianDigits(Math.round(u.totalCalories).toLocaleString())} kcal</td>
-          <td>${toPersianDigits(u.totalDistance.toFixed(1))} کیلومتر</td>
-          <td>${toPersianDigits(u.loggedDays)} روز</td>
-        </tr>
-      `).join('');
-
-      leaderboardWrapperEl.classList.remove('hidden');
-
-    } catch (err) {
-      console.error('Leaderboard Fetch Error:', err);
-      loadingEl.innerText = 'خطا در بارگیری اطلاعات. لطفاً کنسول را بررسی کنید.';
-    }
+      `;
+    });
+    podWrap.innerHTML = podHtml;
   }
 
-  document.addEventListener('DOMContentLoaded', loadLeaderboard);
+  // Render Full Table
+  boardWrap.classList.remove("hidden");
+  tbody.innerHTML = users.map((u, index) => {
+    const rank = index + 1;
+    return `
+      <tr>
+        <td style="text-align: center;"><span class="rank">${rank}</span></td>
+        <td class="user-name">${u.name}</td>
+        <td class="calories-val">${fmt(u.calories)} کالری</td>
+        <td>${fmt(u.km, 2)} کیلومتر</td>
+        <td>${fmt(u.days)} روز</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+document.addEventListener("DOMContentLoaded", loadLeaderboard);
 </script>
 </body>
 </html>
