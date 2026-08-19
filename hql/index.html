@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>انگیزه من</title>
+  <title>H Q L</title>
 
   <!-- Vazirmatn -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1069,7 +1069,7 @@
    ========================================================= */
 
 const SUPABASE_URL =
-  "https://ehgjzvqdnglkwipzfvil.supabase.co";
+  "https://ehgjzvqdnglkwipzfvil.supabaseClient.co";
 
 const SUPABASE_KEY =
   "sb_publishable_h0NBFewBDnGulVkxBISzkQ_zUlgWNWu";
@@ -1080,7 +1080,7 @@ const {
 } = window.supabase;
 
 
-const supabase =
+const supabaseClient =
   createClient(
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -1092,7 +1092,6 @@ const supabase =
       }
     }
   );
-
 
 
 /* =========================================================
@@ -1470,7 +1469,7 @@ $("authForm").addEventListener(
 
 
         result =
-          await supabase.auth.signUp({
+          await supabaseClient.auth.signUp({
 
             email,
 
@@ -1492,7 +1491,7 @@ $("authForm").addEventListener(
       } else {
 
         result =
-          await supabase.auth
+          await supabaseClient.auth
             .signInWithPassword({
 
               email,
@@ -1660,7 +1659,7 @@ async function getDisplayName() {
       user
     }
   } =
-    await supabase.auth
+    await supabaseClient.auth
       .getUser();
 
 
@@ -1704,7 +1703,7 @@ $("themeButton").onclick =
     const {
       error
     } =
-      await supabase.rpc(
+      await supabaseClient.rpc(
         "update_my_profile",
         {
           p_display_name:
@@ -1765,7 +1764,7 @@ document.addEventListener(
 $("logoutButton").onclick =
   async () => {
 
-    await supabase.auth
+    await supabaseClient.auth
       .signOut();
 
   };
@@ -2181,7 +2180,7 @@ async function saveItem(
     data,
     error
   } =
-    await supabase.rpc(
+    await supabaseClient.rpc(
       "save_daily_log",
       {
         p_item_type:
@@ -2309,7 +2308,7 @@ async function loadToday() {
     data: summary,
     error: summaryError
   } =
-    await supabase.rpc(
+    await supabaseClient.rpc(
       "get_today_summary"
     );
 
@@ -2393,7 +2392,7 @@ function subscribeToRealtime(
 
   if (realtimeChannel) {
 
-    supabase.removeChannel(
+    supabaseClient.removeChannel(
       realtimeChannel
     );
 
@@ -2433,7 +2432,7 @@ function subscribeToRealtime(
    AUTH SESSION
    ========================================================= */
 
-supabase.auth
+supabaseClient.auth
   .getSession()
   .then(
     async ({
@@ -2454,7 +2453,7 @@ supabase.auth
   );
 
 
-supabase.auth
+supabaseClient.auth
   .onAuthStateChange(
     async (
       event,
@@ -2470,7 +2469,7 @@ supabase.auth
           realtimeChannel
         ) {
 
-          supabase.removeChannel(
+          supabaseClient.removeChannel(
             realtimeChannel
           );
 
