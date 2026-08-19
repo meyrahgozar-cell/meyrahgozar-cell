@@ -952,29 +952,41 @@ function gregorianRangeForJalali(
 }
 
 
-function formatJalaliDate(
-  isoDate
-){
+function parseGregorianDate(value){
 
-  const [
-    gy,
-    gm,
-    gd
-  ] =
-    isoDate
-      .split("-")
-      .map(Number);
+  const match =
+    String(value || "").match(
+      /^(\d{4})-(\d{2})-(\d{2})/
+    );
+
+  if(!match)
+    return null;
+
+  return {
+    gy:Number(match[1]),
+    gm:Number(match[2]),
+    gd:Number(match[3])
+  };
+}
+
+
+function formatJalaliDate(value){
+
+  const date =
+    parseGregorianDate(value);
+
+  if(!date)
+    return "—";
 
   const j =
     jalaali.toJalaali(
-      gy,
-      gm,
-      gd
+      date.gy,
+      date.gm,
+      date.gd
     );
 
   return `${faNumber(j.jy)}/${faNumber(j.jm)}/${faNumber(j.jd)}`;
 }
-
 
 /* =========================================================
    CURRENT SHAMSI MONTH
@@ -1550,12 +1562,18 @@ function renderChart(){
   daily.forEach(
     (item,index) => {
 
-      const j =
-        jalaali.toJalaali(
-          ...item.date
-            .split("-")
-            .map(Number)
-        );
+const date =
+  parseGregorianDate(item.date);
+
+if(!date)
+  return;
+
+const j =
+  jalaali.toJalaali(
+    date.gy,
+    date.gm,
+    date.gd
+  );
 
       /*
         Only show every few labels
@@ -2228,12 +2246,15 @@ window.addEventListener(
   "resize",
   () => {
 
-    if(reportData)
+    if(
+      reportData &&
+      document.getElementById("dailyChart")
+    ){
       renderChart();
+    }
 
   }
 );
-
 
 /* =========================================================
    INITIALIZE
