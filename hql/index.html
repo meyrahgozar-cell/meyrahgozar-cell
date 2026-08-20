@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HQL | زندگی با کیفیت</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --bg:#080b12;
+  --card:#111722;
+  --card2:#171e29;
+  --card3:#202938;
+  --text:#f5f7fa;
+  --muted:#8d98aa;
+  --border:rgba(255,255,255,.08);
+  --accent:#9275ff;
+  --positive:#45e6a2;
+  --negative:#ff647c;
+  --shadow:0 18px 50px rgba(0,0,0,.25);
+  --radius:22px;
+}
+
+[data-theme="light"]{
+  --bg:#f4f6fa;
+  --card:#fff;
+  --card2:#f0f3f8;
+  --card3:#e5e9f0;
+  --text:#151925;
+  --muted:#697386;
+  --border:rgba(20,25,37,.09);
+  --accent:#7055df;
+  --positive:#0ca76b;
+  --negative:#e6405d;
+  --shadow:0 15px 40px rgba(30,40,60,.1);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  min-height:100%;
+}
+
+body{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(146,117,255,.11),transparent 30rem),
+    var(--bg);
+  color:var(--text);
+  font-family:"Vazirmatn",sans-serif;
+  transition:.25s;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.hidden{
+  display:none!important;
+}
+
+.shell{
+  width:min(1100px,calc(100% - 24px));
+  margin:auto;
+}
+
+
+/* AUTH */
+
+.auth-page{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+.auth-card{
+  width:min(440px,100%);
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:28px;
+  box-shadow:var(--shadow);
+}
+
+.logo{
+  font-size:30px;
+  font-weight:800;
+  margin-bottom:4px;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:24px;
+}
+
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  background:var(--card2);
+  padding:4px;
+  border-radius:15px;
+  margin-bottom:20px;
+}
+
+.tab{
+  height:44px;
+  border:0;
+  border-radius:12px;
+  background:transparent;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.tab.active{
+  background:var(--card);
+  color:var(--text);
+}
+
+.form{
+  display:grid;
+  gap:10px;
+}
+
+.label{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.input{
+  width:100%;
+  height:50px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:var(--card2);
+  color:var(--text);
+  outline:none;
+}
+
+.input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(146,117,255,.12);
+}
+
+.primary{
+  height:50px;
+  border:0;
+  border-radius:15px;
+  background:linear-gradient(135deg,var(--accent),#6048d8);
+  color:#fff;
+  font-weight:700;
+  margin-top:6px;
+}
+
+.error{
+  min-height:18px;
+  color:var(--negative);
+  font-size:12px;
+}
+
+
+/* HEADER */
+
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  backdrop-filter:blur(18px);
+  background:rgba(8,11,18,.78);
+  border-bottom:1px solid var(--border);
+}
+
+[data-theme="light"] header{
+  background:rgba(244,246,250,.82);
+}
+
+.nav{
+  min-height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  line-height:1.05;
+}
+
+.brand strong{
+  font-size:20px;
+  font-weight:800;
+}
+
+.brand span{
+  color:var(--muted);
+  font-size:9px;
+  margin-top:4px;
+}
+
+.score.positive{
+  color:var(--positive);
+  text-shadow:0 0 25px rgba(69,230,162,.25);
+}
+
+.score.negative{
+  color:var(--negative);
+  text-shadow:0 0 25px rgba(255,100,124,.22);
+}
+
+.item-score.positive{
+  color:var(--positive);
+}
+
+.item-score.negative{
+  color:var(--negative);
+}
+
+.nav-actions{
+  display:flex;
+  gap:8px;
+}
+
+.icon{
+  width:44px;
+  height:44px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card);
+  color:var(--text);
+}
+
+
+/* MAIN */
+
+.page{
+  padding:22px 0 60px;
+}
+
+.hero{
+  display:grid;
+  gap:14px;
+  margin-bottom:25px;
+}
+
+.score-card{
+  background:linear-gradient(145deg,var(--card),var(--card2));
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+  position:sticky;
+  top:78px;
+  z-index:15;
+}
+
+.score-card .eyebrow{
+  font-size:11px;
+}
+
+.score-card .score{
+  font-size:clamp(38px,8vw,54px);
+  margin:6px 0 10px;
+}
+
+.score-card .progress{
+  height:5px;
+}
+
+.score-card .score-meta{
+  margin-top:7px;
+  font-size:10px;
+}
+
+.eyebrow{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.score{
+  font-size:clamp(55px,12vw,80px);
+  line-height:1;
+  font-weight:800;
+  letter-spacing:-3px;
+  color:var(--positive);
+  margin:12px 0 18px;
+  text-shadow:0 0 25px rgba(69,230,162,.25);
+}
+
+.progress{
+  height:7px;
+  background:var(--card3);
+  border-radius:99px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  width:0;
+  background:var(--positive);
+  border-radius:99px;
+  transition:.45s;
+}
+
+.score-meta{
+  display:flex;
+  justify-content:space-between;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.streak-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:20px;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.streak-number{
+  font-size:25px;
+  font-weight:800;
+  color:var(--accent);
+  margin-top:4px;
+}
+
+
+/* ITEMS */
+
+.section-title{
+  font-size:19px;
+  font-weight:800;
+  margin:28px 0 13px;
+}
+
+.items{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.item{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px;
+}
+
+.item-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.item-name{
+  font-weight:750;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+
+.item-icon{
+  font-size:22px;
+}
+
+.item-desc{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:3px;
+}
+
+.item-score{
+  color:var(--positive);
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.option{
+  min-height:50px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card2);
+  color:var(--text);
+  padding:8px;
+  transition:transform .12s ease, border-color .12s ease, background .12s ease;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+.option:hover{
+  border-color:rgba(146,117,255,.45);
+  background:var(--card3);
+}
+
+.option:active{
+  transform:scale(.97);
+}
+
+.option.selected{
+  border-color:var(--accent);
+  background:rgba(146,117,255,.14);
+}
+
+.input-row{
+  display:flex;
+  gap:8px;
+}
+
+.input-row .input{
+  flex:1;
+}
+
+.small-primary{
+  min-width:76px;
+  height:50px;
+  border:0;
+  border-radius:14px;
+  background:var(--accent);
+  color:white;
+  font-weight:700;
+}
+
+
+/* USER MENU */
+
+.menu{
+  position:fixed;
+  z-index:50;
+  top:66px;
+  left:12px;
+  width:210px;
+  padding:8px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+}
+
+.menu button{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  text-align:right;
+  border-radius:11px;
+  padding:12px;
+}
+
+.menu button:hover{
+  background:var(--card2);
+}
+
+
+/* FLOATING SCORE */
+
+.float-score{
+  position:fixed;
+  z-index:100;
+  pointer-events:none;
+  font-size:20px;
+  font-weight:800;
+  text-shadow:0 0 15px currentColor;
+  animation:float .85s ease-out forwards;
+}
+
+@keyframes float{
+  from{
+    opacity:1;
+    transform:translate(-50%,0) scale(1);
+  }
+  to{
+    opacity:0;
+    transform:translate(-50%,-80px) scale(1.15);
+  }
+}
+
+
+/* TOAST */
+
+.toast{
+  position:fixed;
+  z-index:100;
+  bottom:22px;
+  left:50%;
+  transform:translate(-50%,20px);
+  opacity:0;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:11px 16px;
+  box-shadow:var(--shadow);
+  font-size:12px;
+  transition:.2s;
+  pointer-events:none;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+
+@media(min-width:850px){
+  .hero{
+    grid-template-columns:1.6fr .8fr;
+  }
+}
+
+@media(max-width:700px){
+  .score-card{
+    top:6px;
+    border-radius:16px;
+    padding:11px 13px;
+  }
+
+  .items{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- AUTH -->
+
+<div id="authPage" class="auth-page">
+
+  <div class="auth-card">
+
+    <div class="logo">HQL</div>
+
+    <div class="subtitle brand-subtitle">زندگی با کیفیت</div>
+
+    <div class="subtitle">
+      هر روز، یک قدم بهتر.
+    </div>
+
+    <div class="tabs">
+
+      <button id="loginTab" class="tab active">
+        ورود
+      </button>
+
+      <button id="signupTab" class="tab">
+        ثبت‌نام
+      </button>
+
+    </div>
+
+    <form id="authForm" class="form">
+
+      <div id="nameBox" class="hidden">
+
+        <div class="label">نام نمایشی</div>
+
+        <input
+          id="name"
+          class="input"
+          maxlength="60"
+          placeholder="مثلاً علی"
+        >
+
+      </div>
+
+      <div class="label">ایمیل</div>
+
+      <input
+        id="email"
+        class="input"
+        type="email"
+        autocomplete="email"
+        required
+        placeholder="you@example.com"
+      >
+
+      <div class="label">رمز عبور</div>
+
+      <input
+        id="password"
+        class="input"
+        type="password"
+        minlength="6"
+        required
+        placeholder="حداقل ۶ کاراکتر"
+      >
+
+      <button id="authButton" class="primary">
+        ورود
+      </button>
+
+      <div id="authError" class="error"></div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- APP -->
+
+<div id="app" class="hidden">
+
+<header>
+
+  <div class="shell nav">
+
+    <div class="brand">
+      <strong>HQL</strong>
+      <span>زندگی با کیفیت</span>
+    </div>
+
+    <div class="nav-actions">
+
+      <button id="themeButton" class="icon">
+        ☀️
+      </button>
+
+      <button id="userButton" class="icon">
+        ☻
+      </button>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+<div id="menu" class="menu hidden">
+
+  <button id="reportButton">
+    📊 گزارش ماهانه
+  </button>
+
+  <button id="logoutButton">
+    ↪ خروج
+  </button>
+
+</div>
+
+
+<main class="page shell">
+
+  <section class="hero">
+
+    <div class="score-card">
+
+      <div class="eyebrow">
+        امتیاز امروز
+      </div>
+
+      <div id="score" class="score">
+        ۰
+      </div>
+
+      <div class="progress">
+        <div id="progress" class="progress-bar"></div>
+      </div>
+
+      <div class="score-meta">
+
+        <span id="completed">
+          ۰ آیتم از ۱۰
+        </span>
+
+        <span>
+          حداکثر امتیاز روزانه
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="streak-card">
+
+      <div>
+
+        <div class="eyebrow">
+          تداوم فعلی
+        </div>
+
+        <div id="currentStreak" class="streak-number">
+          🔥 ۰ روز
+        </div>
+
+      </div>
+
+      <div>
+
+        <div class="eyebrow">
+          بهترین تداوم
+        </div>
+
+        <div id="bestStreak" class="streak-number">
+          ۰ روز
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <div class="section-title">
+    لاگ امروز
+  </div>
+
+  <section id="items" class="items"></section>
+
+</main>
+
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE CONFIG
+   ========================================================= */
+
+const SUPABASE_URL =
+  "https://ehgjzvqdnglkwipzfvil.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_h0NBFewBDnGulVkxBISzkQ_zUlgWNWu";
+
+
+/*
+  IMPORTANT:
+  The library is called window.supabase.
+  Our client is called db.
+  Nothing else in this file uses "supabase" as a variable.
+*/
+
+const db =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+      auth:{
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true
+      }
+    }
+  );
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let mode = "login";
+let todayLogs = new Map();
+let realtimeChannel = null;
+let theme = "dark";
+
+
+/* =========================================================
+   DAILY ITEMS
+   ========================================================= */
+
+const ITEMS = [
+
+  {
+    type:"water",
+    icon:"💧",
+    title:"مصرف آب",
+    desc:"تعداد لیوان",
+    options:[
+      ["۰ تا ۲ لیوان",2],
+      ["۲ تا ۴ لیوان",4],
+      ["۴ تا ۶ لیوان",6],
+      ["۶ تا ۸ لیوان",8]
+    ]
+  },
+
+  {
+    type:"exercise",
+    icon:"🏃",
+    title:"کالری ورزش",
+    desc:"کالری مصرف‌شده",
+    input:true,
+    placeholder:"مثلاً ۳۵۰"
+  },
+
+  {
+    type:"sleep",
+    icon:"🌙",
+    title:"زمان خواب دیشب",
+    desc:"چه ساعتی خوابیدی؟",
+    time:true
+  },
+
+  {
+    type:"instagram",
+    icon:"📱",
+    title:"اینستاگرام زیر ۱۰ دقیقه",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"sun",
+    icon:"☀️",
+    title:"۱۰ دقیقه آفتاب",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"solitude",
+    icon:"🧘",
+    title:"۱۰ دقیقه خلوت با خود",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"reading",
+    icon:"📖",
+    title:"مطالعه کتاب",
+    desc:"تعداد صفحه",
+    input:true,
+    placeholder:"مثلاً ۱۲"
+  },
+
+  {
+    type:"sugar",
+    icon:"🍬",
+    title:"مصرف قند مصنوعی",
+    desc:"امروز",
+    options:[
+      ["مصرف نشد",1],
+      ["مصرف شد",0]
+    ]
+  },
+
+  {
+    type:"nature",
+    icon:"⛰️",
+    title:"کوه و طبیعت‌گردی",
+    desc:"امروز",
+    options:[
+      ["امروز رفتم",1],
+      ["نرفتم",0]
+    ]
+  },
+
+  {
+    type:"dinner",
+    icon:"🍽️",
+    title:"زمان شام",
+    desc:"چه ساعتی شام خوردی؟",
+    time:true
+  }
+
+];
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function faNumber(value){
+
+  return String(value)
+    .replace(
+      /\d/g,
+      x => "۰۱۲۳۴۵۶۷۸۹"[x]
+    );
+
+}
+
+
+function scoreText(value){
+
+  const n = Number(value || 0);
+
+  let s;
+
+  if(Number.isInteger(n)){
+    s = String(n);
+  }else{
+    s = n.toFixed(2)
+      .replace(/0+$/,"")
+      .replace(/\.$/,"");
+  }
+
+  return faNumber(s);
+}
+
+
+function todayIran(){
+
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:"Asia/Tehran",
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit"
+      }
+    ).formatToParts(new Date());
+
+  const get =
+    type =>
+      parts.find(x => x.type === type).value;
+
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+
+function showToast(text){
+
+  const el = document.getElementById("toast");
+
+  el.textContent = text;
+
+  el.classList.add("show");
+
+  clearTimeout(window.__toast);
+
+  window.__toast =
+    setTimeout(
+      () => el.classList.remove("show"),
+      2200
+    );
+
+}
+
+
+function floatingScore(score,x,y){
+
+  if(!score) return;
+
+  const el =
+    document.createElement("div");
+
+  el.className = "float-score";
+
+  el.textContent =
+    (score > 0 ? "+" : "") +
+    scoreText(score);
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  el.style.color =
+    score > 0
+      ? "var(--positive)"
+      : "var(--negative)";
+
+  document.body.appendChild(el);
+
+  setTimeout(
+    () => el.remove(),
+    900
+  );
+}
+
+
+/* =========================================================
+   SCORE CALCULATION
+   =========================================================
+   The current values are intentionally kept in one place.
+   Later, these can be moved to Supabase scoring_rules so
+   user/coach feedback and real usage data can calibrate
+   the ratios without rewriting the UI.
+   ========================================================= */
+
+const SCORE_CALIBRATION = {
+  water: {
+    "0-2": .5,
+    "2-4": .6,
+    "4-6": .7,
+    "6-8": 1.5
+  },
+  exercise: {
+    "100-300": 1,
+    "300-600": 3,
+    "600+": 5
+  },
+  sleep: {
+    "before-23": 2,
+    "23-24": .5,
+    "after-24": -.5
+  },
+  instagram: { yes:1.5, no:0 },
+  sun: { yes:1.5, no:0 },
+  solitude: { yes:1.5, no:0 },
+  reading: { one:.5, more:1 },
+  sugar: { none:2, consumed:-.5 },
+  nature: { yes:10, no:0 },
+  dinner: { before19:2, "19-21":.75, after21:0 }
+};
+
+function calculateScore(type,value){
+
+  value = Number(value);
+
+  switch(type){
+
+    case "water":
+      if(value <= 2) return .5;
+      if(value <= 4) return .6;
+      if(value <= 6) return .7;
+      return 1.5;
+
+    case "exercise":
+      if(value < 100) return 0;
+      if(value < 300) return 1;
+      if(value <= 600) return 3;
+      return 5;
+
+    case "sleep":
+      if(value < 1380) return 2;
+      if(value < 1440) return .5;
+      return -.5;
+
+    case "instagram":
+      return value === 1 ? 1.5 : 0;
+
+    case "sun":
+      return value === 1 ? 1.5 : 0;
+
+    case "solitude":
+      return value === 1 ? 1.5 : 0;
+
+    case "reading":
+      if(value <= 0) return 0;
+      if(value === 1) return .5;
+      return 1;
+
+    case "sugar":
+      return value === 1 ? 2 : -.5;
+
+    case "nature":
+      return value === 1 ? 10 : 0;
+
+    case "dinner":
+      if(value < 1140) return 2;
+      if(value <= 1260) return .75;
+      return 0;
+
+    default:
+      return 0;
+  }
+}
+
+
+/* =========================================================
+   AUTH UI
+   ========================================================= */
+
+function setMode(newMode){
+
+  mode = newMode;
+
+  document
+    .getElementById("loginTab")
+    .classList
+    .toggle("active",mode === "login");
+
+  document
+    .getElementById("signupTab")
+    .classList
+    .toggle("active",mode === "signup");
+
+  document
+    .getElementById("nameBox")
+    .classList
+    .toggle("hidden",mode !== "signup");
+
+  document
+    .getElementById("authButton")
+    .textContent =
+      mode === "signup"
+        ? "ساخت حساب"
+        : "ورود";
+
+  document
+    .getElementById("authError")
+    .textContent = "";
+}
+
+
+document
+  .getElementById("loginTab")
+  .onclick =
+    () => setMode("login");
+
+
+document
+  .getElementById("signupTab")
+  .onclick =
+    () => setMode("signup");
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+document
+  .getElementById("authForm")
+  .addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      const email =
+        document.getElementById("email")
+          .value.trim();
+
+      const password =
+        document.getElementById("password")
+          .value;
+
+      const name =
+        document.getElementById("name")
+          .value.trim();
+
+      const error =
+        document.getElementById("authError");
+
+      const button =
+        document.getElementById("authButton");
+
+      error.textContent = "";
+
+      button.disabled = true;
+
+      button.textContent =
+        "در حال پردازش…";
+
+      try{
+
+        let result;
+
+        if(mode === "signup"){
+
+          if(!name){
+            throw new Error(
+              "نام نمایشی را وارد کن."
+            );
+          }
+
+          result =
+            await db.auth.signUp({
+              email,
+              password,
+              options:{
+                data:{
+                  display_name:name
+                }
+              }
+            });
+
+        }else{
+
+          result =
+            await db.auth.signInWithPassword({
+              email,
+              password
+            });
+
+        }
+
+        if(result.error)
+          throw result.error;
+
+        if(result.data.session){
+
+          await openApp(
+            result.data.session.user
+          );
+
+        }else{
+
+          showToast(
+            "حساب ساخته شد."
+          );
+
+        }
+
+      }catch(err){
+
+        console.error(err);
+
+        error.textContent =
+          translateError(err.message);
+
+      }finally{
+
+        button.disabled = false;
+
+        button.textContent =
+          mode === "signup"
+            ? "ساخت حساب"
+            : "ورود";
+      }
+    }
+  );
+
+
+function translateError(message){
+
+  const map = {
+    "Invalid login credentials":
+      "ایمیل یا رمز عبور اشتباه است.",
+    "User already registered":
+      "این ایمیل قبلاً ثبت‌نام شده است.",
+    "Password should be at least 6 characters.":
+      "رمز عبور باید حداقل ۶ کاراکتر باشد."
+  };
+
+  return map[message] || message || "خطایی رخ داد.";
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+async function loadProfile(user){
+
+  const result =
+    await db
+      .from("profiles")
+      .select("display_name,theme_preference")
+      .eq("id",user.id)
+      .maybeSingle();
+
+  if(result.error){
+
+    console.error(
+      "Profile error:",
+      result.error
+    );
+
+    return;
+  }
+
+  if(result.data){
+
+    theme =
+      result.data.theme_preference ||
+      "dark";
+
+  }
+
+  applyTheme();
+}
+
+
+async function saveTheme(){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const result =
+    await db
+      .from("profiles")
+      .update({
+        theme_preference:theme
+      })
+      .eq("id",userData.user.id);
+
+  if(result.error){
+
+    console.error(result.error);
+
+    showToast(
+      "ذخیره پوسته انجام نشد."
+    );
+  }
+}
+
+
+function applyTheme(){
+
+  document.documentElement
+    .dataset
+    .theme = theme;
+
+  document.getElementById("themeButton")
+    .textContent =
+      theme === "dark"
+        ? "☀️"
+        : "🌙";
+}
+
+
+/* =========================================================
+   OPEN APP
+   ========================================================= */
+
+async function openApp(user){
+
+  document
+    .getElementById("authPage")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("app")
+    .classList
+    .remove("hidden");
+
+  await loadProfile(user);
+
+  renderItems();
+
+  await loadToday();
+
+  subscribeRealtime(user.id);
+}
+
+
+/* =========================================================
+   RENDER ITEMS
+   ========================================================= */
+
+function renderItems(){
+
+  const container =
+    document.getElementById("items");
+
+  container.innerHTML = "";
+
+  ITEMS.forEach(item => {
+
+    const card =
+      document.createElement("article");
+
+    card.className = "item";
+
+    card.dataset.type = item.type;
+
+    let html = `
+
+      <div class="item-top">
+
+        <div>
+
+          <div class="item-name">
+            <span class="item-icon">
+              ${item.icon}
+            </span>
+            ${item.title}
+          </div>
+
+          <div class="item-desc">
+            ${item.desc}
+          </div>
+
+        </div>
+
+        <div class="item-score"></div>
+
+      </div>
+    `;
+
+    if(item.options){
+
+      html += `<div class="options">`;
+
+      item.options.forEach(
+        ([label,value]) => {
+
+          html += `
+            <button
+              class="option"
+              data-value="${value}"
+              type="button"
+            >
+              ${label}
+            </button>
+          `;
+        }
+      );
+
+      html += `</div>`;
+    }
+
+    if(item.input){
+
+      html += `
+        <div class="input-row">
+
+          <input
+            class="input value-input"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="${item.placeholder}"
+          >
+
+          <button
+            class="small-primary save-value"
+            type="button"
+          >
+            ثبت
+          </button>
+
+        </div>
+      `;
+    }
+
+    if(item.time){
+
+      html += `
+        <div class="input-row">
+
+          <input
+            class="input time-input"
+            type="time"
+          >
+
+          <button
+            class="small-primary save-time"
+            type="button"
+          >
+            ثبت
+          </button>
+
+        </div>
+      `;
+    }
+
+    card.innerHTML = html;
+
+    if(item.options){
+
+      card
+        .querySelectorAll(".option")
+        .forEach(button => {
+
+          button.onclick =
+            event => {
+
+              saveLog(
+                item.type,
+                Number(button.dataset.value),
+                event
+              );
+
+            };
+        });
+    }
+
+    if(item.input){
+
+      card
+        .querySelector(".save-value")
+        .onclick =
+          event => {
+
+            const input =
+              card.querySelector(".value-input");
+
+            const value =
+              Number(input.value);
+
+            if(!Number.isFinite(value) || value < 0){
+
+              showToast(
+                "یک عدد معتبر وارد کن."
+              );
+
+              return;
+            }
+
+            saveLog(
+              item.type,
+              value,
+              event
+            );
+          };
+    }
+
+    if(item.time){
+
+      card
+        .querySelector(".save-time")
+        .onclick =
+          event => {
+
+            const input =
+              card.querySelector(".time-input");
+
+            if(!input.value){
+
+              showToast(
+                "ساعت را انتخاب کن."
+              );
+
+              return;
+            }
+
+            const [h,m] =
+              input.value
+                .split(":")
+                .map(Number);
+
+            saveLog(
+              item.type,
+              h * 60 + m,
+              event
+            );
+          };
+    }
+
+    container.appendChild(card);
+  });
+}
+
+
+/* =========================================================
+   LOAD TODAY
+   ========================================================= */
+
+async function loadToday(){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const result =
+    await db
+      .from("daily_logs")
+      .select("*")
+      .eq("user_id",userData.user.id)
+      .eq("log_date",todayIran());
+
+  if(result.error){
+
+    console.error(
+      "Daily logs error:",
+      result.error
+    );
+
+    showToast(
+      "دریافت اطلاعات امروز انجام نشد."
+    );
+
+    return;
+  }
+
+  todayLogs =
+    new Map(
+      (result.data || [])
+        .map(
+          row =>
+            [row.item_type,row]
+        )
+    );
+
+  updateUI();
+}
+
+
+/* =========================================================
+   SAVE LOG
+   ========================================================= */
+
+async function saveLog(
+  type,
+  value,
+  event
+){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const previous =
+    todayLogs.get(type);
+
+  const score =
+    calculateScore(type,value);
+
+  const result =
+    await db
+      .from("daily_logs")
+      .upsert(
+        {
+          user_id:userData.user.id,
+          log_date:todayIran(),
+          item_type:type,
+          value:value,
+          score:score
+        },
+        {
+          onConflict:
+            "user_id,log_date,item_type"
+        }
+      )
+      .select()
+      .single();
+
+  if(result.error){
+
+    console.error(
+      "Save error:",
+      result.error
+    );
+
+    showToast(
+      "ثبت انجام نشد: " +
+      result.error.message
+    );
+
+    return;
+  }
+
+  todayLogs.set(
+    type,
+    result.data
+  );
+
+  updateUI();
+
+  const oldScore =
+    Number(previous?.score || 0);
+
+  floatingScore(
+    score - oldScore,
+    event.clientX,
+    event.clientY
+  );
+
+  showToast("ثبت شد ✓");
+}
+
+
+/* =========================================================
+   UPDATE UI
+   ========================================================= */
+
+function updateUI(){
+
+  let total = 0;
+  let completed = 0;
+
+  ITEMS.forEach(item => {
+
+    const log =
+      todayLogs.get(item.type);
+
+    const card =
+      document.querySelector(
+        `.item[data-type="${item.type}"]`
+      );
+
+    if(!card) return;
+
+    const scoreEl =
+      card.querySelector(".item-score");
+
+    scoreEl.classList.remove(
+      "positive",
+      "negative"
+    );
+
+    scoreEl.textContent =
+      log
+        ? (
+            Number(log.score) > 0
+              ? "+"
+              : ""
+          ) +
+          scoreText(log.score)
+        : "";
+
+    if(log){
+      scoreEl.classList.toggle(
+        "positive",
+        Number(log.score) > 0
+      );
+
+      scoreEl.classList.toggle(
+        "negative",
+        Number(log.score) < 0
+      );
+    }
+
+    card
+      .querySelectorAll(".option")
+      .forEach(button => {
+
+        button.classList.toggle(
+          "selected",
+          !!log &&
+          Number(button.dataset.value) ===
+          Number(log.value)
+        );
+      });
+
+    if(log){
+
+      total += Number(log.score || 0);
+
+      completed++;
+
+      const valueInput =
+        card.querySelector(".value-input");
+
+      if(valueInput)
+        valueInput.value =
+          log.value;
+
+      const timeInput =
+        card.querySelector(".time-input");
+
+      if(timeInput){
+
+        const value =
+          Number(log.value);
+
+        const h =
+          String(Math.floor(value / 60))
+            .padStart(2,"0");
+
+        const m =
+          String(value % 60)
+            .padStart(2,"0");
+
+        timeInput.value =
+          `${h}:${m}`;
+      }
+    }
+  });
+
+
+  const totalScoreEl =
+    document.getElementById("score");
+
+  totalScoreEl.textContent =
+    scoreText(total);
+
+  totalScoreEl.classList.toggle(
+    "positive",
+    total > 0
+  );
+
+  totalScoreEl.classList.toggle(
+    "negative",
+    total < 0
+  );
+
+  document.getElementById("completed")
+    .textContent =
+      `${faNumber(completed)} آیتم از ${faNumber(ITEMS.length)}`;
+
+  /*
+    The current 10 visible items have a maximum
+    positive score of 28.5. This is only a visual
+    progress bar. The automatic "نظم پر کردن" item
+    is still a separate pending requirement.
+  */
+
+  const percentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        total / 28.5 * 100
+      )
+    );
+
+  document.getElementById("progress")
+    .style.width =
+      percentage + "%";
+}
+
+
+/* =========================================================
+   REALTIME
+   ========================================================= */
+
+function subscribeRealtime(userId){
+
+  if(realtimeChannel){
+
+    db.removeChannel(
+      realtimeChannel
+    );
+  }
+
+  realtimeChannel =
+    db
+      .channel(
+        "daily-logs-" + userId
+      )
+      .on(
+        "postgres_changes",
+        {
+          event:"*",
+          schema:"public",
+          table:"daily_logs",
+          filter:
+            `user_id=eq.${userId}`
+        },
+        () => loadToday()
+      )
+      .subscribe();
+}
+
+
+/* =========================================================
+   THEME BUTTON
+   ========================================================= */
+
+document
+  .getElementById("themeButton")
+  .onclick =
+    async () => {
+
+      theme =
+        theme === "dark"
+          ? "light"
+          : "dark";
+
+      applyTheme();
+
+      await saveTheme();
+    };
+
+
+/* =========================================================
+   USER MENU
+   ========================================================= */
+
+document
+  .getElementById("userButton")
+  .onclick =
+    () => {
+
+      document
+        .getElementById("menu")
+        .classList
+        .toggle("hidden");
+    };
+
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const menu =
+      document.getElementById("menu");
+
+    const userButton =
+      document.getElementById("userButton");
+
+    if(
+      !menu.contains(event.target) &&
+      event.target !== userButton
+    ){
+
+      menu.classList.add("hidden");
+    }
+  }
+);
+
+
+document
+  .getElementById("logoutButton")
+  .onclick =
+    async () => {
+
+      await db.auth.signOut();
+    };
+
+
+document
+  .getElementById("reportButton")
+  .onclick =
+    () => {
+
+      window.location.href =
+        "report.html";
+    };
+
+
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
+
+db.auth.onAuthStateChange(
+  async (event,session) => {
+
+    if(
+      session &&
+      (
+        event === "SIGNED_IN" ||
+        event === "INITIAL_SESSION"
+      )
+    ){
+
+      await openApp(
+        session.user
+      );
+    }
+
+    if(event === "SIGNED_OUT"){
+
+      if(realtimeChannel){
+
+        db.removeChannel(
+          realtimeChannel
+        );
+
+        realtimeChannel = null;
+      }
+
+      document
+        .getElementById("app")
+        .classList
+        .add("hidden");
+
+      document
+        .getElementById("authPage")
+        .classList
+        .remove("hidden");
+
+      setMode("login");
+    }
+  }
+);
+
+
+/* =========================================================
+   INITIAL SESSION
+   ========================================================= */
+
+(async function(){
+
+  const result =
+    await db.auth.getSession();
+
+  if(result.data.session){
+
+    await openApp(
+      result.data.session.user
+    );
+  }
+
+})();
+
+</script>
+
+</body>
+</html>
