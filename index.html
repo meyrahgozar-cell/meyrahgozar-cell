@@ -1,465 +1,2008 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HQL — زندگی با کیفیت</title>
-  <meta name="description" content="ثبت دویدن، عادت‌های روزانه و داشبورد پیشرفت">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HQL | زندگی با کیفیت</title>
 
-  <!-- Persian Font: Vazirmatn -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    :root {
-      --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
-      --primary:#2563eb; --primary2:#1d4ed8; --green:#16a34a; --orange:#f59e0b;
-      --red:#dc2626; --purple:#7c3aed; --shadow:0 10px 30px rgba(15,23,42,.06); --radius:16px;
-    }
-    * { box-sizing:border-box; }
-    body {
-      margin:0;
-      background:linear-gradient(135deg,#f8fafc,#eef4ff);
-      color:var(--text);
-      font-family:'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
-      min-height:100vh;
-      -webkit-tap-highlight-color: transparent;
-    }
-    button, input, select { font:inherit; }
-    button { cursor:pointer; touch-action: manipulation; }
-    .app { max-width:1250px; margin:auto; padding:16px; }
-    .hidden { display:none !important; }
-
-    /* Navigation & Topbar */
-    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
-    .brand { display:flex; align-items:center; gap:12px; }
-    .logo { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:linear-gradient(135deg,var(--primary),var(--purple)); color:#fff; font-size:23px; }
-    h1, h2, h3, p { margin-top:0; }
-    .brand h1 { font-size:20px; margin:0; font-weight:700; }
-    .brand small { color:var(--muted); }
-
-    .nav { display:flex; gap:8px; flex-wrap:wrap; }
-    .nav button, .ghost, .nav a.report-btn { border:1px solid var(--line); background:#fff; color:var(--text); padding:10px 16px; border-radius:12px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
-    .nav button.active, .primary { background:var(--primary); color:#fff; border-color:var(--primary); }
-    .danger { background:#fff; border:1px solid #fecaca; color:var(--red); padding:10px 16px; border-radius:12px; font-weight:500; }
-
-    /* Layout Cards */
-    .grid { display:grid; gap:16px; }
-    .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); }
-    .card { background:rgba(255,255,255,.95); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
-    .kpi .label { color:var(--muted); font-size:13px; }
-    .kpi .value { font-size:28px; font-weight:800; margin-top:6px; }
-    .kpi .sub { color:var(--muted); font-size:12px; margin-top:6px; }
-    .section-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; }
-    .section-title h2 { font-size:18px; margin:0; font-weight:700; }
-    .muted { color:var(--muted); }
-    .two { grid-template-columns:1.4fr 1fr; }
-
-    /* Forms & Inputs */
-    label { display:block; font-size:13px; color:var(--muted); margin-bottom:7px; font-weight:500; }
-    input, select { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; outline:none; transition:all .2s; font-size:14px; }
-    input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px #dbeafe; }
-    .row { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-    .form-grid { display:grid; gap:14px; }
-    .jalali-row { display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; }
-    .btn { border:0; padding:12px 18px; border-radius:12px; font-weight:600; }
-    .btn.primary { color:#fff; background:var(--primary); }
-    .btn.full { width:100%; }
-
-    /* Authentication Wrap */
-    .auth-wrap { min-height:80vh; display:grid; place-items:center; }
-    .auth { width:min(440px,100%); }
-    .auth-tabs { display:flex; background:#f1f5f9; border-radius:12px; padding:4px; margin-bottom:18px; }
-    .auth-tabs button { flex:1; border:0; background:transparent; padding:10px; border-radius:9px; font-weight:600; }
-    .auth-tabs button.active { background:#fff; box-shadow:0 3px 12px #0000000b; }
-
-    /* Habits Checkbox Grid */
-    .check-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-    .check { border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; align-items:center; gap:9px; font-size:13px; user-select:none; cursor:pointer; }
-    .check input { width:18px; height:18px; accent-color:var(--primary); }
-
-    .status { font-size:12px; padding:4px 10px; border-radius:999px; display:inline-block; font-weight:500; }
-    .yes { background:#dcfce7; color:#166534; }
-    .no { background:#fee2e2; color:#991b1b; }
-
-    /* Tables Mobile Responsive Scroll */
-    table { width:100%; border-collapse:collapse; white-space:nowrap; }
-    th, td { text-align:right; padding:12px 10px; border-bottom:1px solid var(--line); font-size:13px; }
-    th { color:var(--muted); font-weight:600; }
-    .scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .empty { text-align:center; padding:35px; color:var(--muted); }
-
-    /* Toast & Progress Bar */
-    .toast { position:fixed; bottom:20px; left:20px; z-index:50; padding:12px 18px; border-radius:12px; color:#fff; background:#172033; box-shadow:var(--shadow); font-weight:500; }
-    .toast.ok { background:var(--green); }
-    .toast.err { background:var(--red); }
-    .bar { height:10px; background:#eef2f7; border-radius:999px; overflow:hidden; }
-    .bar>i { display:block; height:100%; background:linear-gradient(90deg,var(--primary),var(--purple)); border-radius:999px; }
-
-    /* Visual Chart */
-    .chart { height:220px; display:flex; align-items:end; gap:8px; padding:15px 4px 0; }
-    .col { flex:1; min-width:18px; display:flex; flex-direction:column; align-items:center; gap:5px; height:100%; justify-content:end; }
-    .col i { display:block; width:100%; max-width:32px; border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#60a5fa,#2563eb); min-height:3px; }
-    .col span { font-size:10px; color:var(--muted); }
-
-    .notice { padding:13px 15px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; font-size:13px; line-height:1.7; }
-    .admin-badge { background:#ede9fe; color:#5b21b6; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:600; }
-    .footer { text-align:center; color:var(--muted); font-size:12px; padding:25px; }
-
-    /* Mobile Enhancements */
-    @media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr);} .two{grid-template-columns:1fr;} }
-    @media(max-width:600px){
-      .app { padding:12px; }
-      .kpis { grid-template-columns:1fr 1fr; }
-      .row, .check-grid { grid-template-columns:1fr; }
-      .topbar { align-items:stretch; flex-direction:column; gap:12px; }
-      .nav { width:100%; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-      .nav button, .nav a.report-btn { padding:10px; text-align:center; font-size:13px; }
-      .card { padding:16px; }
-      .kpi .value { font-size:22px; }
-    }
-  </style>
-</head>
-<body>
-<div class="app">
-  <header id="topbar" class="topbar hidden">
-    <div class="brand"><div class="logo">🏃</div><div><h1>HQL</h1><small>دویدن، عادت‌ها و پیشرفت</small></div></div>
-    <div class="nav">
-      <button type="button" data-page="dashboard">داشبورد من</button>
-      <button type="button" data-page="log">ثبت روزانه</button>
-      <a href="report.html" class="report-btn">گزارش عمومی</a>
-      <button type="button" id="adminNav" data-page="admin" class="hidden">مدیریت</button>
-      <button type="button" id="logout" class="danger">خروج</button>
-    </div>
-  </header>
-
-  <main id="authView" class="auth-wrap">
-    <section class="card auth">
-      <div class="brand" style="margin-bottom:20px"><div class="logo">🏃</div><div><h1>HQL</h1><small>داشبورد شخصی دویدن</small></div></div>
-      <div class="auth-tabs">
-        <button type="button" id="tabLogin" class="active">ورود</button>
-        <button type="button" id="tabSignup">ثبت‌نام</button>
-      </div>
-      <form id="authForm" class="form-grid">
-        <div><label>ایمیل</label><input id="email" type="email" required autocomplete="email"></div>
-        <div><label>رمز عبور</label><input id="password" type="password" minlength="6" required autocomplete="current-password"></div>
-        <div id="nameWrap" class="hidden"><label>نام نمایشی</label><input id="displayName" autocomplete="name"></div>
-        <button type="submit" class="btn primary full" id="authSubmit">ورود</button>
-      </form>
-      <p id="authMsg" class="muted" style="margin:14px 0 0;font-size:12px"></p>
-    </section>
-  </main>
-
-  <main id="siteView" class="hidden">
-    <section id="dashboardPage" class="page">
-      <div class="section-title"><div><h2>داشبورد من</h2><span id="welcome" class="muted"></span></div><span id="roleBadge"></span></div>
-      <div class="grid kpis">
-        <div class="card kpi"><div class="label">مجموع کیلومتر</div><div class="value" id="kKm">۰</div><div class="sub">تمام رکوردها</div></div>
-        <div class="card kpi"><div class="label">کالری دویدن</div><div class="value" id="kCal">۰</div><div class="sub">بر اساس وزن × کیلومتر</div></div>
-        <div class="card kpi"><div class="label">چربی معادل</div><div class="value" id="kFat">۰</div><div class="sub">کیلوگرم، تبدیل تئوریک</div></div>
-        <div class="card kpi"><div class="label">میانگین وزن</div><div class="value" id="kWeight">—</div><div class="sub">کیلوگرم</div></div>
-      </div>
-      <div class="grid two" style="margin-top:16px">
-        <div class="card"><div class="section-title"><h2>روند ۱۴ رکورد اخیر</h2></div><div id="chart" class="chart"></div></div>
-        <div class="card"><div class="section-title"><h2>رعایت عادت‌ها</h2></div><div id="habits"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px"><div class="section-title"><h2>رکوردهای اخیر</h2><button type="button" class="ghost" onclick="showPage('log')">+ ثبت رکورد</button></div><div id="recent" class="scroll"></div></div>
-    </section>
-
-    <section id="logPage" class="page hidden">
-      <div class="section-title"><h2>ثبت روزانه</h2><span class="muted">هر روز یک رکورد</span></div>
-      <div class="card">
-        <form id="logForm" class="form-grid">
-          <div class="row">
-            <div>
-              <label>تاریخ (شمسی)</label>
-              <div class="jalali-row">
-                <select id="jYear" required></select>
-                <select id="jMonth" required></select>
-                <select id="jDay" required></select>
-              </div>
-            </div>
-            <div><label>وزن (کیلوگرم)</label><input id="weight" type="number" min="1" step=".1" placeholder="مثلا 75.5" required></div>
-          </div>
-          <div class="row">
-            <div><label>کیلومتر دویده‌شده</label><input id="km" type="number" min="0" step=".01" placeholder="مثلا 5.2"></div>
-            <div><label>کالری دویدن</label><input id="calories" type="number" min="0" step="1" placeholder="مثلا 390"></div>
-          </div>
-          <div class="check-grid">
-            <label class="check"><input id="dinner" type="checkbox"> شام ساعت ۸ رعایت شد</label>
-            <label class="check"><input id="sleep" type="checkbox"> خواب قبل از ۱۱:۳۰ رعایت شد</label>
-            <label class="check"><input id="sweet" type="checkbox"> شرط نخوردن شیرینی رعایت شد</label>
-          </div>
-          <div class="notice">با وارد کردن وزن، محاسبه <b>کیلومتر ↔ کالری</b> به‌صورت خودکار و هوشمند انجام می‌شود.</div>
-          <button class="btn primary" type="submit">ذخیره رکورد</button>
-        </form>
-      </div>
-    </section>
-
-    <section id="adminPage" class="page hidden">
-      <div class="section-title"><div><h2>پنل مدیریت</h2><span class="muted">فقط برای Super User</span></div><span class="admin-badge">ADMIN</span></div>
-      <div class="card">
-        <div class="section-title"><h2>کاربران</h2><button type="button" class="ghost" id="refreshAdmin">به‌روزرسانی</button></div>
-        <div id="adminUsers" class="scroll"></div>
-      </div>
-      <div class="card hidden" id="adminDetail" style="margin-top:16px">
-        <div class="section-title"><h2 id="adminDetailTitle">جزئیات کاربر</h2><button type="button" class="ghost" id="closeDetail">بستن</button></div>
-        <div id="adminRecords" class="scroll"></div>
-      </div>
-    </section>
-  </main>
-  <div id="toast" class="toast hidden"></div>
-  <footer class="footer">RunTrack • v2.2.0 BI-DIRECTIONAL</footer>
-</div>
-<script>
-/* =========================================================
-   1) SUPABASE CONFIG & INITIALIZATION
-========================================================= */
-const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
-
-const ready = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_"));
-const sb = ready ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-let currentUser = null, currentProfile = null, mode = "login";
-
-const $ = id => document.getElementById(id);
-const fmt = (n, d=0) => Number(n||0).toLocaleString("fa-IR", {maximumFractionDigits: d});
-const PERSIAN_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-
-function initJalaliSelectors() {
-  const ySel = $("jYear"), mSel = $("jMonth"), dSel = $("jDay");
-  if(!ySel || !mSel || !dSel) return;
-  
-  ySel.innerHTML = ""; mSel.innerHTML = ""; dSel.innerHTML = "";
-  const now = new Date();
-  const currentJ = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  
-  for(let y = currentJ.jy; y >= currentJ.jy - 5; y--) { ySel.add(new Option(y.toString(), y)); }
-  PERSIAN_MONTHS.forEach((m, idx) => { mSel.add(new Option(m, idx + 1)); });
-  for(let d = 1; d <= 31; d++) { dSel.add(new Option(d.toString(), d)); }
-  
-  ySel.value = currentJ.jy; 
-  mSel.value = currentJ.jm; 
-  dSel.value = currentJ.jd;
+<style>
+:root{
+  --bg:#080b12;
+  --card:#111722;
+  --card2:#171e29;
+  --card3:#202938;
+  --text:#f5f7fa;
+  --muted:#8d98aa;
+  --border:rgba(255,255,255,.08);
+  --accent:#9275ff;
+  --positive:#45e6a2;
+  --negative:#ff647c;
+  --shadow:0 18px 50px rgba(0,0,0,.25);
+  --radius:22px;
 }
 
-function toJalaliDate(isoDateStr) {
-  if(!isoDateStr) return "—";
-  const date = new Date(isoDateStr);
-  return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+[data-theme="light"]{
+  --bg:#f4f6fa;
+  --card:#fff;
+  --card2:#f0f3f8;
+  --card3:#e5e9f0;
+  --text:#151925;
+  --muted:#697386;
+  --border:rgba(20,25,37,.09);
+  --accent:#7055df;
+  --positive:#0ca76b;
+  --negative:#e6405d;
+  --shadow:0 15px 40px rgba(30,40,60,.1);
 }
 
-function toast(msg, type=""){
-  $("toast").textContent=msg; $("toast").className="toast "+type;
-  setTimeout(()=>$("toast").classList.add("hidden"),3000);
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  min-height:100%;
 }
 
-function showPage(name){
-  document.querySelectorAll(".page").forEach(x=>x.classList.add("hidden"));
-  const p=$(name+"Page"); if(p) p.classList.remove("hidden");
-  document.querySelectorAll(".nav button[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===name));
-  if(name==="dashboard") loadDashboard();
-  if(name==="log") initJalaliSelectors();
-  if(name==="admin" && currentProfile?.role==="admin") loadAdmin();
+body{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(146,117,255,.11),transparent 30rem),
+    var(--bg);
+  color:var(--text);
+  font-family:"Vazirmatn",sans-serif;
+  transition:.25s;
 }
 
-function setAuthMode(m){
-  mode=m;
-  $("tabLogin").classList.toggle("active",m==="login");
-  $("tabSignup").classList.toggle("active",m==="signup");
-  $("nameWrap").classList.toggle("hidden",m==="login");
-  $("authSubmit").textContent=m==="login"?"ورود":"ساخت حساب";
-  $("authMsg").textContent="";
+button,input{
+  font:inherit;
 }
 
-async function init(){
-  try {
-    initJalaliSelectors();
-    if(!ready){$("authMsg").textContent="تنظیمات Supabase یافت نشد.";return;}
-    
-    const {data:{session}} = await sb.auth.getSession();
-    if(session) await enter(session.user);
-    
-    sb.auth.onAuthStateChange(async (event,session)=>{
-      if(session) await enter(session.user); else leave();
-    });
-  } catch(e) {
-    console.error("Init Error: ", e);
+button{
+  cursor:pointer;
+}
+
+.hidden{
+  display:none!important;
+}
+
+.shell{
+  width:min(1100px,calc(100% - 24px));
+  margin:auto;
+}
+
+
+/* AUTH */
+
+.auth-page{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+.auth-card{
+  width:min(440px,100%);
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:28px;
+  box-shadow:var(--shadow);
+}
+
+.logo{
+  font-size:30px;
+  font-weight:800;
+  margin-bottom:4px;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:24px;
+}
+
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  background:var(--card2);
+  padding:4px;
+  border-radius:15px;
+  margin-bottom:20px;
+}
+
+.tab{
+  height:44px;
+  border:0;
+  border-radius:12px;
+  background:transparent;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.tab.active{
+  background:var(--card);
+  color:var(--text);
+}
+
+.form{
+  display:grid;
+  gap:10px;
+}
+
+.label{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.input{
+  width:100%;
+  height:50px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:var(--card2);
+  color:var(--text);
+  outline:none;
+}
+
+.input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(146,117,255,.12);
+}
+
+.primary{
+  height:50px;
+  border:0;
+  border-radius:15px;
+  background:linear-gradient(135deg,var(--accent),#6048d8);
+  color:#fff;
+  font-weight:700;
+  margin-top:6px;
+}
+
+.error{
+  min-height:18px;
+  color:var(--negative);
+  font-size:12px;
+}
+
+
+/* HEADER */
+
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  backdrop-filter:blur(18px);
+  background:rgba(8,11,18,.78);
+  border-bottom:1px solid var(--border);
+}
+
+[data-theme="light"] header{
+  background:rgba(244,246,250,.82);
+}
+
+.nav{
+  min-height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  line-height:1.05;
+}
+
+.brand strong{
+  font-size:20px;
+  font-weight:800;
+}
+
+.brand span{
+  color:var(--muted);
+  font-size:9px;
+  margin-top:4px;
+}
+
+.score.positive{
+  color:var(--positive);
+  text-shadow:0 0 25px rgba(69,230,162,.25);
+}
+
+.score.negative{
+  color:var(--negative);
+  text-shadow:0 0 25px rgba(255,100,124,.22);
+}
+
+.item-score.positive{
+  color:var(--positive);
+}
+
+.item-score.negative{
+  color:var(--negative);
+}
+
+.nav-actions{
+  display:flex;
+  gap:8px;
+}
+
+.icon{
+  width:44px;
+  height:44px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card);
+  color:var(--text);
+}
+
+
+/* MAIN */
+
+.page{
+  padding:22px 0 60px;
+}
+
+.hero{
+  display:grid;
+  gap:14px;
+  margin-bottom:25px;
+}
+
+.score-card{
+  background:linear-gradient(145deg,var(--card),var(--card2));
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+  position:sticky;
+  top:78px;
+  z-index:15;
+}
+
+.score-card .eyebrow{
+  font-size:11px;
+}
+
+.score-card .score{
+  font-size:clamp(38px,8vw,54px);
+  margin:6px 0 10px;
+}
+
+.score-card .progress{
+  height:5px;
+}
+
+.score-card .score-meta{
+  margin-top:7px;
+  font-size:10px;
+}
+
+.eyebrow{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.score{
+  font-size:clamp(55px,12vw,80px);
+  line-height:1;
+  font-weight:800;
+  letter-spacing:-3px;
+  color:var(--positive);
+  margin:12px 0 18px;
+  text-shadow:0 0 25px rgba(69,230,162,.25);
+}
+
+.progress{
+  height:7px;
+  background:var(--card3);
+  border-radius:99px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  width:0;
+  background:var(--positive);
+  border-radius:99px;
+  transition:.45s;
+}
+
+.score-meta{
+  display:flex;
+  justify-content:space-between;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.streak-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:20px;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.streak-number{
+  font-size:25px;
+  font-weight:800;
+  color:var(--accent);
+  margin-top:4px;
+}
+
+
+/* ITEMS */
+
+.section-title{
+  font-size:19px;
+  font-weight:800;
+  margin:28px 0 13px;
+}
+
+.items{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.item{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px;
+}
+
+.item-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.item-name{
+  font-weight:750;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+
+.item-icon{
+  font-size:22px;
+}
+
+.item-desc{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:3px;
+}
+
+.item-score{
+  color:var(--positive);
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.option{
+  min-height:50px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card2);
+  color:var(--text);
+  padding:8px;
+  transition:transform .12s ease, border-color .12s ease, background .12s ease;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+.option:hover{
+  border-color:rgba(146,117,255,.45);
+  background:var(--card3);
+}
+
+.option:active{
+  transform:scale(.97);
+}
+
+.option.selected{
+  border-color:var(--accent);
+  background:rgba(146,117,255,.14);
+}
+
+.input-row{
+  display:flex;
+  gap:8px;
+}
+
+.input-row .input{
+  flex:1;
+}
+
+.small-primary{
+  min-width:76px;
+  height:50px;
+  border:0;
+  border-radius:14px;
+  background:var(--accent);
+  color:white;
+  font-weight:700;
+}
+
+
+/* USER MENU */
+
+.menu{
+  position:fixed;
+  z-index:50;
+  top:66px;
+  left:12px;
+  width:210px;
+  padding:8px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+}
+
+.menu button{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  text-align:right;
+  border-radius:11px;
+  padding:12px;
+}
+
+.menu button:hover{
+  background:var(--card2);
+}
+
+
+/* FLOATING SCORE */
+
+.float-score{
+  position:fixed;
+  z-index:100;
+  pointer-events:none;
+  font-size:20px;
+  font-weight:800;
+  text-shadow:0 0 15px currentColor;
+  animation:float .85s ease-out forwards;
+}
+
+@keyframes float{
+  from{
+    opacity:1;
+    transform:translate(-50%,0) scale(1);
+  }
+  to{
+    opacity:0;
+    transform:translate(-50%,-80px) scale(1.15);
   }
 }
 
-async function enter(user){
-  currentUser=user;
-  const {data:profile,error}=await sb.from("profiles").select("id,display_name,role").eq("id",user.id).single();
-  if(error){console.error(error);toast("پروفایل پیدا نشد؛ SQL راه‌اندازی را بررسی کنید.","err");return;}
-  currentProfile=profile;
-  $("authView").classList.add("hidden");$("topbar").classList.remove("hidden");$("siteView").classList.remove("hidden");
-  $("welcome").textContent=(profile.display_name||user.email||"")+" خوش آمدید";
-  $("adminNav").classList.toggle("hidden",profile.role!=="admin");
-  $("roleBadge").innerHTML=profile.role==="admin"?'<span class="admin-badge">Super User</span>':"";
-  showPage("dashboard");
+
+/* TOAST */
+
+.toast{
+  position:fixed;
+  z-index:100;
+  bottom:22px;
+  left:50%;
+  transform:translate(-50%,20px);
+  opacity:0;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:11px 16px;
+  box-shadow:var(--shadow);
+  font-size:12px;
+  transition:.2s;
+  pointer-events:none;
 }
 
-function leave(){
-  currentUser=null;currentProfile=null;
-  $("topbar").classList.add("hidden");
-  $("siteView").classList.add("hidden");
-  $("authView").classList.remove("hidden");
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  $("tabLogin").onclick = () => setAuthMode("login");
-  $("tabSignup").onclick = () => setAuthMode("signup");
 
-  $("authForm").onsubmit = async e => {
-    e.preventDefault();
-    if(!ready){toast("تنظیمات Supabase کامل نشده.","err");return;}
-    const email=$("email").value.trim(), password=$("password").value;
-    $("authSubmit").disabled=true;
-    try {
-      if(mode==="login"){
-        const {error}=await sb.auth.signInWithPassword({email,password}); 
-        if(error) throw error;
-        toast("ورود موفق بود","ok");
-      } else {
-        const name=$("displayName").value.trim();
-        const {data,error}=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
-        if(error) throw error;
-        if(!data.session) $("authMsg").textContent="حساب ساخته شد.";
-        else toast("حساب ساخته شد","ok");
+@media(min-width:850px){
+  .hero{
+    grid-template-columns:1.6fr .8fr;
+  }
+}
+
+@media(max-width:700px){
+  .score-card{
+    top:6px;
+    border-radius:16px;
+    padding:11px 13px;
+  }
+
+  .items{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- AUTH -->
+
+<div id="authPage" class="auth-page">
+
+  <div class="auth-card">
+
+    <div class="logo">HQL</div>
+
+    <div class="subtitle brand-subtitle">زندگی با کیفیت</div>
+
+    <div class="subtitle">
+      هر روز، یک قدم بهتر.
+    </div>
+
+    <div class="tabs">
+
+      <button id="loginTab" class="tab active">
+        ورود
+      </button>
+
+      <button id="signupTab" class="tab">
+        ثبت‌نام
+      </button>
+
+    </div>
+
+    <form id="authForm" class="form">
+
+      <div id="nameBox" class="hidden">
+
+        <div class="label">نام نمایشی</div>
+
+        <input
+          id="name"
+          class="input"
+          maxlength="60"
+          placeholder="مثلاً علی"
+        >
+
+      </div>
+
+      <div class="label">ایمیل</div>
+
+      <input
+        id="email"
+        class="input"
+        type="email"
+        autocomplete="email"
+        required
+        placeholder="you@example.com"
+      >
+
+      <div class="label">رمز عبور</div>
+
+      <input
+        id="password"
+        class="input"
+        type="password"
+        minlength="6"
+        required
+        placeholder="حداقل ۶ کاراکتر"
+      >
+
+      <button id="authButton" class="primary">
+        ورود
+      </button>
+
+      <div id="authError" class="error"></div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- APP -->
+
+<div id="app" class="hidden">
+
+<header>
+
+  <div class="shell nav">
+
+    <div class="brand">
+      <strong>HQL</strong>
+      <span>زندگی با کیفیت</span>
+    </div>
+
+    <div class="nav-actions">
+
+      <button id="themeButton" class="icon">
+        ☀️
+      </button>
+
+      <button id="userButton" class="icon">
+        ☻
+      </button>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+<div id="menu" class="menu hidden">
+
+  <button id="reportButton">
+    📊 گزارش ماهانه
+  </button>
+
+  <button id="logoutButton">
+    ↪ خروج
+  </button>
+
+</div>
+
+
+<main class="page shell">
+
+  <section class="hero">
+
+    <div class="score-card">
+
+      <div class="eyebrow">
+        امتیاز امروز
+      </div>
+
+      <div id="score" class="score">
+        ۰
+      </div>
+
+      <div class="progress">
+        <div id="progress" class="progress-bar"></div>
+      </div>
+
+      <div class="score-meta">
+
+        <span id="completed">
+          ۰ آیتم از ۱۰
+        </span>
+
+        <span>
+          حداکثر امتیاز روزانه
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="streak-card">
+
+      <div>
+
+        <div class="eyebrow">
+          تداوم فعلی
+        </div>
+
+        <div id="currentStreak" class="streak-number">
+          🔥 ۰ روز
+        </div>
+
+      </div>
+
+      <div>
+
+        <div class="eyebrow">
+          بهترین تداوم
+        </div>
+
+        <div id="bestStreak" class="streak-number">
+          ۰ روز
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <div class="section-title">
+    لاگ امروز
+  </div>
+
+  <section id="items" class="items"></section>
+
+</main>
+
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE CONFIG
+   ========================================================= */
+
+const SUPABASE_URL =
+  "https://ehgjzvqdnglkwipzfvil.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_h0NBFewBDnGulVkxBISzkQ_zUlgWNWu";
+
+
+/*
+  IMPORTANT:
+  The library is called window.supabase.
+  Our client is called db.
+  Nothing else in this file uses "supabase" as a variable.
+*/
+
+const db =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+      auth:{
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true
       }
-    } catch(err){
-      $("authMsg").textContent=err.message||"خطا در ورود";
-      toast("عملیات ناموفق بود","err");
-    } finally {
-      $("authSubmit").disabled=false;
     }
+  );
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let mode = "login";
+let todayLogs = new Map();
+let realtimeChannel = null;
+let theme = "dark";
+
+
+/* =========================================================
+   DAILY ITEMS
+   ========================================================= */
+
+const ITEMS = [
+
+  {
+    type:"water",
+    icon:"💧",
+    title:"مصرف آب",
+    desc:"تعداد لیوان",
+    options:[
+      ["۰ تا ۲ لیوان",2],
+      ["۲ تا ۴ لیوان",4],
+      ["۴ تا ۶ لیوان",6],
+      ["۶ تا ۸ لیوان",8]
+    ]
+  },
+
+  {
+    type:"exercise",
+    icon:"🏃",
+    title:"کالری ورزش",
+    desc:"کالری مصرف‌شده",
+    input:true,
+    placeholder:"مثلاً ۳۵۰"
+  },
+
+  {
+    type:"sleep",
+    icon:"🌙",
+    title:"زمان خواب دیشب",
+    desc:"چه ساعتی خوابیدی؟",
+    time:true
+  },
+
+  {
+    type:"instagram",
+    icon:"📱",
+    title:"اینستاگرام زیر ۱۰ دقیقه",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"sun",
+    icon:"☀️",
+    title:"۱۰ دقیقه آفتاب",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"solitude",
+    icon:"🧘",
+    title:"۱۰ دقیقه خلوت با خود",
+    desc:"امروز",
+    options:[
+      ["بله",1],
+      ["خیر",0]
+    ]
+  },
+
+  {
+    type:"reading",
+    icon:"📖",
+    title:"مطالعه کتاب",
+    desc:"تعداد صفحه",
+    input:true,
+    placeholder:"مثلاً ۱۲"
+  },
+
+  {
+    type:"sugar",
+    icon:"🍬",
+    title:"مصرف قند مصنوعی",
+    desc:"امروز",
+    options:[
+      ["مصرف نشد",1],
+      ["مصرف شد",0]
+    ]
+  },
+
+  {
+    type:"nature",
+    icon:"⛰️",
+    title:"کوه و طبیعت‌گردی",
+    desc:"امروز",
+    options:[
+      ["امروز رفتم",1],
+      ["نرفتم",0]
+    ]
+  },
+
+  {
+    type:"dinner",
+    icon:"🍽️",
+    title:"زمان شام",
+    desc:"چه ساعتی شام خوردی؟",
+    time:true
+  }
+
+];
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function faNumber(value){
+
+  return String(value)
+    .replace(
+      /\d/g,
+      x => "۰۱۲۳۴۵۶۷۸۹"[x]
+    );
+
+}
+
+
+function scoreText(value){
+
+  const n = Number(value || 0);
+
+  let s;
+
+  if(Number.isInteger(n)){
+    s = String(n);
+  }else{
+    s = n.toFixed(2)
+      .replace(/0+$/,"")
+      .replace(/\.$/,"");
+  }
+
+  return faNumber(s);
+}
+
+
+function todayIran(){
+
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:"Asia/Tehran",
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit"
+      }
+    ).formatToParts(new Date());
+
+  const get =
+    type =>
+      parts.find(x => x.type === type).value;
+
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+
+function showToast(text){
+
+  const el = document.getElementById("toast");
+
+  el.textContent = text;
+
+  el.classList.add("show");
+
+  clearTimeout(window.__toast);
+
+  window.__toast =
+    setTimeout(
+      () => el.classList.remove("show"),
+      2200
+    );
+
+}
+
+
+function floatingScore(score,x,y){
+
+  if(!score) return;
+
+  const el =
+    document.createElement("div");
+
+  el.className = "float-score";
+
+  el.textContent =
+    (score > 0 ? "+" : "") +
+    scoreText(score);
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  el.style.color =
+    score > 0
+      ? "var(--positive)"
+      : "var(--negative)";
+
+  document.body.appendChild(el);
+
+  setTimeout(
+    () => el.remove(),
+    900
+  );
+}
+
+
+/* =========================================================
+   SCORE CALCULATION
+   =========================================================
+   The current values are intentionally kept in one place.
+   Later, these can be moved to Supabase scoring_rules so
+   user/coach feedback and real usage data can calibrate
+   the ratios without rewriting the UI.
+   ========================================================= */
+
+const SCORE_CALIBRATION = {
+  water: {
+    "0-2": .5,
+    "2-4": .6,
+    "4-6": .7,
+    "6-8": 1.5
+  },
+  exercise: {
+    "100-300": 1,
+    "300-600": 3,
+    "600+": 5
+  },
+  sleep: {
+    "before-23": 2,
+    "23-24": .5,
+    "after-24": -.5
+  },
+  instagram: { yes:1.5, no:0 },
+  sun: { yes:1.5, no:0 },
+  solitude: { yes:1.5, no:0 },
+  reading: { one:.5, more:1 },
+  sugar: { none:2, consumed:-.5 },
+  nature: { yes:10, no:0 },
+  dinner: { before19:2, "19-21":.75, after21:0 }
+};
+
+function calculateScore(type,value){
+
+  value = Number(value);
+
+  switch(type){
+
+    case "water":
+      if(value <= 2) return .5;
+      if(value <= 4) return .6;
+      if(value <= 6) return .7;
+      return 1.5;
+
+    case "exercise":
+      if(value < 100) return 0;
+      if(value < 300) return 1;
+      if(value <= 600) return 3;
+      return 5;
+
+    case "sleep":
+      if(value < 1380) return 2;
+      if(value < 1440) return .5;
+      return -.5;
+
+    case "instagram":
+      return value === 1 ? 1.5 : 0;
+
+    case "sun":
+      return value === 1 ? 1.5 : 0;
+
+    case "solitude":
+      return value === 1 ? 1.5 : 0;
+
+    case "reading":
+      if(value <= 0) return 0;
+      if(value === 1) return .5;
+      return 1;
+
+    case "sugar":
+      return value === 1 ? 2 : -.5;
+
+    case "nature":
+      return value === 1 ? 10 : 0;
+
+    case "dinner":
+      if(value < 1140) return 2;
+      if(value <= 1260) return .75;
+      return 0;
+
+    default:
+      return 0;
+  }
+}
+
+
+/* =========================================================
+   AUTH UI
+   ========================================================= */
+
+function setMode(newMode){
+
+  mode = newMode;
+
+  document
+    .getElementById("loginTab")
+    .classList
+    .toggle("active",mode === "login");
+
+  document
+    .getElementById("signupTab")
+    .classList
+    .toggle("active",mode === "signup");
+
+  document
+    .getElementById("nameBox")
+    .classList
+    .toggle("hidden",mode !== "signup");
+
+  document
+    .getElementById("authButton")
+    .textContent =
+      mode === "signup"
+        ? "ساخت حساب"
+        : "ورود";
+
+  document
+    .getElementById("authError")
+    .textContent = "";
+}
+
+
+document
+  .getElementById("loginTab")
+  .onclick =
+    () => setMode("login");
+
+
+document
+  .getElementById("signupTab")
+  .onclick =
+    () => setMode("signup");
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+document
+  .getElementById("authForm")
+  .addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      const email =
+        document.getElementById("email")
+          .value.trim();
+
+      const password =
+        document.getElementById("password")
+          .value;
+
+      const name =
+        document.getElementById("name")
+          .value.trim();
+
+      const error =
+        document.getElementById("authError");
+
+      const button =
+        document.getElementById("authButton");
+
+      error.textContent = "";
+
+      button.disabled = true;
+
+      button.textContent =
+        "در حال پردازش…";
+
+      try{
+
+        let result;
+
+        if(mode === "signup"){
+
+          if(!name){
+            throw new Error(
+              "نام نمایشی را وارد کن."
+            );
+          }
+
+          result =
+            await db.auth.signUp({
+              email,
+              password,
+              options:{
+                data:{
+                  display_name:name
+                }
+              }
+            });
+
+        }else{
+
+          result =
+            await db.auth.signInWithPassword({
+              email,
+              password
+            });
+
+        }
+
+        if(result.error)
+          throw result.error;
+
+        if(result.data.session){
+
+          await openApp(
+            result.data.session.user
+          );
+
+        }else{
+
+          showToast(
+            "حساب ساخته شد."
+          );
+
+        }
+
+      }catch(err){
+
+        console.error(err);
+
+        error.textContent =
+          translateError(err.message);
+
+      }finally{
+
+        button.disabled = false;
+
+        button.textContent =
+          mode === "signup"
+            ? "ساخت حساب"
+            : "ورود";
+      }
+    }
+  );
+
+
+function translateError(message){
+
+  const map = {
+    "Invalid login credentials":
+      "ایمیل یا رمز عبور اشتباه است.",
+    "User already registered":
+      "این ایمیل قبلاً ثبت‌نام شده است.",
+    "Password should be at least 6 characters.":
+      "رمز عبور باید حداقل ۶ کاراکتر باشد."
   };
 
-  $("logout").onclick = async () => { if(sb) await sb.auth.signOut(); };
-  
-  document.querySelectorAll(".nav button[data-page]").forEach(b => {
-    b.addEventListener("click", () => showPage(b.dataset.page));
+  return map[message] || message || "خطایی رخ داد.";
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+async function loadProfile(user){
+
+  const result =
+    await db
+      .from("profiles")
+      .select("display_name,theme_preference")
+      .eq("id",user.id)
+      .maybeSingle();
+
+  if(result.error){
+
+    console.error(
+      "Profile error:",
+      result.error
+    );
+
+    return;
+  }
+
+  if(result.data){
+
+    theme =
+      result.data.theme_preference ||
+      "dark";
+
+  }
+
+  applyTheme();
+}
+
+
+async function saveTheme(){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const result =
+    await db
+      .from("profiles")
+      .update({
+        theme_preference:theme
+      })
+      .eq("id",userData.user.id);
+
+  if(result.error){
+
+    console.error(result.error);
+
+    showToast(
+      "ذخیره پوسته انجام نشد."
+    );
+  }
+}
+
+
+function applyTheme(){
+
+  document.documentElement
+    .dataset
+    .theme = theme;
+
+  document.getElementById("themeButton")
+    .textContent =
+      theme === "dark"
+        ? "☀️"
+        : "🌙";
+}
+
+
+/* =========================================================
+   OPEN APP
+   ========================================================= */
+
+async function openApp(user){
+
+  document
+    .getElementById("authPage")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("app")
+    .classList
+    .remove("hidden");
+
+  await loadProfile(user);
+
+  renderItems();
+
+  await loadToday();
+
+  subscribeRealtime(user.id);
+}
+
+
+/* =========================================================
+   RENDER ITEMS
+   ========================================================= */
+
+function renderItems(){
+
+  const container =
+    document.getElementById("items");
+
+  container.innerHTML = "";
+
+  ITEMS.forEach(item => {
+
+    const card =
+      document.createElement("article");
+
+    card.className = "item";
+
+    card.dataset.type = item.type;
+
+    let html = `
+
+      <div class="item-top">
+
+        <div>
+
+          <div class="item-name">
+            <span class="item-icon">
+              ${item.icon}
+            </span>
+            ${item.title}
+          </div>
+
+          <div class="item-desc">
+            ${item.desc}
+          </div>
+
+        </div>
+
+        <div class="item-score"></div>
+
+      </div>
+    `;
+
+    if(item.options){
+
+      html += `<div class="options">`;
+
+      item.options.forEach(
+        ([label,value]) => {
+
+          html += `
+            <button
+              class="option"
+              data-value="${value}"
+              type="button"
+            >
+              ${label}
+            </button>
+          `;
+        }
+      );
+
+      html += `</div>`;
+    }
+
+    if(item.input){
+
+      html += `
+        <div class="input-row">
+
+          <input
+            class="input value-input"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="${item.placeholder}"
+          >
+
+          <button
+            class="small-primary save-value"
+            type="button"
+          >
+            ثبت
+          </button>
+
+        </div>
+      `;
+    }
+
+    if(item.time){
+
+      html += `
+        <div class="input-row">
+
+          <input
+            class="input time-input"
+            type="time"
+          >
+
+          <button
+            class="small-primary save-time"
+            type="button"
+          >
+            ثبت
+          </button>
+
+        </div>
+      `;
+    }
+
+    card.innerHTML = html;
+
+    if(item.options){
+
+      card
+        .querySelectorAll(".option")
+        .forEach(button => {
+
+          button.onclick =
+            event => {
+
+              saveLog(
+                item.type,
+                Number(button.dataset.value),
+                event
+              );
+
+            };
+        });
+    }
+
+    if(item.input){
+
+      card
+        .querySelector(".save-value")
+        .onclick =
+          event => {
+
+            const input =
+              card.querySelector(".value-input");
+
+            const value =
+              Number(input.value);
+
+            if(!Number.isFinite(value) || value < 0){
+
+              showToast(
+                "یک عدد معتبر وارد کن."
+              );
+
+              return;
+            }
+
+            saveLog(
+              item.type,
+              value,
+              event
+            );
+          };
+    }
+
+    if(item.time){
+
+      card
+        .querySelector(".save-time")
+        .onclick =
+          event => {
+
+            const input =
+              card.querySelector(".time-input");
+
+            if(!input.value){
+
+              showToast(
+                "ساعت را انتخاب کن."
+              );
+
+              return;
+            }
+
+            const [h,m] =
+              input.value
+                .split(":")
+                .map(Number);
+
+            saveLog(
+              item.type,
+              h * 60 + m,
+              event
+            );
+          };
+    }
+
+    container.appendChild(card);
   });
+}
 
-  $("refreshAdmin").onclick = loadAdmin;
-  $("closeDetail").onclick = () => $("adminDetail").classList.add("hidden");
 
-  // --- محاسبات خودکار و هوشمند دوطرفه بین کیلومتر و کالری ---
-  $("km").addEventListener("input", () => {
-    const w = parseFloat($("weight").value);
-    const k = parseFloat($("km").value);
-    if (w > 0 && k >= 0) {
-      $("calories").value = Math.round(w * k);
+/* =========================================================
+   LOAD TODAY
+   ========================================================= */
+
+async function loadToday(){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const result =
+    await db
+      .from("daily_logs")
+      .select("*")
+      .eq("user_id",userData.user.id)
+      .eq("log_date",todayIran());
+
+  if(result.error){
+
+    console.error(
+      "Daily logs error:",
+      result.error
+    );
+
+    showToast(
+      "دریافت اطلاعات امروز انجام نشد."
+    );
+
+    return;
+  }
+
+  todayLogs =
+    new Map(
+      (result.data || [])
+        .map(
+          row =>
+            [row.item_type,row]
+        )
+    );
+
+  updateUI();
+}
+
+
+/* =========================================================
+   SAVE LOG
+   ========================================================= */
+
+async function saveLog(
+  type,
+  value,
+  event
+){
+
+  const {
+    data:userData
+  } =
+    await db.auth.getUser();
+
+  if(!userData.user) return;
+
+  const previous =
+    todayLogs.get(type);
+
+  const score =
+    calculateScore(type,value);
+
+  const result =
+    await db
+      .from("daily_logs")
+      .upsert(
+        {
+          user_id:userData.user.id,
+          log_date:todayIran(),
+          item_type:type,
+          value:value,
+          score:score
+        },
+        {
+          onConflict:
+            "user_id,log_date,item_type"
+        }
+      )
+      .select()
+      .single();
+
+  if(result.error){
+
+    console.error(
+      "Save error:",
+      result.error
+    );
+
+    showToast(
+      "ثبت انجام نشد: " +
+      result.error.message
+    );
+
+    return;
+  }
+
+  todayLogs.set(
+    type,
+    result.data
+  );
+
+  updateUI();
+
+  const oldScore =
+    Number(previous?.score || 0);
+
+  floatingScore(
+    score - oldScore,
+    event.clientX,
+    event.clientY
+  );
+
+  showToast("ثبت شد ✓");
+}
+
+
+/* =========================================================
+   UPDATE UI
+   ========================================================= */
+
+function updateUI(){
+
+  let total = 0;
+  let completed = 0;
+
+  ITEMS.forEach(item => {
+
+    const log =
+      todayLogs.get(item.type);
+
+    const card =
+      document.querySelector(
+        `.item[data-type="${item.type}"]`
+      );
+
+    if(!card) return;
+
+    const scoreEl =
+      card.querySelector(".item-score");
+
+    scoreEl.classList.remove(
+      "positive",
+      "negative"
+    );
+
+    scoreEl.textContent =
+      log
+        ? (
+            Number(log.score) > 0
+              ? "+"
+              : ""
+          ) +
+          scoreText(log.score)
+        : "";
+
+    if(log){
+      scoreEl.classList.toggle(
+        "positive",
+        Number(log.score) > 0
+      );
+
+      scoreEl.classList.toggle(
+        "negative",
+        Number(log.score) < 0
+      );
+    }
+
+    card
+      .querySelectorAll(".option")
+      .forEach(button => {
+
+        button.classList.toggle(
+          "selected",
+          !!log &&
+          Number(button.dataset.value) ===
+          Number(log.value)
+        );
+      });
+
+    if(log){
+
+      total += Number(log.score || 0);
+
+      completed++;
+
+      const valueInput =
+        card.querySelector(".value-input");
+
+      if(valueInput)
+        valueInput.value =
+          log.value;
+
+      const timeInput =
+        card.querySelector(".time-input");
+
+      if(timeInput){
+
+        const value =
+          Number(log.value);
+
+        const h =
+          String(Math.floor(value / 60))
+            .padStart(2,"0");
+
+        const m =
+          String(value % 60)
+            .padStart(2,"0");
+
+        timeInput.value =
+          `${h}:${m}`;
+      }
     }
   });
 
-  $("calories").addEventListener("input", () => {
-    const w = parseFloat($("weight").value);
-    const c = parseFloat($("calories").value);
-    if (w > 0 && c >= 0) {
-      $("km").value = (c / w).toFixed(2);
+
+  const totalScoreEl =
+    document.getElementById("score");
+
+  totalScoreEl.textContent =
+    scoreText(total);
+
+  totalScoreEl.classList.toggle(
+    "positive",
+    total > 0
+  );
+
+  totalScoreEl.classList.toggle(
+    "negative",
+    total < 0
+  );
+
+  document.getElementById("completed")
+    .textContent =
+      `${faNumber(completed)} آیتم از ${faNumber(ITEMS.length)}`;
+
+  /*
+    The current 10 visible items have a maximum
+    positive score of 28.5. This is only a visual
+    progress bar. The automatic "نظم پر کردن" item
+    is still a separate pending requirement.
+  */
+
+  const percentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        total / 28.5 * 100
+      )
+    );
+
+  document.getElementById("progress")
+    .style.width =
+      percentage + "%";
+}
+
+
+/* =========================================================
+   REALTIME
+   ========================================================= */
+
+function subscribeRealtime(userId){
+
+  if(realtimeChannel){
+
+    db.removeChannel(
+      realtimeChannel
+    );
+  }
+
+  realtimeChannel =
+    db
+      .channel(
+        "daily-logs-" + userId
+      )
+      .on(
+        "postgres_changes",
+        {
+          event:"*",
+          schema:"public",
+          table:"daily_logs",
+          filter:
+            `user_id=eq.${userId}`
+        },
+        () => loadToday()
+      )
+      .subscribe();
+}
+
+
+/* =========================================================
+   THEME BUTTON
+   ========================================================= */
+
+document
+  .getElementById("themeButton")
+  .onclick =
+    async () => {
+
+      theme =
+        theme === "dark"
+          ? "light"
+          : "dark";
+
+      applyTheme();
+
+      await saveTheme();
+    };
+
+
+/* =========================================================
+   USER MENU
+   ========================================================= */
+
+document
+  .getElementById("userButton")
+  .onclick =
+    () => {
+
+      document
+        .getElementById("menu")
+        .classList
+        .toggle("hidden");
+    };
+
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const menu =
+      document.getElementById("menu");
+
+    const userButton =
+      document.getElementById("userButton");
+
+    if(
+      !menu.contains(event.target) &&
+      event.target !== userButton
+    ){
+
+      menu.classList.add("hidden");
     }
-  });
+  }
+);
 
-  $("weight").addEventListener("input", () => {
-    const w = parseFloat($("weight").value);
-    const k = parseFloat($("km").value);
-    if (w > 0 && k >= 0) {
-      $("calories").value = Math.round(w * k);
+
+document
+  .getElementById("logoutButton")
+  .onclick =
+    async () => {
+
+      await db.auth.signOut();
+    };
+
+
+document
+  .getElementById("reportButton")
+  .onclick =
+    () => {
+
+      window.location.href =
+        "report.html";
+    };
+
+
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
+
+db.auth.onAuthStateChange(
+  async (event,session) => {
+
+    if(
+      session &&
+      (
+        event === "SIGNED_IN" ||
+        event === "INITIAL_SESSION"
+      )
+    ){
+
+      await openApp(
+        session.user
+      );
     }
-  });
 
-  init();
-});
+    if(event === "SIGNED_OUT"){
 
-async function loadDashboard(){
-  if(!currentUser)return;
-  const {data,error}=await sb.from("daily_logs").select("*").eq("user_id",currentUser.id).order("log_date",{ascending:false});
-  if(error){toast("خطا در دریافت اطلاعات","err");console.error(error);return;}
-  const rows=data||[];
-  const km=rows.reduce((a,r)=>a+Number(r.km||0),0),cal=rows.reduce((a,r)=>a+Number(r.calories||0),0),fat=cal/7700;
-  const weights=rows.map(r=>Number(r.weight)).filter(Boolean);
-  $("kKm").textContent=fmt(km,2);$("kCal").textContent=fmt(cal);$("kFat").textContent=fmt(fat,3);
-  $("kWeight").textContent=weights.length?fmt(weights.reduce((a,b)=>a+b,0)/weights.length,1):"—";
-  renderChart(rows.slice(0,14).reverse());renderHabits(rows);renderRecent(rows.slice(0,10));
-}
+      if(realtimeChannel){
 
-function renderChart(rows){
-  const vals=rows.map(r=>Number(r.calories||0)), max=Math.max(...vals,1);
-  $("chart").innerHTML=rows.length?rows.map(r=>{
-    const h=Math.max(3,(Number(r.calories||0)/max)*170);
-    return `<div class="col"><i style="height:${h}px" title="${fmt(r.calories)} کالری"></i><span>${toJalaliDate(r.log_date).slice(-5)}</span></div>`;
-  }).join(""):`<div class="empty">هنوز رکوردی ثبت نشده است.</div>`;
-}
+        db.removeChannel(
+          realtimeChannel
+        );
 
-function renderHabits(rows){
-  const calc=key=>{let n=rows.length,b=rows.filter(r=>r[key]).length;return [b,n?Math.round(b/n*100):0]};
-  const items=[["شام ساعت ۸","dinner_ok"],["خواب قبل از ۱۱:۳۰","sleep_ok"],["نخوردن شیرینی","sweet_ok"]];
-  $("habits").innerHTML=items.map(([name,key])=>{
-    const [b,p]=calc(key);return `<div style="margin:16px 0"><div class="section-title"><span>${name}</span><b>${fmt(p)}%</b></div><div class="bar"><i style="width:${p}%"></i></div><small class="muted">${fmt(b)} از ${fmt(rows.length)} روز</small></div>`
-  }).join("");
-}
+        realtimeChannel = null;
+      }
 
-function status(v){return `<span class="status ${v?"yes":"no"}">${v?"بله":"خیر"}</span>`}
+      document
+        .getElementById("app")
+        .classList
+        .add("hidden");
 
-function renderRecent(rows){
-  $("recent").innerHTML=rows.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>چربی معادل</th><th>عادت‌ها</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${toJalaliDate(r.log_date)}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${fmt(Number(r.calories)/7700,3)}</td><td>${status(r.dinner_ok)} ${status(r.sleep_ok)} ${status(r.sweet_ok)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">اولین رکوردت را ثبت کن.</div>`;
-}
+      document
+        .getElementById("authPage")
+        .classList
+        .remove("hidden");
 
-$("logForm").onsubmit=async e=>{
-  e.preventDefault();if(!currentUser)return;
-  const jy = parseInt($("jYear").value), jm = parseInt($("jMonth").value), jd = parseInt($("jDay").value);
-  const g = jalaali.toGregorian(jy, jm, jd);
-  const log_date = `${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`;
-  
-  const weightVal = Number($("weight").value);
-  let kmVal = Number($("km").value);
-  let calVal = Number($("calories").value);
+      setMode("login");
+    }
+  }
+);
 
-  // اگر یکی پر شده باشد، مقدار دیگری به‌طور خودکار محاسبه می‌شود
-  if (!kmVal && calVal && weightVal) kmVal = calVal / weightVal;
-  if (!calVal && kmVal && weightVal) calVal = weightVal * kmVal;
 
-  const payload={
-    user_id:currentUser.id,
-    log_date:log_date,
-    weight:weightVal,
-    km:kmVal,
-    calories:calVal,
-    dinner_ok:$("dinner").checked,
-    sleep_ok:$("sleep").checked,
-    sweet_ok:$("sweet").checked
-  };
+/* =========================================================
+   INITIAL SESSION
+   ========================================================= */
 
-  const {error}=await sb.from("daily_logs").upsert(payload,{onConflict:"user_id,log_date"});
-  if(error){toast(error.message,"err");return}
-  toast("رکورد ذخیره شد","ok");showPage("dashboard");
-};
+(async function(){
 
-async function loadAdmin(){
-  const {data,error}=await sb.from("profiles").select("id,display_name,role,created_at").order("created_at",{ascending:false});
-  if(error){toast("دسترسی ادمین رد شد","err");return}
-  $("adminUsers").innerHTML=`<table><thead><tr><th>نام</th><th>نقش</th><th>تاریخ عضویت</th><th></th></tr></thead><tbody>${(data||[]).map(u=>`<tr><td>${u.display_name||"بدون نام"}</td><td>${u.role==="admin"?'<span class="admin-badge">Admin</span>':"User"}</td><td>${toJalaliDate(u.created_at)}</td><td><button type="button" class="ghost" onclick="openAdminUser('${u.id}','${(u.display_name||"کاربر").replace(/'/g,"")}')">مشاهده داده‌ها</button></td></tr>`).join("")}</tbody></table>`;
-}
+  const result =
+    await db.auth.getSession();
 
-window.openAdminUser=async function(id,name){
-  const {data,error}=await sb.from("daily_logs").select("*").eq("user_id",id).order("log_date",{ascending:false});
-  if(error){toast("خطا در دریافت داده کاربر","err");return}
-  $("adminDetail").classList.remove("hidden");$("adminDetailTitle").textContent=`داده‌های ${name}`;
-  $("adminRecords").innerHTML=data?.length?`<table><thead><tr><th>تاریخ</th><th>کیلومتر</th><th>وزن</th><th>کالری</th><th>شام</th><th>خواب</th><th>شیرینی</th><th></th></tr></thead><tbody>${data.map(r=>`<tr><td>${toJalaliDate(r.log_date)}</td><td>${fmt(r.km,2)}</td><td>${fmt(r.weight,1)}</td><td>${fmt(r.calories)}</td><td>${status(r.dinner_ok)}</td><td>${status(r.sleep_ok)}</td><td>${status(r.sweet_ok)}</td><td><button type="button" class="danger" onclick="deleteAdminRecord('${r.id}')">حذف</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">رکوردی ندارد.</div>`;
-};
+  if(result.data.session){
 
-window.deleteAdminRecord=async function(id){
-  if(!confirm("این رکورد حذف شود؟"))return;
-  const {error}=await sb.from("daily_logs").delete().eq("id",id);
-  if(error){toast(error.message,"err");return}
-  toast("رکورد حذف شد","ok");loadAdmin();
-};
+    await openApp(
+      result.data.session.user
+    );
+  }
+
+})();
+
 </script>
+
 </body>
 </html>
