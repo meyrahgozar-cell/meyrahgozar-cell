@@ -194,8 +194,18 @@ let mode="login", selectedDate=null, todayDate=null, monthStart=null, currentUse
 let todayLogs=new Map(), exerciseLog=null, mountainTrips=[], latePenalty=0, theme="dark", realtimeChannel=null;
 
 const ITEMS=[
- {type:"water",icon:"💧",title:"مصرف آب",desc:"فقط آب • امتیاز از ۱ لیوان شروع می‌شود",
-  options:[["۰ تا ۱ لیوان",0],["۱ تا ۲ لیوان",2],["۲ تا ۴ لیوان",4],["۴ تا ۶ لیوان",6],["۶ تا ۸ لیوان",8]]},
+{
+  type:"water",
+  icon:"💧",
+  title:"مصرف آب",
+  desc:"فقط آب",
+  options:[
+    ["۱ تا ۲ لیوان",2],
+    ["۲ تا ۴ لیوان",4],
+    ["۴ تا ۶ لیوان",6],
+    ["۶ تا ۸ لیوان",8]
+  ]
+}
  {type:"sleep",icon:"🌙",title:"زمان خواب دیشب",desc:"چه ساعتی خوابیدی؟",time:true},
  {type:"instagram",icon:"📱",title:"اینستاگرام زیر ۱۰ دقیقه",desc:"امروز",options:[["بله",1],["خیر",0]]},
  {type:"sun",icon:"☀️",title:"۱۰ دقیقه آفتاب",desc:"امروز",options:[["بله",1],["خیر",0]]},
@@ -279,7 +289,12 @@ function translateError(m){
 function calculateScore(type,value){
  value=Number(value);
  switch(type){
-  case"water": if(value<1)return 0;if(value<2)return .5;if(value<=4)return .6;if(value<=6)return .7;return 1.5;
+  case"water":
+  if(value<1)return 0;
+  if(value<2)return .5;
+  if(value<=4)return .6;
+  if(value<=6)return .7;
+  return 1.5;
   case"sleep":if(value<1380)return 2;if(value<1440)return .5;return -.5;
   case"instagram":return value===1?1.5:0;
   case"sun":return value===1?1.5:0;
@@ -422,7 +437,10 @@ async function updateUI(){
  document.getElementById("completed").textContent=`${faNumber(completed)} آیتم از ۱۰${latePenalty<0?" • جریمه تأخیر "+scoreText(latePenalty):""}`;
  document.getElementById("mountainDailyBonus").textContent=mountainBonus?`سهم کوه: +${scoreText(mountainBonus)}`:"";
  const pct=Math.max(0,Math.min(100,total/20*100));document.getElementById("progress").style.width=pct+"%";
- document.getElementById("dayLabel").textContent=sameDate(selectedDate,todayDate)?"امروز":jalaliLabel(selectedDate);
+ document.getElementById("dayLabel").textContent =
+  sameDate(selectedDate, todayDate)
+    ? `امروز، ${jalaliDateLabel(selectedDate)}`
+    : jalaliDateLabel(selectedDate);
  document.getElementById("dateInput").value=selectedDate;
  document.getElementById("nextDay").disabled=selectedDate>=todayDate;
 }
@@ -461,6 +479,40 @@ db.auth.onAuthStateChange(async(event,session)=>{
  }
 });
 (async()=>{const r=await db.auth.getSession();if(r.data.session)await openApp(r.data.session.user)})();
+
+function getPersianWeekday(s) {
+  const weekdays = [
+    "یکشنبه",
+    "دوشنبه",
+    "سه‌شنبه",
+    "چهارشنبه",
+    "پنجشنبه",
+    "جمعه",
+    "شنبه"
+  ];
+
+  const d = parseDate(s);
+  return weekdays[d.getUTCDay()];
+}
+
+function jalaliDateLabel(s) {
+  const j = jalaliOf(s);
+  return `${getPersianWeekday(s)}، ${faNumber(j.jd)} ${[
+    "فروردین",
+    "اردیبهشت",
+    "خرداد",
+    "تیر",
+    "مرداد",
+    "شهریور",
+    "مهر",
+    "آبان",
+    "آذر",
+    "دی",
+    "بهمن",
+    "اسفند"
+  ][j.jm - 1]} ${faNumber(j.jy)}`;
+}
+ 
 </script>
 </body>
 </html>
