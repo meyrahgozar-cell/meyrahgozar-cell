@@ -8,148 +8,695 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 
 <style>
 :root{
- --bg:#080b12;--card:#111722;--card2:#171e29;--card3:#202938;
- --text:#f5f7fa;--muted:#8d98aa;--border:rgba(255,255,255,.08);
- --accent:#9275ff;--positive:#45e6a2;--negative:#ff647c;
- --shadow:0 18px 50px rgba(0,0,0,.25);--radius:20px;
+ --bg:#080b12;
+ --card:#111722;
+ --card2:#171e29;
+ --card3:#202938;
+ --text:#f5f7fa;
+ --muted:#8d98aa;
+ --border:rgba(255,255,255,.08);
+ --accent:#9275ff;
+ --positive:#45e6a2;
+ --negative:#ff647c;
+ --shadow:0 18px 50px rgba(0,0,0,.25);
+ --radius:20px;
 }
+
 [data-theme="light"]{
- --bg:#f4f6fa;--card:#fff;--card2:#f0f3f8;--card3:#e5e9f0;
- --text:#151925;--muted:#697386;--border:rgba(20,25,37,.09);
- --accent:#7055df;--positive:#0ca76b;--negative:#e6405d;
+ --bg:#f4f6fa;
+ --card:#fff;
+ --card2:#f0f3f8;
+ --card3:#e5e9f0;
+ --text:#151925;
+ --muted:#697386;
+ --border:rgba(20,25,37,.09);
+ --accent:#7055df;
+ --positive:#0ca76b;
+ --negative:#e6405d;
  --shadow:0 15px 40px rgba(30,40,60,.1);
 }
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%}
-body{
- background:radial-gradient(circle at 10% 0%,rgba(146,117,255,.11),transparent 30rem),var(--bg);
- color:var(--text);font-family:"Vazirmatn",sans-serif;transition:.25s
+
+*{
+ box-sizing:border-box;
 }
-button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-.shell{width:min(1100px,calc(100% - 24px));margin:auto}
+
+html,body{
+ margin:0;
+ min-height:100%;
+}
+
+body{
+ background:
+   radial-gradient(circle at 10% 0%,rgba(146,117,255,.11),transparent 30rem),
+   var(--bg);
+ color:var(--text);
+ font-family:"Vazirmatn",sans-serif;
+ transition:.25s;
+}
+
+button,input{
+ font:inherit;
+}
+
+button{
+ cursor:pointer;
+}
+
+.hidden{
+ display:none!important;
+}
+
+.shell{
+ width:min(1100px,calc(100% - 24px));
+ margin:auto;
+}
 
 /* AUTH */
-.auth-page{min-height:100vh;display:grid;place-items:center;padding:20px}
-.auth-card{width:min(440px,100%);background:var(--card);border:1px solid var(--border);
- border-radius:28px;padding:28px;box-shadow:var(--shadow)}
-.logo{font-size:30px;font-weight:800;margin-bottom:4px}
-.subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--card2);padding:4px;border-radius:15px;margin-bottom:20px}
-.tab{height:44px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:700}
-.tab.active{background:var(--card);color:var(--text)}
-.form{display:grid;gap:10px}.label{color:var(--muted);font-size:12px;margin-top:4px}
-.input{width:100%;height:50px;padding:0 14px;border-radius:14px;border:1px solid var(--border);
- background:var(--card2);color:var(--text);outline:none}
-.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(146,117,255,.12)}
-.primary{height:50px;border:0;border-radius:15px;background:linear-gradient(135deg,var(--accent),#6048d8);
- color:#fff;font-weight:700;margin-top:6px}
-.error{min-height:18px;color:var(--negative);font-size:12px}
+
+.auth-page{
+ min-height:100vh;
+ display:grid;
+ place-items:center;
+ padding:20px;
+}
+
+.auth-card{
+ width:min(440px,100%);
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:28px;
+ padding:28px;
+ box-shadow:var(--shadow);
+}
+
+.logo{
+ font-size:30px;
+ font-weight:800;
+ margin-bottom:4px;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-bottom:24px;
+}
+
+.tabs{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:4px;
+ background:var(--card2);
+ padding:4px;
+ border-radius:15px;
+ margin-bottom:20px;
+}
+
+.tab{
+ height:44px;
+ border:0;
+ border-radius:12px;
+ background:transparent;
+ color:var(--muted);
+ font-weight:700;
+}
+
+.tab.active{
+ background:var(--card);
+ color:var(--text);
+}
+
+.form{
+ display:grid;
+ gap:10px;
+}
+
+.label{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.input{
+ width:100%;
+ height:50px;
+ padding:0 14px;
+ border-radius:14px;
+ border:1px solid var(--border);
+ background:var(--card2);
+ color:var(--text);
+ outline:none;
+}
+
+.input:focus{
+ border-color:var(--accent);
+ box-shadow:0 0 0 3px rgba(146,117,255,.12);
+}
+
+.primary{
+ height:50px;
+ border:0;
+ border-radius:15px;
+ background:linear-gradient(135deg,var(--accent),#6048d8);
+ color:#fff;
+ font-weight:700;
+ margin-top:6px;
+}
+
+.error{
+ min-height:18px;
+ color:var(--negative);
+ font-size:12px;
+}
 
 /* HEADER */
-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(18px);background:rgba(8,11,18,.82);border-bottom:1px solid var(--border)}
-[data-theme="light"] header{background:rgba(244,246,250,.84)}
-.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;flex-direction:column;line-height:1.05}.brand strong{font-size:20px;font-weight:800}
-.brand span{color:var(--muted);font-size:9px;margin-top:4px}
-.nav-actions{display:flex;gap:8px}.icon{width:43px;height:43px;border:1px solid var(--border);
- border-radius:13px;background:var(--card);color:var(--text)}
+
+header{
+ position:sticky;
+ top:0;
+ z-index:40;
+ backdrop-filter:blur(18px);
+ background:rgba(8,11,18,.82);
+ border-bottom:1px solid var(--border);
+}
+
+[data-theme="light"] header{
+ background:rgba(244,246,250,.84);
+}
+
+.nav{
+ min-height:68px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+}
+
+.brand{
+ display:flex;
+ flex-direction:column;
+ line-height:1.05;
+}
+
+.brand strong{
+ font-size:20px;
+ font-weight:800;
+}
+
+.brand span{
+ color:var(--muted);
+ font-size:9px;
+ margin-top:4px;
+}
+
+.nav-actions{
+ display:flex;
+ gap:8px;
+}
+
+.icon{
+ width:43px;
+ height:43px;
+ border:1px solid var(--border);
+ border-radius:13px;
+ background:var(--card);
+ color:var(--text);
+}
 
 /* MAIN */
-.page{padding:18px 0 60px}
+
+.page{
+ padding:18px 0 60px;
+}
+
 .score-card{
- background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--border);
- border-radius:17px;padding:11px 14px;box-shadow:var(--shadow);
- position:sticky;top:74px;z-index:25
+ background:linear-gradient(145deg,var(--card),var(--card2));
+ border:1px solid var(--border);
+ border-radius:17px;
+ padding:11px 14px;
+ box-shadow:var(--shadow);
+ position:sticky;
+ top:74px;
+ z-index:25;
 }
-.score-card .eyebrow{font-size:10px}.score-card .score{font-size:clamp(34px,7vw,50px);margin:4px 0 8px}
-.eyebrow{color:var(--muted);font-size:12px}.score{font-size:60px;line-height:1;font-weight:800;letter-spacing:-3px;
- color:var(--positive);text-shadow:0 0 25px rgba(69,230,162,.25);margin:10px 0 14px}
-.score.positive{color:var(--positive);text-shadow:0 0 25px rgba(69,230,162,.25)}
-.score.negative{color:var(--negative);text-shadow:0 0 25px rgba(255,100,124,.22)}
-.progress{height:5px;background:var(--card3);border-radius:99px;overflow:hidden}
-.progress-bar{height:100%;width:0;background:var(--positive);border-radius:99px;transition:.45s}
-.score-meta{display:flex;justify-content:space-between;margin-top:7px;color:var(--muted);font-size:10px}
+
+.score-card .eyebrow{
+ font-size:10px;
+}
+
+.score-card .score{
+ font-size:clamp(34px,7vw,50px);
+ margin:4px 0 8px;
+}
+
+.eyebrow{
+ color:var(--muted);
+ font-size:12px;
+}
+
+.score{
+ font-size:60px;
+ line-height:1;
+ font-weight:800;
+ letter-spacing:-3px;
+ color:var(--positive);
+ text-shadow:0 0 25px rgba(69,230,162,.25);
+ margin:10px 0 14px;
+}
+
+.score.positive{
+ color:var(--positive);
+ text-shadow:0 0 25px rgba(69,230,162,.25);
+}
+
+.score.negative{
+ color:var(--negative);
+ text-shadow:0 0 25px rgba(255,100,124,.22);
+}
+
+.progress{
+ height:5px;
+ background:var(--card3);
+ border-radius:99px;
+ overflow:hidden;
+}
+
+.progress-bar{
+ height:100%;
+ width:0;
+ background:var(--positive);
+ border-radius:99px;
+ transition:.45s;
+}
+
+.score-meta{
+ display:flex;
+ justify-content:space-between;
+ margin-top:7px;
+ color:var(--muted);
+ font-size:10px;
+}
+
 .daybar{
- display:flex;align-items:center;gap:7px;margin:13px 0 15px;background:var(--card);
- border:1px solid var(--border);border-radius:15px;padding:7px
+ display:flex;
+ align-items:center;
+ gap:7px;
+ margin:13px 0 15px;
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:15px;
+ padding:7px;
 }
-.daybar button{height:39px;min-width:39px;border:1px solid var(--border);border-radius:11px;background:var(--card2);color:var(--text)}
-.daybar .date-input{height:39px;flex:1;min-width:0;border:1px solid var(--border);border-radius:11px;background:var(--card2);color:var(--text);padding:0 9px}
-.day-label{font-size:12px;font-weight:700;min-width:105px;text-align:center}
-.streak-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:15px;
- display:flex;justify-content:space-between;gap:20px;margin-bottom:18px}
-.streak-number{font-size:22px;font-weight:800;color:var(--accent);margin-top:3px}
-.section-title{font-size:18px;font-weight:800;margin:20px 0 11px}
-.item{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:17px;margin-bottom:12px}
-.item-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px}
-.item-name{font-weight:750;display:flex;align-items:center;gap:9px}.item-icon{font-size:21px}
-.item-desc{color:var(--muted);font-size:10px;margin-top:3px}.item-score{font-weight:800;white-space:nowrap}
-.item-score.positive{color:var(--positive)}.item-score.negative{color:var(--negative)}
-.options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.option{min-height:49px;border:1px solid var(--border);border-radius:13px;background:var(--card2);color:var(--text);
- padding:8px;transition:transform .12s,border-color .12s,background .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.option:hover{border-color:rgba(146,117,255,.45);background:var(--card3)}
-.option:active{transform:scale(.97)}.option.selected{border-color:var(--accent);background:rgba(146,117,255,.14)}
-.input-row{display:flex;gap:8px}.input-row .input{flex:1}.small-primary{min-width:76px;height:50px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:700}
-.exercise-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.exercise-field label{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}
-.exercise-result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.mini-stat{background:var(--card2);border-radius:12px;padding:9px;text-align:center}.mini-stat small{display:block;color:var(--muted);font-size:9px}.mini-stat strong{display:block;margin-top:3px;font-size:13px}
-.mountain-status{margin-top:10px;color:var(--muted);font-size:10px}
-.menu{position:fixed;z-index:50;top:65px;left:12px;width:210px;padding:8px;background:var(--card);
- border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
-.menu button{width:100%;border:0;background:transparent;color:var(--text);text-align:right;border-radius:11px;padding:12px}
-.menu button:hover{background:var(--card2)}
-.float-score{position:fixed;z-index:100;pointer-events:none;font-size:20px;font-weight:800;text-shadow:0 0 15px currentColor;animation:float .85s ease-out forwards}
-@keyframes float{from{opacity:1;transform:translate(-50%,0) scale(1)}to{opacity:0;transform:translate(-50%,-80px) scale(1.15)}}
-.toast{position:fixed;z-index:100;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;
- background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 16px;box-shadow:var(--shadow);
- font-size:12px;transition:.2s;pointer-events:none;max-width:min(92vw,520px);text-align:center}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.loading-note{color:var(--muted);font-size:11px;padding:10px 0}
+
+.daybar button{
+ height:39px;
+ min-width:39px;
+ border:1px solid var(--border);
+ border-radius:11px;
+ background:var(--card2);
+ color:var(--text);
+}
+
+.daybar .date-input{
+ height:39px;
+ flex:1;
+ min-width:0;
+ border:1px solid var(--border);
+ border-radius:11px;
+ background:var(--card2);
+ color:var(--text);
+ padding:0 9px;
+}
+
+.day-label{
+ font-size:12px;
+ font-weight:700;
+ min-width:145px;
+ text-align:center;
+}
+
+.streak-card{
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:20px;
+ padding:15px;
+ display:flex;
+ justify-content:space-between;
+ gap:20px;
+ margin-bottom:18px;
+}
+
+.streak-number{
+ font-size:22px;
+ font-weight:800;
+ color:var(--accent);
+ margin-top:3px;
+}
+
+.section-title{
+ font-size:18px;
+ font-weight:800;
+ margin:20px 0 11px;
+}
+
+.item{
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:20px;
+ padding:17px;
+ margin-bottom:12px;
+}
+
+.item-top{
+ display:flex;
+ justify-content:space-between;
+ gap:10px;
+ margin-bottom:14px;
+}
+
+.item-name{
+ font-weight:750;
+ display:flex;
+ align-items:center;
+ gap:9px;
+}
+
+.item-icon{
+ font-size:21px;
+}
+
+.item-desc{
+ color:var(--muted);
+ font-size:10px;
+ margin-top:3px;
+}
+
+.item-score{
+ font-weight:800;
+ white-space:nowrap;
+}
+
+.item-score.positive{
+ color:var(--positive);
+}
+
+.item-score.negative{
+ color:var(--negative);
+}
+
+.options{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;
+}
+
+.option{
+ min-height:49px;
+ border:1px solid var(--border);
+ border-radius:13px;
+ background:var(--card2);
+ color:var(--text);
+ padding:8px;
+ transition:transform .12s,border-color .12s,background .12s;
+ -webkit-tap-highlight-color:transparent;
+ touch-action:manipulation;
+}
+
+.option:hover{
+ border-color:rgba(146,117,255,.45);
+ background:var(--card3);
+}
+
+.option:active{
+ transform:scale(.97);
+}
+
+.option.selected{
+ border-color:var(--accent);
+ background:rgba(146,117,255,.14);
+}
+
+.input-row{
+ display:flex;
+ gap:8px;
+}
+
+.input-row .input{
+ flex:1;
+}
+
+.small-primary{
+ min-width:76px;
+ height:50px;
+ border:0;
+ border-radius:14px;
+ background:var(--accent);
+ color:#fff;
+ font-weight:700;
+}
+
+.exercise-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:8px;
+}
+
+.exercise-field label{
+ display:block;
+ color:var(--muted);
+ font-size:10px;
+ margin-bottom:5px;
+}
+
+.exercise-result{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:8px;
+ margin-top:10px;
+}
+
+.mini-stat{
+ background:var(--card2);
+ border-radius:12px;
+ padding:9px;
+ text-align:center;
+}
+
+.mini-stat small{
+ display:block;
+ color:var(--muted);
+ font-size:9px;
+}
+
+.mini-stat strong{
+ display:block;
+ margin-top:3px;
+ font-size:13px;
+}
+
+.mountain-status{
+ margin-top:10px;
+ color:var(--muted);
+ font-size:10px;
+}
+
+.menu{
+ position:fixed;
+ z-index:50;
+ top:65px;
+ left:12px;
+ width:210px;
+ padding:8px;
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:18px;
+ box-shadow:var(--shadow);
+}
+
+.menu button{
+ width:100%;
+ border:0;
+ background:transparent;
+ color:var(--text);
+ text-align:right;
+ border-radius:11px;
+ padding:12px;
+}
+
+.menu button:hover{
+ background:var(--card2);
+}
+
+.float-score{
+ position:fixed;
+ z-index:100;
+ pointer-events:none;
+ font-size:20px;
+ font-weight:800;
+ text-shadow:0 0 15px currentColor;
+ animation:float .85s ease-out forwards;
+}
+
+@keyframes float{
+ from{
+  opacity:1;
+  transform:translate(-50%,0) scale(1);
+ }
+ to{
+  opacity:0;
+  transform:translate(-50%,-80px) scale(1.15);
+ }
+}
+
+.toast{
+ position:fixed;
+ z-index:100;
+ bottom:22px;
+ left:50%;
+ transform:translate(-50%,20px);
+ opacity:0;
+ background:var(--card);
+ border:1px solid var(--border);
+ border-radius:14px;
+ padding:11px 16px;
+ box-shadow:var(--shadow);
+ font-size:12px;
+ transition:.2s;
+ pointer-events:none;
+ max-width:min(92vw,520px);
+ text-align:center;
+}
+
+.toast.show{
+ opacity:1;
+ transform:translate(-50%,0);
+}
+
+.loading-note{
+ color:var(--muted);
+ font-size:11px;
+ padding:10px 0;
+}
+
 @media(max-width:700px){
- .score-card{top:6px}.daybar{position:sticky;top:67px;z-index:20}
- .options{grid-template-columns:1fr}.exercise-grid{grid-template-columns:1fr 1fr}
- .exercise-grid .full{grid-column:1/-1}.streak-card{margin-top:8px}
+
+ .score-card{
+  top:6px;
+ }
+
+ .daybar{
+  position:sticky;
+  top:67px;
+  z-index:20;
+ }
+
+ .options{
+  grid-template-columns:1fr;
+ }
+
+ .exercise-grid{
+  grid-template-columns:1fr 1fr;
+ }
+
+ .exercise-grid .full{
+  grid-column:1/-1;
+ }
+
+ .streak-card{
+  margin-top:8px;
+ }
+
 }
-@media(max-width:430px){.exercise-grid{grid-template-columns:1fr}.exercise-result{grid-template-columns:1fr 1fr}.day-label{min-width:90px}}
+
+@media(max-width:430px){
+
+ .exercise-grid{
+  grid-template-columns:1fr;
+ }
+
+ .exercise-result{
+  grid-template-columns:1fr 1fr;
+ }
+
+ .day-label{
+  min-width:110px;
+  font-size:10px;
+ }
+
+}
 </style>
 </head>
+
 <body>
 
 <div id="authPage" class="auth-page">
  <div class="auth-card">
+
   <div class="logo">HQL</div>
   <div class="subtitle brand-subtitle">زندگی با کیفیت</div>
   <div class="subtitle">هر روز، یک قدم بهتر.</div>
+
   <div class="tabs">
    <button id="loginTab" class="tab active">ورود</button>
    <button id="signupTab" class="tab">ثبت‌نام</button>
   </div>
+
   <form id="authForm" class="form">
+
    <div id="nameBox" class="hidden">
     <div class="label">نام نمایشی</div>
     <input id="name" class="input" maxlength="60" placeholder="مثلاً علی">
    </div>
+
    <div class="label">ایمیل</div>
-   <input id="email" class="input" type="email" autocomplete="email" required placeholder="you@example.com">
+   <input
+    id="email"
+    class="input"
+    type="email"
+    autocomplete="email"
+    required
+    placeholder="you@example.com"
+   >
+
    <div class="label">رمز عبور</div>
-   <input id="password" class="input" type="password" minlength="6" required placeholder="حداقل ۶ کاراکتر">
+   <input
+    id="password"
+    class="input"
+    type="password"
+    minlength="6"
+    required
+    placeholder="حداقل ۶ کاراکتر"
+   >
+
    <button id="authButton" class="primary">ورود</button>
+
    <div id="authError" class="error"></div>
+
   </form>
  </div>
 </div>
 
 <div id="app" class="hidden">
-<header><div class="shell nav">
- <div class="brand"><strong>HQL</strong><span>زندگی با کیفیت</span></div>
- <div class="nav-actions"><button id="themeButton" class="icon">☀️</button><button id="userButton" class="icon">☻</button></div>
-</div></header>
+
+<header>
+ <div class="shell nav">
+
+  <div class="brand">
+   <strong>HQL</strong>
+   <span>زندگی با کیفیت</span>
+  </div>
+
+  <div class="nav-actions">
+   <button id="themeButton" class="icon">☀️</button>
+   <button id="userButton" class="icon">☻</button>
+  </div>
+
+ </div>
+</header>
 
 <div id="menu" class="menu hidden">
  <button id="reportButton">📊 گزارش ماهانه</button>
@@ -157,362 +704,2113 @@ header{position:sticky;top:0;z-index:40;backdrop-filter:blur(18px);background:rg
 </div>
 
 <main class="page shell">
+
  <section class="score-card">
-  <div class="eyebrow">امتیاز روز انتخاب‌شده</div>
-  <div id="score" class="score">۰</div>
-  <div class="progress"><div id="progress" class="progress-bar"></div></div>
-  <div class="score-meta"><span id="completed">۰ آیتم از ۱۰</span><span id="mountainDailyBonus"></span></div>
+
+  <div class="eyebrow">
+   امتیاز روز انتخاب‌شده
+  </div>
+
+  <div id="score" class="score">
+   ۰
+  </div>
+
+  <div class="progress">
+   <div id="progress" class="progress-bar"></div>
+  </div>
+
+  <div class="score-meta">
+   <span id="completed">۰ آیتم از ۱۰</span>
+   <span id="mountainDailyBonus"></span>
+  </div>
+
  </section>
 
  <section class="daybar">
+
   <button id="prevDay" title="روز قبل">‹</button>
-  <div id="dayLabel" class="day-label">امروز</div>
-  <input id="dateInput" class="date-input" type="date">
+
+  <div id="dayLabel" class="day-label">
+   امروز
+  </div>
+
+  <input
+   id="dateInput"
+   class="date-input"
+   type="date"
+  >
+
   <button id="nextDay" title="روز بعد">›</button>
+
  </section>
 
  <section class="streak-card">
-  <div><div class="eyebrow">تداوم فعلی</div><div id="currentStreak" class="streak-number">🔥 ۰ روز</div></div>
-  <div><div class="eyebrow">بهترین تداوم</div><div id="bestStreak" class="streak-number">۰ روز</div></div>
+
+  <div>
+   <div class="eyebrow">تداوم فعلی</div>
+   <div id="currentStreak" class="streak-number">🔥 ۰ روز</div>
+  </div>
+
+  <div>
+   <div class="eyebrow">بهترین تداوم</div>
+   <div id="bestStreak" class="streak-number">۰ روز</div>
+  </div>
+
  </section>
 
- <div class="section-title">لاگ روز</div>
+ <div class="section-title">
+  لاگ روز
+ </div>
+
  <section id="items"></section>
+
 </main>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-const SUPABASE_URL="https://ehgjzvqdnglkwipzfvil.supabase.co";
-const SUPABASE_KEY="sb_publishable_h0NBFewBDnGulVkxBISzkQ_zUlgWNWu";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
- auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-});
 
-let mode="login", selectedDate=null, todayDate=null, monthStart=null, currentUser=null;
-let todayLogs=new Map(), exerciseLog=null, mountainTrips=[], latePenalty=0, theme="dark", realtimeChannel=null;
+const SUPABASE_URL =
+ "https://ehgjzvqdnglkwipzfvil.supabase.co";
+
+const SUPABASE_KEY =
+ "sb_publishable_h0NBFewBDnGulVkxBISzkQ_zUlgWNWu";
+
+const db =
+ window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+   auth:{
+    persistSession:true,
+    autoRefreshToken:true,
+    detectSessionInUrl:true
+   }
+  }
+);
+
+let mode="login";
+let selectedDate=null;
+let todayDate=null;
+let monthStart=null;
+let currentUser=null;
+
+let todayLogs=new Map();
+let exerciseLog=null;
+let mountainTrips=[];
+let latePenalty=0;
+let theme="dark";
+let realtimeChannel=null;
+
+
+/* =========================================================
+   DAILY ITEMS
+   ========================================================= */
 
 const ITEMS=[
-{
+
+ {
   type:"water",
   icon:"💧",
   title:"مصرف آب",
-  desc:"فقط آب",
+  desc:"فقط آب • امتیاز از ۱ لیوان شروع می‌شود",
+
   options:[
-    ["۱ تا ۲ لیوان",2],
-    ["۲ تا ۴ لیوان",4],
-    ["۴ تا ۶ لیوان",6],
-    ["۶ تا ۸ لیوان",8]
+   ["۱ تا ۲ لیوان",2],
+   ["۲ تا ۴ لیوان",4],
+   ["۴ تا ۶ لیوان",6],
+   ["۶ تا ۸ لیوان",8]
   ]
-}
- {type:"sleep",icon:"🌙",title:"زمان خواب دیشب",desc:"چه ساعتی خوابیدی؟",time:true},
- {type:"instagram",icon:"📱",title:"اینستاگرام زیر ۱۰ دقیقه",desc:"امروز",options:[["بله",1],["خیر",0]]},
- {type:"sun",icon:"☀️",title:"۱۰ دقیقه آفتاب",desc:"امروز",options:[["بله",1],["خیر",0]]},
- {type:"solitude",icon:"🧘",title:"۱۰ دقیقه خلوت با خود",desc:"امروز",options:[["بله",1],["خیر",0]]},
- {type:"reading",icon:"📖",title:"مطالعه کتاب",desc:"تعداد صفحه",input:true,placeholder:"مثلاً ۱۲"},
- {type:"sugar",icon:"🍬",title:"مصرف قند مصنوعی",desc:"امروز",options:[["مصرف نشد",1],["مصرف شد",0]]},
- {type:"dinner",icon:"🍽️",title:"زمان شام",desc:"چه ساعتی شام خوردی؟",time:true}
+ },
+
+ {
+  type:"sleep",
+  icon:"🌙",
+  title:"زمان خواب دیشب",
+  desc:"چه ساعتی خوابیدی؟",
+  time:true
+ },
+
+ {
+  type:"instagram",
+  icon:"📱",
+  title:"اینستاگرام زیر ۱۰ دقیقه",
+  desc:"امروز",
+  options:[
+   ["بله",1],
+   ["خیر",0]
+  ]
+ },
+
+ {
+  type:"sun",
+  icon:"☀️",
+  title:"۱۰ دقیقه آفتاب",
+  desc:"امروز",
+  options:[
+   ["بله",1],
+   ["خیر",0]
+  ]
+ },
+
+ {
+  type:"solitude",
+  icon:"🧘",
+  title:"۱۰ دقیقه خلوت با خود",
+  desc:"امروز",
+  options:[
+   ["بله",1],
+   ["خیر",0]
+  ]
+ },
+
+ {
+  type:"reading",
+  icon:"📖",
+  title:"مطالعه کتاب",
+  desc:"تعداد صفحه",
+  input:true,
+  placeholder:"مثلاً ۱۲"
+ },
+
+ {
+  type:"sugar",
+  icon:"🍬",
+  title:"مصرف قند مصنوعی",
+  desc:"امروز",
+  options:[
+   ["مصرف نشد",1],
+   ["مصرف شد",0]
+  ]
+ },
+
+ {
+  type:"dinner",
+  icon:"🍽️",
+  title:"زمان شام",
+  desc:"چه ساعتی شام خوردی؟",
+  time:true
+ }
+
 ];
 
-function faNumber(v){return String(v).replace(/\d/g,x=>"۰۱۲۳۴۵۶۷۸۹"[x])}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function faNumber(v){
+ return String(v).replace(
+  /\d/g,
+  x=>"۰۱۲۳۴۵۶۷۸۹"[x]
+ );
+}
+
 function scoreText(v){
- const n=Number(v||0); let s=Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+
+ const n=Number(v||0);
+
+ let s=
+  Number.isInteger(n)
+   ? String(n)
+   : n.toFixed(2)
+     .replace(/0+$/,"")
+     .replace(/\.$/,"");
+
  return faNumber(s);
 }
-function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),2600)}
-function floatingScore(score,x,y){
- if(!score)return; const e=document.createElement("div");e.className="float-score";e.textContent=(score>0?"+":"")+scoreText(score);
- e.style.left=x+"px";e.style.top=y+"px";e.style.color=score>0?"var(--positive)":"var(--negative)";
- document.body.appendChild(e);setTimeout(()=>e.remove(),900)
-}
-function parseDate(s){const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d))}
-function isoDate(d){return d.toISOString().slice(0,10)}
-function addDays(s,n){const d=parseDate(s);d.setUTCDate(d.getUTCDate()+n);return isoDate(d)}
-function daysInGregorianMonth(s){const d=parseDate(s);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate()}
-function jalaliOf(s){const [y,m,d]=s.split("-").map(Number);return jalaali.toJalaali(y,m,d)}
-function gregorianFromJalali(y,m,d){const g=jalaali.toGregorian(y,m,d);return `${g.gy}-${String(g.gm).padStart(2,"0")}-${String(g.gd).padStart(2,"0")}`}
-function currentIranDate(){
- const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tehran",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
- const get=t=>p.find(x=>x.type===t).value; return `${get("year")}-${get("month")}-${get("day")}`;
-}
-function currentJalali(){
- const [y,m,d]=currentIranDate().split("-").map(Number); return jalaali.toJalaali(y,m,d)
-}
-function monthRangeFor(s){
- const j=jalaliOf(s);
- return {start:gregorianFromJalali(j.jy,j.jm,1),end:gregorianFromJalali(j.jy,j.jm,jalaali.jalaaliMonthLength(j.jy,j.jm)),jy:j.jy,jm:j.jm}
-}
-function jalaliLabel(s){
- const j=jalaliOf(s); const names=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
- return `${faNumber(j.jd)} ${names[j.jm-1]} ${faNumber(j.jy)}`
-}
-function sameDate(a,b){return a===b}
 
-function applyTheme(){document.documentElement.dataset.theme=theme;document.getElementById("themeButton").textContent=theme==="dark"?"☀️":"🌙"}
+function showToast(t){
+
+ const e=document.getElementById("toast");
+
+ e.textContent=t;
+ e.classList.add("show");
+
+ clearTimeout(window.__toast);
+
+ window.__toast=
+  setTimeout(
+   ()=>e.classList.remove("show"),
+   2600
+  );
+}
+
+function floatingScore(score,x,y){
+
+ if(!score)return;
+
+ const e=document.createElement("div");
+
+ e.className="float-score";
+
+ e.textContent=
+  (score>0?"+":"")+
+  scoreText(score);
+
+ e.style.left=x+"px";
+ e.style.top=y+"px";
+
+ e.style.color=
+  score>0
+   ?"var(--positive)"
+   :"var(--negative)";
+
+ document.body.appendChild(e);
+
+ setTimeout(
+  ()=>e.remove(),
+  900
+ );
+}
+
+function parseDate(s){
+
+ const [y,m,d]=
+  s.split("-").map(Number);
+
+ return new Date(
+  Date.UTC(y,m-1,d)
+ );
+}
+
+function isoDate(d){
+ return d.toISOString().slice(0,10);
+}
+
+function addDays(s,n){
+
+ const d=parseDate(s);
+
+ d.setUTCDate(
+  d.getUTCDate()+n
+ );
+
+ return isoDate(d);
+}
+
+function jalaliOf(s){
+
+ const [y,m,d]=
+  s.split("-").map(Number);
+
+ return jalaali.toJalaali(
+  y,m,d
+ );
+}
+
+function gregorianFromJalali(y,m,d){
+
+ const g=
+  jalaali.toGregorian(y,m,d);
+
+ return `${g.gy}-${String(g.gm).padStart(2,"0")}-${String(g.gd).padStart(2,"0")}`;
+}
+
+function currentIranDate(){
+
+ const p=
+  new Intl.DateTimeFormat(
+   "en-CA",
+   {
+    timeZone:"Asia/Tehran",
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit"
+   }
+  ).formatToParts(new Date());
+
+ const get=
+  t=>p.find(x=>x.type===t).value;
+
+ return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function currentJalali(){
+
+ const [y,m,d]=
+  currentIranDate()
+   .split("-")
+   .map(Number);
+
+ return jalaali.toJalaali(y,m,d);
+}
+
+function monthRangeFor(s){
+
+ const j=jalaliOf(s);
+
+ return {
+  start:gregorianFromJalali(
+   j.jy,
+   j.jm,
+   1
+  ),
+
+  end:gregorianFromJalali(
+   j.jy,
+   j.jm,
+   jalaali.jalaaliMonthLength(
+    j.jy,
+    j.jm
+   )
+  ),
+
+  jy:j.jy,
+  jm:j.jm
+ };
+}
+
+
+/* =========================================================
+   NEW: SHAMSI DATE + WEEKDAY
+   ========================================================= */
+
+function getPersianWeekday(s){
+
+ const weekdays=[
+  "یکشنبه",
+  "دوشنبه",
+  "سه‌شنبه",
+  "چهارشنبه",
+  "پنجشنبه",
+  "جمعه",
+  "شنبه"
+ ];
+
+ const d=parseDate(s);
+
+ return weekdays[d.getUTCDay()];
+}
+
+function jalaliLabel(s){
+
+ const j=jalaliOf(s);
+
+ const names=[
+  "فروردین",
+  "اردیبهشت",
+  "خرداد",
+  "تیر",
+  "مرداد",
+  "شهریور",
+  "مهر",
+  "آبان",
+  "آذر",
+  "دی",
+  "بهمن",
+  "اسفند"
+ ];
+
+ return `${getPersianWeekday(s)}، ${faNumber(j.jd)} ${names[j.jm-1]} ${faNumber(j.jy)}`;
+}
+
+function sameDate(a,b){
+ return a===b;
+}
+
+
+/* =========================================================
+   THEME
+   ========================================================= */
+
+function applyTheme(){
+
+ document.documentElement.dataset.theme=
+  theme;
+
+ document.getElementById("themeButton").textContent=
+  theme==="dark"
+   ?"☀️"
+   :"🌙";
+}
 
 async function loadProfile(){
- const r=await db.from("profiles").select("display_name,theme_preference").eq("id",currentUser.id).maybeSingle();
- if(!r.error&&r.data)theme=r.data.theme_preference||"dark"; applyTheme();
+
+ const r=
+  await db
+   .from("profiles")
+   .select(
+    "display_name,theme_preference"
+   )
+   .eq("id",currentUser.id)
+   .maybeSingle();
+
+ if(!r.error&&r.data){
+  theme=
+   r.data.theme_preference ||
+   "dark";
+ }
+
+ applyTheme();
 }
-async function saveTheme(){await db.from("profiles").update({theme_preference:theme}).eq("id",currentUser.id)}
+
+async function saveTheme(){
+
+ await db
+  .from("profiles")
+  .update({
+   theme_preference:theme
+  })
+  .eq(
+   "id",
+   currentUser.id
+  );
+}
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
 
 function setMode(m){
- mode=m;
- document.getElementById("loginTab").classList.toggle("active",m==="login");
- document.getElementById("signupTab").classList.toggle("active",m==="signup");
- document.getElementById("nameBox").classList.toggle("hidden",m!=="signup");
- document.getElementById("authButton").textContent=m==="signup"?"ساخت حساب":"ورود";
- document.getElementById("authError").textContent="";
-}
-document.getElementById("loginTab").onclick=()=>setMode("login");
-document.getElementById("signupTab").onclick=()=>setMode("signup");
 
-document.getElementById("authForm").onsubmit=async e=>{
- e.preventDefault(); const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
- const name=document.getElementById("name").value.trim(),err=document.getElementById("authError"),btn=document.getElementById("authButton");
- btn.disabled=true;err.textContent="";
- try{
-  let r;
-  if(mode==="signup"){
-   if(!name)throw new Error("نام نمایشی را وارد کن.");
-   r=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
-  }else r=await db.auth.signInWithPassword({email,password});
-  if(r.error)throw r.error;
-  if(r.data.session)await openApp(r.data.session.user); else showToast("حساب ساخته شد.");
- }catch(x){err.textContent=translateError(x.message)}finally{btn.disabled=false;btn.textContent=mode==="signup"?"ساخت حساب":"ورود"}
-};
-function translateError(m){
- return {"Invalid login credentials":"ایمیل یا رمز عبور اشتباه است.","User already registered":"این ایمیل قبلاً ثبت‌نام شده است.","Password should be at least 6 characters.":"رمز عبور باید حداقل ۶ کاراکتر باشد."}[m]||m||"خطایی رخ داد."
+ mode=m;
+
+ document
+  .getElementById("loginTab")
+  .classList
+  .toggle(
+   "active",
+   m==="login"
+  );
+
+ document
+  .getElementById("signupTab")
+  .classList
+  .toggle(
+   "active",
+   m==="signup"
+  );
+
+ document
+  .getElementById("nameBox")
+  .classList
+  .toggle(
+   "hidden",
+   m!=="signup"
+  );
+
+ document
+  .getElementById("authButton")
+  .textContent=
+   m==="signup"
+    ?"ساخت حساب"
+    :"ورود";
+
+ document
+  .getElementById("authError")
+  .textContent="";
 }
+
+document.getElementById("loginTab").onclick=
+ ()=>setMode("login");
+
+document.getElementById("signupTab").onclick=
+ ()=>setMode("signup");
+
+document.getElementById("authForm").onsubmit=
+ async e=>{
+
+  e.preventDefault();
+
+  const email=
+   document
+    .getElementById("email")
+    .value
+    .trim();
+
+  const password=
+   document
+    .getElementById("password")
+    .value;
+
+  const name=
+   document
+    .getElementById("name")
+    .value
+    .trim();
+
+  const err=
+   document.getElementById("authError");
+
+  const btn=
+   document.getElementById("authButton");
+
+  btn.disabled=true;
+  err.textContent="";
+
+  try{
+
+   let r;
+
+   if(mode==="signup"){
+
+    if(!name)
+     throw new Error(
+      "نام نمایشی را وارد کن."
+     );
+
+    r=
+     await db.auth.signUp({
+      email,
+      password,
+      options:{
+       data:{
+        display_name:name
+       }
+      }
+     });
+
+   }else{
+
+    r=
+     await db.auth.signInWithPassword({
+      email,
+      password
+     });
+
+   }
+
+   if(r.error)
+    throw r.error;
+
+   if(r.data.session){
+
+    await openApp(
+     r.data.session.user
+    );
+
+   }else{
+
+    showToast(
+     "حساب ساخته شد."
+    );
+
+   }
+
+  }catch(x){
+
+   err.textContent=
+    translateError(
+     x.message
+    );
+
+  }finally{
+
+   btn.disabled=false;
+
+   btn.textContent=
+    mode==="signup"
+     ?"ساخت حساب"
+     :"ورود";
+  }
+};
+
+function translateError(m){
+
+ return {
+  "Invalid login credentials":
+   "ایمیل یا رمز عبور اشتباه است.",
+
+  "User already registered":
+   "این ایمیل قبلاً ثبت‌نام شده است.",
+
+  "Password should be at least 6 characters.":
+   "رمز عبور باید حداقل ۶ کاراکتر باشد."
+
+ }[m]||m||"خطایی رخ داد.";
+}
+
+
+/* =========================================================
+   SCORE
+   ========================================================= */
 
 function calculateScore(type,value){
+
  value=Number(value);
+
  switch(type){
-  case"water":
-  if(value<1)return 0;
-  if(value<2)return .5;
-  if(value<=4)return .6;
-  if(value<=6)return .7;
-  return 1.5;
-  case"sleep":if(value<1380)return 2;if(value<1440)return .5;return -.5;
-  case"instagram":return value===1?1.5:0;
-  case"sun":return value===1?1.5:0;
-  case"solitude":return value===1?1.5:0;
-  case"reading":if(value<=0)return 0;if(value===1)return .5;return 1;
-  case"sugar":return value===1?2:-.5;
-  case"dinner":if(value<1140)return 2;if(value<=1260)return .75;return 0;
-  default:return 0;
+
+  case "water":
+
+   if(value<1)
+    return 0;
+
+   if(value<2)
+    return .5;
+
+   if(value<=4)
+    return .6;
+
+   if(value<=6)
+    return .7;
+
+   return 1.5;
+
+
+  case "sleep":
+
+   if(value<1380)
+    return 2;
+
+   if(value<1440)
+    return .5;
+
+   return -.5;
+
+
+  case "instagram":
+
+   return value===1
+    ?1.5
+    :0;
+
+
+  case "sun":
+
+   return value===1
+    ?1.5
+    :0;
+
+
+  case "solitude":
+
+   return value===1
+    ?1.5
+    :0;
+
+
+  case "reading":
+
+   if(value<=0)
+    return 0;
+
+   if(value===1)
+    return .5;
+
+   return 1;
+
+
+  case "sugar":
+
+   return value===1
+    ?2
+    :-.5;
+
+
+  case "dinner":
+
+   if(value<1140)
+    return 2;
+
+   if(value<=1260)
+    return .75;
+
+   return 0;
+
+
+  default:
+   return 0;
  }
 }
 
+
+/* =========================================================
+   RENDER DAILY ITEMS
+   ========================================================= */
+
 function renderItems(){
- const c=document.getElementById("items");c.innerHTML="";
+
+ const c=
+  document.getElementById("items");
+
+ c.innerHTML="";
+
  ITEMS.forEach(item=>{
-  const card=document.createElement("article");card.className="item";card.dataset.type=item.type;
-  let h=`<div class="item-top"><div><div class="item-name"><span class="item-icon">${item.icon}</span>${item.title}</div><div class="item-desc">${item.desc}</div></div><div class="item-score"></div></div>`;
-  if(item.options){h+=`<div class="options">`;item.options.forEach(([label,value])=>h+=`<button class="option" data-value="${value}" type="button">${label}</button>`);h+=`</div>`}
-  if(item.input)h+=`<div class="input-row"><input class="input value-input" type="number" min="0" step="1" placeholder="${item.placeholder}"><button class="small-primary save-value">ثبت</button></div>`;
-  if(item.time)h+=`<div class="input-row"><input class="input time-input" type="time"><button class="small-primary save-time">ثبت</button></div>`;
+
+  const card=
+   document.createElement("article");
+
+  card.className="item";
+  card.dataset.type=item.type;
+
+  let h=`
+   <div class="item-top">
+
+    <div>
+
+     <div class="item-name">
+      <span class="item-icon">
+       ${item.icon}
+      </span>
+      ${item.title}
+     </div>
+
+     <div class="item-desc">
+      ${item.desc}
+     </div>
+
+    </div>
+
+    <div class="item-score"></div>
+
+   </div>
+  `;
+
+  if(item.options){
+
+   h+=`<div class="options">`;
+
+   item.options.forEach(
+    ([label,value])=>{
+
+     h+=`
+      <button
+       class="option"
+       data-value="${value}"
+       type="button"
+      >
+       ${label}
+      </button>
+     `;
+    }
+   );
+
+   h+=`</div>`;
+  }
+
+  if(item.input){
+
+   h+=`
+    <div class="input-row">
+
+     <input
+      class="input value-input"
+      type="number"
+      min="0"
+      step="1"
+      placeholder="${item.placeholder}"
+     >
+
+     <button
+      class="small-primary save-value"
+     >
+      ثبت
+     </button>
+
+    </div>
+   `;
+  }
+
+  if(item.time){
+
+   h+=`
+    <div class="input-row">
+
+     <input
+      class="input time-input"
+      type="time"
+     >
+
+     <button
+      class="small-primary save-time"
+     >
+      ثبت
+     </button>
+
+    </div>
+   `;
+  }
+
   card.innerHTML=h;
-  card.querySelectorAll(".option").forEach(b=>b.onclick=e=>saveDailyLog(item.type,Number(b.dataset.value),e));
-  if(item.input)card.querySelector(".save-value").onclick=e=>{const v=Number(card.querySelector(".value-input").value);if(!Number.isFinite(v)||v<0)return showToast("یک عدد معتبر وارد کن.");saveDailyLog(item.type,v,e)};
-  if(item.time)card.querySelector(".save-time").onclick=e=>{const v=card.querySelector(".time-input").value;if(!v)return showToast("ساعت را انتخاب کن.");const [h,m]=v.split(":").map(Number);saveDailyLog(item.type,h*60+m,e)};
-  c.appendChild(card)
- })
+
+  card
+   .querySelectorAll(".option")
+   .forEach(
+    b=>
+     b.onclick=
+      e=>
+       saveDailyLog(
+        item.type,
+        Number(b.dataset.value),
+        e
+       )
+   );
+
+  if(item.input){
+
+   card
+    .querySelector(".save-value")
+    .onclick=e=>{
+
+     const v=
+      Number(
+       card
+        .querySelector(".value-input")
+        .value
+      );
+
+     if(
+      !Number.isFinite(v)||
+      v<0
+     ){
+
+      return showToast(
+       "یک عدد معتبر وارد کن."
+      );
+     }
+
+     saveDailyLog(
+      item.type,
+      v,
+      e
+     );
+    };
+  }
+
+  if(item.time){
+
+   card
+    .querySelector(".save-time")
+    .onclick=e=>{
+
+     const v=
+      card
+       .querySelector(".time-input")
+       .value;
+
+     if(!v){
+
+      return showToast(
+       "ساعت را انتخاب کن."
+      );
+     }
+
+     const [h,m]=
+      v.split(":").map(Number);
+
+     saveDailyLog(
+      item.type,
+      h*60+m,
+      e
+     );
+    };
+  }
+
+  c.appendChild(card);
+ });
+
  renderExerciseCard(c);
- renderMountainCard(c)
+ renderMountainCard(c);
 }
 
+
+/* =========================================================
+   EXERCISE
+   ========================================================= */
+
 function renderExerciseCard(c){
- const card=document.createElement("article");card.className="item";card.dataset.type="exercise";
+
+ const card=
+  document.createElement("article");
+
+ card.className="item";
+ card.dataset.type="exercise";
+
  card.innerHTML=`
- <div class="item-top"><div><div class="item-name"><span class="item-icon">🏃</span>ورزش</div><div class="item-desc">کالری از روی وزن، هوازی و مسافت محاسبه می‌شود</div></div><div id="exerciseScore" class="item-score"></div></div>
- <div class="exercise-grid">
-  <div class="exercise-field"><label>وزن (کیلوگرم)</label><input id="exerciseWeight" class="input" type="number" min="1" step=".1" placeholder="وزن"></div>
-  <div class="exercise-field"><label>زمان هوازی (دقیقه)</label><input id="aerobicMinutes" class="input" type="number" min="0" step="1" placeholder="مثلاً ۳۰"></div>
-  <div class="exercise-field full"><label>مسافت دویدن (کیلومتر)</label><input id="runningKm" class="input" type="number" min="0" step=".01" placeholder="مثلاً ۳.۵"></div>
- </div>
- <div class="exercise-result">
-  <div class="mini-stat"><small>کیلومتر معادل هوازی</small><strong id="aerobicKm">۰</strong></div>
-  <div class="mini-stat"><small>کیلومتر جمع</small><strong id="totalKm">۰</strong></div>
-  <div class="mini-stat"><small>کالری</small><strong id="exerciseCalories">۰</strong></div>
- </div>
- <div class="input-row" style="margin-top:10px"><button id="saveExercise" class="small-primary" style="width:100%">ثبت ورزش</button></div>`;
+
+  <div class="item-top">
+
+   <div>
+
+    <div class="item-name">
+     <span class="item-icon">🏃</span>
+     ورزش
+    </div>
+
+    <div class="item-desc">
+     کالری از روی وزن، هوازی و مسافت محاسبه می‌شود
+    </div>
+
+   </div>
+
+   <div
+    id="exerciseScore"
+    class="item-score"
+   ></div>
+
+  </div>
+
+  <div class="exercise-grid">
+
+   <div class="exercise-field">
+
+    <label>
+     وزن (کیلوگرم)
+    </label>
+
+    <input
+     id="exerciseWeight"
+     class="input"
+     type="number"
+     min="1"
+     step=".1"
+     placeholder="وزن"
+    >
+
+   </div>
+
+   <div class="exercise-field">
+
+    <label>
+     زمان هوازی (دقیقه)
+    </label>
+
+    <input
+     id="aerobicMinutes"
+     class="input"
+     type="number"
+     min="0"
+     step="1"
+     placeholder="مثلاً ۳۰"
+    >
+
+   </div>
+
+   <div class="exercise-field full">
+
+    <label>
+     مسافت دویدن (کیلومتر)
+    </label>
+
+    <input
+     id="runningKm"
+     class="input"
+     type="number"
+     min="0"
+     step=".01"
+     placeholder="مثلاً ۳.۵"
+    >
+
+   </div>
+
+  </div>
+
+  <div class="exercise-result">
+
+   <div class="mini-stat">
+    <small>کیلومتر معادل هوازی</small>
+    <strong id="aerobicKm">۰</strong>
+   </div>
+
+   <div class="mini-stat">
+    <small>کیلومتر جمع</small>
+    <strong id="totalKm">۰</strong>
+   </div>
+
+   <div class="mini-stat">
+    <small>کالری</small>
+    <strong id="exerciseCalories">۰</strong>
+   </div>
+
+  </div>
+
+  <div
+   class="input-row"
+   style="margin-top:10px"
+  >
+
+   <button
+    id="saveExercise"
+    class="small-primary"
+    style="width:100%"
+   >
+    ثبت ورزش
+   </button>
+
+  </div>
+ `;
+
  c.appendChild(card);
- ["exerciseWeight","aerobicMinutes","runningKm"].forEach(id=>document.getElementById(id).addEventListener("input",previewExercise));
- document.getElementById("saveExercise").onclick=saveExercise;
+
+ [
+  "exerciseWeight",
+  "aerobicMinutes",
+  "runningKm"
+ ].forEach(
+  id=>
+   document
+    .getElementById(id)
+    .addEventListener(
+     "input",
+     previewExercise
+    )
+ );
+
+ document
+  .getElementById("saveExercise")
+  .onclick=saveExercise;
 }
 
 function renderMountainCard(c){
- const card=document.createElement("article");card.className="item";card.dataset.type="nature";
- card.innerHTML=`<div class="item-top"><div><div class="item-name"><span class="item-icon">⛰️</span>کوه و طبیعت‌گردی</div><div class="item-desc">هر سفر ماهانه امتیازش را روی روزهای ماه پخش می‌کند</div></div><div id="mountainScore" class="item-score"></div></div>
- <button id="saveMountain" class="small-primary" style="width:100%">امروز رفتم</button><div id="mountainStatus" class="mountain-status"></div>`;
- c.appendChild(card);document.getElementById("saveMountain").onclick=saveMountain;
+
+ const card=
+  document.createElement("article");
+
+ card.className="item";
+ card.dataset.type="nature";
+
+ card.innerHTML=`
+
+  <div class="item-top">
+
+   <div>
+
+    <div class="item-name">
+     <span class="item-icon">⛰️</span>
+     کوه و طبیعت‌گردی
+    </div>
+
+    <div class="item-desc">
+     هر سفر ماهانه امتیازش را روی روزهای ماه پخش می‌کند
+    </div>
+
+   </div>
+
+   <div
+    id="mountainScore"
+    class="item-score"
+   ></div>
+
+  </div>
+
+  <button
+   id="saveMountain"
+   class="small-primary"
+   style="width:100%"
+  >
+   امروز رفتم
+  </button>
+
+  <div
+   id="mountainStatus"
+   class="mountain-status"
+  ></div>
+ `;
+
+ c.appendChild(card);
+
+ document
+  .getElementById("saveMountain")
+  .onclick=saveMountain;
 }
 
-function exerciseCalc(weight,aerobic,running){
- const aerobicKm=(weight/60)*.08*aerobic,totalKm=aerobicKm+running,calories=totalKm*weight;
- const score=calories<100?0:calories<300?1:calories<=600?3:5;
- return {aerobicKm,totalKm,calories,score}
+
+/* =========================================================
+   EXERCISE CALCULATION
+   ========================================================= */
+
+function exerciseCalc(
+ weight,
+ aerobic,
+ running
+){
+
+ const aerobicKm=
+  (weight/60)*
+  .08*
+  aerobic;
+
+ const totalKm=
+  aerobicKm+
+  running;
+
+ const calories=
+  totalKm*
+  weight;
+
+ const score=
+  calories<100
+   ?0
+   :calories<300
+    ?1
+    :calories<=600
+     ?3
+     :5;
+
+ return{
+  aerobicKm,
+  totalKm,
+  calories,
+  score
+ };
 }
+
 function previewExercise(){
- const w=Number(document.getElementById("exerciseWeight").value),a=Number(document.getElementById("aerobicMinutes").value)||0,r=Number(document.getElementById("runningKm").value)||0;
- if(!w||w<=0)return;
- const x=exerciseCalc(w,a,r);
- document.getElementById("aerobicKm").textContent=faNumber(x.aerobicKm.toFixed(2));
- document.getElementById("totalKm").textContent=faNumber(x.totalKm.toFixed(2));
- document.getElementById("exerciseCalories").textContent=faNumber(x.calories.toFixed(0));
- document.getElementById("exerciseScore").textContent=x.score?((x.score>0?"+":"")+scoreText(x.score)):"";
- document.getElementById("exerciseScore").className="item-score "+(x.score>0?"positive":x.score<0?"negative":"");
-}
-async function loadLatestWeight(){
- const r=await db.from("user_weights").select("weight_kg").eq("user_id",currentUser.id).order("recorded_at",{ascending:false}).limit(1).maybeSingle();
- if(!r.error&&r.data)document.getElementById("exerciseWeight").value=r.data.weight_kg;
-}
-async function saveExercise(e){
- const w=Number(document.getElementById("exerciseWeight").value),a=Number(document.getElementById("aerobicMinutes").value)||0,r=Number(document.getElementById("runningKm").value)||0;
- if(!w||w<=0)return showToast("وزن معتبر وارد کن.");
- if(a<0||r<0)return showToast("مقادیر ورزش نمی‌توانند منفی باشند.");
- const x=exerciseCalc(w,a,r);
- const old=Number(exerciseLog?.score||0);
- const q=await db.rpc("save_exercise_log",{p_log_date:selectedDate,p_weight_kg:w,p_aerobic_minutes:a,p_running_km:r,p_month_start:monthStart});
- if(q.error)return showToast("ثبت ورزش انجام نشد: "+q.error.message);
- exerciseLog=q.data;await loadDayData();
- floatingScore(x.score-old,e.clientX,e.clientY);showToast("ورزش ثبت شد ✓");
+
+ const w=
+  Number(
+   document
+    .getElementById("exerciseWeight")
+    .value
+  );
+
+ const a=
+  Number(
+   document
+    .getElementById("aerobicMinutes")
+    .value
+  )||0;
+
+ const r=
+  Number(
+   document
+    .getElementById("runningKm")
+    .value
+  )||0;
+
+ if(!w||w<=0)
+  return;
+
+ const x=
+  exerciseCalc(
+   w,
+   a,
+   r
+  );
+
+ document
+  .getElementById("aerobicKm")
+  .textContent=
+   faNumber(
+    x.aerobicKm.toFixed(2)
+   );
+
+ document
+  .getElementById("totalKm")
+  .textContent=
+   faNumber(
+    x.totalKm.toFixed(2)
+   );
+
+ document
+  .getElementById("exerciseCalories")
+  .textContent=
+   faNumber(
+    x.calories.toFixed(0)
+   );
+
+ document
+  .getElementById("exerciseScore")
+  .textContent=
+   x.score
+    ?(
+      (x.score>0?"+":"")+
+      scoreText(x.score)
+     )
+    :"";
+
+ document
+  .getElementById("exerciseScore")
+  .className=
+   "item-score "+
+   (
+    x.score>0
+     ?"positive"
+     :x.score<0
+      ?"negative"
+      :""
+   );
 }
 
-async function saveDailyLog(type,value,e){
- const score=calculateScore(type,value),old=Number(todayLogs.get(type)?.score||0);
- const q=await db.rpc("save_daily_log",{p_log_date:selectedDate,p_item_type:type,p_value:value,p_score:score,p_month_start:monthStart});
- if(q.error)return showToast("ثبت انجام نشد: "+q.error.message);
- todayLogs.set(type,q.data);await loadDayData();floatingScore(score-old,e.clientX,e.clientY);showToast("ثبت شد ✓");
+async function loadLatestWeight(){
+
+ const r=
+  await db
+   .from("user_weights")
+   .select("weight_kg")
+   .eq(
+    "user_id",
+    currentUser.id
+   )
+   .order(
+    "recorded_at",
+    {ascending:false}
+   )
+   .limit(1)
+   .maybeSingle();
+
+ if(!r.error&&r.data){
+
+  document
+   .getElementById("exerciseWeight")
+   .value=
+    r.data.weight_kg;
+ }
 }
+
+async function saveExercise(e){
+
+ const w=
+  Number(
+   document
+    .getElementById("exerciseWeight")
+    .value
+  );
+
+ const a=
+  Number(
+   document
+    .getElementById("aerobicMinutes")
+    .value
+  )||0;
+
+ const r=
+  Number(
+   document
+    .getElementById("runningKm")
+    .value
+  )||0;
+
+ if(!w||w<=0)
+  return showToast(
+   "وزن معتبر وارد کن."
+  );
+
+ if(a<0||r<0)
+  return showToast(
+   "مقادیر ورزش نمی‌توانند منفی باشند."
+  );
+
+ const x=
+  exerciseCalc(
+   w,
+   a,
+   r
+  );
+
+ const old=
+  Number(
+   exerciseLog?.score||0
+  );
+
+ const q=
+  await db.rpc(
+   "save_exercise_log",
+   {
+    p_log_date:selectedDate,
+    p_weight_kg:w,
+    p_aerobic_minutes:a,
+    p_running_km:r,
+    p_month_start:monthStart
+   }
+  );
+
+ if(q.error)
+  return showToast(
+   "ثبت ورزش انجام نشد: "+
+   q.error.message
+  );
+
+ exerciseLog=q.data;
+
+ await loadDayData();
+
+ floatingScore(
+  x.score-old,
+  e.clientX,
+  e.clientY
+ );
+
+ showToast(
+  "ورزش ثبت شد ✓"
+ );
+}
+
+
+/* =========================================================
+   DAILY SAVE
+   ========================================================= */
+
+async function saveDailyLog(
+ type,
+ value,
+ e
+){
+
+ const score=
+  calculateScore(
+   type,
+   value
+  );
+
+ const old=
+  Number(
+   todayLogs.get(type)?.score||0
+  );
+
+ const q=
+  await db.rpc(
+   "save_daily_log",
+   {
+    p_log_date:selectedDate,
+    p_item_type:type,
+    p_value:value,
+    p_score:score,
+    p_month_start:monthStart
+   }
+  );
+
+ if(q.error)
+  return showToast(
+   "ثبت انجام نشد: "+
+   q.error.message
+  );
+
+ todayLogs.set(
+  type,
+  q.data
+ );
+
+ await loadDayData();
+
+ floatingScore(
+  score-old,
+  e.clientX,
+  e.clientY
+ );
+
+ showToast(
+  "ثبت شد ✓"
+ );
+}
+
+
+/* =========================================================
+   MOUNTAIN
+   ========================================================= */
 
 async function saveMountain(e){
- if(selectedDate>todayDate)return showToast("برای آینده نمی‌شود ثبت کرد.");
- const range=monthRangeFor(selectedDate); const q=await db.rpc("save_mountain_trip",{p_trip_date:selectedDate,p_month_start:range.start,p_month_end:range.end});
- if(q.error)return showToast(q.error.message);
- await loadDayData();floatingScore(.333333,e.clientX,e.clientY);showToast("کوه ثبت شد ✓");
+
+ if(selectedDate>todayDate){
+
+  return showToast(
+   "برای آینده نمی‌شود ثبت کرد."
+  );
+ }
+
+ const range=
+  monthRangeFor(
+   selectedDate
+  );
+
+ const q=
+  await db.rpc(
+   "save_mountain_trip",
+   {
+    p_trip_date:selectedDate,
+    p_month_start:range.start,
+    p_month_end:range.end
+   }
+  );
+
+ if(q.error)
+  return showToast(
+   q.error.message
+  );
+
+ await loadDayData();
+
+ floatingScore(
+  .333333,
+  e.clientX,
+  e.clientY
+ );
+
+ showToast(
+  "کوه ثبت شد ✓"
+ );
 }
+
+
+/* =========================================================
+   LOAD DAY
+   ========================================================= */
 
 async function loadDayData(){
- const q=await db.from("daily_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate);
- if(q.error)return showToast("دریافت لاگ انجام نشد.");
- todayLogs=new Map((q.data||[]).map(r=>[r.item_type,r]));
- const ex=await db.from("exercise_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle();
- exerciseLog=ex.data||null;
- const j=jalaliOf(selectedDate),range=monthRangeFor(selectedDate);
- const mt=await db.from("mountain_trips").select("id,trip_date").eq("user_id",currentUser.id).gte("trip_date",range.start).lte("trip_date",range.end).order("trip_date");
- mountainTrips=mt.data||[];
- const pen=await db.from("daily_penalties").select("score").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle();
- latePenalty=Number(pen.data?.score||0);
- updateUI();loadExerciseUI();updateMountainUI();
+
+ const q=
+  await db
+   .from("daily_logs")
+   .select("*")
+   .eq(
+    "user_id",
+    currentUser.id
+   )
+   .eq(
+    "log_date",
+    selectedDate
+   );
+
+ if(q.error)
+  return showToast(
+   "دریافت لاگ انجام نشد."
+  );
+
+ todayLogs=
+  new Map(
+   (q.data||[])
+    .map(
+     r=>[
+      r.item_type,
+      r
+     ]
+    )
+  );
+
+ const ex=
+  await db
+   .from("exercise_logs")
+   .select("*")
+   .eq(
+    "user_id",
+    currentUser.id
+   )
+   .eq(
+    "log_date",
+    selectedDate
+   )
+   .maybeSingle();
+
+ exerciseLog=
+  ex.data||null;
+
+ const range=
+  monthRangeFor(
+   selectedDate
+  );
+
+ const mt=
+  await db
+   .from("mountain_trips")
+   .select("id,trip_date")
+   .eq(
+    "user_id",
+    currentUser.id
+   )
+   .gte(
+    "trip_date",
+    range.start
+   )
+   .lte(
+    "trip_date",
+    range.end
+   )
+   .order(
+    "trip_date"
+   );
+
+ mountainTrips=
+  mt.data||[];
+
+ const pen=
+  await db
+   .from("daily_penalties")
+   .select("score")
+   .eq(
+    "user_id",
+    currentUser.id
+   )
+   .eq(
+    "log_date",
+    selectedDate
+   )
+   .maybeSingle();
+
+ latePenalty=
+  Number(
+   pen.data?.score||0
+  );
+
+ updateUI();
+
+ loadExerciseUI();
+
+ updateMountainUI();
 }
+
 function loadExerciseUI(){
- const w=document.getElementById("exerciseWeight");if(!w)return;
+
+ const w=
+  document.getElementById(
+   "exerciseWeight"
+  );
+
+ if(!w)
+  return;
+
  if(exerciseLog){
-  w.value=exerciseLog.weight_kg;document.getElementById("aerobicMinutes").value=exerciseLog.aerobic_minutes;
-  document.getElementById("runningKm").value=exerciseLog.running_km;previewExercise();
- }else loadLatestWeight();
+
+  w.value=
+   exerciseLog.weight_kg;
+
+  document
+   .getElementById("aerobicMinutes")
+   .value=
+    exerciseLog.aerobic_minutes;
+
+  document
+   .getElementById("runningKm")
+   .value=
+    exerciseLog.running_km;
+
+  previewExercise();
+
+ }else{
+
+  loadLatestWeight();
+ }
 }
+
 function updateMountainUI(){
- const n=mountainTrips.length,bonus=n*.333333;
- document.getElementById("mountainStatus").textContent=`این ماه ${faNumber(n)} از ۳ بار ثبت شده • سهم روزانه: +${scoreText(bonus)}`;
- const btn=document.getElementById("saveMountain");btn.disabled=mountainTrips.some(x=>x.trip_date===selectedDate)||n>=3;
- btn.textContent=mountainTrips.some(x=>x.trip_date===selectedDate)?"برای این روز ثبت شده":n>=3?"سقف ماهانه پر شده":"امروز رفتم";
+
+ const n=
+  mountainTrips.length;
+
+ const bonus=
+  n*.333333;
+
+ document
+  .getElementById("mountainStatus")
+  .textContent=
+   `این ماه ${faNumber(n)} از ۳ بار ثبت شده • سهم روزانه: +${scoreText(bonus)}`;
+
+ const btn=
+  document.getElementById(
+   "saveMountain"
+  );
+
+ const already=
+  mountainTrips.some(
+   x=>x.trip_date===selectedDate
+  );
+
+ btn.disabled=
+  already||
+  n>=3;
+
+ btn.textContent=
+  already
+   ?"برای این روز ثبت شده"
+   :n>=3
+    ?"سقف ماهانه پر شده"
+    :"امروز رفتم";
 }
+
+
+/* =========================================================
+   UPDATE UI
+   ========================================================= */
+
 async function updateUI(){
- let total=0,completed=0;
+
+ let total=0;
+ let completed=0;
+
  ITEMS.forEach(item=>{
-  const log=todayLogs.get(item.type),card=document.querySelector(`.item[data-type="${item.type}"]`);if(!card)return;
-  const s=card.querySelector(".item-score");s.className="item-score";s.textContent=log?((Number(log.score)>0?"+":"")+scoreText(log.score)):"";
-  if(log)s.classList.add(Number(log.score)>0?"positive":Number(log.score)<0?"negative":"");
-  card.querySelectorAll(".option").forEach(b=>b.classList.toggle("selected",!!log&&Number(b.dataset.value)===Number(log.value)));
-  if(log){total+=Number(log.score||0);completed++;const vi=card.querySelector(".value-input");if(vi)vi.value=log.value;const ti=card.querySelector(".time-input");if(ti){const v=Number(log.value),h=String(Math.floor(v/60)).padStart(2,"0"),m=String(v%60).padStart(2,"0");ti.value=`${h}:${m}`}}
+
+  const log=
+   todayLogs.get(
+    item.type
+   );
+
+  const card=
+   document.querySelector(
+    `.item[data-type="${item.type}"]`
+   );
+
+  if(!card)
+   return;
+
+  const s=
+   card.querySelector(
+    ".item-score"
+   );
+
+  s.className=
+   "item-score";
+
+  s.textContent=
+   log
+    ?(
+      (Number(log.score)>0?"+":"")+
+      scoreText(log.score)
+     )
+    :"";
+
+  if(log){
+
+   s.classList.add(
+    Number(log.score)>0
+     ?"positive"
+     :Number(log.score)<0
+      ?"negative"
+      :""
+   );
+  }
+
+  card
+   .querySelectorAll(".option")
+   .forEach(
+    b=>
+     b.classList.toggle(
+      "selected",
+      !!log&&
+      Number(b.dataset.value)===
+      Number(log.value)
+     )
+   );
+
+  if(log){
+
+   total+=
+    Number(
+     log.score||0
+    );
+
+   completed++;
+
+   const vi=
+    card.querySelector(
+     ".value-input"
+    );
+
+   if(vi)
+    vi.value=
+     log.value;
+
+   const ti=
+    card.querySelector(
+     ".time-input"
+    );
+
+   if(ti){
+
+    const v=
+     Number(log.value);
+
+    const h=
+     String(
+      Math.floor(v/60)
+     ).padStart(2,"0");
+
+    const m=
+     String(
+      v%60
+     ).padStart(2,"0");
+
+    ti.value=
+     `${h}:${m}`;
+   }
+  }
  });
- if(exerciseLog){total+=Number(exerciseLog.score||0);completed++}
- const mountainBonus=mountainTrips.length*.333333;total+=mountainBonus;total+=latePenalty;
- const scoreEl=document.getElementById("score");scoreEl.textContent=scoreText(total);scoreEl.classList.toggle("positive",total>0);scoreEl.classList.toggle("negative",total<0);
- document.getElementById("completed").textContent=`${faNumber(completed)} آیتم از ۱۰${latePenalty<0?" • جریمه تأخیر "+scoreText(latePenalty):""}`;
- document.getElementById("mountainDailyBonus").textContent=mountainBonus?`سهم کوه: +${scoreText(mountainBonus)}`:"";
- const pct=Math.max(0,Math.min(100,total/20*100));document.getElementById("progress").style.width=pct+"%";
- document.getElementById("dayLabel").textContent =
-  sameDate(selectedDate, todayDate)
-    ? `امروز، ${jalaliDateLabel(selectedDate)}`
-    : jalaliDateLabel(selectedDate);
- document.getElementById("dateInput").value=selectedDate;
- document.getElementById("nextDay").disabled=selectedDate>=todayDate;
+
+ if(exerciseLog){
+
+  total+=
+   Number(
+    exerciseLog.score||0
+   );
+
+  completed++;
+ }
+
+ const mountainBonus=
+  mountainTrips.length*
+  .333333;
+
+ total+=mountainBonus;
+
+ total+=latePenalty;
+
+ const scoreEl=
+  document.getElementById(
+   "score"
+  );
+
+ scoreEl.textContent=
+  scoreText(total);
+
+ scoreEl.classList.toggle(
+  "positive",
+  total>0
+ );
+
+ scoreEl.classList.toggle(
+  "negative",
+  total<0
+ );
+
+ document
+  .getElementById("completed")
+  .textContent=
+   `${faNumber(completed)} آیتم از ۱۰`+
+   (
+    latePenalty<0
+     ?" • جریمه تأخیر "+
+      scoreText(latePenalty)
+     :""
+   );
+
+ document
+  .getElementById("mountainDailyBonus")
+  .textContent=
+   mountainBonus
+    ?`سهم کوه: +${scoreText(mountainBonus)}`
+    :"";
+
+ const pct=
+  Math.max(
+   0,
+   Math.min(
+    100,
+    total/20*100
+   )
+  );
+
+ document
+  .getElementById("progress")
+  .style.width=
+   pct+"%";
+
+
+ /* =========================================
+    SHAMSI DATE + WEEKDAY DISPLAY
+    ========================================= */
+
+ document
+  .getElementById("dayLabel")
+  .textContent=
+   sameDate(
+    selectedDate,
+    todayDate
+   )
+    ?`امروز، ${jalaliLabel(selectedDate)}`
+    :jalaliLabel(selectedDate);
+
+ document
+  .getElementById("dateInput")
+  .value=
+   selectedDate;
+
+ document
+  .getElementById("nextDay")
+  .disabled=
+   selectedDate>=todayDate;
 }
+
+
+/* =========================================================
+   DATE NAVIGATION
+   ========================================================= */
+
 function setSelectedDate(s){
- if(s<monthStart)s=monthStart;if(s>todayDate)s=todayDate;selectedDate=s;loadDayData();
+
+ if(s<monthStart)
+  s=monthStart;
+
+ if(s>todayDate)
+  s=todayDate;
+
+ selectedDate=s;
+
+ loadDayData();
 }
-document.getElementById("dateInput").onchange=e=>setSelectedDate(e.target.value);
-document.getElementById("prevDay").onclick=()=>setSelectedDate(addDays(selectedDate,-1));
-document.getElementById("nextDay").onclick=()=>setSelectedDate(addDays(selectedDate,1));
+
+document
+ .getElementById("dateInput")
+ .onchange=
+  e=>
+   setSelectedDate(
+    e.target.value
+   );
+
+document
+ .getElementById("prevDay")
+ .onclick=
+  ()=>
+   setSelectedDate(
+    addDays(
+     selectedDate,
+     -1
+    )
+   );
+
+document
+ .getElementById("nextDay")
+ .onclick=
+  ()=>
+   setSelectedDate(
+    addDays(
+     selectedDate,
+     1
+    )
+   );
+
+
+/* =========================================================
+   DATE RANGE
+   ========================================================= */
 
 async function setupDateRange(){
- todayDate=currentIranDate();const j=currentJalali();monthStart=gregorianFromJalali(j.jy,j.jm,1);
- document.getElementById("dateInput").min=monthStart;document.getElementById("dateInput").max=todayDate;selectedDate=todayDate;
+
+ todayDate=
+  currentIranDate();
+
+ const j=
+  currentJalali();
+
+ monthStart=
+  gregorianFromJalali(
+   j.jy,
+   j.jm,
+   1
+  );
+
+ document
+  .getElementById("dateInput")
+  .min=
+   monthStart;
+
+ document
+  .getElementById("dateInput")
+  .max=
+   todayDate;
+
+ selectedDate=
+  todayDate;
 }
+
+
+/* =========================================================
+   APP
+   ========================================================= */
 
 async function openApp(user){
- currentUser=user;document.getElementById("authPage").classList.add("hidden");document.getElementById("app").classList.remove("hidden");
- await loadProfile();renderItems();await setupDateRange();await loadDayData();subscribeRealtime(user.id);
+
+ currentUser=user;
+
+ document
+  .getElementById("authPage")
+  .classList
+  .add("hidden");
+
+ document
+  .getElementById("app")
+  .classList
+  .remove("hidden");
+
+ await loadProfile();
+
+ renderItems();
+
+ await setupDateRange();
+
+ await loadDayData();
+
+ subscribeRealtime(
+  user.id
+ );
 }
+
 function subscribeRealtime(uid){
- if(realtimeChannel)db.removeChannel(realtimeChannel);
- realtimeChannel=db.channel("hql-"+uid).on("postgres_changes",{event:"*",schema:"public",table:"daily_logs",filter:`user_id=eq.${uid}`},()=>loadDayData()).on("postgres_changes",{event:"*",schema:"public",table:"exercise_logs",filter:`user_id=eq.${uid}`},()=>loadDayData()).on("postgres_changes",{event:"*",schema:"public",table:"mountain_trips",filter:`user_id=eq.${uid}`},()=>loadDayData()).subscribe();
+
+ if(realtimeChannel)
+  db.removeChannel(
+   realtimeChannel
+  );
+
+ realtimeChannel=
+  db
+   .channel(
+    "hql-"+uid
+   )
+
+   .on(
+    "postgres_changes",
+    {
+     event:"*",
+     schema:"public",
+     table:"daily_logs",
+     filter:`user_id=eq.${uid}`
+    },
+    ()=>loadDayData()
+   )
+
+   .on(
+    "postgres_changes",
+    {
+     event:"*",
+     schema:"public",
+     table:"exercise_logs",
+     filter:`user_id=eq.${uid}`
+    },
+    ()=>loadDayData()
+   )
+
+   .on(
+    "postgres_changes",
+    {
+     event:"*",
+     schema:"public",
+     table:"mountain_trips",
+     filter:`user_id=eq.${uid}`
+    },
+    ()=>loadDayData()
+   )
+
+   .subscribe();
 }
 
-document.getElementById("themeButton").onclick=async()=>{theme=theme==="dark"?"light":"dark";applyTheme();await saveTheme()};
-document.getElementById("userButton").onclick=()=>document.getElementById("menu").classList.toggle("hidden");
-document.addEventListener("click",e=>{const m=document.getElementById("menu"),b=document.getElementById("userButton");if(!m.contains(e.target)&&e.target!==b)m.classList.add("hidden")});
-document.getElementById("logoutButton").onclick=async()=>db.auth.signOut();
-document.getElementById("reportButton").onclick=()=>location.href="report.html";
 
-db.auth.onAuthStateChange(async(event,session)=>{
- if(session&&(event==="SIGNED_IN"||event==="INITIAL_SESSION"))await openApp(session.user);
- if(event==="SIGNED_OUT"){
-  if(realtimeChannel){db.removeChannel(realtimeChannel);realtimeChannel=null}
-  document.getElementById("app").classList.add("hidden");document.getElementById("authPage").classList.remove("hidden");setMode("login");
+/* =========================================================
+   HEADER ACTIONS
+   ========================================================= */
+
+document
+ .getElementById("themeButton")
+ .onclick=
+  async()=>{
+   theme=
+    theme==="dark"
+     ?"light"
+     :"dark";
+
+   applyTheme();
+
+   await saveTheme();
+  };
+
+document
+ .getElementById("userButton")
+ .onclick=
+  ()=>
+   document
+    .getElementById("menu")
+    .classList
+    .toggle("hidden");
+
+document.addEventListener(
+ "click",
+ e=>{
+
+  const m=
+   document.getElementById(
+    "menu"
+   );
+
+  const b=
+   document.getElementById(
+    "userButton"
+   );
+
+  if(
+   !m.contains(e.target)&&
+   e.target!==b
+  ){
+
+   m.classList.add(
+    "hidden"
+   );
+  }
  }
-});
-(async()=>{const r=await db.auth.getSession();if(r.data.session)await openApp(r.data.session.user)})();
+);
 
-function getPersianWeekday(s) {
-  const weekdays = [
-    "یکشنبه",
-    "دوشنبه",
-    "سه‌شنبه",
-    "چهارشنبه",
-    "پنجشنبه",
-    "جمعه",
-    "شنبه"
-  ];
+document
+ .getElementById("logoutButton")
+ .onclick=
+  async()=>{
+   await db.auth.signOut();
+  };
 
-  const d = parseDate(s);
-  return weekdays[d.getUTCDay()];
-}
+document
+ .getElementById("reportButton")
+ .onclick=
+  ()=>location.href=
+   "report.html";
 
-function jalaliDateLabel(s) {
-  const j = jalaliOf(s);
-  return `${getPersianWeekday(s)}، ${faNumber(j.jd)} ${[
-    "فروردین",
-    "اردیبهشت",
-    "خرداد",
-    "تیر",
-    "مرداد",
-    "شهریور",
-    "مهر",
-    "آبان",
-    "آذر",
-    "دی",
-    "بهمن",
-    "اسفند"
-  ][j.jm - 1]} ${faNumber(j.jy)}`;
-}
- 
+
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
+
+db.auth.onAuthStateChange(
+ async(event,session)=>{
+
+  if(
+   session&&
+   (
+    event==="SIGNED_IN"||
+    event==="INITIAL_SESSION"
+   )
+  ){
+
+   await openApp(
+    session.user
+   );
+  }
+
+  if(
+   event==="SIGNED_OUT"
+  ){
+
+   if(realtimeChannel){
+
+    db.removeChannel(
+     realtimeChannel
+    );
+
+    realtimeChannel=null;
+   }
+
+   document
+    .getElementById("app")
+    .classList
+    .add("hidden");
+
+   document
+    .getElementById("authPage")
+    .classList
+    .remove("hidden");
+
+   setMode("login");
+  }
+ }
+);
+
+
+/* =========================================================
+   INITIAL SESSION
+   ========================================================= */
+
+(async()=>{
+
+ const r=
+  await db.auth.getSession();
+
+ if(r.data.session){
+
+  await openApp(
+   r.data.session.user
+  );
+ }
+
+})();
+
 </script>
+
 </body>
 </html>
