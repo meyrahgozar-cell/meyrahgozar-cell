@@ -1062,7 +1062,13 @@ document.addEventListener("click",e=>{
   if(!m.contains(e.target)&&e.target!==b) m.classList.add("hidden");
 });
 document.getElementById("logoutButton").onclick=()=>db.auth.signOut();
-document.getElementById("themeButton").onclick=()=>showToast("تم نئون سایبرپانک 💜");
+document.getElementById("themeButton").onclick=()=>{
+  if (Math.random() < 0.2) {
+    showToast("خالی بندی پر نکنیداااا 😈");
+  } else {
+    showToast("تم نئون سایبرپانک 💜");
+  }
+};
 document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
 
 /* ===== OPEN ===== */
