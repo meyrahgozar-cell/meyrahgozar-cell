@@ -1,381 +1,575 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HQL — جدول رده‌بندی عمومی</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>HQL | گزارش ماهانه</title>
 
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --primary: #2563eb;
-      --purple: #7c3aed;
-      --gold: #f59e0b;
-      --silver: #64748b;
-      --bronze: #d97706;
-      --shadow: 0 10px 30px rgba(15,23,42,.06);
-      --radius: 16px;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: linear-gradient(135deg, #f8fafc, #eef4ff);
-      color: var(--text);
-      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
-      min-height: 100vh;
-      padding: 16px 12px 40px;
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 
-    .app { max-width: 950px; margin: auto; }
-    
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 12px 18px;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-    
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .logo {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      color: #fff;
-      font-size: 22px;
-      flex-shrink: 0;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .topbar:hover .logo { transform: rotate(10deg) scale(1.05); }
-    .brand h1 { font-size: 18px; margin: 0; font-weight: 800; }
-    
-    .btn-back {
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--text);
-      padding: 8px 16px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 13px;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition: all 0.2s ease;
-    }
-    .btn-back:hover {
-      background: #f1f5f9;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
+<style>
+:root {
+  --bg: #05060a;
+  --card: #0d1019;
+  --card2: #131722;
+  --border: rgba(180, 100, 255, 0.18);
+  --text: #f0f2ff;
+  --muted: #8b92b0;
+  --neon: #b44cff;
+  --neon2: #00f0ff;
+  --positive: #00ff9d;
+  --negative: #ff4d6d;
+  --glow: 0 0 18px rgba(180, 76, 255, 0.3);
+  --radius: 16px;
+}
 
-    .card {
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: var(--shadow);
-    }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .header-box { text-align: center; margin-bottom: 20px; }
-    .header-box h2 { font-size: 20px; font-weight: 800; margin: 0 0 6px; }
-    .header-box p { color: var(--muted); font-size: 13px; margin: 0; }
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Vazirmatn", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 
-    .month-badge {
-      display: inline-block;
-      background: #dbeafe;
-      color: #1e40af;
-      padding: 4px 14px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-top: 8px;
-    }
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.06), transparent),
+    var(--bg);
+  min-height: 100vh;
+}
 
-    /* Podium Cards for Top 3 & Visual Hover Effects */
-    .podium {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-      align-items: stretch;
-    }
-    .podium-card {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 16px 10px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 130px;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      cursor: default;
-      position: relative;
-    }
-    .podium-card:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 12px 24px rgba(15,23,42,0.08);
-    }
-    .podium-card.first { border-color: #fde68a; background: linear-gradient(180deg, #fffdf2, #fff); }
-    .podium-card.first:hover { box-shadow: 0 12px 28px rgba(245, 158, 11, 0.18); }
-    .podium-card.second { border-color: #e2e8f0; }
-    .podium-card.third { border-color: #fed7aa; background: linear-gradient(180deg, #fffaf2, #fff); }
-    .podium-card.third:hover { box-shadow: 0 12px 28px rgba(217, 119, 6, 0.15); }
-    
-    .podium-badge {
-      font-size: 24px;
-      line-height: 1;
-      margin-bottom: 6px;
-      transition: transform 0.2s ease;
-    }
-    .podium-card:hover .podium-badge { transform: scale(1.2); }
+button, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+.hidden { display: none !important; }
 
-    .podium-name {
-      font-weight: 700;
-      font-size: 13px;
-      margin-bottom: 4px;
-      width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--text);
-    }
-    .podium-val { font-weight: 800; color: var(--primary); font-size: 15px; line-height: 1.2; }
-    .podium-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 14px 80px;
+}
 
-    /* Table Styles & Hover Visuals */
-    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-    th, td { text-align: right; padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
-    th { color: var(--muted); font-weight: 600; background: #fafafa; }
-    
-    tbody tr {
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    tbody tr:hover {
-      background-color: #f8fafc;
-    }
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
 
-    /* Active User Highlight Styles */
-    tbody tr.active-user-row {
-      background-color: #eff6ff !important;
-      border-right: 4px solid var(--primary);
-      font-weight: 600;
-    }
-    tbody tr.active-user-row:hover {
-      background-color: #dbeafe !important;
-    }
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #b44cff, #00f0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-    .you-badge {
-      display: inline-block;
-      background: var(--primary);
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 7px;
-      border-radius: 999px;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
 
-    .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--line); }
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
 
-    .rank {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 12px;
-      background: #f1f5f9;
-      color: var(--muted);
-      transition: all 0.2s ease;
-    }
-    tbody tr:hover .rank {
-      background: var(--primary);
-      color: #fff;
-    }
-    .user-name { font-weight: 700; color: var(--text); }
-    .calories-val { font-weight: 800; color: var(--primary); }
+.page-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
 
-    .empty, .loading { text-align: center; padding: 30px; color: var(--muted); font-weight: 500; }
-    .hidden { display: none !important; }
-    .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0 10px; }
-    
-    @media(max-width: 600px) {
-      .podium { grid-template-columns: 1fr; }
-      .podium-card { min-height: auto; padding: 12px; }
-    }
-  </style>
+/* Month picker */
+.month-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.select {
+  flex: 1;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b92b0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+}
+
+.select:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(180,76,255,0.15);
+}
+
+/* Summary cards */
+.summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 14px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-value.positive { color: var(--positive); }
+.stat-value.negative { color: var(--negative); }
+
+.stat-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* Chart */
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  padding-top: 10px;
+}
+
+.bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.bar {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, #b44cff, #5a2db0);
+  min-height: 2px;
+  transition: height 0.3s;
+}
+
+.bar.positive { background: linear-gradient(180deg, #00ff9d, #00a86b); }
+.bar.negative { background: linear-gradient(180deg, #ff4d6d, #b03040); }
+.bar.zero { background: var(--card2); }
+
+.bar-label {
+  font-size: 9px;
+  color: var(--muted);
+  transform: rotate(-40deg);
+  white-space: nowrap;
+}
+
+/* Habits */
+.habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.habit-row:last-child { border-bottom: none; }
+
+.habit-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.habit-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.habit-stats b {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.habit-stats b.pos { color: var(--positive); }
+.habit-stats b.neg { color: var(--negative); }
+
+/* Empty / loading */
+.empty {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .stat-value { font-size: 22px; }
+  .summary { gap: 8px; }
+}
+</style>
 </head>
 <body>
 
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">🏆</div>
-      <div><h1>جدول رده‌بندی عمومی</h1></div>
-    </div>
-    <a href="index.html" class="btn-back">بازگشت به خانه</a>
+<div class="page">
+  <header class="header">
+    <div class="brand">HQL</div>
+    <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
   </header>
 
-  <main class="card">
-    <div class="header-box">
-      <h2>رتبه‌بندی کالری‌سوزی کاربران</h2>
-      <p>محاسبه شده بر اساس مجموع کالری دویده شده از ابتدای ماه جاری</p>
-      <div id="monthBadge" class="month-badge">در حال محاسبه...</div>
-    </div>
+  <h1 class="page-title">گزارش ماهانه</h1>
+  <p class="page-sub">نمای کلی عملکرد و عادت‌ها</p>
 
-    <!-- Top 3 Podium Container -->
-    <div id="podiumWrapper" class="podium hidden"></div>
+  <div class="month-bar">
+    <select id="yearSelect" class="select"></select>
+    <select id="monthSelect" class="select"></select>
+  </div>
 
-    <div id="loading" class="loading">در حال دریافت و پردازش اطلاعات...</div>
-
-    <div id="leaderboardWrapper" class="scroll hidden">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 50px; text-align: center;">رتبه</th>
-            <th>کاربر</th>
-            <th>کالری سوزانده‌شده (ماه)</th>
-            <th>مسافت دویده شده</th>
-            <th>روزهای ثبت‌شده</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardBody"></tbody>
-      </table>
-    </div>
-  </main>
-
-  <footer class="footer">HQL Public Leaderboard • v2.3.0</footer>
+  <div id="content">
+    <div class="loading">در حال بارگذاری...</div>
+  </div>
 </div>
+
 <script>
-const SUPABASE_URL = "https://igvhuwxqljtxtpikebcq.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_rwuDqMKTGOmUXpZZTWDcFg_Pmvrr67v";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-const PERSIAN_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-const fmt = (n, d=0) => Number(n||0).toLocaleString("fa-IR", {maximumFractionDigits: d});
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
 
-function getJalaliMonthStartISO() {
-  const now = new Date();
-  const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  document.getElementById("monthBadge").textContent = `ماه جاری: ${PERSIAN_MONTHS[jNow.jm - 1]} ${jNow.jy}`;
-  const gStart = jalaali.toGregorian(jNow.jy, jNow.jm, 1);
-  return `${gStart.gy}-${String(gStart.gm).padStart(2,'0')}-${String(gStart.gd).padStart(2,'0')}`;
+const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+
+const HABIT_LABELS = {
+  water: { icon: "💧", title: "آب" },
+  sleep: { icon: "🌙", title: "خواب" },
+  instagram: { icon: "📱", title: "اینستاگرام" },
+  sun: { icon: "☀️", title: "آفتاب" },
+  solitude: { icon: "🧘", title: "خلوت" },
+  reading: { icon: "📖", title: "مطالعه" },
+  sugar: { icon: "🍬", title: "قند" },
+  dinner: { icon: "🍽️", title: "شام" },
+  exercise: { icon: "🏃", title: "ورزش" }
+};
+
+let currentUser = null;
+let selectedYear = null;
+let selectedMonth = null;
+
+function fa(v) {
+  return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
 }
 
-async function loadLeaderboard() {
-  const monthStartISO = getJalaliMonthStartISO();
-  try {
-    // Detect active logged-in user session
-    let currentUserId = null;
-    let currentUserDisplayName = null;
-    
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      currentUserId = session.user.id;
-      const { data: profile } = await sb.from("profiles").select("display_name").eq("id", currentUserId).single();
-      if (profile) currentUserDisplayName = profile.display_name;
-    }
-
-    const { data, error } = await sb.rpc("get_monthly_leaderboard", { month_start_date: monthStartISO });
-    if (error) throw error;
-    
-    const formattedData = (data || []).map(u => ({
-      name: u.display_name || "کاربر بدون نام",
-      calories: u.total_calories || 0,
-      km: u.total_km || 0,
-      days: u.days_count || 0
-    }));
-    
-    renderLeaderboard(formattedData, currentUserDisplayName);
-  } catch (err) {
-    console.error(err);
-    document.getElementById("loading").textContent = "خطا در بارگذاری اطلاعات عمومی.";
-  }
+function scoreText(v) {
+  const n = Number(v || 0);
+  let s = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return fa(s);
 }
 
-function renderLeaderboard(users, activeUserName) {
-  document.getElementById("loading").classList.add("hidden");
-  const podWrap = document.getElementById("podiumWrapper");
-  const boardWrap = document.getElementById("leaderboardWrapper");
-  const tbody = document.getElementById("leaderboardBody");
-  
-  if (!users.length) {
-    boardWrap.classList.remove("hidden");
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">هیچ داده‌ای برای این ماه ثبت نشده است.</td></tr>`;
+function isoDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function jalaliRange(jy, jm) {
+  const startG = jalaali.toGregorian(jy, jm, 1);
+  const days = jalaali.jalaaliMonthLength(jy, jm);
+  const endG = jalaali.toGregorian(jy, jm, days);
+  return {
+    start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
+    end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd)))
+  };
+}
+
+/* ===== Auth guard ===== */
+db.auth.onAuthStateChange(async (event, session) => {
+  if (!session) {
+    location.href = "index.html";
     return;
   }
+  if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+    currentUser = session.user;
+    initMonthPicker();
+    await loadReport();
+  }
+});
 
-  // Render Podium for Top 3 Users
-  if (users.length > 0) {
-    podWrap.classList.remove("hidden");
-    let podHtml = "";
-    
-    const topThree = users.slice(0, 3);
-    const classes = ["first", "second", "third"];
-    const badges = ["🥇", "🥈", "🥉"];
+(async () => {
+  const r = await db.auth.getSession();
+  if (!r.data.session) {
+    location.href = "index.html";
+    return;
+  }
+  currentUser = r.data.session.user;
+  initMonthPicker();
+  await loadReport();
+})();
 
-    topThree.forEach((u, idx) => {
-      const isMe = activeUserName && u.name === activeUserName;
-      const meBadge = isMe ? `<span class="you-badge">شما</span>` : "";
-      
-      podHtml += `
-        <div class="podium-card ${classes[idx]}">
-          <div class="podium-badge">${badges[idx]}</div>
-          <div class="podium-name">${u.name} ${meBadge}</div>
-          <div class="podium-val">${fmt(u.calories)} کالری</div>
-          <div class="podium-sub">${fmt(u.km, 1)} کیلومتر</div>
-        </div>
-      `;
-    });
-    podWrap.innerHTML = podHtml;
+document.getElementById("backBtn").onclick = () => {
+  location.href = "index.html";
+};
+
+/* ===== Month picker ===== */
+function initMonthPicker() {
+  const now = new Date();
+  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  selectedYear = j.jy;
+  selectedMonth = j.jm;
+
+  const yearSel = document.getElementById("yearSelect");
+  const monthSel = document.getElementById("monthSelect");
+
+  yearSel.innerHTML = "";
+  for (let y = j.jy; y >= j.jy - 3; y--) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = fa(y);
+    if (y === selectedYear) opt.selected = true;
+    yearSel.appendChild(opt);
   }
 
-  // Render Full Table with Active User Highlight
-  boardWrap.classList.remove("hidden");
-  tbody.innerHTML = users.map((u, index) => {
-    const rank = index + 1;
-    const isMe = activeUserName && u.name === activeUserName;
-    const rowClass = isMe ? 'class="active-user-row"' : "";
-    const meBadge = isMe ? `<span class="you-badge">شما</span>` : "";
+  monthSel.innerHTML = "";
+  J_MONTHS.forEach((name, i) => {
+    const opt = document.createElement("option");
+    opt.value = i + 1;
+    opt.textContent = name;
+    if (i + 1 === selectedMonth) opt.selected = true;
+    monthSel.appendChild(opt);
+  });
 
-    return `
-      <tr ${rowClass}>
-        <td style="text-align: center;"><span class="rank">${rank}</span></td>
-        <td class="user-name">${u.name} ${meBadge}</td>
-        <td class="calories-val">${fmt(u.calories)} کالری</td>
-        <td>${fmt(u.km, 2)} کیلومتر</td>
-        <td>${fmt(u.days)} روز</td>
-      </tr>
-    `;
-  }).join("");
+  yearSel.onchange = () => {
+    selectedYear = Number(yearSel.value);
+    loadReport();
+  };
+  monthSel.onchange = () => {
+    selectedMonth = Number(monthSel.value);
+    loadReport();
+  };
 }
 
-document.addEventListener("DOMContentLoaded", loadLeaderboard);
+/* ===== Load report ===== */
+async function loadReport() {
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+
+  const range = jalaliRange(selectedYear, selectedMonth);
+
+  try {
+    // Use the RPC we created
+    const rpc = await db.rpc("get_my_month_report", {
+      p_start: range.start,
+      p_end: range.end
+    });
+
+    if (rpc.error) throw rpc.error;
+
+    const stats = rpc.data || {
+      total_score: 0,
+      avg_score: 0,
+      best_day: null,
+      best_score: 0,
+      active_days: 0,
+      daily: []
+    };
+
+    // Habit breakdown (direct query)
+    const logs = await db.from("daily_logs")
+      .select("item_type, score, log_date")
+      .eq("user_id", currentUser.id)
+      .gte("log_date", range.start)
+      .lte("log_date", range.end);
+
+    const exLogs = await db.from("exercise_logs")
+      .select("score, log_date")
+      .eq("user_id", currentUser.id)
+      .gte("log_date", range.start)
+      .lte("log_date", range.end);
+
+    const habitMap = {};
+    (logs.data || []).forEach(r => {
+      if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
+      habitMap[r.item_type].count++;
+      habitMap[r.item_type].total += Number(r.score) || 0;
+    });
+
+    // exercise as a habit
+    if (exLogs.data && exLogs.data.length) {
+      habitMap.exercise = {
+        count: exLogs.data.length,
+        total: exLogs.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
+      };
+    }
+
+    renderReport(stats, habitMap, range);
+  } catch (err) {
+    content.innerHTML = `<div class="empty">خطا در دریافت گزارش<br><small>${err.message}</small></div>`;
+  }
+}
+
+function renderReport(stats, habitMap, range) {
+  const content = document.getElementById("content");
+
+  const total = Number(stats.total_score) || 0;
+  const avg = Number(stats.avg_score) || 0;
+  const best = Number(stats.best_score) || 0;
+  const active = Number(stats.active_days) || 0;
+  const daily = stats.daily || [];
+
+  // Best day label
+  let bestNote = "—";
+  if (stats.best_day) {
+    const [y, m, d] = stats.best_day.split("-").map(Number);
+    const j = jalaali.toJalaali(y, m, d);
+    bestNote = fa(j.jd) + " " + J_MONTHS[j.jm - 1];
+  }
+
+  // Build chart bars
+  const maxAbs = Math.max(...daily.map(d => Math.abs(Number(d.score) || 0)), 1);
+
+  let chartHtml = "";
+  if (daily.length === 0) {
+    chartHtml = `<div class="empty">هنوز داده‌ای برای این ماه ثبت نشده</div>`;
+  } else {
+    chartHtml = `<div class="chart">` + daily.map(d => {
+      const sc = Number(d.score) || 0;
+      const h = Math.max(4, (Math.abs(sc) / maxAbs) * 110);
+      const cls = sc > 0 ? "positive" : sc < 0 ? "negative" : "zero";
+      const [y, m, day] = d.date.split("-").map(Number);
+      const j = jalaali.toJalaali(y, m, day);
+      return `
+        <div class="bar-wrap" title="${fa(j.jd)}: ${scoreText(sc)}">
+          <div class="bar ${cls}" style="height:${h}px"></div>
+          <div class="bar-label">${fa(j.jd)}</div>
+        </div>`;
+    }).join("") + `</div>`;
+  }
+
+  // Habits
+  let habitsHtml = "";
+  const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
+  const hasAny = order.some(k => habitMap[k]);
+
+  if (!hasAny) {
+    habitsHtml = `<div class="empty">هیچ عادتی ثبت نشده</div>`;
+  } else {
+    habitsHtml = order.filter(k => habitMap[k]).map(k => {
+      const h = habitMap[k];
+      const avgH = h.count ? (h.total / h.count) : 0;
+      const info = HABIT_LABELS[k] || { icon: "•", title: k };
+      return `
+        <div class="habit-row">
+          <div class="habit-name">${info.icon} ${info.title}</div>
+          <div class="habit-stats">
+            <div><b>${fa(h.count)}</b>روز</div>
+            <div><b class="${h.total > 0 ? "pos" : h.total < 0 ? "neg" : ""}">${scoreText(h.total)}</b>مجموع</div>
+            <div><b class="${avgH > 0 ? "pos" : avgH < 0 ? "neg" : ""}">${scoreText(avgH)}</b>میانگین</div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  content.innerHTML = `
+    <div class="summary">
+      <div class="stat">
+        <div class="stat-label">امتیاز کل ماه</div>
+        <div class="stat-value ${total > 0 ? "positive" : total < 0 ? "negative" : ""}">${scoreText(total)}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">میانگین روزانه</div>
+        <div class="stat-value ${avg > 0 ? "positive" : avg < 0 ? "negative" : ""}">${scoreText(avg)}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">بهترین روز</div>
+        <div class="stat-value positive">${scoreText(best)}</div>
+        <div class="stat-note">${bestNote}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">روزهای فعال</div>
+        <div class="stat-value">${fa(active)}</div>
+        <div class="stat-note">از ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} روز</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">نمودار روزانه</div>
+      <div class="card-sub">امتیاز هر روز در ماه انتخاب‌شده</div>
+      ${chartHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">عملکرد عادت‌ها</div>
+      <div class="card-sub">تعداد روز، مجموع و میانگین امتیاز</div>
+      ${habitsHtml}
+    </div>
+  `;
+}
 </script>
 </body>
 </html>
