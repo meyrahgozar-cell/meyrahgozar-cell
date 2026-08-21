@@ -26,6 +26,9 @@
   --negative: #ff4d6d;
   --glow: 0 0 18px rgba(180, 76, 255, 0.3);
   --radius: 16px;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -56,7 +59,6 @@ button { cursor: pointer; border: none; background: none; }
   padding: 14px 14px 80px;
 }
 
-/* Header */
 .header {
   display: flex;
   align-items: center;
@@ -95,7 +97,6 @@ button { cursor: pointer; border: none; background: none; }
   margin-bottom: 18px;
 }
 
-/* Month picker */
 .month-bar {
   display: flex;
   gap: 10px;
@@ -121,7 +122,6 @@ button { cursor: pointer; border: none; background: none; }
   box-shadow: 0 0 0 2px rgba(180,76,255,0.15);
 }
 
-/* Summary cards */
 .summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -158,7 +158,6 @@ button { cursor: pointer; border: none; background: none; }
   margin-top: 4px;
 }
 
-/* Cards */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -179,7 +178,105 @@ button { cursor: pointer; border: none; background: none; }
   margin-bottom: 14px;
 }
 
-/* Chart */
+/* Podium */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0 6px;
+  min-height: 160px;
+}
+
+.podium-place {
+  flex: 1;
+  max-width: 120px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.podium-medal {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.podium-name {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-score {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.podium-bar {
+  width: 100%;
+  border-radius: 10px 10px 4px 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.podium-place.first .podium-bar {
+  height: 90px;
+  background: linear-gradient(180deg, #ffd700, #b8860b);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);
+}
+.podium-place.second .podium-bar {
+  height: 70px;
+  background: linear-gradient(180deg, #e8e8e8, #888);
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.25);
+}
+.podium-place.third .podium-bar {
+  height: 55px;
+  background: linear-gradient(180deg, #cd7f32, #8b4513);
+  box-shadow: 0 0 12px rgba(205, 127, 50, 0.25);
+}
+
+.podium-place.first .podium-score { color: var(--gold); }
+.podium-place.second .podium-score { color: var(--silver); }
+.podium-place.third .podium-score { color: var(--bronze); }
+
+.ranking-list {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.rank-row:last-child { border-bottom: none; }
+
+.rank-num {
+  width: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.rank-name { flex: 1; font-weight: 600; }
+.rank-score { font-weight: 700; color: var(--neon2); }
+
 .chart {
   display: flex;
   align-items: flex-end;
@@ -218,7 +315,6 @@ button { cursor: pointer; border: none; background: none; }
   white-space: nowrap;
 }
 
-/* Habits */
 .habit-row {
   display: flex;
   align-items: center;
@@ -257,7 +353,6 @@ button { cursor: pointer; border: none; background: none; }
 .habit-stats b.pos { color: var(--positive); }
 .habit-stats b.neg { color: var(--negative); }
 
-/* Empty / loading */
 .empty {
   text-align: center;
   padding: 30px 10px;
@@ -274,6 +369,8 @@ button { cursor: pointer; border: none; background: none; }
 @media (max-width: 480px) {
   .stat-value { font-size: 22px; }
   .summary { gap: 8px; }
+  .podium { gap: 6px; }
+  .podium-name { font-size: 12px; }
 }
 </style>
 </head>
@@ -307,6 +404,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+const START_YEAR = 1405;
 
 const HABIT_LABELS = {
   water: { icon: "💧", title: "آب" },
@@ -348,7 +446,6 @@ function jalaliRange(jy, jm) {
   };
 }
 
-/* ===== Auth guard ===== */
 db.auth.onAuthStateChange(async (event, session) => {
   if (!session) {
     location.href = "index.html";
@@ -372,22 +469,21 @@ db.auth.onAuthStateChange(async (event, session) => {
   await loadReport();
 })();
 
-document.getElementById("backBtn").onclick = () => {
-  location.href = "index.html";
-};
+document.getElementById("backBtn").onclick = () => location.href = "index.html";
 
-/* ===== Month picker ===== */
+/* Year picker: from 1405 up to current year only */
 function initMonthPicker() {
   const now = new Date();
   const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  selectedYear = j.jy;
+  const currentYear = j.jy;
+  selectedYear = currentYear;
   selectedMonth = j.jm;
 
   const yearSel = document.getElementById("yearSelect");
   const monthSel = document.getElementById("monthSelect");
 
   yearSel.innerHTML = "";
-  for (let y = j.jy; y >= j.jy - 3; y--) {
+  for (let y = START_YEAR; y <= currentYear; y++) {
     const opt = document.createElement("option");
     opt.value = y;
     opt.textContent = fa(y);
@@ -414,7 +510,6 @@ function initMonthPicker() {
   };
 }
 
-/* ===== Load report ===== */
 async function loadReport() {
   const content = document.getElementById("content");
   content.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
@@ -422,58 +517,50 @@ async function loadReport() {
   const range = jalaliRange(selectedYear, selectedMonth);
 
   try {
-    // Use the RPC we created
-    const rpc = await db.rpc("get_my_month_report", {
-      p_start: range.start,
-      p_end: range.end
-    });
+    const [statsRes, boardRes, logsRes, exRes] = await Promise.all([
+      db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
+      db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
+      db.from("daily_logs")
+        .select("item_type, score, log_date")
+        .eq("user_id", currentUser.id)
+        .gte("log_date", range.start)
+        .lte("log_date", range.end),
+      db.from("exercise_logs")
+        .select("score, log_date")
+        .eq("user_id", currentUser.id)
+        .gte("log_date", range.start)
+        .lte("log_date", range.end)
+    ]);
 
-    if (rpc.error) throw rpc.error;
+    if (statsRes.error) throw statsRes.error;
 
-    const stats = rpc.data || {
-      total_score: 0,
-      avg_score: 0,
-      best_day: null,
-      best_score: 0,
-      active_days: 0,
-      daily: []
+    const stats = statsRes.data || {
+      total_score: 0, avg_score: 0, best_day: null, best_score: 0, active_days: 0, daily: []
     };
 
-    // Habit breakdown (direct query)
-    const logs = await db.from("daily_logs")
-      .select("item_type, score, log_date")
-      .eq("user_id", currentUser.id)
-      .gte("log_date", range.start)
-      .lte("log_date", range.end);
-
-    const exLogs = await db.from("exercise_logs")
-      .select("score, log_date")
-      .eq("user_id", currentUser.id)
-      .gte("log_date", range.start)
-      .lte("log_date", range.end);
+    const leaderboard = boardRes.data || [];
 
     const habitMap = {};
-    (logs.data || []).forEach(r => {
+    (logsRes.data || []).forEach(r => {
       if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
       habitMap[r.item_type].count++;
       habitMap[r.item_type].total += Number(r.score) || 0;
     });
 
-    // exercise as a habit
-    if (exLogs.data && exLogs.data.length) {
+    if (exRes.data && exRes.data.length) {
       habitMap.exercise = {
-        count: exLogs.data.length,
-        total: exLogs.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
+        count: exRes.data.length,
+        total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
       };
     }
 
-    renderReport(stats, habitMap, range);
+    renderReport(stats, habitMap, leaderboard);
   } catch (err) {
     content.innerHTML = `<div class="empty">خطا در دریافت گزارش<br><small>${err.message}</small></div>`;
   }
 }
 
-function renderReport(stats, habitMap, range) {
+function renderReport(stats, habitMap, leaderboard) {
   const content = document.getElementById("content");
 
   const total = Number(stats.total_score) || 0;
@@ -482,7 +569,6 @@ function renderReport(stats, habitMap, range) {
   const active = Number(stats.active_days) || 0;
   const daily = stats.daily || [];
 
-  // Best day label
   let bestNote = "—";
   if (stats.best_day) {
     const [y, m, d] = stats.best_day.split("-").map(Number);
@@ -490,9 +576,7 @@ function renderReport(stats, habitMap, range) {
     bestNote = fa(j.jd) + " " + J_MONTHS[j.jm - 1];
   }
 
-  // Build chart bars
   const maxAbs = Math.max(...daily.map(d => Math.abs(Number(d.score) || 0)), 1);
-
   let chartHtml = "";
   if (daily.length === 0) {
     chartHtml = `<div class="empty">هنوز داده‌ای برای این ماه ثبت نشده</div>`;
@@ -511,15 +595,65 @@ function renderReport(stats, habitMap, range) {
     }).join("") + `</div>`;
   }
 
-  // Habits
+  /* Top 3 podium */
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
+  let podiumHtml = "";
+  if (top3.length === 0) {
+    podiumHtml = `<div class="empty">هنوز رتبه‌بندی‌ای وجود ندارد</div>`;
+  } else {
+    // classic order: 2nd | 1st | 3rd
+    let order, placeMap, medalMap;
+    if (top3.length >= 3) {
+      order = [top3[1], top3[0], top3[2]];
+      placeMap = ["second", "first", "third"];
+      medalMap = ["🥈", "🥇", "🥉"];
+    } else if (top3.length === 2) {
+      order = [top3[1], top3[0]];
+      placeMap = ["second", "first"];
+      medalMap = ["🥈", "🥇"];
+    } else {
+      order = [top3[0]];
+      placeMap = ["first"];
+      medalMap = ["🥇"];
+    }
+
+    podiumHtml = `<div class="podium">` + order.map((u, i) => {
+      const place = placeMap[i];
+      const medal = medalMap[i];
+      const name = u.display_name || "کاربر";
+      const sc = Number(u.total_score) || 0;
+      const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
+      return `
+        <div class="podium-place ${place}">
+          <div class="podium-medal">${medal}</div>
+          <div class="podium-name">${name}</div>
+          <div class="podium-score">${scoreText(sc)}</div>
+          <div class="podium-bar">${num}</div>
+        </div>`;
+    }).join("") + `</div>`;
+
+    if (rest.length) {
+      podiumHtml += `<div class="ranking-list">` + rest.map((u, i) => `
+        <div class="rank-row">
+          <div class="rank-num">${fa(i + 4)}</div>
+          <div class="rank-name">${u.display_name || "کاربر"}</div>
+          <div class="rank-score">${scoreText(u.total_score)}</div>
+        </div>
+      `).join("") + `</div>`;
+    }
+  }
+
+  /* Habits */
   let habitsHtml = "";
-  const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
-  const hasAny = order.some(k => habitMap[k]);
+  const orderH = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
+  const hasAny = orderH.some(k => habitMap[k]);
 
   if (!hasAny) {
     habitsHtml = `<div class="empty">هیچ عادتی ثبت نشده</div>`;
   } else {
-    habitsHtml = order.filter(k => habitMap[k]).map(k => {
+    habitsHtml = orderH.filter(k => habitMap[k]).map(k => {
       const h = habitMap[k];
       const avgH = h.count ? (h.total / h.count) : 0;
       const info = HABIT_LABELS[k] || { icon: "•", title: k };
@@ -555,6 +689,12 @@ function renderReport(stats, habitMap, range) {
         <div class="stat-value">${fa(active)}</div>
         <div class="stat-note">از ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} روز</div>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">جدول امتیازات</div>
+      <div class="card-sub">رتبه‌بندی کاربران در این ماه</div>
+      ${podiumHtml}
     </div>
 
     <div class="card">
