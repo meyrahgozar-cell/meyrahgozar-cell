@@ -235,68 +235,113 @@ button { cursor: pointer; border: none; background: none; }
   text-align: left;
 }
 
-/* CALENDAR */
+/* COMPACT CALENDAR */
 .cal-wrap {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 12px;
-  margin-bottom: 14px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.cal-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  gap: 10px;
+}
+
+.cal-toggle:hover { background: rgba(180,76,255,0.06); }
+
+.cal-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-date-label {
+  color: var(--neon2);
+  font-weight: 700;
+}
+
+.cal-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.cal-wrap.open .cal-chevron {
+  transform: rotate(180deg);
+}
+
+.cal-body {
+  display: none;
+  padding: 0 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.cal-wrap.open .cal-body {
+  display: block;
 }
 
 .cal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 10px 4px 8px;
 }
 
 .cal-title {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .cal-nav {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .cal-nav button {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   background: var(--card2);
   border: 1px solid var(--border);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 2px;
+  margin-bottom: 4px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
 }
 
 .days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
 .day {
   aspect-ratio: 1;
-  border-radius: 10px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text);
-  transition: 0.12s;
+  transition: 0.1s;
 }
 
 .day:hover:not(.empty):not(.future) {
@@ -310,20 +355,20 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 .day.selected {
-  background: linear-gradient(135deg, rgba(180,76,255,0.35), rgba(0,240,255,0.15));
+  background: linear-gradient(135deg, rgba(180,76,255,0.4), rgba(0,240,255,0.18));
   border-color: var(--neon);
-  box-shadow: 0 0 12px rgba(180,76,255,0.25);
+  box-shadow: 0 0 10px rgba(180,76,255,0.25);
   color: #fff;
 }
 
 .day.empty { visibility: hidden; }
-.day.future { opacity: 0.3; pointer-events: none; }
+.day.future { opacity: 0.28; pointer-events: none; }
 
 .streaks {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin: 10px 0 14px;
+  margin: 8px 0 12px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -547,21 +592,30 @@ button { cursor: pointer; border: none; background: none; }
     </section>
   </div>
 
-  <!-- SHAMSI CALENDAR -->
-  <div class="cal-wrap">
-    <div class="cal-header">
-      <div class="cal-nav">
-        <button id="prevMonth">‹</button>
+  <!-- COMPACT COLLAPSIBLE CALENDAR -->
+  <div class="cal-wrap" id="calWrap">
+    <button class="cal-toggle" id="calToggle">
+      <div class="cal-toggle-left">
+        <span>📅</span>
+        <span class="cal-date-label" id="calDateLabel">امروز</span>
       </div>
-      <div class="cal-title" id="calTitle">—</div>
-      <div class="cal-nav">
-        <button id="nextMonth">›</button>
+      <span class="cal-chevron">▼</span>
+    </button>
+    <div class="cal-body">
+      <div class="cal-header">
+        <div class="cal-nav">
+          <button id="prevMonth">‹</button>
+        </div>
+        <div class="cal-title" id="calTitle">—</div>
+        <div class="cal-nav">
+          <button id="nextMonth">›</button>
+        </div>
       </div>
+      <div class="weekdays">
+        <div>ش</div><div>ی</div><div>د</div><div>س</div><div>چ</div><div>پ</div><div>ج</div>
+      </div>
+      <div class="days" id="calDays"></div>
     </div>
-    <div class="weekdays">
-      <div>ش</div><div>ی</div><div>د</div><div>س</div><div>چ</div><div>پ</div><div>ج</div>
-    </div>
-    <div class="days" id="calDays"></div>
   </div>
 
   <div class="streaks">
@@ -583,15 +637,16 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 let mode = "login";
-let selectedDate = null;   // ISO yyyy-mm-dd
+let selectedDate = null;
 let todayDate = null;
-let viewYear = null;       // jalali year
-let viewMonth = null;      // jalali month 1-12
+let viewYear = null;
+let viewMonth = null;
 let currentUser = null;
 let todayLogs = new Map();
 let exerciseLog = null;
 let mountainTrips = [];
 let latePenalty = 0;
+let calOpen = false;
 
 const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
 
@@ -642,8 +697,13 @@ function monthRangeISO(iso){
   const end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
   return{start:isoDate(start),end:isoDate(end)};
 }
+function jalaliLabel(iso){
+  const[y,m,d]=iso.split("-").map(Number);
+  const j=jalaali.toJalaali(y,m,d);
+  return fa(j.jd)+" "+J_MONTHS[j.jm-1];
+}
 
-/* ===== SCORING (exact original) ===== */
+/* ===== SCORING ===== */
 function calculateScore(type,value){
   value=Number(value);
   switch(type){
@@ -717,15 +777,24 @@ document.getElementById("authForm").onsubmit=async e=>{
   }finally{ btn.disabled=false; }
 };
 
+/* ===== CALENDAR TOGGLE ===== */
+document.getElementById("calToggle").onclick=()=>{
+  calOpen=!calOpen;
+  document.getElementById("calWrap").classList.toggle("open",calOpen);
+};
+
+function updateCalLabel(){
+  const label=selectedDate===todayDate ? "امروز" : jalaliLabel(selectedDate);
+  document.getElementById("calDateLabel").textContent=label;
+}
+
 /* ===== SHAMSI CALENDAR ===== */
 function renderCalendar(){
-  const title=document.getElementById("calTitle");
-  title.textContent=J_MONTHS[viewMonth-1]+" "+fa(viewYear);
+  document.getElementById("calTitle").textContent=J_MONTHS[viewMonth-1]+" "+fa(viewYear);
 
   const g=jalaali.toGregorian(viewYear,viewMonth,1);
   const first=new Date(Date.UTC(g.gy,g.gm-1,g.gd));
-  // JS getUTCDay: 0=Sun ... 6=Sat. We want شنبه first → Sat=0
-  let startOffset=(first.getUTCDay()+1)%7; // Sat=0, Sun=1 ... Fri=6
+  let startOffset=(first.getUTCDay()+1)%7;
 
   const daysInMonth=jalaali.jalaaliMonthLength(viewYear,viewMonth);
   const container=document.getElementById("calDays");
@@ -736,8 +805,6 @@ function renderCalendar(){
     e.className="day empty";
     container.appendChild(e);
   }
-
-  const todayJ=jalaali.toJalaali(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
 
   for(let d=1;d<=daysInMonth;d++){
     const btn=document.createElement("button");
@@ -754,19 +821,25 @@ function renderCalendar(){
     btn.onclick=()=>{
       if(iso>todayDate) return;
       selectedDate=iso;
+      updateCalLabel();
       loadDayData();
       renderCalendar();
+      // auto collapse after select
+      calOpen=false;
+      document.getElementById("calWrap").classList.remove("open");
     };
     container.appendChild(btn);
   }
 }
 
-document.getElementById("prevMonth").onclick=()=>{
+document.getElementById("prevMonth").onclick=e=>{
+  e.stopPropagation();
   viewMonth--;
   if(viewMonth<1){ viewMonth=12; viewYear--; }
   renderCalendar();
 };
-document.getElementById("nextMonth").onclick=()=>{
+document.getElementById("nextMonth").onclick=e=>{
+  e.stopPropagation();
   viewMonth++;
   if(viewMonth>12){ viewMonth=1; viewYear++; }
   renderCalendar();
@@ -948,7 +1021,6 @@ async function saveDailyLog(type,value,e){
   if(q.error) return showToast("خطا: "+q.error.message);
   todayLogs.set(type,q.data);
   updateScoreUI();
-  // light re-render only score part + this item would be ideal, but full is ok for now
   renderItems();
   if(e) floatingScore(score-old,e.clientX,e.clientY);
   showToast("ثبت شد ✓");
@@ -1007,6 +1079,7 @@ async function openApp(user){
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
 
+  updateCalLabel();
   renderCalendar();
   await loadDayData();
 }
