@@ -15,7 +15,6 @@
 <style>
 :root {
   --bg: #05060a;
-  --bg2: #0a0c14;
   --card: #0d1019;
   --card2: #131722;
   --border: rgba(180, 100, 255, 0.18);
@@ -23,19 +22,13 @@
   --muted: #8b92b0;
   --neon: #b44cff;
   --neon2: #00f0ff;
-  --neon3: #ff2d95;
   --positive: #00ff9d;
   --negative: #ff4d6d;
-  --glow: 0 0 20px rgba(180, 76, 255, 0.35);
-  --glow2: 0 0 30px rgba(0, 240, 255, 0.25);
-  --radius: 18px;
+  --glow: 0 0 18px rgba(180, 76, 255, 0.3);
+  --radius: 16px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   min-height: 100%;
@@ -47,27 +40,17 @@ html, body {
 
 body {
   background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.08), transparent),
-    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(255, 45, 149, 0.06), transparent),
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.06), transparent),
     var(--bg);
   min-height: 100vh;
 }
 
-button, input {
-  font: inherit;
-  color: inherit;
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-}
-
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
 .hidden { display: none !important; }
 
-/* ========== AUTH ========== */
+/* AUTH */
 .auth-page {
   min-height: 100vh;
   display: grid;
@@ -76,458 +59,392 @@ button {
 }
 
 .auth-card {
-  width: min(420px, 100%);
+  width: min(400px, 100%);
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 32px 28px;
-  box-shadow: var(--glow), 0 25px 60px rgba(0,0,0,0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(180,76,255,0.08), transparent 40%, rgba(0,240,255,0.05));
-  pointer-events: none;
+  border-radius: 22px;
+  padding: 28px 24px;
+  box-shadow: var(--glow), 0 20px 50px rgba(0,0,0,0.45);
 }
 
 .logo {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
-  letter-spacing: -0.5px;
   background: linear-gradient(90deg, #b44cff, #00f0ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin-bottom: 4px;
 }
 
-.subtitle {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 28px;
-}
+.subtitle { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
 
 .tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 5px;
   background: var(--card2);
-  padding: 5px;
-  border-radius: 14px;
-  margin-bottom: 22px;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
   border: 1px solid var(--border);
 }
 
 .tab {
-  height: 42px;
-  border-radius: 10px;
+  height: 40px;
+  border-radius: 9px;
   color: var(--muted);
   font-weight: 600;
   font-size: 14px;
-  transition: 0.2s;
 }
 
 .tab.active {
-  background: linear-gradient(135deg, rgba(180,76,255,0.25), rgba(0,240,255,0.15));
+  background: linear-gradient(135deg, rgba(180,76,255,0.28), rgba(0,240,255,0.12));
   color: var(--text);
-  box-shadow: 0 0 15px rgba(180,76,255,0.2);
 }
 
-.form {
-  display: grid;
-  gap: 12px;
-}
-
-.label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: -4px;
-}
+.form { display: grid; gap: 10px; }
+.label { font-size: 12px; color: var(--muted); }
 
 .input {
   width: 100%;
-  height: 48px;
-  padding: 0 16px;
-  border-radius: 12px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 11px;
   border: 1px solid var(--border);
   background: var(--card2);
-  color: var(--text);
   outline: none;
-  transition: 0.2s;
 }
 
 .input:focus {
   border-color: var(--neon);
-  box-shadow: 0 0 0 3px rgba(180,76,255,0.15);
+  box-shadow: 0 0 0 2px rgba(180,76,255,0.15);
 }
 
 .btn-primary {
-  height: 50px;
-  border-radius: 14px;
+  height: 48px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #b44cff, #7b2fff);
-  color: white;
+  color: #fff;
   font-weight: 700;
-  font-size: 15px;
-  margin-top: 8px;
-  box-shadow: 0 0 25px rgba(180,76,255,0.4);
-  transition: 0.2s;
+  margin-top: 6px;
+  box-shadow: 0 0 20px rgba(180,76,255,0.35);
 }
 
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 35px rgba(180,76,255,0.55);
-}
+.btn-primary:disabled { opacity: 0.55; }
+.error { color: var(--negative); font-size: 13px; text-align: center; min-height: 18px; }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  transform: none;
-}
-
-.error {
-  color: var(--negative);
-  font-size: 13px;
-  min-height: 20px;
-  text-align: center;
-}
-
-/* ========== APP ========== */
+/* APP */
 .app {
-  max-width: 720px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 16px 14px 100px;
+  padding: 12px 12px 90px;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 12px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .brand {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   background: linear-gradient(90deg, #b44cff, #00f0ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.user-btn, .theme-btn, .report-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+.header-actions { display: flex; gap: 7px; position: relative; }
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
   background: var(--card);
   border: 1px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 18px;
-  transition: 0.2s;
-}
-
-.user-btn:hover, .theme-btn:hover, .report-btn:hover {
-  border-color: var(--neon);
-  box-shadow: var(--glow);
+  font-size: 16px;
 }
 
 .menu {
   position: absolute;
-  top: 56px;
-  left: 14px;
+  top: 48px;
+  left: 0;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 8px;
-  min-width: 160px;
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 140px;
+  z-index: 60;
   box-shadow: var(--glow);
-  z-index: 50;
 }
 
 .menu button {
   width: 100%;
   text-align: right;
-  padding: 12px 14px;
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 14px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  font-size: 13px;
 }
 
-.menu button:hover {
-  background: rgba(180,76,255,0.12);
+.menu button:hover { background: rgba(180,76,255,0.12); }
+
+/* STICKY SCORE */
+.score-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg);
+  padding: 8px 0 10px;
+  margin: 0 -4px;
 }
 
-/* Score Card */
 .score-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 22px 20px;
-  margin-bottom: 18px;
+  border-radius: 18px;
+  padding: 16px 18px;
   box-shadow: var(--glow);
-  position: relative;
-  overflow: hidden;
-}
-
-.score-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(180,76,255,0.1), transparent 50%, rgba(0,240,255,0.06));
-  pointer-events: none;
-}
-
-.score-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
-.score-main {
-  text-align: center;
-  flex: 1;
-}
-
-.score-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
+.score-main { text-align: center; flex: 1; }
+.score-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
 
 .score-value {
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -1px;
 }
 
-.score-value.positive { color: var(--positive); text-shadow: 0 0 20px rgba(0,255,157,0.4); }
-.score-value.negative { color: var(--negative); text-shadow: 0 0 20px rgba(255,77,109,0.4); }
+.score-value.positive { color: var(--positive); text-shadow: 0 0 16px rgba(0,255,157,0.35); }
+.score-value.negative { color: var(--negative); text-shadow: 0 0 16px rgba(255,77,109,0.35); }
 
 .score-meta {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   color: var(--muted);
+  text-align: left;
 }
 
-.meta-item {
+/* CALENDAR */
+.cal-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 12px;
+  margin-bottom: 14px;
+}
+
+.cal-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cal-nav {
+  display: flex;
   gap: 6px;
 }
 
-.date-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin: 18px 0 8px;
-}
-
-.date-nav button {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+.cal-nav button {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: var(--card2);
   border: 1px solid var(--border);
-  font-size: 18px;
-  transition: 0.2s;
-}
-
-.date-nav button:hover {
-  border-color: var(--neon2);
-  box-shadow: var(--glow2);
-}
-
-.date-label {
   font-size: 16px;
-  font-weight: 600;
-  min-width: 140px;
-  text-align: center;
 }
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  transition: 0.12s;
+}
+
+.day:hover:not(.empty):not(.future) {
+  border-color: var(--border);
+  background: var(--card2);
+}
+
+.day.today {
+  border-color: var(--neon2);
+  color: var(--neon2);
+}
+
+.day.selected {
+  background: linear-gradient(135deg, rgba(180,76,255,0.35), rgba(0,240,255,0.15));
+  border-color: var(--neon);
+  box-shadow: 0 0 12px rgba(180,76,255,0.25);
+  color: #fff;
+}
+
+.day.empty { visibility: hidden; }
+.day.future { opacity: 0.3; pointer-events: none; }
 
 .streaks {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
-  margin-bottom: 20px;
-  font-size: 13px;
+  margin: 10px 0 14px;
+  font-size: 12px;
   color: var(--muted);
 }
 
 .streaks span {
   background: var(--card2);
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 5px 11px;
+  border-radius: 16px;
   border: 1px solid var(--border);
 }
 
-/* Items */
-.items {
-  display: grid;
-  gap: 12px;
-}
+/* ITEMS */
+.items { display: grid; gap: 10px; }
 
 .item {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
-  transition: 0.2s;
-}
-
-.item:hover {
-  border-color: rgba(180,76,255,0.4);
-  box-shadow: 0 0 20px rgba(180,76,255,0.12);
+  padding: 14px;
 }
 
 .item-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .item-name {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
-.item-icon { font-size: 18px; }
-
-.item-desc {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-}
+.item-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 .item-score {
   font-weight: 700;
-  font-size: 15px;
-  min-width: 40px;
+  font-size: 14px;
+  min-width: 36px;
   text-align: left;
 }
 
 .item-score.positive { color: var(--positive); }
 .item-score.negative { color: var(--negative); }
 
-.options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.options { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .opt {
-  padding: 8px 14px;
-  border-radius: 10px;
+  padding: 7px 12px;
+  border-radius: 9px;
   background: var(--card2);
   border: 1px solid var(--border);
-  font-size: 13px;
-  transition: 0.15s;
-}
-
-.opt:hover, .opt.active {
-  border-color: var(--neon);
-  background: rgba(180,76,255,0.15);
-  box-shadow: 0 0 12px rgba(180,76,255,0.2);
+  font-size: 12px;
 }
 
 .opt.active {
+  border-color: var(--neon);
+  background: rgba(180,76,255,0.18);
   color: var(--neon2);
 }
 
-.input-row {
-  display: flex;
-  gap: 8px;
-}
+.input-row { display: flex; gap: 7px; }
 
-.input-row input {
+.input-row input, .time-input {
   flex: 1;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--card2);
-  outline: none;
-}
-
-.input-row input:focus {
-  border-color: var(--neon);
-}
-
-.small-primary {
-  height: 42px;
-  padding: 0 18px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #b44cff, #7b2fff);
-  color: white;
-  font-weight: 600;
-  font-size: 13px;
-  box-shadow: 0 0 15px rgba(180,76,255,0.3);
-}
-
-.time-input {
-  width: 100%;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 10px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--card2);
   outline: none;
   color-scheme: dark;
 }
 
-.time-input:focus {
+.input-row input:focus, .time-input:focus {
   border-color: var(--neon);
 }
 
-/* Exercise special */
+.small-primary {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #b44cff, #7b2fff);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .exercise-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .exercise-grid label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .exercise-stats {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.exercise-stats b {
-  color: var(--neon2);
-}
+.exercise-stats b { color: var(--neon2); }
 
 .mountain-status {
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: 8px;
+  font-size: 11px;
   color: var(--muted);
   text-align: center;
 }
@@ -535,18 +452,18 @@ button {
 /* Toast */
 .toast {
   position: fixed;
-  bottom: 28px;
+  bottom: 24px;
   left: 50%;
-  transform: translateX(-50%) translateY(80px);
+  transform: translateX(-50%) translateY(70px);
   background: var(--card);
   border: 1px solid var(--border);
-  padding: 12px 22px;
-  border-radius: 14px;
-  font-size: 14px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 13px;
   box-shadow: var(--glow);
   z-index: 100;
   opacity: 0;
-  transition: 0.3s;
+  transition: 0.25s;
   pointer-events: none;
 }
 
@@ -555,25 +472,22 @@ button {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Floating score */
 .float-score {
   position: fixed;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 17px;
   pointer-events: none;
   z-index: 200;
-  animation: floatUp 0.9s ease-out forwards;
+  animation: floatUp 0.85s ease-out forwards;
 }
 
 @keyframes floatUp {
   0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-50px); }
+  100% { opacity: 0; transform: translateY(-45px); }
 }
 
-/* Mobile tweaks */
 @media (max-width: 480px) {
-  .score-value { font-size: 40px; }
-  .app { padding: 12px 10px 90px; }
+  .score-value { font-size: 36px; }
   .exercise-grid { grid-template-columns: 1fr; }
 }
 </style>
@@ -585,26 +499,20 @@ button {
   <div class="auth-card">
     <div class="logo">HQL</div>
     <div class="subtitle">زندگی با کیفیت • هر روز یک قدم بهتر</div>
-
     <div class="tabs">
       <button class="tab active" id="loginTab">ورود</button>
       <button class="tab" id="signupTab">ثبت‌نام</button>
     </div>
-
     <form class="form" id="authForm">
       <div id="nameBox" class="hidden">
         <div class="label">نام نمایشی</div>
         <input class="input" id="displayName" placeholder="مثلاً میراح" autocomplete="name">
       </div>
-
       <div class="label">ایمیل</div>
       <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
-
       <div class="label">رمز عبور</div>
       <input class="input" id="password" type="password" placeholder="حداقل ۶ کاراکتر" autocomplete="current-password" required>
-
       <div class="error" id="authError"></div>
-
       <button type="submit" class="btn-primary" id="authBtn">ورود</button>
     </form>
   </div>
@@ -613,37 +521,47 @@ button {
 <!-- APP -->
 <div id="app" class="app hidden">
   <header class="header">
-    <div class="header-left">
-      <div class="brand">HQL</div>
-    </div>
-    <div style="display:flex;gap:8px;position:relative">
-      <button class="report-btn" id="reportButton" title="گزارش">📊</button>
-      <button class="theme-btn" id="themeButton" title="تم">🌓</button>
-      <button class="user-btn" id="userButton" title="کاربر">👤</button>
+    <div class="brand">HQL</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="reportButton" title="گزارش">📊</button>
+      <button class="icon-btn" id="themeButton" title="تم">🌓</button>
+      <button class="icon-btn" id="userButton" title="کاربر">👤</button>
       <div id="menu" class="menu hidden">
         <button id="logoutButton">خروج</button>
       </div>
     </div>
   </header>
 
-  <section class="score-card">
-    <div class="score-row">
+  <!-- STICKY SCORE -->
+  <div class="score-sticky">
+    <section class="score-card">
       <div class="score-main">
         <div class="score-label">امتیاز روز</div>
         <div id="score" class="score-value">۰</div>
       </div>
       <div class="score-meta">
-        <div class="meta-item" id="itemsCount">۰ از ۱۰ آیتم</div>
-        <div class="meta-item" id="latePenalty"></div>
-        <div class="meta-item" id="mountainBonus"></div>
+        <div id="itemsCount">۰ از ۱۰ آیتم</div>
+        <div id="latePenalty"></div>
+        <div id="mountainBonus"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SHAMSI CALENDAR -->
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-nav">
+        <button id="prevMonth">‹</button>
+      </div>
+      <div class="cal-title" id="calTitle">—</div>
+      <div class="cal-nav">
+        <button id="nextMonth">›</button>
       </div>
     </div>
-  </section>
-
-  <div class="date-nav">
-    <button id="prevDay">‹</button>
-    <div class="date-label" id="dateLabel">امروز</div>
-    <button id="nextDay">›</button>
+    <div class="weekdays">
+      <div>ش</div><div>ی</div><div>د</div><div>س</div><div>چ</div><div>پ</div><div>ج</div>
+    </div>
+    <div class="days" id="calDays"></div>
   </div>
 
   <div class="streaks">
@@ -657,721 +575,454 @@ button {
 <div id="toast" class="toast"></div>
 
 <script>
-/* =========================================================
-   CONFIG - NEW PROJECT ONLY
-   ========================================================= */
 const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
-/* =========================================================
-   STATE
-   ========================================================= */
 let mode = "login";
-let selectedDate = null;
+let selectedDate = null;   // ISO yyyy-mm-dd
 let todayDate = null;
-let monthStart = null;
+let viewYear = null;       // jalali year
+let viewMonth = null;      // jalali month 1-12
 let currentUser = null;
 let todayLogs = new Map();
 let exerciseLog = null;
 let mountainTrips = [];
 let latePenalty = 0;
-let theme = "dark";
 
-/* =========================================================
-   ITEMS (same as original)
-   ========================================================= */
+const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+
 const ITEMS = [
-  {
-    type: "water",
-    icon: "💧",
-    title: "مصرف آب",
-    desc: "فقط آب • امتیاز از ۱ لیوان شروع می‌شود",
-    options: [
-      ["۱ تا ۲ لیوان", 2],
-      ["۲ تا ۴ لیوان", 4],
-      ["۴ تا ۶ لیوان", 6],
-      ["۶ تا ۸ لیوان", 8]
-    ]
-  },
-  {
-    type: "sleep",
-    icon: "🌙",
-    title: "زمان خواب دیشب",
-    desc: "چه ساعتی خوابیدی؟",
-    time: true
-  },
-  {
-    type: "instagram",
-    icon: "📱",
-    title: "اینستاگرام زیر ۱۰ دقیقه",
-    desc: "امروز",
-    options: [["بله", 1], ["خیر", 0]]
-  },
-  {
-    type: "sun",
-    icon: "☀️",
-    title: "۱۰ دقیقه آفتاب",
-    desc: "امروز",
-    options: [["بله", 1], ["خیر", 0]]
-  },
-  {
-    type: "solitude",
-    icon: "🧘",
-    title: "۱۰ دقیقه خلوت با خود",
-    desc: "امروز",
-    options: [["بله", 1], ["خیر", 0]]
-  },
-  {
-    type: "reading",
-    icon: "📖",
-    title: "مطالعه کتاب",
-    desc: "تعداد صفحه",
-    input: true,
-    placeholder: "مثلاً ۱۲"
-  },
-  {
-    type: "sugar",
-    icon: "🍬",
-    title: "مصرف قند مصنوعی",
-    desc: "امروز",
-    options: [["مصرف نشد", 1], ["مصرف شد", 0]]
-  },
-  {
-    type: "dinner",
-    icon: "🍽️",
-    title: "زمان شام",
-    desc: "چه ساعتی شام خوردی؟",
-    time: true
-  }
+  { type:"water", icon:"💧", title:"مصرف آب", desc:"فقط آب", options:[["۱–۲ لیوان",2],["۲–۴ لیوان",4],["۴–۶ لیوان",6],["۶–۸ لیوان",8]] },
+  { type:"sleep", icon:"🌙", title:"زمان خواب دیشب", desc:"چه ساعتی؟", time:true },
+  { type:"instagram", icon:"📱", title:"اینستاگرام زیر ۱۰ دقیقه", desc:"امروز", options:[["بله",1],["خیر",0]] },
+  { type:"sun", icon:"☀️", title:"۱۰ دقیقه آفتاب", desc:"امروز", options:[["بله",1],["خیر",0]] },
+  { type:"solitude", icon:"🧘", title:"۱۰ دقیقه خلوت", desc:"امروز", options:[["بله",1],["خیر",0]] },
+  { type:"reading", icon:"📖", title:"مطالعه کتاب", desc:"تعداد صفحه", input:true, placeholder:"مثلاً ۱۲" },
+  { type:"sugar", icon:"🍬", title:"قند مصنوعی", desc:"امروز", options:[["مصرف نشد",1],["مصرف شد",0]] },
+  { type:"dinner", icon:"🍽️", title:"زمان شام", desc:"چه ساعتی؟", time:true }
 ];
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
-function faNumber(v) {
-  return String(v).replace(/\d/g, x => "۰۱۲۳۴۵۶۷۸۹"[x]);
+function fa(v){ return String(v).replace(/\d/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d]); }
+function scoreText(v){
+  const n=Number(v||0);
+  let s=Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+  return fa(s);
 }
-
-function scoreText(v) {
-  const n = Number(v || 0);
-  let s = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  return faNumber(s);
+function showToast(t){
+  const e=document.getElementById("toast");
+  e.textContent=t; e.classList.add("show");
+  clearTimeout(window.__t);
+  window.__t=setTimeout(()=>e.classList.remove("show"),2400);
 }
-
-function showToast(t) {
-  const e = document.getElementById("toast");
-  e.textContent = t;
-  e.classList.add("show");
-  clearTimeout(window.__toast);
-  window.__toast = setTimeout(() => e.classList.remove("show"), 2600);
-}
-
-function floatingScore(score, x, y) {
-  if (!score) return;
-  const e = document.createElement("div");
-  e.className = "float-score";
-  e.textContent = (score > 0 ? "+" : "") + scoreText(score);
-  e.style.left = x + "px";
-  e.style.top = y + "px";
-  e.style.color = score > 0 ? "var(--positive)" : "var(--negative)";
+function floatingScore(score,x,y){
+  if(!score)return;
+  const e=document.createElement("div");
+  e.className="float-score";
+  e.textContent=(score>0?"+":"")+scoreText(score);
+  e.style.left=x+"px"; e.style.top=y+"px";
+  e.style.color=score>0?"var(--positive)":"var(--negative)";
   document.body.appendChild(e);
-  setTimeout(() => e.remove(), 900);
+  setTimeout(()=>e.remove(),850);
+}
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function parseISO(s){ const[y,m,d]=s.split("-").map(Number); return new Date(Date.UTC(y,m-1,d)); }
+function toMinutes(t){ if(!t)return null; const[h,m]=t.split(":").map(Number); return h*60+m; }
+function minutesToTime(mins){
+  if(mins==null)return"";
+  const h=Math.floor(mins/60)%24, m=mins%60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+function monthRangeISO(iso){
+  const d=parseISO(iso);
+  const start=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1));
+  const end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+  return{start:isoDate(start),end:isoDate(end)};
 }
 
-function parseDate(s) {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
-}
-
-function isoDate(d) {
-  return d.toISOString().slice(0, 10);
-}
-
-function addDays(s, n) {
-  const d = parseDate(s);
-  d.setUTCDate(d.getUTCDate() + n);
-  return isoDate(d);
-}
-
-function monthRangeFor(dateStr) {
-  const d = parseDate(dateStr);
-  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-  const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
-  return { start: isoDate(start), end: isoDate(end) };
-}
-
-function toMinutes(timeStr) {
-  if (!timeStr) return null;
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function minutesToTime(mins) {
-  if (mins == null) return "";
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
-}
-
-function jalaliLabel(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  const j = jalaali.toJalaali(y, m, d);
-  const months = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
-  return faNumber(j.jd) + " " + months[j.jm - 1];
-}
-
-/* =========================================================
-   SCORING (exact original logic)
-   ========================================================= */
-function calculateScore(type, value) {
-  value = Number(value);
-
-  switch (type) {
-    case "water":
-      if (value < 1) return 0;
-      if (value < 2) return 0.5;
-      if (value <= 4) return 0.6;
-      if (value <= 6) return 0.7;
+/* ===== SCORING (exact original) ===== */
+function calculateScore(type,value){
+  value=Number(value);
+  switch(type){
+    case"water":
+      if(value<1)return 0;
+      if(value<2)return .5;
+      if(value<=4)return .6;
+      if(value<=6)return .7;
       return 1.5;
-
-    case "sleep":
-      if (value < 1380) return 2;      // before 23:00
-      if (value < 1440) return 0.5;    // 23:00 - 24:00
-      return -0.5;
-
-    case "instagram":
-      return value === 1 ? 1.5 : 0;
-
-    case "sun":
-      return value === 1 ? 1.5 : 0;
-
-    case "solitude":
-      return value === 1 ? 1.5 : 0;
-
-    case "reading":
-      if (value <= 0) return 0;
-      if (value === 1) return 0.5;
+    case"sleep":
+      if(value<1380)return 2;
+      if(value<1440)return .5;
+      return -.5;
+    case"instagram": return value===1?1.5:0;
+    case"sun": return value===1?1.5:0;
+    case"solitude": return value===1?1.5:0;
+    case"reading":
+      if(value<=0)return 0;
+      if(value===1)return .5;
       return 1;
-
-    case "sugar":
-      return value === 1 ? 2 : -0.5;
-
-    case "dinner":
-      if (value < 1140) return 2;      // before 19:00
-      if (value <= 1260) return 0.75;  // 19:00 - 21:00
+    case"sugar": return value===1?2:-.5;
+    case"dinner":
+      if(value<1140)return 2;
+      if(value<=1260)return .75;
       return 0;
-
-    default:
-      return 0;
+    default: return 0;
   }
 }
-
-function exerciseCalc(weight, aerobic, running) {
-  const aerobicKm = (weight / 60) * 0.08 * aerobic;
-  const totalKm = aerobicKm + running;
-  const calories = totalKm * weight;
-  const score = calories < 100 ? 0 : calories < 300 ? 1 : calories <= 600 ? 3 : 5;
-  return { aerobicKm, totalKm, calories, score };
+function exerciseCalc(w,a,r){
+  const aerobicKm=(w/60)*0.08*a;
+  const totalKm=aerobicKm+r;
+  const calories=totalKm*w;
+  const score=calories<100?0:calories<300?1:calories<=600?3:5;
+  return{aerobicKm,totalKm,calories,score};
 }
 
-/* =========================================================
-   AUTH UI
-   ========================================================= */
-function setMode(m) {
-  mode = m;
-  document.getElementById("loginTab").classList.toggle("active", m === "login");
-  document.getElementById("signupTab").classList.toggle("active", m === "signup");
-  document.getElementById("nameBox").classList.toggle("hidden", m !== "signup");
-  document.getElementById("authBtn").textContent = m === "signup" ? "ساخت حساب" : "ورود";
-  document.getElementById("authError").textContent = "";
+/* ===== AUTH ===== */
+function setMode(m){
+  mode=m;
+  document.getElementById("loginTab").classList.toggle("active",m==="login");
+  document.getElementById("signupTab").classList.toggle("active",m==="signup");
+  document.getElementById("nameBox").classList.toggle("hidden",m!=="signup");
+  document.getElementById("authBtn").textContent=m==="signup"?"ساخت حساب":"ورود";
+  document.getElementById("authError").textContent="";
 }
+document.getElementById("loginTab").onclick=()=>setMode("login");
+document.getElementById("signupTab").onclick=()=>setMode("signup");
 
-document.getElementById("loginTab").onclick = () => setMode("login");
-document.getElementById("signupTab").onclick = () => setMode("signup");
-
-document.getElementById("authForm").onsubmit = async (e) => {
+document.getElementById("authForm").onsubmit=async e=>{
   e.preventDefault();
-  const btn = document.getElementById("authBtn");
-  const err = document.getElementById("authError");
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  const name = document.getElementById("displayName").value.trim();
-
-  btn.disabled = true;
-  err.textContent = "";
-
-  try {
+  const btn=document.getElementById("authBtn");
+  const err=document.getElementById("authError");
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  const name=document.getElementById("displayName").value.trim();
+  btn.disabled=true; err.textContent="";
+  try{
     let r;
-    if (mode === "signup") {
-      if (!name) throw new Error("نام نمایشی را وارد کن.");
-      r = await db.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: name } }
-      });
-    } else {
-      r = await db.auth.signInWithPassword({ email, password });
+    if(mode==="signup"){
+      if(!name) throw new Error("نام نمایشی را وارد کن.");
+      r=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
+    }else{
+      r=await db.auth.signInWithPassword({email,password});
     }
-
-    if (r.error) throw r.error;
-
-    if (r.data.session) {
-      await openApp(r.data.session.user);
-    } else {
-      showToast("حساب ساخته شد. ایمیل را تأیید کن.");
-    }
-  } catch (x) {
-    err.textContent = translateError(x.message);
-  } finally {
-    btn.disabled = false;
-  }
+    if(r.error) throw r.error;
+    if(r.data.session) await openApp(r.data.session.user);
+    else showToast("حساب ساخته شد.");
+  }catch(x){
+    const map={"Invalid login credentials":"ایمیل یا رمز اشتباه است.","User already registered":"این ایمیل قبلاً ثبت شده.","Password should be at least 6 characters.":"رمز حداقل ۶ کاراکتر."};
+    err.textContent=map[x.message]||x.message;
+  }finally{ btn.disabled=false; }
 };
 
-function translateError(m) {
-  const map = {
-    "Invalid login credentials": "ایمیل یا رمز عبور اشتباه است.",
-    "User already registered": "این ایمیل قبلاً ثبت‌نام شده است.",
-    "Password should be at least 6 characters.": "رمز عبور حداقل ۶ کاراکتر باشد.",
-    "Unable to validate email address: invalid format": "فرمت ایمیل درست نیست."
-  };
-  return map[m] || m;
+/* ===== SHAMSI CALENDAR ===== */
+function renderCalendar(){
+  const title=document.getElementById("calTitle");
+  title.textContent=J_MONTHS[viewMonth-1]+" "+fa(viewYear);
+
+  const g=jalaali.toGregorian(viewYear,viewMonth,1);
+  const first=new Date(Date.UTC(g.gy,g.gm-1,g.gd));
+  // JS getUTCDay: 0=Sun ... 6=Sat. We want شنبه first → Sat=0
+  let startOffset=(first.getUTCDay()+1)%7; // Sat=0, Sun=1 ... Fri=6
+
+  const daysInMonth=jalaali.jalaaliMonthLength(viewYear,viewMonth);
+  const container=document.getElementById("calDays");
+  container.innerHTML="";
+
+  for(let i=0;i<startOffset;i++){
+    const e=document.createElement("div");
+    e.className="day empty";
+    container.appendChild(e);
+  }
+
+  const todayJ=jalaali.toJalaali(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
+
+  for(let d=1;d<=daysInMonth;d++){
+    const btn=document.createElement("button");
+    btn.className="day";
+    btn.textContent=fa(d);
+
+    const gDay=jalaali.toGregorian(viewYear,viewMonth,d);
+    const iso=isoDate(new Date(Date.UTC(gDay.gy,gDay.gm-1,gDay.gd)));
+
+    if(iso===todayDate) btn.classList.add("today");
+    if(iso===selectedDate) btn.classList.add("selected");
+    if(iso>todayDate) btn.classList.add("future");
+
+    btn.onclick=()=>{
+      if(iso>todayDate) return;
+      selectedDate=iso;
+      loadDayData();
+      renderCalendar();
+    };
+    container.appendChild(btn);
+  }
 }
 
-/* =========================================================
-   THEME
-   ========================================================= */
-function applyTheme() {
-  // For now we keep neon dark only (cyberpunk). Light can be added later.
-  document.documentElement.setAttribute("data-theme", "dark");
-}
+document.getElementById("prevMonth").onclick=()=>{
+  viewMonth--;
+  if(viewMonth<1){ viewMonth=12; viewYear--; }
+  renderCalendar();
+};
+document.getElementById("nextMonth").onclick=()=>{
+  viewMonth++;
+  if(viewMonth>12){ viewMonth=1; viewYear++; }
+  renderCalendar();
+};
 
-async function loadTheme() {
-  const r = await db.from("profiles").select("theme_preference").eq("id", currentUser.id).maybeSingle();
-  if (!r.error && r.data) theme = r.data.theme_preference || "dark";
-  applyTheme();
-}
+/* ===== RENDER ITEMS ===== */
+function renderItems(){
+  const c=document.getElementById("items");
+  c.innerHTML="";
 
-/* =========================================================
-   RENDER ITEMS
-   ========================================================= */
-function renderItems() {
-  const c = document.getElementById("items");
-  c.innerHTML = "";
+  ITEMS.forEach(item=>{
+    const card=document.createElement("article");
+    card.className="item";
+    const log=todayLogs.get(item.type);
+    const sc=log?Number(log.score):0;
 
-  // Daily habits
-  ITEMS.forEach(item => {
-    const card = document.createElement("article");
-    card.className = "item";
-    card.dataset.type = item.type;
-
-    const log = todayLogs.get(item.type);
-    const currentScore = log ? Number(log.score) : 0;
-
-    let body = "";
-    if (item.options) {
-      body = `<div class="options">${item.options.map(([label, val]) => {
-        const active = log && Number(log.value) === val ? "active" : "";
+    let body="";
+    if(item.options){
+      body=`<div class="options">${item.options.map(([label,val])=>{
+        const active=log&&Number(log.value)===val?"active":"";
         return `<button class="opt ${active}" data-val="${val}">${label}</button>`;
       }).join("")}</div>`;
-    } else if (item.time) {
-      const t = log ? minutesToTime(Number(log.value)) : "";
-      body = `<input type="time" class="time-input" value="${t}">`;
-    } else if (item.input) {
-      const v = log ? log.value : "";
-      body = `<div class="input-row">
-        <input type="number" inputmode="numeric" placeholder="${item.placeholder || ""}" value="${v || ""}">
+    }else if(item.time){
+      const t=log?minutesToTime(Number(log.value)):"";
+      body=`<input type="time" class="time-input" value="${t}">`;
+    }else if(item.input){
+      const v=log?log.value:"";
+      body=`<div class="input-row">
+        <input type="number" inputmode="numeric" placeholder="${item.placeholder||""}" value="${v||""}">
         <button class="small-primary save-btn">ثبت</button>
       </div>`;
     }
 
-    card.innerHTML = `
+    card.innerHTML=`
       <div class="item-top">
         <div>
-          <div class="item-name"><span class="item-icon">${item.icon}</span>${item.title}</div>
+          <div class="item-name"><span>${item.icon}</span>${item.title}</div>
           <div class="item-desc">${item.desc}</div>
         </div>
-        <div class="item-score ${currentScore > 0 ? "positive" : currentScore < 0 ? "negative" : ""}">
-          ${currentScore ? (currentScore > 0 ? "+" : "") + scoreText(currentScore) : ""}
-        </div>
-      </div>
-      ${body}
-    `;
+        <div class="item-score ${sc>0?"positive":sc<0?"negative":""}">${sc?(sc>0?"+":"")+scoreText(sc):""}</div>
+      </div>${body}`;
     c.appendChild(card);
 
-    // events
-    if (item.options) {
-      card.querySelectorAll(".opt").forEach(btn => {
-        btn.onclick = (e) => {
-          const val = Number(btn.dataset.val);
-          saveDailyLog(item.type, val, e);
-        };
+    if(item.options){
+      card.querySelectorAll(".opt").forEach(btn=>{
+        btn.onclick=e=>saveDailyLog(item.type,Number(btn.dataset.val),e);
       });
-    } else if (item.time) {
-      const inp = card.querySelector("input");
-      inp.onchange = (e) => {
-        const mins = toMinutes(inp.value);
-        if (mins == null) return;
-        saveDailyLog(item.type, mins, e);
+    }else if(item.time){
+      const inp=card.querySelector("input");
+      inp.onchange=e=>{
+        const mins=toMinutes(inp.value);
+        if(mins!=null) saveDailyLog(item.type,mins,e);
       };
-    } else if (item.input) {
-      const inp = card.querySelector("input");
-      const btn = card.querySelector(".save-btn");
-      btn.onclick = (e) => {
-        const val = Number(inp.value);
-        if (isNaN(val) || val < 0) return showToast("عدد معتبر وارد کن.");
-        saveDailyLog(item.type, val, e);
+    }else if(item.input){
+      const inp=card.querySelector("input");
+      card.querySelector(".save-btn").onclick=e=>{
+        const val=Number(inp.value);
+        if(isNaN(val)||val<0) return showToast("عدد معتبر وارد کن.");
+        saveDailyLog(item.type,val,e);
       };
     }
   });
 
-  // Exercise card
-  renderExerciseCard(c);
-
-  // Mountain card
-  renderMountainCard(c);
+  renderExercise(c);
+  renderMountain(c);
 }
 
-function renderExerciseCard(container) {
-  const card = document.createElement("article");
-  card.className = "item";
-  card.id = "exerciseCard";
+function renderExercise(c){
+  const card=document.createElement("article");
+  card.className="item";
+  const w=exerciseLog?.weight_kg??"";
+  const a=exerciseLog?.aerobic_minutes??"";
+  const r=exerciseLog?.running_km??"";
+  const sc=exerciseLog?Number(exerciseLog.score):0;
 
-  const w = exerciseLog?.weight_kg || "";
-  const a = exerciseLog?.aerobic_minutes || "";
-  const r = exerciseLog?.running_km || "";
-  const sc = exerciseLog ? Number(exerciseLog.score) : 0;
-
-  card.innerHTML = `
+  card.innerHTML=`
     <div class="item-top">
       <div>
-        <div class="item-name"><span class="item-icon">🏃</span>ورزش</div>
+        <div class="item-name"><span>🏃</span>ورزش</div>
         <div class="item-desc">وزن + هوازی + دویدن</div>
       </div>
-      <div class="item-score ${sc > 0 ? "positive" : ""}" id="exerciseScore">
-        ${sc ? "+" + scoreText(sc) : ""}
-      </div>
+      <div class="item-score ${sc>0?"positive":""}" id="exScore">${sc?"+"+scoreText(sc):""}</div>
     </div>
     <div class="exercise-grid">
-      <div>
-        <label>وزن (کیلو)</label>
-        <input type="number" step="0.1" id="exerciseWeight" class="time-input" value="${w}" placeholder="مثلاً ۷۲">
-      </div>
-      <div>
-        <label>هوازی (دقیقه)</label>
-        <input type="number" id="aerobicMinutes" class="time-input" value="${a}" placeholder="۰">
-      </div>
-      <div>
-        <label>دویدن (کیلومتر)</label>
-        <input type="number" step="0.1" id="runningKm" class="time-input" value="${r}" placeholder="۰">
-      </div>
+      <div><label>وزن (کیلو)</label><input type="number" step="0.1" id="exW" class="time-input" value="${w}" placeholder="۷۲"></div>
+      <div><label>هوازی (دقیقه)</label><input type="number" id="exA" class="time-input" value="${a}" placeholder="۰"></div>
+      <div><label>دویدن (کیلومتر)</label><input type="number" step="0.1" id="exR" class="time-input" value="${r}" placeholder="۰"></div>
     </div>
-    <div class="exercise-stats" id="exercisePreview"></div>
-    <button class="small-primary" style="width:100%" id="saveExercise">ثبت ورزش</button>
-  `;
-  container.appendChild(card);
+    <div class="exercise-stats" id="exPreview"></div>
+    <button class="small-primary" style="width:100%" id="saveEx">ثبت ورزش</button>`;
+  c.appendChild(card);
 
-  const updatePreview = () => {
-    const ww = Number(document.getElementById("exerciseWeight").value);
-    const aa = Number(document.getElementById("aerobicMinutes").value) || 0;
-    const rr = Number(document.getElementById("runningKm").value) || 0;
-    if (!ww || ww <= 0) {
-      document.getElementById("exercisePreview").innerHTML = "";
-      return;
-    }
-    const x = exerciseCalc(ww, aa, rr);
-    document.getElementById("exercisePreview").innerHTML = `
-      <span>معادل هوازی: <b>${faNumber(x.aerobicKm.toFixed(2))} km</b></span>
-      <span>کل: <b>${faNumber(x.totalKm.toFixed(2))} km</b></span>
-      <span>کالری: <b>${faNumber(Math.round(x.calories))}</b></span>
-    `;
+  const preview=()=>{
+    const ww=Number(document.getElementById("exW").value);
+    const aa=Number(document.getElementById("exA").value)||0;
+    const rr=Number(document.getElementById("exR").value)||0;
+    if(!ww||ww<=0){ document.getElementById("exPreview").innerHTML=""; return; }
+    const x=exerciseCalc(ww,aa,rr);
+    document.getElementById("exPreview").innerHTML=
+      `<span>معادل: <b>${fa(x.aerobicKm.toFixed(2))} km</b></span>
+       <span>کل: <b>${fa(x.totalKm.toFixed(2))} km</b></span>
+       <span>کالری: <b>${fa(Math.round(x.calories))}</b></span>`;
   };
-
-  ["exerciseWeight", "aerobicMinutes", "runningKm"].forEach(id => {
-    document.getElementById(id).oninput = updatePreview;
-  });
-  updatePreview();
-
-  document.getElementById("saveExercise").onclick = saveExercise;
+  ["exW","exA","exR"].forEach(id=>document.getElementById(id).oninput=preview);
+  preview();
+  document.getElementById("saveEx").onclick=saveExercise;
 }
 
-function renderMountainCard(container) {
-  const card = document.createElement("article");
-  card.className = "item";
+function renderMountain(c){
+  const card=document.createElement("article");
+  card.className="item";
+  const count=mountainTrips.length;
+  const hasToday=mountainTrips.some(t=>t.trip_date===selectedDate);
 
-  const count = mountainTrips.length;
-  const hasToday = mountainTrips.some(t => t.trip_date === selectedDate);
-  const bonus = count >= 3 ? 3 : count; // simple daily share approximation
-
-  card.innerHTML = `
+  card.innerHTML=`
     <div class="item-top">
       <div>
-        <div class="item-name"><span class="item-icon">⛰️</span>کوهنوردی</div>
+        <div class="item-name"><span>⛰️</span>کوهنوردی</div>
         <div class="item-desc">حداکثر ۳ بار در ماه</div>
       </div>
-      <div class="item-score positive" id="mountainScore">${count ? "+" + scoreText(bonus) : ""}</div>
+      <div class="item-score positive">${count?"+"+scoreText(count>=3?1:0):""}</div>
     </div>
-    <button class="small-primary" style="width:100%" id="saveMountain" ${hasToday ? "disabled" : ""}>
-      ${hasToday ? "امروز ثبت شده" : "امروز رفتم"}
+    <button class="small-primary" style="width:100%" id="saveMt" ${hasToday?"disabled":""}>
+      ${hasToday?"امروز ثبت شده":"امروز رفتم"}
     </button>
-    <div class="mountain-status" id="mountainStatus">
-      این ماه ${faNumber(count)} از ۳ بار ثبت شده
-    </div>
-  `;
-  container.appendChild(card);
-
-  document.getElementById("saveMountain").onclick = saveMountain;
+    <div class="mountain-status">این ماه ${fa(count)} از ۳ بار</div>`;
+  c.appendChild(card);
+  document.getElementById("saveMt").onclick=saveMountain;
 }
 
-/* =========================================================
-   DATA LOADING
-   ========================================================= */
-async function loadDayData() {
-  if (!currentUser || !selectedDate) return;
+/* ===== DATA ===== */
+async function loadDayData(){
+  if(!currentUser||!selectedDate) return;
 
-  // Daily logs
-  const q = await db.from("daily_logs")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .eq("log_date", selectedDate);
+  const [logs,ex,mt,pen]=await Promise.all([
+    db.from("daily_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate),
+    db.from("exercise_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle(),
+    db.from("mountain_trips").select("id,trip_date").eq("user_id",currentUser.id)
+      .gte("trip_date",monthRangeISO(selectedDate).start)
+      .lte("trip_date",monthRangeISO(selectedDate).end),
+    db.from("daily_penalties").select("score").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle()
+  ]);
 
-  if (q.error) return showToast("خطا در دریافت لاگ‌ها");
+  todayLogs=new Map((logs.data||[]).map(r=>[r.item_type,r]));
+  exerciseLog=ex.data||null;
+  mountainTrips=mt.data||[];
+  latePenalty=pen.data?.score||0;
 
-  todayLogs = new Map((q.data || []).map(r => [r.item_type, r]));
-
-  // Exercise
-  const ex = await db.from("exercise_logs")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .eq("log_date", selectedDate)
-    .maybeSingle();
-
-  exerciseLog = ex.data || null;
-
-  // Mountain trips this month
-  const range = monthRangeFor(selectedDate);
-  const mt = await db.from("mountain_trips")
-    .select("id, trip_date")
-    .eq("user_id", currentUser.id)
-    .gte("trip_date", range.start)
-    .lte("trip_date", range.end)
-    .order("trip_date");
-
-  mountainTrips = mt.data || [];
-
-  // Late penalty
-  const pen = await db.from("daily_penalties")
-    .select("score")
-    .eq("user_id", currentUser.id)
-    .eq("log_date", selectedDate)
-    .maybeSingle();
-
-  latePenalty = pen.data?.score || 0;
-
-  updateUI();
-}
-
-function updateUI() {
-  // Date label
-  const label = selectedDate === todayDate ? "امروز" : jalaliLabel(selectedDate);
-  document.getElementById("dateLabel").textContent = label;
-
-  // Score
-  let total = 0;
-  let count = 0;
-
-  todayLogs.forEach(log => {
-    total += Number(log.score) || 0;
-    count++;
-  });
-
-  if (exerciseLog) {
-    total += Number(exerciseLog.score) || 0;
-    count++;
-  }
-
-  // Mountain bonus (simple: if 3 trips, +1 per day roughly – keep light for now)
-  const mCount = mountainTrips.length;
-  const mountainBonus = mCount >= 3 ? 1 : 0;
-  total += mountainBonus;
-
-  total += Number(latePenalty) || 0;
-
-  const scoreEl = document.getElementById("score");
-  scoreEl.textContent = scoreText(total);
-  scoreEl.classList.toggle("positive", total > 0);
-  scoreEl.classList.toggle("negative", total < 0);
-
-  document.getElementById("itemsCount").textContent = faNumber(count) + " از ۱۰ آیتم";
-
-  const lateEl = document.getElementById("latePenalty");
-  lateEl.textContent = latePenalty ? `جریمه دیرکرد: ${scoreText(latePenalty)}` : "";
-
-  const mEl = document.getElementById("mountainBonus");
-  mEl.textContent = mountainBonus ? `سهم کوه: +${scoreText(mountainBonus)}` : "";
-
-  // Streaks (placeholder for now – can improve later)
-  document.getElementById("streakCurrent").textContent = faNumber(0);
-  document.getElementById("streakBest").textContent = faNumber(0);
-
+  updateScoreUI();
   renderItems();
 }
 
-/* =========================================================
-   SAVE ACTIONS
-   ========================================================= */
-async function saveDailyLog(type, value, e) {
-  const score = calculateScore(type, value);
-  const old = Number(todayLogs.get(type)?.score || 0);
+function updateScoreUI(){
+  let total=0, count=0;
+  todayLogs.forEach(l=>{ total+=Number(l.score)||0; count++; });
+  if(exerciseLog){ total+=Number(exerciseLog.score)||0; count++; }
 
-  const q = await db.rpc("save_daily_log", {
-    p_log_date: selectedDate,
-    p_item_type: type,
-    p_value: value,
-    p_score: score,
-    p_month_start: monthStart
+  const mBonus=mountainTrips.length>=3?1:0;
+  total+=mBonus;
+  total+=Number(latePenalty)||0;
+
+  const el=document.getElementById("score");
+  el.textContent=scoreText(total);
+  el.classList.toggle("positive",total>0);
+  el.classList.toggle("negative",total<0);
+
+  document.getElementById("itemsCount").textContent=fa(count)+" از ۱۰ آیتم";
+  document.getElementById("latePenalty").textContent=latePenalty?`جریمه: ${scoreText(latePenalty)}`:"";
+  document.getElementById("mountainBonus").textContent=mBonus?`سهم کوه: +${scoreText(mBonus)}`:"";
+}
+
+/* ===== SAVE ===== */
+async function saveDailyLog(type,value,e){
+  const score=calculateScore(type,value);
+  const old=Number(todayLogs.get(type)?.score||0);
+  const q=await db.rpc("save_daily_log",{
+    p_log_date:selectedDate, p_item_type:type, p_value:value, p_score:score
   });
-
-  if (q.error) return showToast("ثبت انجام نشد: " + q.error.message);
-
-  todayLogs.set(type, q.data);
-  await loadDayData();
-
-  if (e) floatingScore(score - old, e.clientX, e.clientY);
+  if(q.error) return showToast("خطا: "+q.error.message);
+  todayLogs.set(type,q.data);
+  updateScoreUI();
+  // light re-render only score part + this item would be ideal, but full is ok for now
+  renderItems();
+  if(e) floatingScore(score-old,e.clientX,e.clientY);
   showToast("ثبت شد ✓");
 }
 
-async function saveExercise(e) {
-  const w = Number(document.getElementById("exerciseWeight").value);
-  const a = Number(document.getElementById("aerobicMinutes").value) || 0;
-  const r = Number(document.getElementById("runningKm").value) || 0;
-
-  if (!w || w <= 0) return showToast("وزن معتبر وارد کن.");
-  if (a < 0 || r < 0) return showToast("مقادیر نمی‌توانند منفی باشند.");
-
-  const x = exerciseCalc(w, a, r);
-  const old = Number(exerciseLog?.score || 0);
-
-  const q = await db.rpc("save_exercise_log", {
-    p_log_date: selectedDate,
-    p_weight_kg: w,
-    p_aerobic_minutes: a,
-    p_running_km: r,
-    p_month_start: monthStart
+async function saveExercise(e){
+  const w=Number(document.getElementById("exW").value);
+  const a=Number(document.getElementById("exA").value)||0;
+  const r=Number(document.getElementById("exR").value)||0;
+  if(!w||w<=0) return showToast("وزن معتبر وارد کن.");
+  const x=exerciseCalc(w,a,r);
+  const old=Number(exerciseLog?.score||0);
+  const q=await db.rpc("save_exercise_log",{
+    p_log_date:selectedDate, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
   });
-
-  if (q.error) return showToast("ثبت ورزش انجام نشد: " + q.error.message);
-
-  exerciseLog = q.data;
-  await loadDayData();
-
-  floatingScore(x.score - old, e.clientX, e.clientY);
+  if(q.error) return showToast("خطا: "+q.error.message);
+  exerciseLog=q.data;
+  updateScoreUI();
+  renderItems();
+  floatingScore(x.score-old,e.clientX,e.clientY);
   showToast("ورزش ثبت شد ✓");
 }
 
-async function saveMountain(e) {
-  if (selectedDate > todayDate) return showToast("برای آینده نمی‌شود ثبت کرد.");
-
-  const range = monthRangeFor(selectedDate);
-
-  const q = await db.rpc("save_mountain_trip", {
-    p_trip_date: selectedDate,
-    p_month_start: range.start,
-    p_month_end: range.end
+async function saveMountain(){
+  if(selectedDate>todayDate) return showToast("آینده هنوز نرسیده.");
+  const range=monthRangeISO(selectedDate);
+  const q=await db.rpc("save_mountain_trip",{
+    p_trip_date:selectedDate, p_month_start:range.start, p_month_end:range.end
   });
-
-  if (q.error) return showToast(q.error.message);
-
+  if(q.error) return showToast(q.error.message);
   await loadDayData();
   showToast("کوهنوردی ثبت شد ✓");
 }
 
-/* =========================================================
-   DATE NAV
-   ========================================================= */
-document.getElementById("prevDay").onclick = () => {
-  selectedDate = addDays(selectedDate, -1);
-  loadDayData();
-};
-
-document.getElementById("nextDay").onclick = () => {
-  const next = addDays(selectedDate, 1);
-  if (next > todayDate) return showToast("آینده هنوز نرسیده!");
-  selectedDate = next;
-  loadDayData();
-};
-
-/* =========================================================
-   HEADER ACTIONS
-   ========================================================= */
-document.getElementById("themeButton").onclick = () => {
-  showToast("تم نئون سایبرپانک فعال است 💜");
-};
-
-document.getElementById("userButton").onclick = () => {
-  document.getElementById("menu").classList.toggle("hidden");
-};
-
-document.addEventListener("click", e => {
-  const m = document.getElementById("menu");
-  const b = document.getElementById("userButton");
-  if (!m.contains(e.target) && e.target !== b) m.classList.add("hidden");
+/* ===== HEADER ===== */
+document.getElementById("userButton").onclick=()=>document.getElementById("menu").classList.toggle("hidden");
+document.addEventListener("click",e=>{
+  const m=document.getElementById("menu"), b=document.getElementById("userButton");
+  if(!m.contains(e.target)&&e.target!==b) m.classList.add("hidden");
 });
+document.getElementById("logoutButton").onclick=()=>db.auth.signOut();
+document.getElementById("themeButton").onclick=()=>showToast("تم نئون سایبرپانک 💜");
+document.getElementById("reportButton").onclick=()=>showToast("گزارش به زودی...");
 
-document.getElementById("logoutButton").onclick = async () => {
-  await db.auth.signOut();
-};
+/* ===== OPEN ===== */
+async function openApp(user){
+  currentUser=user;
+  const now=new Date();
+  todayDate=isoDate(now);
+  selectedDate=todayDate;
 
-document.getElementById("reportButton").onclick = () => {
-  showToast("صفحه گزارش به زودی...");
-};
-
-/* =========================================================
-   OPEN APP
-   ========================================================= */
-async function openApp(user) {
-  currentUser = user;
-  todayDate = isoDate(new Date());
-  selectedDate = todayDate;
-  monthStart = monthRangeFor(todayDate).start;
+  const j=jalaali.toJalaali(now.getFullYear(),now.getMonth()+1,now.getDate());
+  viewYear=j.jy;
+  viewMonth=j.jm;
 
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
 
-  await loadTheme();
+  renderCalendar();
   await loadDayData();
 }
 
-/* =========================================================
-   AUTH STATE
-   ========================================================= */
-db.auth.onAuthStateChange(async (event, session) => {
-  if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-    await openApp(session.user);
-  }
-
-  if (event === "SIGNED_OUT") {
+db.auth.onAuthStateChange(async(event,session)=>{
+  if(session&&(event==="SIGNED_IN"||event==="INITIAL_SESSION")) await openApp(session.user);
+  if(event==="SIGNED_OUT"){
     document.getElementById("app").classList.add("hidden");
     document.getElementById("authPage").classList.remove("hidden");
     setMode("login");
   }
 });
 
-/* =========================================================
-   INIT
-   ========================================================= */
-(async () => {
-  const r = await db.auth.getSession();
-  if (r.data.session) {
-    await openApp(r.data.session.user);
-  }
+(async()=>{
+  const r=await db.auth.getSession();
+  if(r.data.session) await openApp(r.data.session.user);
 })();
 </script>
 </body>
