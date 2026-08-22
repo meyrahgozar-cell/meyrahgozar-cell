@@ -538,16 +538,28 @@ async function loadReport() {
       total_score: 0, avg_score: 0, best_day: null, best_score: 0, active_days: 0, daily: []
     };
 
+    // Ranking by average over elapsed days in the selected month
+    // (not full month length — only days that have passed so far)
+    const now = new Date();
+    const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
     const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
-    const MAX_DAILY = 18; // theoretical max daily score
-    // Rank by average daily score, normalized to 20
+    let elapsedDays;
+    if (selectedYear === jNow.jy && selectedMonth === jNow.jm) {
+      // current month → days from 1 to today
+      elapsedDays = jNow.jd;
+    } else if (selectedYear > jNow.jy || (selectedYear === jNow.jy && selectedMonth > jNow.jm)) {
+      // future month → treat as 0 / avoid div by zero
+      elapsedDays = 1;
+    } else {
+      // past month → full month
+      elapsedDays = daysInMonth;
+    }
     let leaderboard = (boardRes.data || []).map(u => {
       const totalScore = Number(u.total_score) || 0;
-      const avgRaw = totalScore / daysInMonth;
-      const normalized = Math.min(20, Math.max(0, (avgRaw / MAX_DAILY) * 20));
-      return { ...u, normalized: Math.round(normalized * 100) / 100 };
+      const avg = elapsedDays > 0 ? totalScore / elapsedDays : 0;
+      return { ...u, avg: Math.round(avg * 100) / 100, elapsedDays };
     });
-    leaderboard.sort((a, b) => b.normalized - a.normalized);
+    leaderboard.sort((a, b) => b.avg - a.avg);
 
     const habitMap = {};
     (logsRes.data || []).forEach(r => {
@@ -632,13 +644,13 @@ function renderReport(stats, habitMap, leaderboard) {
       const place = placeMap[i];
       const medal = medalMap[i];
       const name = u.display_name || "کاربر";
-      const sc = u.normalized != null ? u.normalized : 0;
+      const sc = u.avg != null ? u.avg : 0;
       const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
       return `
         <div class="podium-place ${place}">
           <div class="podium-medal">${medal}</div>
           <div class="podium-name">${name}</div>
-          <div class="podium-score">${scoreText(sc)} / ۲۰</div>
+          <div class="podium-score">${scoreText(sc)}</div>
           <div class="podium-bar">${num}</div>
         </div>`;
     }).join("") + `</div>`;
@@ -648,7 +660,7 @@ function renderReport(stats, habitMap, leaderboard) {
         <div class="rank-row">
           <div class="rank-num">${fa(i + 4)}</div>
           <div class="rank-name">${u.display_name || "کاربر"}</div>
-          <div class="rank-score">${scoreText(u.normalized != null ? u.normalized : 0)} / ۲۰</div>
+          <div class="rank-score">${scoreText(u.avg != null ? u.avg : 0)}</div>
         </div>
       `).join("") + `</div>`;
     }
@@ -702,7 +714,7 @@ function renderReport(stats, habitMap, leaderboard) {
 
     <div class="card">
       <div class="card-title">جدول امتیازات</div>
-      <div class="card-sub">رتبه بر اساس میانگین نرمال‌شده از ۲۰</div>
+      <div class="card-sub">رتبه بر اساس میانگین روزهای سپری‌شده</div>
       ${podiumHtml}
     </div>
 
