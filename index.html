@@ -381,7 +381,19 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* ITEMS */
-.items { display: grid; gap: 10px; }
+.items {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .items {
+    grid-template-columns: 1fr 1fr;
+  }
+  .item[data-full] {
+    grid-column: 1 / -1;
+  }
+}
 
 .item {
   background: var(--card);
@@ -426,8 +438,18 @@ button { cursor: pointer; border: none; background: none; }
 .item-score.positive { color: var(--positive); }
 .item-score.negative { color: var(--negative); }
 
-.options { display: flex; flex-wrap: wrap; gap: 7px; }
-.options .opt { flex: 1 1 calc(50% - 7px); min-width: 120px; text-align: center; }
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+.options .opt {
+  text-align: center;
+  width: 100%;
+}
+@media (max-width: 380px) {
+  .options { grid-template-columns: 1fr; }
+}
 
 .opt {
   padding: 7px 12px;
@@ -476,6 +498,9 @@ button { cursor: pointer; border: none; background: none; }
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 10px;
+}
+.exercise-grid > div:last-child {
+  grid-column: 1 / -1;
 }
 
 .exercise-grid label {
@@ -550,7 +575,7 @@ button { cursor: pointer; border: none; background: none; }
   .item-name { font-size: 13px; }
   .item-desc { font-size: 11px; }
   .options { gap: 6px; }
-  .opt { padding: 8px 11px; font-size: 12px; flex: 1 1 auto; min-width: calc(50% - 6px); text-align: center; }
+  .opt { padding: 8px 11px; font-size: 12px; text-align: center; }
   .cal-toggle { padding: 10px 12px; font-size: 13px; }
   .streaks { flex-wrap: wrap; gap: 6px; }
   .streaks span { font-size: 11px; padding: 5px 10px; }
@@ -561,7 +586,6 @@ button { cursor: pointer; border: none; background: none; }
 
 @media (max-width: 380px) {
   .score-value { font-size: 32px; }
-  .opt { min-width: 100%; }
   .summary { /* n/a on index */ }
 }
 </style>
@@ -945,6 +969,7 @@ function renderItems(){
 function renderExercise(c){
   const card=document.createElement("article");
   card.className="item";
+  card.dataset.full="1";
   const w=exerciseLog?.weight_kg??"";
   const a=exerciseLog?.aerobic_minutes??"";
   const r=exerciseLog?.running_km??"";
@@ -986,6 +1011,7 @@ function renderExercise(c){
 function renderMountain(c){
   const card=document.createElement("article");
   card.className="item";
+  card.dataset.full="1";
   const count=mountainTrips.length;
   const hasToday=mountainTrips.some(t=>t.trip_date===selectedDate);
 
