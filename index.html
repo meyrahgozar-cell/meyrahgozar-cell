@@ -388,6 +388,14 @@ button { cursor: pointer; border: none; background: none; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.item:active {
+  transform: scale(0.995);
+}
+.item:hover {
+  border-color: rgba(180,76,255,0.35);
+  box-shadow: 0 0 16px rgba(180,76,255,0.1);
 }
 
 .item-top {
@@ -419,6 +427,7 @@ button { cursor: pointer; border: none; background: none; }
 .item-score.negative { color: var(--negative); }
 
 .options { display: flex; flex-wrap: wrap; gap: 7px; }
+.options .opt { flex: 1 1 calc(50% - 7px); min-width: 120px; text-align: center; }
 
 .opt {
   padding: 7px 12px;
@@ -531,9 +540,29 @@ button { cursor: pointer; border: none; background: none; }
   100% { opacity: 0; transform: translateY(-45px); }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  .app { padding: 10px 10px 80px; }
   .score-value { font-size: 36px; }
+  .score-card { padding: 14px 12px; gap: 8px; }
+  .score-meta { font-size: 11px; }
   .exercise-grid { grid-template-columns: 1fr; }
+  .item { padding: 12px; border-radius: 14px; }
+  .item-name { font-size: 13px; }
+  .item-desc { font-size: 11px; }
+  .options { gap: 6px; }
+  .opt { padding: 8px 11px; font-size: 12px; flex: 1 1 auto; min-width: calc(50% - 6px); text-align: center; }
+  .cal-toggle { padding: 10px 12px; font-size: 13px; }
+  .streaks { flex-wrap: wrap; gap: 6px; }
+  .streaks span { font-size: 11px; padding: 5px 10px; }
+  .header { margin-bottom: 10px; }
+  .brand { font-size: 18px; }
+  .icon-btn { width: 38px; height: 38px; }
+}
+
+@media (max-width: 380px) {
+  .score-value { font-size: 32px; }
+  .opt { min-width: 100%; }
+  .summary { /* n/a on index */ }
 }
 </style>
 </head>
@@ -708,20 +737,20 @@ function calculateScore(type,value){
   value=Number(value);
   switch(type){
     case"water":
-      // options: 2, 4, 6, 8
+      // value from options: 2, 4, 6, 8
       if(value<=0) return 0;
       if(value<=2) return 0.5;   // ۱–۲ لیوان
-      if(value<=4) return 0.8;   // ۲–۴ لیوان
-      if(value<=6) return 1.2;   // ۴–۶ لیوان
+      if(value<=4) return 0.6;   // ۲–۴ لیوان
+      if(value<=6) return 0.7;   // ۴–۶ لیوان
       return 1.5;                // ۶–۸ لیوان
     case"sleep":
-      // value = minutes from 00:00
-      // قبل ۱۱ (قبل ۲۳:۰۰) → +۲
-      // قبل ۱۲ (۲۳:۰۰–۲۳:۵۹) → +۰.۵
-      // بعد ۱۲ (۰۰:۰۰ به بعد تا صبح) → −۰.۵
-      if(value>=1380 && value<1440) return 0.5;  // 23:00–23:59
-      if(value>=0 && value<360) return -0.5;     // 00:00–05:59 (بعد از نیمه‌شب)
-      if(value<1380) return 2;                   // قبل از ۲۳:۰۰
+      // minutes from 00:00
+      // قبل ۱۱ (<23:00) → +2
+      // قبل ۱۲ (23:00–23:59) → +0.5
+      // بعد ۱۲ (00:00–05:59) → -0.5
+      if(value>=0 && value<360) return -0.5;      // بعد نیمه‌شب
+      if(value>=1380 && value<1440) return 0.5;  // ۲۳:۰۰–۲۳:۵۹
+      if(value<1380) return 2;                    // قبل از ۲۳:۰۰
       return -0.5;
     case"instagram": return value===1?1.5:0;
     case"sun": return value===1?1.5:0;
@@ -729,7 +758,7 @@ function calculateScore(type,value){
     case"reading":
       if(value<=0) return 0;
       if(value===1) return 0.5;  // ۱ صفحه
-      return 1;                  // بیشتر از ۱
+      return 1;                  // بیشتر
     case"sugar": return value===1?2:-.5;
     case"dinner":
       if(value<1140) return 2;
