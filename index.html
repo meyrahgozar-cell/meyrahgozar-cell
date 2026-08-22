@@ -708,26 +708,32 @@ function calculateScore(type,value){
   value=Number(value);
   switch(type){
     case"water":
-      if(value<1)return 0;
-      if(value<2)return .5;
-      if(value<=4)return .6;
-      if(value<=6)return .7;
-      return 1.5;
+      // options: 2, 4, 6, 8
+      if(value<=0) return 0;
+      if(value<=2) return 0.5;   // ۱–۲ لیوان
+      if(value<=4) return 0.8;   // ۲–۴ لیوان
+      if(value<=6) return 1.2;   // ۴–۶ لیوان
+      return 1.5;                // ۶–۸ لیوان
     case"sleep":
-      if(value<1380)return 2;
-      if(value<1440)return .5;
-      return -.5;
+      // value = minutes from 00:00
+      // قبل ۱۱ (قبل ۲۳:۰۰) → +۲
+      // قبل ۱۲ (۲۳:۰۰–۲۳:۵۹) → +۰.۵
+      // بعد ۱۲ (۰۰:۰۰ به بعد تا صبح) → −۰.۵
+      if(value>=1380 && value<1440) return 0.5;  // 23:00–23:59
+      if(value>=0 && value<360) return -0.5;     // 00:00–05:59 (بعد از نیمه‌شب)
+      if(value<1380) return 2;                   // قبل از ۲۳:۰۰
+      return -0.5;
     case"instagram": return value===1?1.5:0;
     case"sun": return value===1?1.5:0;
     case"solitude": return value===1?1.5:0;
     case"reading":
-      if(value<=0)return 0;
-      if(value===1)return .5;
-      return 1;
+      if(value<=0) return 0;
+      if(value===1) return 0.5;  // ۱ صفحه
+      return 1;                  // بیشتر از ۱
     case"sugar": return value===1?2:-.5;
     case"dinner":
-      if(value<1140)return 2;
-      if(value<=1260)return .75;
+      if(value<1140) return 2;
+      if(value<=1260) return 0.75;
       return 0;
     default: return 0;
   }
