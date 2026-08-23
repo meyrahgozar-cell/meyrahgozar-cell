@@ -781,10 +781,16 @@ function minutesToTime(mins){
   return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
 }
 function monthRangeISO(iso){
-  const d=parseISO(iso);
-  const start=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1));
-  const end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
-  return{start:isoDate(start),end:isoDate(end)};
+  // Shamsi (Jalali) month range — not Gregorian
+  const [y,m,d] = iso.split("-").map(Number);
+  const j = jalaali.toJalaali(y, m, d);
+  const days = jalaali.jalaaliMonthLength(j.jy, j.jm);
+  const startG = jalaali.toGregorian(j.jy, j.jm, 1);
+  const endG = jalaali.toGregorian(j.jy, j.jm, days);
+  return {
+    start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
+    end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd)))
+  };
 }
 function jalaliLabel(iso){
   const[y,m,d]=iso.split("-").map(Number);
