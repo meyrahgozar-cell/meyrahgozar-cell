@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeonGit — GitHub File Manager</title>
+<title>NeonGit Manager — GitHub Pages File Manager</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 <style>
   :root {
     --bg: #05050a;
-    --bg-panel: #0c0c14;
+    --bg-panel: #0b0b13;
     --bg-card: #11111b;
     --border: #1e1e2e;
     --neon-cyan: #00f0ff;
@@ -23,161 +22,134 @@
     --glow-pink: 0 0 8px #ff00aa, 0 0 20px #ff00aa55;
     --glow-green: 0 0 8px #00ff9f, 0 0 20px #00ff9f55;
     --radius: 10px;
-    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: var(--font-sans);
+    font-family: system-ui, -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
     background-image:
-      radial-gradient(ellipse at 20% 20%, #00f0ff08 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, #ff00aa08 0%, transparent 50%),
-      linear-gradient(180deg, #05050a 0%, #0a0a12 100%);
+      radial-gradient(ellipse at 15% 20%, #00f0ff0a 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 80%, #ff00aa0a 0%, transparent 50%);
   }
 
-  /* Scanline overlay */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.15) 2px,
-      rgba(0, 0, 0, 0.15) 4px
-    );
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.4;
+    opacity: 0.35;
   }
 
-  /* ===== HEADER ===== */
+  /* HEADER */
   header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(5, 5, 10, 0.85);
-    backdrop-filter: blur(16px);
+    background: rgba(5,5,10,0.9);
+    backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
+    padding: 12px 18px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     flex-wrap: wrap;
   }
 
   .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     font-weight: 700;
-    font-size: 1.25rem;
-    letter-spacing: 1px;
+    font-size: 1.2rem;
     color: var(--neon-cyan);
     text-shadow: var(--glow-cyan);
     white-space: nowrap;
   }
-  .logo i { font-size: 1.4rem; }
 
-  .repo-form {
+  .auth-area {
     display: flex;
     flex: 1;
-    min-width: 260px;
-    max-width: 560px;
     gap: 8px;
+    min-width: 280px;
+    max-width: 640px;
+    flex-wrap: wrap;
   }
 
-  .repo-form input {
-    flex: 1;
+  input[type="text"], input[type="password"] {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 14px;
+    padding: 9px 13px;
     color: var(--text);
     font-family: var(--font-mono);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     outline: none;
-    transition: border-color 0.25s, box-shadow 0.25s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .repo-form input:focus {
+  input:focus {
     border-color: var(--neon-cyan);
-    box-shadow: 0 0 0 3px #00f0ff22, var(--glow-cyan);
+    box-shadow: 0 0 0 3px #00f0ff22;
   }
-  .repo-form input::placeholder { color: var(--text-dim); }
+  input::placeholder { color: var(--text-dim); }
+
+  .repo-input { flex: 1; min-width: 160px; }
+  .token-input { flex: 1.4; min-width: 200px; }
 
   .btn {
     background: transparent;
     border: 1px solid var(--neon-cyan);
     color: var(--neon-cyan);
-    padding: 10px 18px;
+    padding: 9px 16px;
     border-radius: var(--radius);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     white-space: nowrap;
   }
   .btn:hover {
-    background: #00f0ff18;
+    background: #00f0ff15;
     box-shadow: var(--glow-cyan);
-    transform: translateY(-1px);
   }
-  .btn:active { transform: translateY(0); }
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-pink { border-color: var(--neon-pink); color: var(--neon-pink); }
+  .btn-pink:hover { background: #ff00aa15; box-shadow: var(--glow-pink); }
+  .btn-green { border-color: var(--neon-green); color: var(--neon-green); }
+  .btn-green:hover { background: #00ff9f15; box-shadow: var(--glow-green); }
+  .btn-red { border-color: #ff4466; color: #ff4466; }
+  .btn-red:hover { background: #ff446618; box-shadow: 0 0 12px #ff446655; }
 
-  .btn-pink {
-    border-color: var(--neon-pink);
-    color: var(--neon-pink);
-  }
-  .btn-pink:hover {
-    background: #ff00aa18;
-    box-shadow: var(--glow-pink);
-  }
-
-  .btn-green {
-    border-color: var(--neon-green);
-    color: var(--neon-green);
-  }
-  .btn-green:hover {
-    background: #00ff9f18;
-    box-shadow: var(--glow-green);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 8px;
+  .status {
+    font-size: 0.8rem;
+    color: var(--text-dim);
     margin-left: auto;
   }
+  .status.ok { color: var(--neon-green); }
+  .status.err { color: var(--neon-pink); }
 
-  /* ===== LAYOUT ===== */
+  /* LAYOUT */
   .app {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    height: calc(100vh - 65px);
+    grid-template-columns: 260px 1fr;
+    height: calc(100vh - 62px);
   }
-
-  @media (max-width: 900px) {
+  @media (max-width: 860px) {
     .app { grid-template-columns: 1fr; }
     .sidebar { display: none; }
-    .sidebar.open { display: flex; position: fixed; inset: 65px 0 0 0; z-index: 90; }
+    .sidebar.open { display: flex; position: fixed; inset: 62px 0 0 0; z-index: 80; }
   }
 
-  /* ===== SIDEBAR ===== */
+  /* SIDEBAR */
   .sidebar {
     background: var(--bg-panel);
     border-right: 1px solid var(--border);
@@ -185,455 +157,255 @@
     flex-direction: column;
     overflow: hidden;
   }
-
   .sidebar-header {
-    padding: 14px 16px;
+    padding: 12px 14px;
     border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
   }
   .sidebar-header h3 {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.4px;
     color: var(--neon-purple);
-    text-shadow: 0 0 8px #bf00ff66;
   }
-
-  .tree {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-    font-size: 0.9rem;
-  }
-
+  .tree { flex: 1; overflow-y: auto; padding: 6px 0; font-size: 0.88rem; }
   .tree-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 16px;
+    padding: 7px 14px;
     cursor: pointer;
-    transition: background 0.15s;
-    user-select: none;
     border-left: 3px solid transparent;
+    transition: background 0.15s;
   }
   .tree-item:hover { background: #00f0ff0a; }
-  .tree-item.active {
-    background: #00f0ff12;
-    border-left-color: var(--neon-cyan);
-    color: var(--neon-cyan);
-  }
-  .tree-item i { width: 18px; text-align: center; font-size: 0.95rem; }
+  .tree-item.active { background: #00f0ff12; border-left-color: var(--neon-cyan); color: var(--neon-cyan); }
+  .tree-item i { width: 16px; text-align: center; }
   .tree-item.folder i { color: var(--neon-yellow); }
-  .tree-item.file i { color: var(--text-dim); }
 
-  .tree-children { padding-left: 18px; }
+  /* MAIN */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
 
-  /* ===== MAIN ===== */
-  .main {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg);
-  }
-
-  /* Breadcrumbs */
   .breadcrumbs {
-    padding: 12px 20px;
+    padding: 11px 18px;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
     background: var(--bg-panel);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
   }
-  .crumb {
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: color 0.2s;
-  }
+  .crumb { color: var(--text-dim); cursor: pointer; }
   .crumb:hover { color: var(--neon-cyan); }
   .crumb.current { color: var(--neon-cyan); cursor: default; }
   .sep { color: #444; }
 
-  /* Toolbar */
   .toolbar {
-    padding: 10px 20px;
+    padding: 10px 18px;
     display: flex;
-    align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
     border-bottom: 1px solid var(--border);
     background: var(--bg-panel);
   }
 
-  .search-box {
-    position: relative;
-    flex: 1;
-    min-width: 180px;
-    max-width: 320px;
-  }
-  .search-box input {
-    width: 100%;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px 12px 8px 36px;
-    color: var(--text);
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.25s, box-shadow 0.25s;
-  }
-  .search-box input:focus {
-    border-color: var(--neon-pink);
-    box-shadow: 0 0 0 3px #ff00aa22;
-  }
-  .search-box i {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-dim);
-    font-size: 0.85rem;
-  }
+  .search-box { position: relative; flex: 1; min-width: 160px; max-width: 280px; }
+  .search-box input { width: 100%; padding-left: 34px; }
+  .search-box i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem; }
 
-  .view-toggle {
-    display: flex;
-    border: 1px solid var(--border);
+  /* UPLOAD ZONE */
+  .upload-zone {
+    margin: 14px 18px 0;
+    border: 2px dashed var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .view-toggle button {
-    background: transparent;
-    border: none;
-    color: var(--text-dim);
-    padding: 8px 12px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.25s;
     cursor: pointer;
-    transition: all 0.2s;
+    background: #0a0a12;
   }
-  .view-toggle button.active {
-    background: #00f0ff18;
-    color: var(--neon-cyan);
+  .upload-zone.dragover {
+    border-color: var(--neon-cyan);
+    background: #00f0ff0c;
+    box-shadow: var(--glow-cyan);
   }
+  .upload-zone i { font-size: 2.2rem; color: var(--neon-cyan); margin-bottom: 8px; }
+  .upload-zone p { color: var(--text-dim); font-size: 0.9rem; }
+  .upload-zone .hint { font-size: 0.78rem; margin-top: 6px; opacity: 0.7; }
 
-  /* Content area */
-  .content {
-    flex: 1;
-    overflow: auto;
-    padding: 16px 20px;
-    position: relative;
-  }
+  .content { flex: 1; overflow: auto; padding: 14px 18px; }
 
-  /* File grid / list */
   .file-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
-  }
-
-  .file-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
   }
 
   .file-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 14px 10px;
+    text-align: center;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 8px;
     position: relative;
-    overflow: hidden;
-  }
-  .file-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent 60%, #00f0ff08);
-    opacity: 0;
-    transition: opacity 0.25s;
   }
   .file-card:hover {
     border-color: var(--neon-cyan);
-    box-shadow: 0 0 15px #00f0ff22;
+    box-shadow: 0 0 14px #00f0ff25;
     transform: translateY(-2px);
   }
-  .file-card:hover::before { opacity: 1; }
+  .file-card .icon { font-size: 2.1rem; margin-bottom: 6px; }
+  .file-card .name { font-size: 0.82rem; word-break: break-all; line-height: 1.3; }
+  .file-card .meta { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+  .file-card .actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: none;
+    gap: 4px;
+  }
+  .file-card:hover .actions { display: flex; }
+  .file-card .actions button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  .file-card .actions button:hover { border-color: var(--neon-pink); color: var(--neon-pink); }
 
-  .file-card .icon {
-    font-size: 2.2rem;
-    margin-bottom: 4px;
-  }
-  .file-card .name {
-    font-size: 0.85rem;
-    word-break: break-all;
-    line-height: 1.3;
-  }
-  .file-card .meta {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-  }
-
-  /* List view item */
+  .file-list { display: flex; flex-direction: column; gap: 3px; }
   .file-row {
     display: grid;
-    grid-template-columns: 40px 1fr 100px 120px;
+    grid-template-columns: 36px 1fr 90px 90px 70px;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
+    gap: 10px;
+    padding: 9px 12px;
     background: var(--bg-card);
+    border-radius: 7px;
     border: 1px solid transparent;
-    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  .file-row:hover {
-    border-color: var(--neon-cyan);
-    background: #00f0ff08;
-  }
-  .file-row .icon { font-size: 1.2rem; text-align: center; }
-  .file-row .name { font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .file-row .size, .file-row .type { font-size: 0.8rem; color: var(--text-dim); }
+  .file-row:hover { border-color: var(--neon-cyan); background: #00f0ff08; }
+  .file-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-row .size, .file-row .type { font-size: 0.78rem; color: var(--text-dim); }
 
-  /* File viewer */
-  .viewer {
-    display: none;
-    flex-direction: column;
-    height: 100%;
-  }
-  .viewer.active { display: flex; }
-
-  .viewer-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0 14px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  .viewer-header .filename {
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    color: var(--neon-green);
-    text-shadow: var(--glow-green);
-  }
-  .viewer-header .actions { margin-left: auto; display: flex; gap: 8px; }
-
-  .viewer-body {
-    flex: 1;
-    overflow: auto;
-    background: #0d0d15;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    position: relative;
-  }
-
-  .viewer-body pre {
-    margin: 0;
-    padding: 16px;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    line-height: 1.55;
-    tab-size: 2;
-  }
-
-  .viewer-body img {
-    max-width: 100%;
-    display: block;
-    margin: 0 auto;
-    border-radius: 4px;
-  }
-
-  .viewer-body iframe {
-    width: 100%;
-    height: 100%;
-    min-height: 500px;
-    border: none;
-    background: white;
-  }
-
-  /* Empty / loading / error states */
   .state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    min-height: 300px;
+    min-height: 280px;
     text-align: center;
-    gap: 16px;
+    gap: 14px;
     color: var(--text-dim);
   }
-  .state i { font-size: 3.5rem; opacity: 0.5; }
-  .state h2 { font-size: 1.3rem; color: var(--text); }
-  .state p { max-width: 360px; line-height: 1.5; }
+  .state i { font-size: 3.2rem; opacity: 0.5; }
+  .state h2 { color: var(--text); font-size: 1.25rem; }
 
   .loader {
-    width: 48px;
-    height: 48px;
+    width: 42px; height: 42px;
     border: 3px solid var(--border);
     border-top-color: var(--neon-cyan);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.75s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Neon pulse for logo */
-  @keyframes pulse-glow {
-    0%, 100% { text-shadow: 0 0 8px #00f0ff, 0 0 16px #00f0ff44; }
-    50% { text-shadow: 0 0 12px #00f0ff, 0 0 28px #00f0ff88; }
-  }
-  .logo { animation: pulse-glow 3s ease-in-out infinite; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb {
-    background: #2a2a3a;
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: #3a3a4a; }
-
-  /* Mobile menu btn */
-  .mobile-menu-btn {
-    display: none;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-  @media (max-width: 900px) {
-    .mobile-menu-btn { display: inline-flex; }
-  }
-
-  /* Repo info badge */
-  .repo-badge {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    padding: 4px 10px;
-    background: var(--bg-card);
-    border-radius: 20px;
-    border: 1px solid var(--border);
-  }
-  .repo-badge.visible { display: inline-flex; }
-  .repo-badge i { color: var(--neon-yellow); }
-
-  /* Context menu */
-  .ctx-menu {
+  /* MODAL */
+  .modal-overlay {
     position: fixed;
-    background: var(--bg-card);
-    border: 1px solid var(--neon-cyan);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px #000a, var(--glow-cyan);
-    z-index: 1000;
-    min-width: 180px;
-    padding: 6px 0;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
     display: none;
-  }
-  .ctx-menu.visible { display: block; }
-  .ctx-item {
-    padding: 9px 16px;
-    cursor: pointer;
-    display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    transition: background 0.15s;
+    justify-content: center;
   }
-  .ctx-item:hover { background: #00f0ff15; color: var(--neon-cyan); }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--neon-cyan);
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: var(--glow-cyan);
+  }
+  .modal h3 { margin-bottom: 14px; color: var(--neon-cyan); }
+  .modal input { width: 100%; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-  /* Toast */
+  /* TOAST */
   .toast {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 22px;
+    right: 22px;
     background: var(--bg-card);
     border: 1px solid var(--neon-green);
-    color: var(--text);
-    padding: 12px 20px;
+    padding: 12px 18px;
     border-radius: var(--radius);
     box-shadow: var(--glow-green);
     z-index: 2000;
-    transform: translateY(100px);
+    transform: translateY(80px);
     opacity: 0;
-    transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
-    max-width: 320px;
+    transition: all 0.3s;
+    max-width: 340px;
   }
-  .toast.show {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: var(--neon-pink); box-shadow: var(--glow-pink); }
 
-  /* File type colors */
   .icon-folder { color: #ffd700; }
-  .icon-code { color: #00f0ff; }
   .icon-img { color: #ff66cc; }
-  .icon-md { color: #66ff99; }
-  .icon-json { color: #ffaa00; }
-  .icon-config { color: #bf00ff; }
+  .icon-code { color: #00f0ff; }
   .icon-default { color: #8888aa; }
+
+  ::-webkit-scrollbar { width: 7px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
+
+  .mobile-btn { display: none; background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 11px; border-radius: var(--radius); cursor: pointer; }
+  @media (max-width: 860px) { .mobile-btn { display: inline-flex; } }
 </style>
 </head>
 <body>
 
 <header>
-  <button class="mobile-menu-btn" id="mobileMenuBtn" title="Toggle tree">
-    <i class="fas fa-bars"></i>
-  </button>
-  <div class="logo">
-    <i class="fab fa-github"></i>
-    <span>NeonGit</span>
+  <button class="mobile-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+  <div class="logo"><i class="fab fa-github"></i> NeonGit Manager</div>
+
+  <div class="auth-area">
+    <input type="text" class="repo-input" id="repoInput" placeholder="owner/repo  (e.g. yourname/yourname.github.io)">
+    <input type="password" class="token-input" id="tokenInput" placeholder="GitHub Personal Access Token">
+    <button class="btn" id="connectBtn"><i class="fas fa-plug"></i> Connect</button>
   </div>
 
-  <form class="repo-form" id="repoForm">
-    <input type="text" id="repoInput" placeholder="owner/repo  (e.g. vercel/next.js)" autocomplete="off" spellcheck="false">
-    <button type="submit" class="btn" id="loadBtn">
-      <i class="fas fa-bolt"></i> Load
-    </button>
-  </form>
-
-  <div class="header-actions">
-    <span class="repo-badge" id="repoBadge">
-      <i class="fas fa-star"></i> <span id="starCount">0</span>
-    </span>
-    <button class="btn btn-pink" id="rawBtn" title="Open on GitHub" style="display:none">
-      <i class="fab fa-github"></i>
-    </button>
-  </div>
+  <div class="status" id="status">Not connected</div>
 </header>
 
 <div class="app">
-  <!-- SIDEBAR TREE -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h3>Explorer</h3>
-      <button class="btn" style="padding:6px 10px;font-size:0.75rem" id="refreshTree" title="Refresh">
-        <i class="fas fa-sync-alt"></i>
-      </button>
+      <button class="btn" style="padding:5px 9px;font-size:0.75rem" id="refreshBtn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
     </div>
     <div class="tree" id="tree"></div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
     <div class="breadcrumbs" id="breadcrumbs">
-      <span class="crumb current">No repository loaded</span>
+      <span class="crumb current">Connect a repository to begin</span>
     </div>
 
     <div class="toolbar" id="toolbar" style="display:none">
@@ -641,549 +413,359 @@
         <i class="fas fa-search"></i>
         <input type="text" id="searchInput" placeholder="Filter files…">
       </div>
-      <div class="view-toggle">
-        <button class="active" data-view="grid" title="Grid view"><i class="fas fa-th"></i></button>
-        <button data-view="list" title="List view"><i class="fas fa-list"></i></button>
-      </div>
-      <button class="btn btn-green" id="downloadZip" title="Download as ZIP" style="display:none">
-        <i class="fas fa-file-archive"></i> ZIP
-      </button>
+      <button class="btn btn-green" id="newFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
+      <button class="btn" id="uploadBtn"><i class="fas fa-upload"></i> Upload</button>
+      <input type="file" id="fileInput" multiple hidden>
+    </div>
+
+    <div class="upload-zone" id="uploadZone" style="display:none">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <p>Drop files here or click “Upload”</p>
+      <div class="hint">Supports images, documents, code — max \~50 MB recommended</div>
     </div>
 
     <div class="content" id="content">
-      <div class="state" id="welcomeState">
+      <div class="state" id="welcome">
         <i class="fas fa-folder-open" style="color:var(--neon-cyan)"></i>
-        <h2>GitHub File Manager</h2>
-        <p>Enter a public repository in the format <strong>owner/repo</strong> and press Load to explore its files with a neon cyberpunk interface.</p>
-        <p style="font-size:0.85rem;opacity:0.7">Try: <code style="color:var(--neon-green)">torvalds/linux</code> · <code style="color:var(--neon-green)">facebook/react</code> · <code style="color:var(--neon-green)">microsoft/vscode</code></p>
+        <h2>GitHub Pages File Manager</h2>
+        <p style="max-width:420px;line-height:1.5">
+          Connect your repository with a Personal Access Token to upload, delete and manage files (JPG, PNG, HTML, etc.) directly from the browser.
+        </p>
+        <p style="font-size:0.85rem;opacity:0.75">
+          Token needs <code style="color:var(--neon-green)">repo</code> or Contents Read/Write permission.
+        </p>
       </div>
     </div>
   </main>
 </div>
 
-<!-- Context Menu -->
-<div class="ctx-menu" id="ctxMenu">
-  <div class="ctx-item" data-action="open"><i class="fas fa-folder-open"></i> Open</div>
-  <div class="ctx-item" data-action="view"><i class="fas fa-eye"></i> View / Preview</div>
-  <div class="ctx-item" data-action="raw"><i class="fas fa-code"></i> View Raw</div>
-  <div class="ctx-item" data-action="download"><i class="fas fa-download"></i> Download</div>
-  <div class="ctx-item" data-action="github"><i class="fab fa-github"></i> Open on GitHub</div>
-  <div class="ctx-item" data-action="copy"><i class="fas fa-copy"></i> Copy Path</div>
+<!-- New Folder Modal -->
+<div class="modal-overlay" id="folderModal">
+  <div class="modal">
+    <h3>Create New Folder</h3>
+    <input type="text" id="folderName" placeholder="folder-name">
+    <div class="modal-actions">
+      <button class="btn" id="cancelFolder">Cancel</button>
+      <button class="btn btn-green" id="createFolder">Create</button>
+    </div>
+  </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-tsx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
 
 <script>
 (() => {
-  // ========== STATE ==========
   const state = {
     owner: '',
     repo: '',
+    token: '',
     path: '',
     branch: 'main',
     contents: [],
-    viewMode: 'grid',
-    currentFile: null,
-    treeCache: {},
-    repoInfo: null
+    connected: false
   };
 
-  // ========== DOM ==========
   const $ = id => document.getElementById(id);
-  const repoForm = $('repoForm');
-  const repoInput = $('repoInput');
   const content = $('content');
   const breadcrumbs = $('breadcrumbs');
   const tree = $('tree');
+  const status = $('status');
   const toolbar = $('toolbar');
-  const searchInput = $('searchInput');
-  const ctxMenu = $('ctxMenu');
-  const toastEl = $('toast');
-  const sidebar = $('sidebar');
+  const uploadZone = $('uploadZone');
 
-  // ========== UTILITIES ==========
-  function toast(msg, duration = 2800) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), duration);
+  // Load saved credentials
+  const saved = JSON.parse(localStorage.getItem('neongit') || '{}');
+  if (saved.repo) $('repoInput').value = saved.repo;
+  if (saved.token) $('tokenInput').value = saved.token;
+
+  function toast(msg, isError = false) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => el.classList.remove('show'), 3200);
   }
 
-  function formatSize(bytes) {
-    if (bytes === 0) return '0 B';
-    if (!bytes) return '—';
-    const u = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
+  function formatSize(b) {
+    if (!b && b !== 0) return '—';
+    const u = ['B','KB','MB','GB'];
+    const i = Math.floor(Math.log(b||1) / Math.log(1024));
+    return ((b||0) / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
   }
 
-  function getFileIcon(name, type) {
+  function getIcon(name, type) {
     if (type === 'dir') return { icon: 'fa-folder', cls: 'icon-folder' };
-    const ext = name.split('.').pop().toLowerCase();
-    const map = {
-      js: ['fa-js', 'icon-code'], ts: ['fa-code', 'icon-code'],
-      jsx: ['fa-react', 'icon-code'], tsx: ['fa-react', 'icon-code'],
-      py: ['fa-python', 'icon-code'], go: ['fa-brands fa-golang', 'icon-code'],
-      rs: ['fa-rust', 'icon-code'], java: ['fa-java', 'icon-code'],
-      c: ['fa-c', 'icon-code'], cpp: ['fa-c', 'icon-code'], h: ['fa-c', 'icon-code'],
-      css: ['fa-css3-alt', 'icon-code'], scss: ['fa-sass', 'icon-code'],
-      html: ['fa-html5', 'icon-code'], vue: ['fa-vuejs', 'icon-code'],
-      json: ['fa-file-code', 'icon-json'], yaml: ['fa-file-code', 'icon-config'],
-      yml: ['fa-file-code', 'icon-config'], toml: ['fa-file-code', 'icon-config'],
-      md: ['fa-markdown', 'icon-md'], markdown: ['fa-markdown', 'icon-md'],
-      png: ['fa-file-image', 'icon-img'], jpg: ['fa-file-image', 'icon-img'],
-      jpeg: ['fa-file-image', 'icon-img'], gif: ['fa-file-image', 'icon-img'],
-      svg: ['fa-file-image', 'icon-img'], webp: ['fa-file-image', 'icon-img'],
-      ico: ['fa-file-image', 'icon-img'],
-      pdf: ['fa-file-pdf', 'icon-default'], zip: ['fa-file-archive', 'icon-default'],
-      gz: ['fa-file-archive', 'icon-default'], tar: ['fa-file-archive', 'icon-default'],
-      sh: ['fa-terminal', 'icon-code'], bash: ['fa-terminal', 'icon-code'],
-      sql: ['fa-database', 'icon-code'], env: ['fa-key', 'icon-config'],
-      gitignore: ['fa-git-alt', 'icon-config'], dockerfile: ['fa-docker', 'icon-config'],
-      lock: ['fa-lock', 'icon-config']
-    };
-    const [ic, cl] = map[ext] || map[name.toLowerCase()] || ['fa-file', 'icon-default'];
-    return { icon: ic.startsWith('fa-') ? ic : 'fa-' + ic, cls: cl };
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (['png','jpg','jpeg','gif','webp','svg','ico','bmp'].includes(ext)) return { icon: 'fa-file-image', cls: 'icon-img' };
+    if (['js','ts','css','html','json','md','py','go'].includes(ext)) return { icon: 'fa-file-code', cls: 'icon-code' };
+    return { icon: 'fa-file', cls: 'icon-default' };
   }
 
-  function getLang(name) {
-    const ext = name.split('.').pop().toLowerCase();
-    const map = {
-      js: 'javascript', mjs: 'javascript', cjs: 'javascript',
-      ts: 'typescript', tsx: 'tsx', jsx: 'jsx',
-      py: 'python', css: 'css', scss: 'css',
-      html: 'markup', htm: 'markup', xml: 'markup',
-      json: 'json', md: 'markdown', markdown: 'markdown',
-      yml: 'yaml', yaml: 'yaml', sh: 'bash', bash: 'bash',
-      go: 'go', rs: 'rust', sql: 'sql', java: 'java',
-      c: 'c', h: 'c', cpp: 'cpp', cc: 'cpp', hpp: 'cpp'
-    };
-    return map[ext] || 'markup';
-  }
-
-  function isImage(name) {
-    return /\.(png|jpe?g|gif|svg|webp|ico|bmp)$/i.test(name);
-  }
-
-  function isText(name) {
-    return /\.(txt|md|markdown|json|js|ts|jsx|tsx|css|scss|html?|xml|yml|yaml|toml|py|go|rs|java|c|cpp|h|hpp|sh|bash|sql|env|gitignore|dockerfile|vue|svelte|astro|php|rb|swift|kt|dart|r|lua|pl|ps1|bat|cfg|ini|conf|log|csv|tsv|svg)$/i.test(name) ||
-      !name.includes('.');
-  }
-
-  // ========== API ==========
-  async function api(path) {
+  async function api(method, path, body = null) {
     const url = `https://api.github.com/repos/\( {state.owner}/ \){state.repo}${path}`;
-    const res = await fetch(url, {
-      headers: { Accept: 'application/vnd.github.v3+json' }
-    });
-    if (!res.ok) {
-      if (res.status === 404) throw new Error('Repository or path not found');
-      if (res.status === 403) throw new Error('API rate limit exceeded. Try again later.');
-      throw new Error(`GitHub API error: ${res.status}`);
-    }
-    return res.json();
+    const opts = {
+      method,
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${state.token}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (res.status === 204) return null;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    return data;
   }
 
-  async function loadRepo(ownerRepo) {
-    const parts = ownerRepo.trim().replace(/^https?:\/\/github\.com\//, '').split('/').filter(Boolean);
-    if (parts.length < 2) {
-      toast('Use format: owner/repo');
+  async function connect() {
+    const repoVal = $('repoInput').value.trim().replace(/^https?:\/\/github\.com\//, '');
+    const token = $('tokenInput').value.trim();
+    if (!repoVal.includes('/') || !token) {
+      toast('Enter owner/repo and a valid token', true);
       return;
     }
-    state.owner = parts[0];
-    state.repo = parts[1];
+    const [owner, repo] = repoVal.split('/');
+    state.owner = owner;
+    state.repo = repo;
+    state.token = token;
     state.path = '';
-    state.treeCache = {};
 
-    content.innerHTML = `<div class="state"><div class="loader"></div><p>Loading repository…</p></div>`;
-    toolbar.style.display = 'none';
+    status.textContent = 'Connecting…';
+    status.className = 'status';
 
     try {
-      // Get default branch + stars
-      state.repoInfo = await api('');
-      state.branch = state.repoInfo.default_branch || 'main';
-      $('starCount').textContent = state.repoInfo.stargazers_count.toLocaleString();
-      $('repoBadge').classList.add('visible');
-      $('rawBtn').style.display = 'inline-flex';
-      \( ('rawBtn').onclick = () => window.open(`https://github.com/ \){state.owner}/${state.repo}`, '_blank');
-      $('downloadZip').style.display = 'inline-flex';
-      $('downloadZip').onclick = () => {
-        window.open(`https://github.com/\( {state.owner}/ \){state.repo}/archive/refs/heads/${state.branch}.zip`, '_blank');
-      };
+      const info = await api('GET', '');
+      state.branch = info.default_branch || 'main';
+      state.connected = true;
+
+      localStorage.setItem('neongit', JSON.stringify({ repo: repoVal, token }));
+      status.textContent = `Connected · ${info.full_name}`;
+      status.className = 'status ok';
+      toolbar.style.display = 'flex';
+      uploadZone.style.display = 'block';
 
       await navigate('');
-      buildTreeRoot();
-      toast(`Loaded \( {state.owner}/ \){state.repo}`);
+      toast('Connected successfully');
     } catch (err) {
-      content.innerHTML = `
-        <div class="state">
-          <i class="fas fa-exclamation-triangle" style="color:var(--neon-pink)"></i>
-          <h2>Failed to load</h2>
-          <p>${err.message}</p>
-        </div>`;
-      toast(err.message);
+      status.textContent = 'Connection failed';
+      status.className = 'status err';
+      toast(err.message, true);
     }
   }
 
   async function navigate(path) {
     state.path = path;
-    state.currentFile = null;
-    content.innerHTML = `<div class="state"><div class="loader"></div><p>Fetching contents…</p></div>`;
+    content.innerHTML = `<div class="state"><div class="loader"></div><p>Loading…</p></div>`;
 
     try {
-      const data = await api(`/contents/\( {path}?ref= \){state.branch}`);
+      const data = await api('GET', `/contents/\( {path}?ref= \){state.branch}`);
       state.contents = Array.isArray(data) ? data : [data];
       state.contents.sort((a, b) => {
         if (a.type === b.type) return a.name.localeCompare(b.name);
         return a.type === 'dir' ? -1 : 1;
       });
-      state.treeCache[path || '/'] = state.contents;
       renderBreadcrumbs();
-      renderContents();
-      toolbar.style.display = 'flex';
-      highlightTree(path);
+      renderFiles();
+      buildTree();
     } catch (err) {
-      content.innerHTML = `
-        <div class="state">
-          <i class="fas fa-exclamation-circle" style="color:var(--neon-pink)"></i>
-          <h2>Error</h2>
-          <p>${err.message}</p>
-        </div>`;
+      content.innerHTML = `<div class="state"><i class="fas fa-exclamation-triangle" style="color:var(--neon-pink)"></i><h2>Error</h2><p>${err.message}</p></div>`;
     }
   }
 
-  async function openFile(item) {
-    state.currentFile = item;
-    content.innerHTML = `<div class="state"><div class="loader"></div><p>Loading file…</p></div>`;
-
-    try {
-      if (isImage(item.name)) {
-        renderImageViewer(item);
-      } else if (isText(item.name) || item.size < 500000) {
-        // Try to fetch text content
-        const res = await fetch(item.download_url);
-        if (!res.ok) throw new Error('Could not fetch file content');
-        const text = await res.text();
-        renderTextViewer(item, text);
-      } else {
-        renderBinaryViewer(item);
-      }
-      renderBreadcrumbs(item.name);
-    } catch (err) {
-      content.innerHTML = `
-        <div class="state">
-          <i class="fas fa-file-excel" style="color:var(--neon-pink)"></i>
-          <h2>Cannot preview</h2>
-          <p>${err.message}</p>
-          <button class="btn" onclick="window.open('${item.html_url}','_blank')">
-            <i class="fab fa-github"></i> View on GitHub
-          </button>
-        </div>`;
-    }
-  }
-
-  // ========== RENDER ==========
-  function renderBreadcrumbs(extra = null) {
+  function renderBreadcrumbs() {
     const parts = state.path ? state.path.split('/') : [];
     let html = `<span class="crumb" data-path="">\( {state.owner}/ \){state.repo}</span>`;
     let acc = '';
     parts.forEach((p, i) => {
       acc += (acc ? '/' : '') + p;
-      const isLast = i === parts.length - 1 && !extra;
-      html += `<span class="sep">/</span><span class="crumb \( {isLast ? 'current' : ''}" data-path=" \){acc}">${p}</span>`;
+      const last = i === parts.length - 1;
+      html += `<span class="sep">/</span><span class="crumb \( {last ? 'current' : ''}" data-path=" \){acc}">${p}</span>`;
     });
-    if (extra) {
-      html += `<span class="sep">/</span><span class="crumb current">${extra}</span>`;
-    }
     breadcrumbs.innerHTML = html;
     breadcrumbs.querySelectorAll('.crumb:not(.current)').forEach(el => {
-      el.addEventListener('click', () => navigate(el.dataset.path || ''));
+      el.onclick = () => navigate(el.dataset.path || '');
     });
   }
 
-  function renderContents(filter = '') {
+  function renderFiles(filter = '') {
     const q = filter.toLowerCase();
     const items = state.contents.filter(i => i.name.toLowerCase().includes(q));
 
     if (!items.length) {
-      content.innerHTML = `
-        <div class="state">
-          <i class="fas fa-search"></i>
-          <h2>No matches</h2>
-          <p>Nothing matches “${filter}”</p>
-        </div>`;
+      content.innerHTML = `<div class="state"><i class="fas fa-search"></i><h2>No files</h2><p>This folder is empty or nothing matches the filter.</p></div>`;
       return;
     }
 
-    if (state.viewMode === 'grid') {
-      content.innerHTML = `<div class="file-grid" id="fileContainer"></div>`;
-      const cont = $('fileContainer');
-      items.forEach(item => {
-        const { icon, cls } = getFileIcon(item.name, item.type);
-        const card = document.createElement('div');
-        card.className = 'file-card';
-        card.innerHTML = `
-          <div class="icon ${cls}"><i class="fas ${icon}"></i></div>
-          <div class="name">${item.name}</div>
-          <div class="meta">${item.type === 'dir' ? 'Folder' : formatSize(item.size)}</div>`;
-        card.addEventListener('click', () => item.type === 'dir' ? navigate(item.path) : openFile(item));
-        card.addEventListener('contextmenu', e => showContext(e, item));
-        cont.appendChild(card);
-      });
-    } else {
-      content.innerHTML = `<div class="file-list" id="fileContainer"></div>`;
-      const cont = $('fileContainer');
-      items.forEach(item => {
-        const { icon, cls } = getFileIcon(item.name, item.type);
-        const row = document.createElement('div');
-        row.className = 'file-row';
-        row.innerHTML = `
-          <div class="icon ${cls}"><i class="fas ${icon}"></i></div>
-          <div class="name">${item.name}</div>
-          <div class="size">${item.type === 'dir' ? '—' : formatSize(item.size)}</div>
-          <div class="type">${item.type === 'dir' ? 'Folder' : (item.name.split('.').pop() || 'file')}</div>`;
-        row.addEventListener('click', () => item.type === 'dir' ? navigate(item.path) : openFile(item));
-        row.addEventListener('contextmenu', e => showContext(e, item));
-        cont.appendChild(row);
-      });
-    }
-  }
+    content.innerHTML = `<div class="file-grid" id="grid"></div>`;
+    const grid = $('grid');
 
-  function renderTextViewer(item, text) {
-    const lang = getLang(item.name);
-    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    content.innerHTML = `
-      <div class="viewer active">
-        <div class="viewer-header">
-          <span class="filename"><i class="fas fa-file-code"></i> ${item.name}</span>
-          <span style="color:var(--text-dim);font-size:0.8rem">${formatSize(item.size)} · ${text.split('\n').length} lines</span>
-          <div class="actions">
-            <button class="btn" onclick="navigator.clipboard.writeText(\`${text.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`).then(()=>toast('Copied to clipboard'))">
-              <i class="fas fa-copy"></i> Copy
-            </button>
-            <button class="btn btn-green" onclick="window.open('${item.download_url}','_blank')">
-              <i class="fas fa-download"></i>
-            </button>
-            <button class="btn btn-pink" onclick="window.open('${item.html_url}','_blank')">
-              <i class="fab fa-github"></i>
-            </button>
-            <button class="btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back</button>
-          </div>
+    items.forEach(item => {
+      const { icon, cls } = getIcon(item.name, item.type);
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.innerHTML = `
+        <div class="actions">
+          \( {item.type === 'file' ? `<button title="Delete" data-del=" \){item.path}" data-sha="${item.sha}"><i class="fas fa-trash"></i></button>` : ''}
+          <button title="Open on GitHub" data-gh="${item.html_url}"><i class="fab fa-github"></i></button>
         </div>
-        <div class="viewer-body">
-          <pre><code class="language-\( {lang}"> \){escaped}</code></pre>
-        </div>
-      </div>`;
-    $('backBtn').onclick = () => navigate(state.path);
-    if (window.Prism) Prism.highlightAll();
-  }
+        <div class="icon ${cls}"><i class="fas ${icon}"></i></div>
+        <div class="name">${item.name}</div>
+        <div class="meta">${item.type === 'dir' ? 'Folder' : formatSize(item.size)}</div>`;
 
-  function renderImageViewer(item) {
-    content.innerHTML = `
-      <div class="viewer active">
-        <div class="viewer-header">
-          <span class="filename"><i class="fas fa-image"></i> ${item.name}</span>
-          <span style="color:var(--text-dim);font-size:0.8rem">${formatSize(item.size)}</span>
-          <div class="actions">
-            <button class="btn btn-green" onclick="window.open('${item.download_url}','_blank')">
-              <i class="fas fa-download"></i>
-            </button>
-            <button class="btn btn-pink" onclick="window.open('${item.html_url}','_blank')">
-              <i class="fab fa-github"></i>
-            </button>
-            <button class="btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back</button>
-          </div>
-        </div>
-        <div class="viewer-body" style="display:flex;align-items:center;justify-content:center;padding:20px;background:#0a0a10">
-          <img src="\( {item.download_url}" alt=" \){item.name}" style="max-height:70vh;box-shadow:0 0 40px #00f0ff33">
-        </div>
-      </div>`;
-    $('backBtn').onclick = () => navigate(state.path);
-  }
-
-  function renderBinaryViewer(item) {
-    content.innerHTML = `
-      <div class="viewer active">
-        <div class="viewer-header">
-          <span class="filename"><i class="fas fa-file"></i> ${item.name}</span>
-          <div class="actions">
-            <button class="btn btn-green" onclick="window.open('${item.download_url}','_blank')">
-              <i class="fas fa-download"></i> Download
-            </button>
-            <button class="btn btn-pink" onclick="window.open('${item.html_url}','_blank')">
-              <i class="fab fa-github"></i>
-            </button>
-            <button class="btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back</button>
-          </div>
-        </div>
-        <div class="state">
-          <i class="fas fa-file-alt" style="color:var(--neon-purple)"></i>
-          <h2>Binary / Large File</h2>
-          <p>${formatSize(item.size)} — preview not available</p>
-        </div>
-      </div>`;
-    $('backBtn').onclick = () => navigate(state.path);
-  }
-
-  // ========== TREE ==========
-  async function buildTreeRoot() {
-    tree.innerHTML = '';
-    const rootItems = state.treeCache['/'] || state.contents;
-    rootItems.forEach(item => {
-      tree.appendChild(createTreeNode(item, 0));
-    });
-  }
-
-  function createTreeNode(item, depth) {
-    const div = document.createElement('div');
-    const { icon, cls } = getFileIcon(item.name, item.type);
-    const row = document.createElement('div');
-    row.className = `tree-item ${item.type === 'dir' ? 'folder' : 'file'}`;
-    row.style.paddingLeft = (16 + depth * 14) + 'px';
-    row.innerHTML = `<i class="fas ${icon} \( {cls}"></i><span> \){item.name}</span>`;
-    row.dataset.path = item.path;
-
-    if (item.type === 'dir') {
-      const children = document.createElement('div');
-      children.className = 'tree-children';
-      children.style.display = 'none';
-      let loaded = false;
-
-      row.addEventListener('click', async (e) => {
+      card.querySelector('[data-del]')?.addEventListener('click', e => {
         e.stopPropagation();
-        if (!loaded) {
-          row.querySelector('i').className = 'fas fa-spinner fa-spin';
-          try {
-            const data = await api(`/contents/\( {item.path}?ref= \){state.branch}`);
-            const sorted = (Array.isArray(data) ? data : []).sort((a, b) => {
-              if (a.type === b.type) return a.name.localeCompare(b.name);
-              return a.type === 'dir' ? -1 : 1;
-            });
-            state.treeCache[item.path] = sorted;
-            sorted.forEach(child => children.appendChild(createTreeNode(child, depth + 1)));
-            loaded = true;
-          } catch {
-            toast('Failed to load folder');
-          }
-          row.querySelector('i').className = `fas ${icon} ${cls}`;
-        }
-        const open = children.style.display !== 'none';
-        children.style.display = open ? 'none' : 'block';
-        row.querySelector('i').className = open
-          ? `fas fa-folder ${cls}`
-          : `fas fa-folder-open ${cls}`;
+        deleteFile(item.path, item.sha, item.name);
+      });
+      card.querySelector('[data-gh]')?.addEventListener('click', e => {
+        e.stopPropagation();
+        window.open(item.html_url, '_blank');
       });
 
-      row.addEventListener('dblclick', () => navigate(item.path));
-      div.appendChild(row);
-      div.appendChild(children);
-    } else {
-      row.addEventListener('click', () => openFile(item));
-      div.appendChild(row);
-    }
-    return div;
-  }
+      card.addEventListener('click', () => {
+        if (item.type === 'dir') navigate(item.path);
+        else window.open(item.download_url || item.html_url, '_blank');
+      });
 
-  function highlightTree(path) {
-    tree.querySelectorAll('.tree-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.path === path);
+      grid.appendChild(card);
     });
   }
 
-  // ========== CONTEXT MENU ==========
-  let ctxItem = null;
-  function showContext(e, item) {
-    e.preventDefault();
-    ctxItem = item;
-    ctxMenu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
-    ctxMenu.style.top = Math.min(e.clientY, window.innerHeight - 220) + 'px';
-    ctxMenu.classList.add('visible');
+  async function buildTree() {
+    tree.innerHTML = '';
+    // Simple flat list of current level + root
+    const root = document.createElement('div');
+    root.className = 'tree-item folder' + (state.path === '' ? ' active' : '');
+    root.innerHTML = `<i class="fas fa-home"></i><span>root</span>`;
+    root.onclick = () => navigate('');
+    tree.appendChild(root);
+
+    state.contents.filter(i => i.type === 'dir').forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'tree-item folder' + (state.path === item.path ? ' active' : '');
+      el.innerHTML = `<i class="fas fa-folder"></i><span>${item.name}</span>`;
+      el.onclick = () => navigate(item.path);
+      tree.appendChild(el);
+    });
   }
-  document.addEventListener('click', () => ctxMenu.classList.remove('visible'));
-  ctxMenu.querySelectorAll('.ctx-item').forEach(el => {
-    el.addEventListener('click', () => {
-      if (!ctxItem) return;
-      const act = el.dataset.action;
-      if (act === 'open' || act === 'view') {
-        ctxItem.type === 'dir' ? navigate(ctxItem.path) : openFile(ctxItem);
-      } else if (act === 'raw') {
-        window.open(ctxItem.download_url || ctxItem.html_url, '_blank');
-      } else if (act === 'download') {
-        window.open(ctxItem.download_url, '_blank');
-      } else if (act === 'github') {
-        window.open(ctxItem.html_url, '_blank');
-      } else if (act === 'copy') {
-        navigator.clipboard.writeText(ctxItem.path).then(() => toast('Path copied'));
+
+  // ========== UPLOAD ==========
+  async function uploadFiles(fileList) {
+    if (!state.connected || !fileList.length) return;
+
+    const files = Array.from(fileList);
+    toast(`Uploading ${files.length} file(s)…`);
+
+    for (const file of files) {
+      try {
+        const base64 = await fileToBase64(file);
+        const path = state.path ? `\( {state.path}/ \){file.name}` : file.name;
+
+        // Check if file already exists
+        let sha = null;
+        try {
+          const existing = await api('GET', `/contents/\( {path}?ref= \){state.branch}`);
+          sha = existing.sha;
+        } catch (_) {}
+
+        const body = {
+          message: `Upload ${file.name} via NeonGit Manager`,
+          content: base64,
+          branch: state.branch
+        };
+        if (sha) body.sha = sha;
+
+        await api('PUT', `/contents/${path}`, body);
+        toast(`Uploaded: ${file.name}`);
+      } catch (err) {
+        toast(`Failed ${file.name}: ${err.message}`, true);
       }
-      ctxMenu.classList.remove('visible');
+    }
+    await navigate(state.path);
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(result.split(',')[1]); // remove data:...;base64,
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-  });
+  }
+
+  // ========== DELETE ==========
+  async function deleteFile(path, sha, name) {
+    if (!confirm(`Delete "${name}" permanently?`)) return;
+    try {
+      await api('DELETE', `/contents/${path}`, {
+        message: `Delete ${name} via NeonGit Manager`,
+        sha,
+        branch: state.branch
+      });
+      toast(`Deleted: ${name}`);
+      await navigate(state.path);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  // ========== NEW FOLDER ==========
+  async function createFolder(name) {
+    name = name.trim().replace(/^\/+|\/+$/g, '');
+    if (!name) return toast('Enter a folder name', true);
+
+    const path = state.path ? `\( {state.path}/ \){name}/.gitkeep` : `${name}/.gitkeep`;
+    try {
+      await api('PUT', `/contents/${path}`, {
+        message: `Create folder ${name}`,
+        content: btoa(''), // empty file
+        branch: state.branch
+      });
+      toast(`Folder created: ${name}`);
+      $('folderModal').classList.remove('show');
+      $('folderName').value = '';
+      await navigate(state.path);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
 
   // ========== EVENTS ==========
-  repoForm.addEventListener('submit', e => {
+  $('connectBtn').onclick = connect;
+  $('refreshBtn').onclick = () => state.connected && navigate(state.path);
+  $('uploadBtn').onclick = () => $('fileInput').click();
+  $('fileInput').onchange = e => uploadFiles(e.target.files);
+
+  $('newFolderBtn').onclick = () => {
+    $('folderModal').classList.add('show');
+    $('folderName').focus();
+  };
+  $('cancelFolder').onclick = () => $('folderModal').classList.remove('show');
+  \( ('createFolder').onclick = () => createFolder( \)('folderName').value);
+  \( ('folderName').onkeydown = e => { if (e.key === 'Enter') createFolder( \)('folderName').value); };
+
+  \( ('searchInput').oninput = () => renderFiles( \)('searchInput').value);
+
+  // Drag & drop
+  const zone = $('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
     e.preventDefault();
-    loadRepo(repoInput.value);
+    zone.classList.remove('dragover');
+    uploadFiles(e.dataTransfer.files);
   });
+  zone.onclick = () => $('fileInput').click();
 
-  searchInput.addEventListener('input', () => {
-    if (!state.currentFile) renderContents(searchInput.value);
-  });
+  $('menuBtn').onclick = () => $('sidebar').classList.toggle('open');
 
-  document.querySelectorAll('.view-toggle button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.viewMode = btn.dataset.view;
-      if (!state.currentFile) renderContents(searchInput.value);
-    });
-  });
-
-  $('mobileMenuBtn').addEventListener('click', () => {
-    sidebar.classList.toggle('open');
-  });
-
-  $('refreshTree').addEventListener('click', () => {
-    if (state.owner) {
-      state.treeCache = {};
-      navigate(state.path);
-      buildTreeRoot();
-      toast('Refreshed');
-    }
-  });
-
-  // Keyboard shortcut
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      repoInput.focus();
-      repoInput.select();
-    }
-    if (e.key === 'Escape') {
-      ctxMenu.classList.remove('visible');
-      if (state.currentFile) navigate(state.path);
-    }
-  });
-
-  // Pre-fill example on first load hint
-  repoInput.value = '';
+  // Auto-connect if credentials exist
+  if (saved.repo && saved.token) {
+    setTimeout(connect, 300);
+  }
 })();
 </script>
 </body>
