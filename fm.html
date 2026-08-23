@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Manager</title>
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #0a0a12;
+    color: #e0e0ff;
+    min-height: 100vh;
+  }
+  header {
+    padding: 16px;
+    background: #11111b;
+    border-bottom: 1px solid #222;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  input {
+    background: #1a1a2e;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  input:focus { outline: none; border-color: #00f0ff; }
+  button {
+    background: transparent;
+    border: 1px solid #00f0ff;
+    color: #00f0ff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover { background: #00f0ff22; }
+  .status { font-size: 13px; color: #888; margin-left: auto; }
+  .status.ok { color: #00ff9f; }
+  .status.err { color: #ff4d6d; }
+
+  .toolbar {
+    padding: 12px 16px;
+    display: none;
+    gap: 10px;
+    border-bottom: 1px solid #222;
+    background: #0f0f18;
+  }
+  .path {
+    padding: 10px 16px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #00f0ff;
+    border-bottom: 1px solid #222;
+  }
+  .files {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: #141420;
+    border: 1px solid #2a2a3a;
+    border-radius: 10px;
+    padding: 16px 10px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover { border-color: #00f0ff; }
+  .card .name { font-size: 13px; word-break: break-all; margin-top: 8px; }
+  .card .meta { font-size: 11px; color: #888; margin-top: 4px; }
+  .card .del {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #2a0a0a;
+    border: 1px solid #ff4d6d;
+    color: #ff4d6d;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: none;
+    cursor: pointer;
+  }
+  .card:hover .del { display: block; }
+
+  .upload-area {
+    margin: 16px;
+    border: 2px dashed #333;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    color: #888;
+    display: none;
+    cursor: pointer;
+  }
+  .upload-area.drag { border-color: #00f0ff; background: #00f0ff11; }
+
+  .msg {
+    padding: 40px;
+    text-align: center;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <input id="repo" type="text" placeholder="owner/repo" style="width:220px" value="meyrahgozar-cell/meyrahgozar-cell">
+  <input id="token" type="password" placeholder="GitHub Token" style="width:260px">
+  <button id="connect">Connect</button>
+  <div class="status" id="status">Not connected</div>
+</header>
+
+<div class="path" id="path"></div>
+
+<div class="toolbar" id="toolbar">
+  <button id="uploadBtn">Upload Files</button>
+  <button id="newFolder">New Folder</button>
+  <input type="file" id="fileInput" multiple hidden>
+</div>
+
+<div class="upload-area" id="drop">
+  Drop files here or click Upload
+</div>
+
+<div class="files" id="files"></div>
+<div class="msg" id="msg">Enter your token and click Connect</div>
+
+<script>
+const state = {
+  owner: "meyrahgozar-cell",
+  repo: "meyrahgozar-cell",
+  token: "",
+  path: "",
+  branch: "main",
+  connected: false
+};
+
+const $ = id => document.getElementById(id);
+
+// Load saved token
+const saved = localStorage.getItem("fm_token");
+if (saved) $("token").value = saved;
+
+async function api(method, path, body) {
+  const url = `https://api.github.com/repos/\( {state.owner}/ \){state.repo}${path}`;
+  const opt = {
+    method,
+    headers: {
+      "Accept": "application/vnd.github.v3+json",
+      "Authorization": "token " + state.token,
+      "Content-Type": "application/json"
+    }
+  };
+  if (body) opt.body = JSON.stringify(body);
+  const res = await fetch(url, opt);
+  if (res.status === 204) return null;
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Error " + res.status);
+  return data;
+}
+
+async function connect() {
+  const repoVal = $("repo").value.trim();
+  const token = $("token").value.trim();
+  if (!repoVal.includes("/") || !token) {
+    alert("Fill both fields");
+    return;
+  }
+  const parts = repoVal.split("/");
+  state.owner = parts[0];
+  state.repo = parts[1];
+  state.token = token;
+  state.path = "";
+
+  $("status").textContent = "Connecting...";
+  $("status").className = "status";
+
+  try {
+    const info = await api("GET", "");
+    state.branch = info.default_branch || "main";
+    state.connected = true;
+    localStorage.setItem("fm_token", token);
+    $("status").textContent = "Connected: " + info.full_name;
+    $("status").className = "status ok";
+    $("toolbar").style.display = "flex";
+    $("drop").style.display = "block";
+    $("msg").style.display = "none";
+    await load();
+  } catch (e) {
+    $("status").textContent = "Failed";
+    $("status").className = "status err";
+    alert(e.message);
+  }
+}
+
+async function load() {
+  $("files").innerHTML = "";
+  $("path").textContent = state.owner + "/" + state.repo + (state.path ? "/" + state.path : "");
+
+  try {
+    const data = await api("GET", "/contents/" + state.path + "?ref=" + state.branch);
+    const items = Array.isArray(data) ? data : [data];
+    items.sort((a, b) => {
+      if (a.type === b.type) return a.name.localeCompare(b.name);
+      return a.type === "dir" ? -1 : 1;
+    });
+
+    // Back button
+    if (state.path) {
+      const back = document.createElement("div");
+      back.className = "card";
+      back.innerHTML = `<div style="font-size:28px">⬅️</div><div class="name">..</div>`;
+      back.onclick = () => {
+        const parts = state.path.split("/");
+        parts.pop();
+        state.path = parts.join("/");
+        load();
+      };
+      $("files").appendChild(back);
+    }
+
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const icon = item.type === "dir" ? "📁" : "📄";
+      card.innerHTML = `
+        <div style="font-size:28px">${icon}</div>
+        <div class="name">${item.name}</div>
+        <div class="meta">${item.type === "dir" ? "Folder" : formatSize(item.size)}</div>
+        ${item.type === "file" ? `<button class="del" title="Delete">✕</button>` : ""}
+      `;
+
+      if (item.type === "file") {
+        card.querySelector(".del").onclick = (e) => {
+          e.stopPropagation();
+          if (confirm("Delete " + item.name + "?")) {
+            deleteFile(item.path, item.sha, item.name);
+          }
+        };
+      }
+
+      card.onclick = () => {
+        if (item.type === "dir") {
+          state.path = item.path;
+          load();
+        } else {
+          window.open(item.download_url || item.html_url, "_blank");
+        }
+      };
+
+      $("files").appendChild(card);
+    });
+  } catch (e) {
+    \( ("files").innerHTML = `<div class="msg"> \){e.message}</div>`;
+  }
+}
+
+function formatSize(b) {
+  if (!b) return "";
+  if (b < 1024) return b + " B";
+  if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+  return (b / 1048576).toFixed(1) + " MB";
+}
+
+async function deleteFile(path, sha, name) {
+  try {
+    await api("DELETE", "/contents/" + path, {
+      message: "Delete " + name,
+      sha: sha,
+      branch: state.branch
+    });
+    load();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function upload(files) {
+  if (!files.length) return;
+  for (const file of files) {
+    try {
+      const base64 = await fileToBase64(file);
+      const path = state.path ? state.path + "/" + file.name : file.name;
+
+      let sha = null;
+      try {
+        const exist = await api("GET", "/contents/" + path + "?ref=" + state.branch);
+        sha = exist.sha;
+      } catch (e) {}
+
+      const body = {
+        message: "Upload " + file.name,
+        content: base64,
+        branch: state.branch
+      };
+      if (sha) body.sha = sha;
+
+      await api("PUT", "/contents/" + path, body);
+    } catch (e) {
+      alert("Failed " + file.name + ": " + e.message);
+    }
+  }
+  load();
+}
+
+async function newFolder() {
+  const name = prompt("Folder name:");
+  if (!name) return;
+  const path = state.path ? state.path + "/" + name + "/.gitkeep" : name + "/.gitkeep";
+  try {
+    await api("PUT", "/contents/" + path, {
+      message: "Create folder " + name,
+      content: btoa(""),
+      branch: state.branch
+    });
+    load();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// Events
+$("connect").onclick = connect;
+$("uploadBtn").onclick = () => $("fileInput").click();
+$("fileInput").onchange = e => upload(e.target.files);
+$("newFolder").onclick = newFolder;
+
+const drop = $("drop");
+drop.onclick = () => $("fileInput").click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("drag"); };
+drop.ondragleave = () => drop.classList.remove("drag");
+drop.ondrop = e => {
+  e.preventDefault();
+  drop.classList.remove("drag");
+  upload(e.dataTransfer.files);
+};
+</script>
+</body>
+</html>
