@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <title>HQL | زندگی با کیفیت</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -619,6 +622,28 @@ button { cursor: pointer; border: none; background: none; }
   transition: none;
 }
 
+
+.theme-btn {
+  padding: 0;
+  overflow: hidden;
+}
+.theme-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 6px;
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(180, 76, 255, 0.45));
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+.theme-btn:hover .theme-icon {
+  transform: scale(1.08) rotate(-8deg);
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.55));
+}
+.theme-btn:active .theme-icon {
+  transform: scale(0.95);
+}
+
 </style>
 </head>
 <body>
@@ -653,7 +678,9 @@ button { cursor: pointer; border: none; background: none; }
     <div class="brand">HQL</div>
     <div class="header-actions">
       <button class="icon-btn" id="reportButton" title="گزارش">📊</button>
-      <button class="icon-btn" id="themeButton" title="تم">🌓</button>
+      <button class="icon-btn theme-btn" id="themeButton" title="تم" aria-label="تم">
+        <img src="favicon.png" alt="" class="theme-icon" width="22" height="22">
+      </button>
       <button class="icon-btn" id="userButton" title="کاربر">👤</button>
       <div id="menu" class="menu hidden">
         <button id="logoutButton">خروج</button>
