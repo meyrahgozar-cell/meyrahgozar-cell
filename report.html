@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<title>HQL | گزارش ماهانه</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
+
+<style>
+:root {
+  --bg: #05060a;
+  --card: #0d1019;
+  --card2: #131722;
+  --border: rgba(180, 100, 255, 0.18);
+  --text: #f0f2ff;
+  --muted: #8b92b0;
+  --neon: #b44cff;
+  --neon2: #00f0ff;
+  --positive: #00ff9d;
+  --negative: #ff4d6d;
+  --glow: 0 0 18px rgba(180, 76, 255, 0.3);
+  --radius: 16px;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Vazirmatn", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.06), transparent),
+    var(--bg);
+  min-height: 100vh;
+}
+
+button, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+.hidden { display: none !important; }
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 14px 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #b44cff, #00f0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.month-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.select {
+  flex: 1;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b92b0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+}
+
+.select:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(180,76,255,0.15);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (min-width: 640px) {
+  .summary {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 14px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-value.positive { color: var(--positive); }
+.stat-value.negative { color: var(--negative); }
+
+.stat-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card:hover {
+  border-color: rgba(180,76,255,0.3);
+  box-shadow: 0 0 16px rgba(180,76,255,0.08);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* Podium */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 10px;
+  padding: 10px 0 6px;
+  min-height: 160px;
+}
+.podium .podium-place { max-width: none; width: 100%; }
+
+.podium-place {
+  flex: 1;
+  max-width: 120px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.podium-medal {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.podium-name {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-score {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.podium-bar {
+  width: 100%;
+  border-radius: 10px 10px 4px 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.podium-place.first .podium-bar {
+  height: 90px;
+  background: linear-gradient(180deg, #ffd700, #b8860b);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);
+}
+.podium-place.second .podium-bar {
+  height: 70px;
+  background: linear-gradient(180deg, #e8e8e8, #888);
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.25);
+}
+.podium-place.third .podium-bar {
+  height: 55px;
+  background: linear-gradient(180deg, #cd7f32, #8b4513);
+  box-shadow: 0 0 12px rgba(205, 127, 50, 0.25);
+}
+
+.podium-place.first .podium-score { color: var(--gold); }
+.podium-place.second .podium-score { color: var(--silver); }
+.podium-place.third .podium-score { color: var(--bronze); }
+
+.ranking-list {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.rank-row:last-child { border-bottom: none; }
+
+.rank-num {
+  width: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.rank-name { flex: 1; font-weight: 600; }
+.rank-score { font-weight: 700; color: var(--neon2); }
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  padding-top: 10px;
+}
+
+.bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.bar {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, #b44cff, #5a2db0);
+  min-height: 2px;
+  transition: height 0.3s;
+}
+
+.bar.positive { background: linear-gradient(180deg, #00ff9d, #00a86b); }
+.bar.negative { background: linear-gradient(180deg, #ff4d6d, #b03040); }
+.bar.zero { background: var(--card2); }
+
+.bar-label {
+  font-size: 9px;
+  color: var(--muted);
+  transform: rotate(-40deg);
+  white-space: nowrap;
+}
+
+.habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.habit-row:last-child { border-bottom: none; }
+
+.habit-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.habit-stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.habit-stats b {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.habit-stats b.pos { color: var(--positive); }
+.habit-stats b.neg { color: var(--negative); }
+
+.empty {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .page { padding: 12px 10px 70px; }
+  .page-title { font-size: 20px; }
+  .stat-value { font-size: 22px; }
+  .summary { gap: 8px; }
+  .stat { padding: 14px 10px; }
+  .podium { gap: 6px; min-height: 140px; }
+  .podium-name { font-size: 12px; }
+  .podium-score { font-size: 13px; }
+  .podium-medal { font-size: 24px; }
+  .podium-place.first .podium-bar { height: 75px; }
+  .podium-place.second .podium-bar { height: 58px; }
+  .podium-place.third .podium-bar { height: 45px; }
+  .habit-row { flex-wrap: wrap; gap: 8px; }
+  .habit-stats { gap: 10px; width: 100%; justify-content: space-between; }
+  .card { padding: 14px 12px; }
+  .month-bar { gap: 8px; }
+  .select { height: 42px; font-size: 13px; }
+  .chart { height: 120px; gap: 2px; }
+  .bar-label { font-size: 8px; }
+}
+
+@media (max-width: 380px) {
+  .stat-value { font-size: 18px; }
+  .summary { grid-template-columns: 1fr 1fr; }
+  .podium-name { font-size: 11px; }
+}
+
+.theme-btn {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(145deg, rgba(180, 76, 255, 0.12), rgba(0, 240, 255, 0.06));
+  border: 1px solid rgba(180, 100, 255, 0.28);
+  box-shadow:
+    inset 0 0 12px rgba(180, 76, 255, 0.08),
+    0 0 10px rgba(180, 76, 255, 0.12);
+}
+.theme-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(0, 240, 255, 0.1), transparent 70%);
+  pointer-events: none;
+}
+.theme-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 5px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  /* lift dark/transparent art on dark UI */
+  filter:
+    brightness(1.35)
+    contrast(1.05)
+    drop-shadow(0 0 3px rgba(180, 140, 255, 0.55))
+    drop-shadow(0 0 6px rgba(0, 200, 255, 0.25));
+  opacity: 0.92;
+  transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+}
+.theme-btn:hover {
+  border-color: rgba(0, 240, 255, 0.35);
+  box-shadow:
+    inset 0 0 14px rgba(0, 240, 255, 0.1),
+    0 0 14px rgba(180, 76, 255, 0.2);
+}
+.theme-btn:hover .theme-icon {
+  transform: scale(1.06);
+  opacity: 1;
+  filter:
+    brightness(1.5)
+    contrast(1.08)
+    drop-shadow(0 0 4px rgba(200, 160, 255, 0.7))
+    drop-shadow(0 0 8px rgba(0, 220, 255, 0.35));
+}
+.theme-btn:active .theme-icon {
+  transform: scale(0.94);
+}
+
+
+.rank-avatar, .podium-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(180, 100, 255, 0.35);
+  box-shadow: 0 0 8px rgba(180, 76, 255, 0.25);
+  background: var(--card2);
+  flex-shrink: 0;
+}
+.podium-avatar {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 6px;
+  border-width: 2px;
+  border-color: rgba(180, 100, 255, 0.4);
+  background: #fff;
+  box-shadow: 0 0 10px rgba(180, 76, 255, 0.55), 0 0 22px rgba(180, 76, 255, 0.3);
+}
+.podium-place.first .podium-avatar {
+  border-color: rgba(255, 215, 0, 0.55);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+.podium-place.second .podium-avatar {
+  border-color: rgba(192, 192, 192, 0.5);
+}
+.podium-place.third .podium-avatar {
+  border-color: rgba(205, 127, 50, 0.55);
+}
+.rank-avatar-fallback, .podium-avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: linear-gradient(145deg, rgba(180,76,255,0.25), rgba(0,240,255,0.12));
+  border: 1px solid rgba(180, 100, 255, 0.3);
+  color: var(--text);
+  flex-shrink: 0;
+}
+.podium-avatar-fallback {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.rank-row { gap: 10px; }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="header">
+    <div class="brand">HQL</div>
+    <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
+  </header>
+
+  <h1 class="page-title">گزارش ماهانه</h1>
+  <p class="page-sub">نمای کلی عملکرد و عادت‌ها</p>
+
+  <div class="month-bar">
+    <select id="yearSelect" class="select"></select>
+    <select id="monthSelect" class="select"></select>
+  </div>
+
+  <div id="content">
+    <div class="loading">در حال بارگذاری...</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
+const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+const START_YEAR = 1405;
+
+const HABIT_LABELS = {
+  water: { icon: "💧", title: "آب" },
+  sleep: { icon: "🌙", title: "خواب" },
+  instagram: { icon: "📱", title: "اینستاگرام" },
+  sun: { icon: "☀️", title: "آفتاب" },
+  solitude: { icon: "🧘", title: "خلوت" },
+  reading: { icon: "📖", title: "مطالعه" },
+  sugar: { icon: "🍬", title: "قند" },
+  dinner: { icon: "🍽️", title: "شام" },
+  exercise: { icon: "🏃", title: "ورزش" }
+};
+
+let currentUser = null;
+let selectedYear = null;
+let selectedMonth = null;
+
+function fa(v) {
+  return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+}
+
+function scoreText(v) {
+  const n = Number(v || 0);
+  let s = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return fa(s);
+}
+
+function isoDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function jalaliRange(jy, jm) {
+  const startG = jalaali.toGregorian(jy, jm, 1);
+  const days = jalaali.jalaaliMonthLength(jy, jm);
+  const endG = jalaali.toGregorian(jy, jm, days);
+  return {
+    start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
+    end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd)))
+  };
+}
+
+db.auth.onAuthStateChange(async (event, session) => {
+  if (!session) {
+    location.href = "index.html";
+    return;
+  }
+  if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+    currentUser = session.user;
+    initMonthPicker();
+    await loadReport();
+  }
+});
+
+(async () => {
+  const r = await db.auth.getSession();
+  if (!r.data.session) {
+    location.href = "index.html";
+    return;
+  }
+  currentUser = r.data.session.user;
+  initMonthPicker();
+  await loadReport();
+})();
+
+document.getElementById("backBtn").onclick = () => location.href = "index.html";
+
+/* Year picker: from 1405 up to current year only */
+function initMonthPicker() {
+  const now = new Date();
+  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const currentYear = j.jy;
+  selectedYear = currentYear;
+  selectedMonth = j.jm;
+
+  const yearSel = document.getElementById("yearSelect");
+  const monthSel = document.getElementById("monthSelect");
+
+  yearSel.innerHTML = "";
+  for (let y = START_YEAR; y <= currentYear; y++) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = fa(y);
+    if (y === selectedYear) opt.selected = true;
+    yearSel.appendChild(opt);
+  }
+
+  monthSel.innerHTML = "";
+  J_MONTHS.forEach((name, i) => {
+    const opt = document.createElement("option");
+    opt.value = i + 1;
+    opt.textContent = name;
+    if (i + 1 === selectedMonth) opt.selected = true;
+    monthSel.appendChild(opt);
+  });
+
+  yearSel.onchange = () => {
+    selectedYear = Number(yearSel.value);
+    loadReport();
+  };
+  monthSel.onchange = () => {
+    selectedMonth = Number(monthSel.value);
+    loadReport();
+  };
+}
+
+async function loadReport() {
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+
+  const range = jalaliRange(selectedYear, selectedMonth);
+
+  try {
+    const [statsRes, boardRes, logsRes, exRes] = await Promise.all([
+      db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
+      db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
+      db.from("daily_logs")
+        .select("item_type, score, log_date")
+        .eq("user_id", currentUser.id)
+        .gte("log_date", range.start)
+        .lte("log_date", range.end),
+      db.from("exercise_logs")
+        .select("score, log_date")
+        .eq("user_id", currentUser.id)
+        .gte("log_date", range.start)
+        .lte("log_date", range.end)
+    ]);
+
+    if (statsRes.error) throw statsRes.error;
+
+    const stats = statsRes.data || {
+      total_score: 0, avg_score: 0, best_day: null, best_score: 0, active_days: 0, daily: []
+    };
+
+    // Ranking by average over elapsed days in the selected month
+    // (not full month length — only days that have passed so far)
+    const now = new Date();
+    const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+    let elapsedDays;
+    if (selectedYear === jNow.jy && selectedMonth === jNow.jm) {
+      // current month → days from 1 to today
+      elapsedDays = jNow.jd;
+    } else if (selectedYear > jNow.jy || (selectedYear === jNow.jy && selectedMonth > jNow.jm)) {
+      // future month → treat as 0 / avoid div by zero
+      elapsedDays = 1;
+    } else {
+      // past month → full month
+      elapsedDays = daysInMonth;
+    }
+    let leaderboard = (boardRes.data || []).map(u => {
+      const totalScore = Number(u.total_score) || 0;
+      const avg = elapsedDays > 0 ? totalScore / elapsedDays : 0;
+      return { ...u, avg: Math.round(avg * 100) / 100, elapsedDays };
+    });
+    leaderboard.sort((a, b) => b.avg - a.avg);
+
+    const habitMap = {};
+    (logsRes.data || []).forEach(r => {
+      if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
+      habitMap[r.item_type].count++;
+      habitMap[r.item_type].total += Number(r.score) || 0;
+    });
+
+    if (exRes.data && exRes.data.length) {
+      habitMap.exercise = {
+        count: exRes.data.length,
+        total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
+      };
+    }
+
+    renderReport(stats, habitMap, leaderboard);
+  } catch (err) {
+    content.innerHTML = `<div class="empty">خطا در دریافت گزارش<br><small>${err.message}</small></div>`;
+  }
+}
+
+
+function avatarSrc(name){
+  if(!name) return null;
+  // file inside images/ folder next to report.html: «images/نام‌نمایشی.png»
+  return encodeURI("images/" + String(name).trim() + ".png");
+}
+function avatarHtml(name, kind){
+  // kind: "podium" | "rank"
+  const cls = kind === "podium" ? "podium-avatar" : "rank-avatar";
+  const fb = kind === "podium" ? "podium-avatar-fallback" : "rank-avatar-fallback";
+  const letter = (name && name.trim()[0]) ? name.trim()[0] : "?";
+  const src = avatarSrc(name);
+  if(!src) return `<div class="${fb}">${letter}</div>`;
+  return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
+}
+
+function renderReport(stats, habitMap, leaderboard) {
+  const content = document.getElementById("content");
+
+  const total = Number(stats.total_score) || 0;
+  const avg = Number(stats.avg_score) || 0;
+  const best = Number(stats.best_score) || 0;
+  const active = Number(stats.active_days) || 0;
+  const daily = stats.daily || [];
+
+  let bestNote = "—";
+  if (stats.best_day) {
+    const [y, m, d] = stats.best_day.split("-").map(Number);
+    const j = jalaali.toJalaali(y, m, d);
+    bestNote = fa(j.jd) + " " + J_MONTHS[j.jm - 1];
+  }
+
+  const maxAbs = Math.max(...daily.map(d => Math.abs(Number(d.score) || 0)), 1);
+  let chartHtml = "";
+  if (daily.length === 0) {
+    chartHtml = `<div class="empty">هنوز داده‌ای برای این ماه ثبت نشده</div>`;
+  } else {
+    chartHtml = `<div class="chart">` + daily.map(d => {
+      const sc = Number(d.score) || 0;
+      const h = Math.max(4, (Math.abs(sc) / maxAbs) * 110);
+      const cls = sc > 0 ? "positive" : sc < 0 ? "negative" : "zero";
+      const [y, m, day] = d.date.split("-").map(Number);
+      const j = jalaali.toJalaali(y, m, day);
+      return `
+        <div class="bar-wrap" title="${fa(j.jd)}: ${scoreText(sc)}">
+          <div class="bar ${cls}" style="height:${h}px"></div>
+          <div class="bar-label">${fa(j.jd)}</div>
+        </div>`;
+    }).join("") + `</div>`;
+  }
+
+  /* Top 3 podium */
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
+  let podiumHtml = "";
+  if (top3.length === 0) {
+    podiumHtml = `<div class="empty">هنوز رتبه‌بندی‌ای وجود ندارد</div>`;
+  } else {
+    // classic order: 2nd | 1st | 3rd
+    let order, placeMap, medalMap;
+    if (top3.length >= 3) {
+      order = [top3[1], top3[0], top3[2]];
+      placeMap = ["second", "first", "third"];
+      medalMap = ["🥈", "🥇", "🥉"];
+    } else if (top3.length === 2) {
+      order = [top3[1], top3[0]];
+      placeMap = ["second", "first"];
+      medalMap = ["🥈", "🥇"];
+    } else {
+      order = [top3[0]];
+      placeMap = ["first"];
+      medalMap = ["🥇"];
+    }
+
+    podiumHtml = `<div class="podium">` + order.map((u, i) => {
+      const place = placeMap[i];
+      const medal = medalMap[i];
+      const name = u.display_name || "کاربر";
+      const sc = u.avg != null ? u.avg : 0;
+      const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
+      return `
+        <div class="podium-place ${place}">
+          <div class="podium-medal">${medal}</div>
+          ${avatarHtml(name, "podium")}
+          <div class="podium-name">${name}</div>
+          <div class="podium-score">${scoreText(sc)}</div>
+          <div class="podium-bar">${num}</div>
+        </div>`;
+    }).join("") + `</div>`;
+
+    if (rest.length) {
+      podiumHtml += `<div class="ranking-list">` + rest.map((u, i) => `
+        <div class="rank-row">
+          <div class="rank-num">${fa(i + 4)}</div>
+          ${avatarHtml(u.display_name || "کاربر", "rank")}
+          <div class="rank-name">${u.display_name || "کاربر"}</div>
+          <div class="rank-score">${scoreText(u.avg != null ? u.avg : 0)}</div>
+        </div>
+      `).join("") + `</div>`;
+    }
+  }
+
+  /* Habits */
+  let habitsHtml = "";
+  const orderH = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
+  const hasAny = orderH.some(k => habitMap[k]);
+
+  if (!hasAny) {
+    habitsHtml = `<div class="empty">هیچ عادتی ثبت نشده</div>`;
+  } else {
+    habitsHtml = orderH.filter(k => habitMap[k]).map(k => {
+      const h = habitMap[k];
+      const avgH = h.count ? (h.total / h.count) : 0;
+      const info = HABIT_LABELS[k] || { icon: "•", title: k };
+      return `
+        <div class="habit-row">
+          <div class="habit-name">${info.icon} ${info.title}</div>
+          <div class="habit-stats">
+            <div><b>${fa(h.count)}</b>روز</div>
+            <div><b class="${h.total > 0 ? "pos" : h.total < 0 ? "neg" : ""}">${scoreText(h.total)}</b>مجموع</div>
+            <div><b class="${avgH > 0 ? "pos" : avgH < 0 ? "neg" : ""}">${scoreText(avgH)}</b>میانگین</div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  content.innerHTML = `
+    <div class="summary">
+      <div class="stat">
+        <div class="stat-label">امتیاز کل ماه</div>
+        <div class="stat-value ${total > 0 ? "positive" : total < 0 ? "negative" : ""}">${scoreText(total)}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">میانگین روزانه</div>
+        <div class="stat-value ${avg > 0 ? "positive" : avg < 0 ? "negative" : ""}">${scoreText(avg)}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">بهترین روز</div>
+        <div class="stat-value positive">${scoreText(best)}</div>
+        <div class="stat-note">${bestNote}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">روزهای فعال</div>
+        <div class="stat-value">${fa(active)}</div>
+        <div class="stat-note">از ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} روز</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">جدول امتیازات</div>
+      <div class="card-sub">رتبه بر اساس میانگین روزهای سپری‌شده</div>
+      ${podiumHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">نمودار روزانه</div>
+      <div class="card-sub">امتیاز هر روز در ماه انتخاب‌شده</div>
+      ${chartHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">عملکرد عادت‌ها</div>
+      <div class="card-sub">تعداد روز، مجموع و میانگین امتیاز</div>
+      ${habitsHtml}
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
