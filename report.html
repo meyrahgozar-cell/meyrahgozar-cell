@@ -725,6 +725,28 @@ a.rank-item-link {
   color: inherit;
 }
 
+
+.admin-user-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  background: rgba(180, 76, 255, 0.15);
+  border: 1px solid rgba(180, 100, 255, 0.35);
+  flex-shrink: 0;
+  transition: 0.15s;
+}
+.admin-user-btn:hover {
+  background: rgba(180, 76, 255, 0.3);
+  box-shadow: 0 0 10px rgba(180, 76, 255, 0.25);
+}
+.podium-place .admin-user-btn {
+  margin-top: 6px;
+}
+
 </style>
 </head>
 <body>
@@ -778,6 +800,7 @@ const HABIT_LABELS = {
 };
 
 let currentUser = null;
+let isAdmin = false;
 let selectedYear = null;
 let selectedMonth = null;
 let lastRenderData = null;
@@ -845,6 +868,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   }
   if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
     currentUser = session.user;
+    await refreshAdminFlag();
     initMonthPicker();
     await loadReport();
   }
@@ -857,6 +881,7 @@ db.auth.onAuthStateChange(async (event, session) => {
     return;
   }
   currentUser = r.data.session.user;
+  await refreshAdminFlag();
   initMonthPicker();
   await loadReport();
 })();
@@ -990,6 +1015,16 @@ function renderSkeleton() {
       ${Array(4).fill(`<div class="skel skel-row"></div>`).join("")}
     </div>
   `;
+}
+
+
+async function refreshAdminFlag() {
+  isAdmin = false;
+  if (!currentUser) return;
+  try {
+    const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+    isAdmin = !!(pr.data && pr.data.is_admin);
+  } catch (e) {}
 }
 
 async function loadReport() {
@@ -1209,14 +1244,18 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}) {
       const sc = u.avg != null ? u.avg : 0;
       const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
       const uid = u.user_id || "";
+      const adminBtn = isAdmin && uid
+        ? `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>`
+        : "";
       return `
-        <a class="podium-place ${place}" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات در ادمین">
+        <div class="podium-place ${place}">
           <div class="podium-medal">${medal}</div>
           ${avatarHtml(name, "podium")}
           <div class="podium-name">${name}</div>
           <div class="podium-score">${scoreText(sc)}</div>
           <div class="podium-bar">${num}</div>
-        </a>`;
+          ${adminBtn}
+        </div>`;
     }).join("") + `</div>`;
 
     if (rest.length) {
@@ -1231,17 +1270,21 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}) {
         if (bonus) detail += ` + جایزه امروز ${scoreText(bonus)}`;
         detail += ` = ${scoreText(avg)}`;
         const uid = u.user_id || "";
+        const adminBtn = isAdmin && uid
+          ? `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>`
+          : "";
         return `
-        <a class="rank-item rank-item-link" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات در ادمین">
+        <div class="rank-item">
           <div class="rank-row">
             <div class="rank-num">${fa(i + 4)}</div>
             ${avatarHtml(u.display_name || "کاربر", "rank")}
             <div class="rank-name">${u.display_name || "کاربر"}</div>
             <div class="rank-score">${scoreText(avg)}</div>
+            ${adminBtn}
             <div class="rank-chevron">›</div>
           </div>
           <div class="rank-detail">${detail}</div>
-        </a>`;
+        </div>`;
       }).join("") + `</div>`;
     }
   }
