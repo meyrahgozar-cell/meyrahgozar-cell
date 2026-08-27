@@ -773,6 +773,40 @@ a.rank-item-link {
 }
 .bar-wrap.missed .bar-label { color: #ff4d6d; }
 
+
+.month-special-bar {
+  display: none;
+  margin-bottom: 14px;
+}
+.month-special-bar.show { display: block; }
+.btn-go-current {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid rgba(0, 240, 200, 0.45);
+  color: #b8fff0;
+  background: linear-gradient(135deg, rgba(0, 240, 180, 0.15), rgba(0, 180, 255, 0.12));
+  box-shadow: 0 0 14px rgba(0, 220, 200, 0.3), 0 0 28px rgba(0, 160, 255, 0.15);
+  animation: cyanGlow 2.2s ease-in-out infinite;
+}
+.btn-go-current:hover {
+  border-color: rgba(0, 255, 220, 0.7);
+}
+@keyframes cyanGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 220, 200, 0.25), 0 0 24px rgba(0, 160, 255, 0.12); }
+  50% { box-shadow: 0 0 22px rgba(0, 255, 220, 0.45), 0 0 36px rgba(0, 180, 255, 0.25); }
+}
+.report-period-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin: -8px 0 14px;
+  line-height: 1.4;
+}
+
 </style>
 
 </head>
@@ -796,6 +830,10 @@ a.rank-item-link {
     <select id="yearSelect" class="select"></select>
     <select id="monthSelect" class="select"></select>
     <button class="icon-btn" id="prevMonthBtn" title="ماه قبل">‹</button>
+  </div>
+  <p class="report-period-note" id="reportPeriodNote"></p>
+  <div class="month-special-bar" id="monthSpecialBar">
+    <button type="button" class="btn-go-current" id="goCurrentMonth">برو به ماه جاری ↗</button>
   </div>
 
   <div id="content" aria-live="polite">
@@ -920,8 +958,22 @@ function initMonthPicker() {
   const now = new Date();
   const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
   const currentYear = j.jy;
-  selectedYear = currentYear;
-  selectedMonth = j.jm;
+  const currentMonth = j.jm;
+  const currentDay = j.jd;
+
+  // روز ۱ و ۲ ماه: گزارش نهایی ماه قبل (پیش‌فرض)
+  if (currentDay <= 2) {
+    if (currentMonth === 1) {
+      selectedYear = currentYear - 1;
+      selectedMonth = 12;
+    } else {
+      selectedYear = currentYear;
+      selectedMonth = currentMonth - 1;
+    }
+  } else {
+    selectedYear = currentYear;
+    selectedMonth = currentMonth;
+  }
 
   const yearSel = document.getElementById("yearSelect");
   const monthSel = document.getElementById("monthSelect");
@@ -946,113 +998,85 @@ function initMonthPicker() {
 
   yearSel.onchange = () => {
     selectedYear = Number(yearSel.value);
-    updateNavButtons();
+    updateReportChrome();
     loadReport();
   };
   monthSel.onchange = () => {
     selectedMonth = Number(monthSel.value);
-    updateNavButtons();
+    updateReportChrome();
     loadReport();
   };
 
-  updateNavButtons();
-}
+  document.getElementById("goCurrentMonth").onclick = () => {
+    selectedYear = currentYear;
+    selectedMonth = currentMonth;
+    yearSel.value = String(selectedYear);
+    monthSel.value = String(selectedMonth);
+    updateReportChrome();
+    loadReport();
+  };
 
-function changeMonth(delta) {
-  let y = selectedYear, m = selectedMonth + delta;
-  if (m < 1) { m = 12; y -= 1; }
-  if (m > 12) { m = 1; y += 1; }
 
-  const yearSel = document.getElementById("yearSelect");
-  const minY = START_YEAR;
-  const maxY = Number(yearSel.options[yearSel.options.length - 1].value);
-  if (y < minY) { y = minY; m = 1; }
-  if (y > maxY) { y = maxY; m = 12; }
-
-  selectedYear = y;
-  selectedMonth = m;
-  yearSel.value = y;
-  document.getElementById("monthSelect").value = m;
-  updateNavButtons();
-  loadReport();
-}
-
-function updateNavButtons() {
-  const yearSel = document.getElementById("yearSelect");
-  if (!yearSel.options.length) return;
-  const minY = START_YEAR;
-  const maxY = Number(yearSel.options[yearSel.options.length - 1].value);
   const prevBtn = document.getElementById("prevMonthBtn");
   const nextBtn = document.getElementById("nextMonthBtn");
-  prevBtn.disabled = (selectedYear === minY && selectedMonth === 1);
-  nextBtn.disabled = (selectedYear === maxY && selectedMonth === 12);
+  if (prevBtn) prevBtn.onclick = () => {
+    let m = selectedMonth - 1, y = selectedYear;
+    if (m < 1) { m = 12; y -= 1; }
+    if (y < START_YEAR) return;
+    selectedYear = y; selectedMonth = m;
+    document.getElementById("yearSelect").value = String(y);
+    document.getElementById("monthSelect").value = String(m);
+    updateReportChrome();
+    loadReport();
+  };
+  if (nextBtn) nextBtn.onclick = () => {
+    const now = new Date();
+    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    let m = selectedMonth + 1, y = selectedYear;
+    if (m > 12) { m = 1; y += 1; }
+    if (y > j.jy || (y === j.jy && m > j.jm)) return;
+    selectedYear = y; selectedMonth = m;
+    document.getElementById("yearSelect").value = String(y);
+    document.getElementById("monthSelect").value = String(m);
+    updateReportChrome();
+    loadReport();
+  };
+
+  updateReportChrome();
 }
 
-document.getElementById("prevMonthBtn").onclick = () => changeMonth(-1);
-document.getElementById("nextMonthBtn").onclick = () => changeMonth(1);
+function updateReportChrome() {
+  const now = new Date();
+  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const isCurrent = selectedYear === j.jy && selectedMonth === j.jm;
+  const note = document.getElementById("reportPeriodNote");
+  const bar = document.getElementById("monthSpecialBar");
 
-document.getElementById("refreshBtn").onclick = async () => {
-  const btn = document.getElementById("refreshBtn");
-  btn.classList.add("spin");
-  await loadReport();
-  setTimeout(() => btn.classList.remove("spin"), 500);
-  toast("بروزرسانی شد");
-};
-
-document.getElementById("shareBtn").onclick = async () => {
-  const summary = buildSummaryText();
-  try {
-    await navigator.clipboard.writeText(summary);
-    toast("خلاصه گزارش کپی شد");
-  } catch {
-    toast("امکان کپی وجود نداشت");
+  if (note) {
+    if (isCurrent) {
+      if (j.jd <= 1) {
+        note.textContent = "امروز اولین روز ماه است — میانگین تا دیروز هنوز خالی است. گزارش نهایی ماه قبل را ببین.";
+      } else {
+        note.textContent = "میانگین و رتبه فقط تا دیروز حساب می‌شود (امروز هنوز در جریان است).";
+      }
+    } else {
+      const past = selectedYear < j.jy || (selectedYear === j.jy && selectedMonth < j.jm);
+      if (past && j.jd <= 2) {
+        note.textContent = "گزارش نهایی ماه قبل — روز ۱ و ۲ برای جمع‌بندی در نظر گرفته شده.";
+      } else if (past) {
+        note.textContent = "گزارش کامل این ماه (روزهای تکمیل‌شده).";
+      } else {
+        note.textContent = "";
+      }
+    }
   }
-};
 
-function buildSummaryText() {
-  if (!lastRenderData) return "گزارشی برای اشتراک‌گذاری وجود ندارد";
-  const { total, avg, best, active, monthLabel, topName } = lastRenderData;
-  const lines = [
-    `گزارش ${monthLabel} — HQL`,
-    `امتیاز کل: ${scoreText(total)}`,
-    `میانگین روزانه: ${scoreText(avg)}`,
-    `بهترین روز: ${scoreText(best)}`,
-    `روزهای فعال: ${fa(active)}`
-  ];
-  if (topName) lines.push(`رتبه اول: ${topName}`);
-  return lines.join("\n");
+  if (bar) {
+    // دکمه ماه جاری وقتی روی ماه دیگری هستیم
+    bar.classList.toggle("show", !isCurrent);
+  }
 }
 
-function renderSkeleton() {
-  const content = document.getElementById("content");
-  content.innerHTML = `
-    <div class="summary">
-      ${Array(4).fill(`<div class="stat"><div class="skel skel-line" style="width:55%;margin:0 auto 10px"></div><div class="skel skel-line" style="width:35%;margin:0 auto"></div></div>`).join("")}
-    </div>
-    <div class="card">
-      <div class="skel skel-line" style="width:110px;margin-bottom:14px"></div>
-      <div class="skel skel-podium"></div>
-    </div>
-    <div class="card">
-      <div class="skel skel-line" style="width:100px;margin-bottom:14px"></div>
-      <div class="skel skel-chart"></div>
-    </div>
-    <div class="card">
-      <div class="skel skel-line" style="width:120px;margin-bottom:14px"></div>
-      ${Array(4).fill(`<div class="skel skel-row"></div>`).join("")}
-    </div>
-  `;
-}
-
-
-async function refreshAdminFlag() {
-  isAdmin = false;
-  if (!currentUser) return;
-  try {
-    const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
-    isAdmin = !!(pr.data && pr.data.is_admin);
-  } catch (e) {}
-}
 
 async function loadReport() {
   renderSkeleton();
