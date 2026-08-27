@@ -926,6 +926,18 @@ function animateNumber(el, to) {
   requestAnimationFrame(tick);
 }
 
+
+async function refreshAdminFlag() {
+  isAdmin = false;
+  if (!currentUser) return;
+  try {
+    const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+    isAdmin = !!(pr.data && pr.data.is_admin);
+  } catch (e) {
+    isAdmin = false;
+  }
+}
+
 db.auth.onAuthStateChange(async (event, session) => {
   // فقط خروج واقعی → index
   // INITIAL_SESSION با null را redirect نکن (قبل از hydrate از localStorage می‌آید)
