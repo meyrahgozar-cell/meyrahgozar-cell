@@ -865,6 +865,8 @@ const HABIT_LABELS = {
 };
 
 let currentUser = null;
+let reportLoadSeq = 0;
+let reportBooted = false;
 let isAdmin = false;
 let selectedYear = null;
 let selectedMonth = null;
@@ -938,34 +940,27 @@ async function refreshAdminFlag() {
   }
 }
 
-db.auth.onAuthStateChange(async (event, session) => {
-  // فقط خروج واقعی → index
-  // INITIAL_SESSION با null را redirect نکن (قبل از hydrate از localStorage می‌آید)
+db.auth.onAuthStateChange((event, session) => {
+  // فقط خروج — لود اولیه فقط یک‌بار از boot انجام می‌شود تا پرش تکراری نباشد
   if (event === "SIGNED_OUT") {
     location.href = "index.html";
-    return;
-  }
-  if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && session) {
-    currentUser = session.user;
-    await refreshAdminFlag();
-    initMonthPicker();
-    await loadReport();
   }
 });
 
-(async () => {
-  // چند بار تلاش برای خواندن session از storage (GitHub Pages / موبایل گاهی دیر hydrate می‌شود)
+(async function bootReport() {
+  if (reportBooted) return;
   let session = null;
-  for (let i = 0; i < 6; i++) {
-    const r = await db.auth.getSession();
-    session = r.data.session;
+  for (let i = 0; i < 8; i++) {
+    const res = await db.auth.getSession();
+    session = res.data.session;
     if (session) break;
-    await new Promise(res => setTimeout(res, 120));
+    await new Promise(r => setTimeout(r, 100));
   }
   if (!session) {
     location.href = "index.html";
     return;
   }
+  reportBooted = true;
   currentUser = session.user;
   await refreshAdminFlag();
   initMonthPicker();
@@ -1128,7 +1123,14 @@ function renderSkeleton() {
 }
 
 async function loadReport() {
-  renderSkeleton();
+  const seq = ++reportLoadSeq;
+
+  if (typeof renderSkeleton === "function") {
+    renderSkeleton();
+  } else {
+    const c = document.getElementById("content");
+    if (c) c.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+  }
 
   const range = jalaliRange(selectedYear, selectedMonth);
 
@@ -1301,6 +1303,7 @@ async function loadReport() {
       else if (s.hasOther || s.hasDisc) s.status = s.hasDisc ? "timely" : "late";
       else s.status = "missed";
     });
+    if (seq !== reportLoadSeq) return; // پاسخ قدیمی — رندر نکن
     renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus);
   } catch (err) {
     const content = document.getElementById("content");
