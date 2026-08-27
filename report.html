@@ -927,23 +927,13 @@ function animateNumber(el, to) {
 }
 
 db.auth.onAuthStateChange(async (event, session) => {
-  // مهم: اول event با session=null می‌آید قبل از بازیابی از storage — نباید redirect کرد
+  // فقط خروج واقعی → index
+  // INITIAL_SESSION با null را redirect نکن (قبل از hydrate از localStorage می‌آید)
   if (event === "SIGNED_OUT") {
     location.href = "index.html";
     return;
   }
-  if (event === "INITIAL_SESSION") {
-    if (!session) {
-      location.href = "index.html";
-      return;
-    }
-    currentUser = session.user;
-    await refreshAdminFlag();
-    initMonthPicker();
-    await loadReport();
-    return;
-  }
-  if (event === "SIGNED_IN" && session) {
+  if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && session) {
     currentUser = session.user;
     await refreshAdminFlag();
     initMonthPicker();
@@ -952,19 +942,19 @@ db.auth.onAuthStateChange(async (event, session) => {
 });
 
 (async () => {
-  const r = await db.auth.getSession();
-  if (!r.data.session) {
-    // کمی صبر برای hydrate شدن session از localStorage
-    await new Promise(res => setTimeout(res, 150));
-    const r2 = await db.auth.getSession();
-    if (!r2.data.session) {
-      location.href = "index.html";
-      return;
-    }
-    currentUser = r2.data.session.user;
-  } else {
-    currentUser = r.data.session.user;
+  // چند بار تلاش برای خواندن session از storage (GitHub Pages / موبایل گاهی دیر hydrate می‌شود)
+  let session = null;
+  for (let i = 0; i < 6; i++) {
+    const r = await db.auth.getSession();
+    session = r.data.session;
+    if (session) break;
+    await new Promise(res => setTimeout(res, 120));
   }
+  if (!session) {
+    location.href = "index.html";
+    return;
+  }
+  currentUser = session.user;
   await refreshAdminFlag();
   initMonthPicker();
   await loadReport();
