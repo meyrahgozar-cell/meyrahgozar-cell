@@ -343,6 +343,9 @@ button { cursor: pointer; border: none; background: none; }
 
 .chart-wrap { position: relative; }
 
+.chart.dense { gap: 2px; }
+.chart.dense .bar { max-width: 10px; }
+.chart.dense .bar-label { font-size: 8px; }
 .chart {
   display: flex;
   align-items: flex-end;
@@ -747,7 +750,41 @@ a.rank-item-link {
   margin-top: 6px;
 }
 
+
+.bar.timely {
+  background: linear-gradient(180deg, #00ff9d, #00a86b) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.35);
+}
+.bar.late {
+  background: linear-gradient(180deg, #ffc14d, #e8950a) !important;
+  box-shadow: 0 0 10px rgba(255, 180, 50, 0.4);
+}
+.bar.missed {
+  background: linear-gradient(180deg, #ff4d6d, #8b2035) !important;
+  box-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
+  opacity: 0.85;
+  min-height: 6px !important;
+}
+.bar.future {
+  background: rgba(139, 146, 176, 0.25) !important;
+  min-height: 3px !important;
+  opacity: 0.4;
+  box-shadow: none;
+}
+.bar-wrap.missed .bar-label { color: #ff4d6d; }
+.chart-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
+  font-size: 11px; color: var(--muted); justify-content: center;
+}
+.chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-legend i {
+  width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+}
+.chart-legend .lg-timely { background: #00ff9d; }
+.chart-legend .lg-late { background: #ffc14d; }
+.chart-legend .lg-missed { background: #ff4d6d; }
 </style>
+
 </head>
 <body>
 
@@ -1176,7 +1213,32 @@ async function loadReport() {
     const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
     const communityKm = Number(kmStats.total_km) || 0;
     const activePeople = Number(kmStats.active_users) || 0;
-    renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople });
+    const dayStatus = {};
+    const daysInM = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+    for (let d = 1; d <= daysInM; d++) {
+      const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+      const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+      dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false };
+    }
+    (logsRes.data || []).forEach(row => {
+      if (!dayStatus[row.log_date]) return;
+      dayStatus[row.log_date].score += Number(row.score) || 0;
+      if (row.item_type === "discipline") dayStatus[row.log_date].hasDisc = true;
+      else dayStatus[row.log_date].hasOther = true;
+    });
+    (exRes.data || []).forEach(row => {
+      if (!dayStatus[row.log_date]) return;
+      dayStatus[row.log_date].score += Number(row.score) || 0;
+      dayStatus[row.log_date].hasOther = true;
+    });
+    const todayISO = isoDate(new Date());
+    Object.keys(dayStatus).forEach(iso => {
+      const s = dayStatus[iso];
+      if (iso > todayISO) s.status = "future";
+      else if (s.hasOther || s.hasDisc) s.status = s.hasDisc ? "timely" : "late";
+      else s.status = "missed";
+    });
+    renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus);
   } catch (err) {
     const content = document.getElementById("content");
     content.innerHTML = `
@@ -1205,7 +1267,7 @@ function avatarHtml(name, kind) {
   return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
 }
 
-function renderReport(stats, habitMap, leaderboard, kmInfo = {}) {
+function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {}) {
   const content = document.getElementById("content");
 
   const total = Number(stats.total_score) || 0;
@@ -1222,24 +1284,44 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}) {
   }
 
   const maxAbs = Math.max(...daily.map(d => Math.abs(Number(d.score) || 0)), 1);
+  // نمودار کامل ماه با وضعیت نظم
+  const statusKeys = Object.keys(dayStatus || {}).sort();
+  const chartDays = statusKeys.length ? statusKeys : (daily || []).map(d => d.date);
+  const scoreByDate = {};
+  (daily || []).forEach(d => { scoreByDate[d.date] = Number(d.score) || 0; });
+  statusKeys.forEach(iso => {
+    if (scoreByDate[iso] === undefined && dayStatus[iso])
+      scoreByDate[iso] = Number(dayStatus[iso].score) || 0;
+  });
+  const allScores = chartDays.map(iso => Math.abs(scoreByDate[iso] || 0));
+  const maxAbs2 = Math.max(...allScores, 1);
+  const dense = chartDays.length >= 30;
+
   let chartHtml = "";
-  if (daily.length === 0) {
+  if (chartDays.length === 0) {
     chartHtml = `<div class="empty"><div class="empty-icon">📊</div>هنوز داده‌ای برای این ماه ثبت نشده</div>`;
   } else {
-    chartHtml = `<div class="chart-wrap"><div class="chart" id="dailyChart">` + daily.map(d => {
-      const sc = Number(d.score) || 0;
-      const h = Math.max(4, (Math.abs(sc) / maxAbs) * 110);
-      const cls = sc > 0 ? "positive" : sc < 0 ? "negative" : "zero";
-      const [y, m, day] = d.date.split("-").map(Number);
+    chartHtml = `<div class="chart-wrap"><div class="chart ${dense ? "dense" : ""}" id="dailyChart">` + chartDays.map(iso => {
+      const sc = scoreByDate[iso] || 0;
+      const st = (dayStatus[iso] && dayStatus[iso].status) || (sc ? "late" : "missed");
+      const h = st === "missed" ? 8 : st === "future" ? 3 : (Math.abs(sc) < 0.001 ? 4 : Math.max(4, (Math.abs(sc) / maxAbs2) * 110));
+      const [y, m, day] = iso.split("-").map(Number);
       const j = jalaali.toJalaali(y, m, day);
-      const isBest = stats.best_day === d.date;
-      const tip = `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)}`;
+      const isBest = stats.best_day === iso && st !== "missed" && st !== "future";
+      const statusFa = st === "timely" ? "به‌موقع" : st === "late" ? "با تأخیر" : st === "future" ? "آینده" : "بدون ثبت";
+      const tip = `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} · ${statusFa}`;
+      const showLabel = !dense || j.jd === 1 || j.jd === chartDays.length || j.jd % 2 === 0 || isBest;
       return `
-        <div class="bar-wrap ${isBest ? "best" : ""}" data-tip="${tip}">
-          <div class="bar ${cls}" data-h="${h}"></div>
-          <div class="bar-label">${isBest ? "★ " : ""}${fa(j.jd)}</div>
+        <div class="bar-wrap ${isBest ? "best" : ""} ${st === "missed" ? "missed" : ""}" data-tip="${tip}">
+          <div class="bar ${st}" data-h="${h}" style="height:${h}px"></div>
+          <div class="bar-label">${isBest ? "★ " : ""}${showLabel ? fa(j.jd) : ""}</div>
         </div>`;
-    }).join("") + `</div><div class="chart-tip" id="chartTip"></div></div>`;
+    }).join("") + `</div><div class="chart-tip" id="chartTip"></div></div>
+    <div class="chart-legend">
+      <span><i class="lg-timely"></i>به‌موقع</span>
+      <span><i class="lg-late"></i>با تأخیر</span>
+      <span><i class="lg-missed"></i>بدون ثبت</span>
+    </div>`;
   }
 
   /* Top 3 podium */
