@@ -1099,6 +1099,34 @@ function updateReportChrome() {
 }
 
 
+
+function renderSkeleton() {
+  const content = document.getElementById("content");
+  if (!content) return;
+  content.innerHTML = `
+    <div class="summary">
+      ${Array(4).fill(0).map(() => `
+        <div class="stat">
+          <div class="skel skel-line" style="width:55%;margin:0 auto 10px"></div>
+          <div class="skel skel-line" style="width:35%;margin:0 auto;height:22px"></div>
+        </div>`).join("")}
+    </div>
+    <div class="card">
+      <div class="skel skel-line" style="width:110px;margin-bottom:14px"></div>
+      <div class="skel skel-podium"></div>
+    </div>
+    <div class="card">
+      <div class="skel skel-line" style="width:100px;margin-bottom:14px"></div>
+      <div class="skel skel-chart"></div>
+    </div>
+    <div class="card">
+      <div class="skel skel-line" style="width:90px;margin-bottom:14px"></div>
+      <div class="skel skel-row" style="margin-bottom:8px"></div>
+      <div class="skel skel-row" style="margin-bottom:8px"></div>
+      <div class="skel skel-row"></div>
+    </div>`;
+}
+
 async function loadReport() {
   renderSkeleton();
 
