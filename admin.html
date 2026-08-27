@@ -243,7 +243,41 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 .day-modal-row-val.neg { color: var(--negative); }
 .bar-wrap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .bar-wrap:active .bar { filter: brightness(1.3); }
+
+.bar.timely {
+  background: linear-gradient(180deg, #00ff9d, #00a86b) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.35);
+}
+.bar.late {
+  background: linear-gradient(180deg, #ffc14d, #e8950a) !important;
+  box-shadow: 0 0 10px rgba(255, 180, 50, 0.4);
+}
+.bar.future {
+  background: rgba(139, 146, 176, 0.25) !important;
+  min-height: 3px !important;
+  box-shadow: none;
+  opacity: 0.4;
+}
+.bar.missed {
+  background: linear-gradient(180deg, #ff4d6d, #8b2035) !important;
+  box-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
+  opacity: 0.85;
+  min-height: 6px !important;
+}
+.bar-wrap.missed .bar-label { color: #ff4d6d; }
+.chart-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
+  font-size: 11px; color: var(--muted); justify-content: center;
+}
+.chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-legend i {
+  width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+}
+.chart-legend .lg-timely { background: #00ff9d; box-shadow: 0 0 6px rgba(0,255,157,0.5); }
+.chart-legend .lg-late { background: #ffc14d; box-shadow: 0 0 6px rgba(255,180,50,0.5); }
+.chart-legend .lg-missed { background: #ff4d6d; box-shadow: 0 0 6px rgba(255,77,109,0.5); }
 </style>
+
 
 </head>
 <body>
@@ -291,7 +325,7 @@ const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","م�
 const START_YEAR = 1405;
 const HABIT_LABELS = {
   water: "💧 آب", sleep: "🌙 خواب", instagram: "📱 اینستا", sun: "☀️ آفتاب",
-  solitude: "🧘 خلوت", reading: "📖 مطالعه", sugar: "🍬 قند", dinner: "🍽️ شام", exercise: "🏃 ورزش"
+  solitude: "🧘 خلوت", reading: "📖 مطالعه", sugar: "🍬 قند", dinner: "🍽️ شام", exercise: "🏃 ورزش", discipline: "✅ نظم"
 };
 
 let currentUser = null;
@@ -516,6 +550,7 @@ async function openUser(userId) {
       if (dayMap[r.log_date] !== undefined) {
         dayMap[r.log_date] += Number(r.score) || 0;
         dayBreakdown[r.log_date].push({
+          type: r.item_type,
           label: HABIT_LABELS[r.item_type] || r.item_type,
           score: Number(r.score) || 0
         });
@@ -525,6 +560,7 @@ async function openUser(userId) {
       if (dayMap[r.log_date] !== undefined) {
         dayMap[r.log_date] += Number(r.score) || 0;
         dayBreakdown[r.log_date].push({
+          type: "exercise",
           label: HABIT_LABELS.exercise || "🏃 ورزش",
           score: Number(r.score) || 0
         });
@@ -534,15 +570,26 @@ async function openUser(userId) {
       if (dayMap[r.log_date] !== undefined) {
         dayMap[r.log_date] += Number(r.score) || 0;
         dayBreakdown[r.log_date].push({
+          type: "penalty",
           label: "⚠️ جریمه",
           score: Number(r.score) || 0
         });
       }
     });
 
-    const daily = Object.keys(dayMap).sort().map(date => ({
-      date, score: dayMap[date], items: dayBreakdown[date] || []
-    }));
+    const daily = Object.keys(dayMap).sort().map(date => {
+      const items = dayBreakdown[date] || [];
+      const hasDisc = items.some(it => it.type === "discipline");
+      const hasOther = items.some(it => it.type !== "discipline");
+      let status = "missed";
+      if (hasOther || hasDisc) {
+        status = hasDisc ? "timely" : "late";
+      }
+      // فقط روزهای آینده را missed نکن — بی‌رنگ‌تر؟ برای سادگی missed فقط گذشته بدون ثبت
+      const todayISO = isoDate(new Date());
+      if (date > todayISO) status = "future";
+      return { date, score: dayMap[date], items, status };
+    });
     dayDetailsCache = {};
     daily.forEach(d => { dayDetailsCache[d.date] = d; });
     detailUserName = u.display_name || "کاربر";
@@ -558,15 +605,16 @@ async function openUser(userId) {
     const chartHtml = `<div class="chart-wrap"><div class="chart ${dense ? "dense" : ""}" id="adminChart">` +
       daily.map(d => {
         const sc = d.score;
-        const h = sc === 0 ? 2 : Math.max(4, (Math.abs(sc) / maxAbs) * 110);
-        const cls = sc > 0 ? "positive" : sc < 0 ? "negative" : "zero";
+        const status = d.status || "missed";
+        const h = status === "missed" ? 8 : status === "future" ? 3 : (Math.abs(sc) < 0.001 ? 4 : Math.max(4, (Math.abs(sc) / maxAbs) * 110));
         const [y, m, day] = d.date.split("-").map(Number);
         const j = jalaali.toJalaali(y, m, day);
-        const isBest = bestDay === d.date;
+        const isBest = bestDay === d.date && status !== "missed";
         const showLabel = !dense || j.jd === 1 || j.jd === daysInMonth || j.jd % 2 === 0 || isBest;
-        const tip = `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)}`;
-        return `<div class="bar-wrap ${isBest ? "best" : ""}" data-date="${d.date}" title="${tip}">
-          <div class="bar ${cls}" style="height:${h}px"></div>
+        const statusFa = status === "timely" ? "به‌موقع" : status === "late" ? "با تأخیر" : "بدون ثبت";
+        const tip = `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} · ${statusFa}`;
+        return `<div class="bar-wrap ${isBest ? "best" : ""} ${status === "missed" ? "missed" : ""}" data-date="${d.date}" title="${tip}">
+          <div class="bar ${status}" style="height:${h}px"></div>
           <div class="bar-label">${showLabel ? fa(j.jd) : ""}</div>
         </div>`;
       }).join("") + `</div></div>`;
@@ -627,6 +675,11 @@ async function openUser(userId) {
         <div class="card-title">نمودار روزانه</div>
         <div class="card-sub">امتیاز هر روز · ${fa(daysInMonth)} روز ماه${dense ? " · فشرده" : ""}</div>
         ${chartHtml}
+        <div class="chart-legend">
+          <span><i class="lg-timely"></i>به‌موقع</span>
+          <span><i class="lg-late"></i>با تأخیر</span>
+          <span><i class="lg-missed"></i>بدون ثبت</span>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">عادت‌ها</div>
