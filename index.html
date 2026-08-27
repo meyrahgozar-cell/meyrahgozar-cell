@@ -659,6 +659,91 @@ button { cursor: pointer; border: none; background: none; }
   transform: scale(0.94);
 }
 
+
+/* Yesterday nav + day context banner */
+.day-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.day-nav-row .cal-panel {
+  flex: 1;
+  margin-bottom: 0;
+}
+.btn-yesterday {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 193, 77, 0.45);
+  background: linear-gradient(145deg, rgba(255, 193, 77, 0.18), rgba(232, 149, 10, 0.08));
+  color: #ffc14d;
+  box-shadow: 0 0 12px rgba(255, 180, 50, 0.25);
+  transition: 0.2s;
+}
+.btn-yesterday:hover {
+  box-shadow: 0 0 18px rgba(255, 193, 77, 0.45);
+  border-color: rgba(255, 193, 77, 0.7);
+}
+.btn-yesterday:active { transform: scale(0.97); }
+.btn-yesterday.hidden { display: none; }
+
+.day-context {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.day-context.show { display: flex; }
+
+.day-context.yesterday {
+  color: #ffe0a0;
+  border: 1px solid rgba(255, 193, 77, 0.5);
+  background: linear-gradient(90deg, rgba(255, 193, 77, 0.14), rgba(255, 140, 40, 0.06));
+  box-shadow: 0 0 14px rgba(255, 180, 50, 0.3);
+  animation: amberPulse 2.2s ease-in-out infinite;
+}
+.day-context.yesterday .dc-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #ffc14d;
+  box-shadow: 0 0 8px #ffc14d, 0 0 16px rgba(255, 193, 77, 0.6);
+  animation: amberDot 1.6s ease-in-out infinite;
+}
+@keyframes amberPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 180, 50, 0.25); }
+  50% { box-shadow: 0 0 20px rgba(255, 193, 77, 0.5); }
+}
+@keyframes amberDot {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+.day-context.past {
+  color: #ffb0c0;
+  border: 1px solid rgba(255, 80, 120, 0.45);
+  background: linear-gradient(90deg, rgba(255, 80, 120, 0.16), rgba(180, 40, 80, 0.08));
+  box-shadow: 0 0 12px rgba(255, 77, 109, 0.25);
+  animation: roseGlow 2.4s ease-in-out infinite;
+}
+.day-context.past .dc-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #ff6b8a;
+  box-shadow: 0 0 8px #ff4d6d;
+}
+@keyframes roseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 77, 109, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(255, 100, 130, 0.4); }
+}
+
 </style>
 </head>
 <body>
@@ -727,6 +812,13 @@ button { cursor: pointer; border: none; background: none; }
 
   <!-- COMPACT COLLAPSIBLE CALENDAR -->
   <div class="cal-wrap" id="calWrap">
+    <div id="dayContext" class="day-context" aria-live="polite">
+      <span class="dc-dot"></span>
+      <span id="dayContextText"></span>
+    </div>
+    <div class="day-nav-row">
+      <button type="button" class="btn-yesterday" id="btnYesterday" title="رفتن به دیروز">دیروز ←</button>
+      <div style="flex:1;min-width:0">
     <button class="cal-toggle" id="calToggle">
       <div class="cal-toggle-left">
         <span>📅</span>
@@ -749,7 +841,8 @@ button { cursor: pointer; border: none; background: none; }
       </div>
       <div class="days" id="calDays"></div>
     </div>
-  </div>
+      </div>
+    </div>
 
   <div class="streaks">
     <span>🔥 تداوم: <b id="streakCurrent">۰</b> روز</span>
@@ -928,9 +1021,46 @@ document.getElementById("calToggle").onclick=()=>{
   document.getElementById("calWrap").classList.toggle("open",calOpen);
 };
 
+
+function prevDayISO(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  return isoDate(dt);
+}
+function updateDayContext() {
+  const el = document.getElementById("dayContext");
+  const tx = document.getElementById("dayContextText");
+  const btnY = document.getElementById("btnYesterday");
+  if (!el || !tx) return;
+
+  const lag = daysBetweenISO(selectedDate, todayDate);
+  // lag 0 = today, 1 = yesterday, >1 = older past, <0 = future
+
+  if (btnY) {
+    // hide if already on yesterday
+    const yest = prevDayISO(todayDate);
+    btnY.classList.toggle("hidden", selectedDate === yest);
+  }
+
+  el.classList.remove("show", "yesterday", "past");
+  if (lag === 1) {
+    el.classList.add("show", "yesterday");
+    tx.textContent = "در حال پر کردن روز قبل · ارفاق نظم هنوز فعاله";
+  } else if (lag > 1) {
+    el.classList.add("show", "past");
+    tx.textContent = "روز دیگری غیر از امروز · برای این روز امتیاز نظم تعلق نمی‌گیرد";
+  } else if (lag < 0) {
+    el.classList.add("show", "past");
+    tx.textContent = "روز آینده — هنوز قابل ثبت نیست";
+  }
+  // today: no banner
+}
+
 function updateCalLabel(){
   const label=selectedDate===todayDate ? "امروز" : jalaliLabel(selectedDate);
   document.getElementById("calDateLabel").textContent=label;
+  updateDayContext();
 }
 
 /* ===== SHAMSI CALENDAR ===== */
@@ -1312,6 +1442,19 @@ document.getElementById("themeButton").onclick=()=>{
     showToast("تم نئون سایبرپانک 💜");
   }
 };
+
+document.getElementById("btnYesterday")?.addEventListener("click", async () => {
+  const yest = prevDayISO(todayDate);
+  selectedDate = yest;
+  const parts = yest.split("-").map(Number);
+  const jj = jalaali.toJalaali(parts[0], parts[1], parts[2]);
+  viewYear = jj.jy;
+  viewMonth = jj.jm;
+  updateCalLabel();
+  renderCalendar();
+  await loadDayData();
+});
+
 document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
 document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
 
