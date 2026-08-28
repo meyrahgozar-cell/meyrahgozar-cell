@@ -807,6 +807,52 @@ a.rank-item-link {
   line-height: 1.4;
 }
 
+
+.profile-hit {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.profile-hit:hover { filter: brightness(1.1); }
+.badge-modal-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(5,6,10,0.8);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.badge-modal {
+  width: 100%; max-width: 380px; max-height: 85vh; overflow-y: auto;
+  background: linear-gradient(160deg, #141828, #0a0d16);
+  border: 1px solid rgba(180,100,255,0.5);
+  border-radius: 18px;
+  padding: 20px 16px 16px;
+  box-shadow: 0 0 32px rgba(180,76,255,0.35);
+}
+.badge-modal-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.badge-modal-name { font-size: 16px; font-weight: 800; }
+.badge-modal-sub { font-size: 12px; color: var(--muted); }
+.badge-list { display: grid; gap: 8px; margin-bottom: 14px; }
+.badge-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--card2); border: 1px solid var(--border);
+  font-size: 13px;
+}
+.badge-row.locked { opacity: 0.4; }
+.badge-row-emoji { font-size: 22px; }
+.badge-row-title { font-weight: 700; flex: 1; }
+.badge-row-count {
+  font-weight: 800; color: var(--neon2);
+  font-size: 14px;
+}
+.badge-modal-close {
+  width: 100%; height: 42px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--card2);
+  font-weight: 700; color: var(--text); cursor: pointer;
+}
+
 </style>
 
 </head>
@@ -1122,6 +1168,147 @@ function renderSkeleton() {
     </div>`;
 }
 
+
+const REPORT_BADGES = {
+  w1: { emoji: "🌿", title: "هفته‌های خوب", desc: "هفته با میانگین ≥۷ و ≥۵ روز فعال" },
+  w2: { emoji: "⚡", title: "زنجیره هفته", desc: "بیشینه هفته‌های خوب پشت‌سرهم" },
+  m1: { emoji: "🌙", title: "ماه خوب", desc: "ماه با میانگین ≥۷ و ≥۱۵ روز" },
+  m2: { emoji: "💎", title: "ماه درخشان", desc: "ماه با میانگین ≥۱۰ و ≥۲۰ روز" }
+};
+
+function shamsiWeekKey(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const sinceSat = (dt.getUTCDay() + 1) % 7;
+  const start = new Date(dt);
+  start.setUTCDate(start.getUTCDate() - sinceSat);
+  return start.toISOString().slice(0, 10);
+}
+
+function computeBadgeCounts(dayScore) {
+  const weeks = {};
+  Object.keys(dayScore).forEach(iso => {
+    const wk = shamsiWeekKey(iso);
+    if (!weeks[wk]) weeks[wk] = { sum: 0, n: 0 };
+    weeks[wk].sum += dayScore[iso];
+    weeks[wk].n += 1;
+  });
+  const isGoodWeek = w => w && w.n >= 5 && w.sum / w.n >= 7;
+  let goodWeekCount = 0;
+  Object.values(weeks).forEach(w => { if (isGoodWeek(w)) goodWeekCount++; });
+
+  // max consecutive good weeks
+  const starts = Object.keys(weeks).sort();
+  let maxStreak = 0, run = 0, prev = null;
+  starts.forEach(wk => {
+    if (!isGoodWeek(weeks[wk])) { run = 0; prev = wk; return; }
+    if (prev) {
+      const [y,m,d] = prev.split("-").map(Number);
+      const dt = new Date(Date.UTC(y,m-1,d));
+      dt.setUTCDate(dt.getUTCDate() + 7);
+      const expect = dt.toISOString().slice(0,10);
+      run = (wk === expect) ? run + 1 : 1;
+    } else run = 1;
+    maxStreak = Math.max(maxStreak, run);
+    prev = wk;
+  });
+
+  const byMonth = {};
+  Object.keys(dayScore).forEach(iso => {
+    const [y, m, d] = iso.split("-").map(Number);
+    const j = jalaali.toJalaali(y, m, d);
+    const key = j.jy + "-" + String(j.jm).padStart(2, "0");
+    if (!byMonth[key]) byMonth[key] = { sum: 0, n: 0 };
+    byMonth[key].sum += dayScore[iso];
+    byMonth[key].n += 1;
+  });
+  let goodMonthCount = 0, shineMonthCount = 0;
+  Object.values(byMonth).forEach(m => {
+    const avg = m.n ? m.sum / m.n : 0;
+    if (m.n >= 15 && avg >= 7) goodMonthCount++;
+    if (m.n >= 20 && avg >= 10) shineMonthCount++;
+  });
+
+  return {
+    w1: goodWeekCount,
+    w2: maxStreak,
+    m1: goodMonthCount,
+    m2: shineMonthCount
+  };
+}
+
+async function fetchUserDayScores(userId) {
+  // SECURITY DEFINER RPC — اگر نبود، فقط برای خود کاربر از جداول
+  try {
+    const rpc = await db.rpc("get_user_daily_scores", { p_user_id: userId });
+    if (!rpc.error && rpc.data) {
+      const dayScore = {};
+      (rpc.data || []).forEach(r => {
+        const iso = r.log_date;
+        dayScore[iso] = Number(r.total_score) || 0;
+      });
+      return dayScore;
+    }
+  } catch (e) {}
+
+  if (currentUser && userId === currentUser.id) {
+    const [logs, ex] = await Promise.all([
+      db.from("daily_logs").select("log_date, score").eq("user_id", userId),
+      db.from("exercise_logs").select("log_date, score").eq("user_id", userId)
+    ]);
+    const dayScore = {};
+    (logs.data || []).forEach(r => {
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+    (ex.data || []).forEach(r => {
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+    return dayScore;
+  }
+  return null;
+}
+
+async function openUserBadges(userId, displayName) {
+  const overlay = document.createElement("div");
+  overlay.className = "badge-modal-overlay";
+  overlay.innerHTML = `
+    <div class="badge-modal">
+      <div class="badge-modal-head">
+        ${avatarHtml(displayName, "rank")}
+        <div>
+          <div class="badge-modal-name">${displayName || "کاربر"}</div>
+          <div class="badge-modal-sub">نشان‌های مسیر (شمارش انباشته)</div>
+        </div>
+      </div>
+      <div class="badge-list" id="badgeListModal"><div class="empty">در حال بارگذاری...</div></div>
+      <button type="button" class="badge-modal-close">بستن</button>
+    </div>`;
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  overlay.querySelector(".badge-modal-close").onclick = close;
+  document.body.appendChild(overlay);
+
+  const dayScore = await fetchUserDayScores(userId);
+  const list = overlay.querySelector("#badgeListModal");
+  if (!dayScore) {
+    list.innerHTML = `<div class="empty">برای دیدن نشان دیگران تابع SQL را اجرا کن، یا فقط نشان خودت از ایندکس در دسترس است.</div>`;
+    return;
+  }
+  const counts = computeBadgeCounts(dayScore);
+  const order = ["m2", "m1", "w1", "w2"];
+  list.innerHTML = order.map(id => {
+    const b = REPORT_BADGES[id];
+    const c = counts[id] || 0;
+    const on = c > 0;
+    return `<div class="badge-row ${on ? "" : "locked"}">
+      <span class="badge-row-emoji">${b.emoji}</span>
+      <div class="badge-row-title">${b.title}<div style="font-size:11px;color:var(--muted);font-weight:500">${b.desc}</div></div>
+      <span class="badge-row-count">${on ? "×" + fa(c) : "—"}</span>
+    </div>`;
+  }).join("");
+}
+
+
 async function loadReport() {
   const seq = ++reportLoadSeq;
 
@@ -1421,8 +1608,10 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
       return `
         <div class="podium-place ${place}">
           <div class="podium-medal">${medal}</div>
+          <div class="profile-hit" data-uid="${uid}" data-name="${name}">
           ${avatarHtml(name, "podium")}
           <div class="podium-name">${name}</div>
+          </div>
           <div class="podium-score">${scoreText(sc)}</div>
           <div class="podium-bar">${num}</div>
           ${adminBtn}
@@ -1448,8 +1637,10 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
         <div class="rank-item">
           <div class="rank-row">
             <div class="rank-num">${fa(i + 4)}</div>
+            <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
             ${avatarHtml(u.display_name || "کاربر", "rank")}
             <div class="rank-name">${u.display_name || "کاربر"}</div>
+            </div>
             <div class="rank-score">${scoreText(avg)}</div>
             ${adminBtn}
             <div class="rank-chevron">›</div>
@@ -1615,6 +1806,14 @@ function initInteractions() {
     }
 
     const rankRow = e.target.closest(".rank-row");
+    const profileHit = e.target.closest(".profile-hit");
+    if (profileHit) {
+      e.stopPropagation();
+      const uid = profileHit.dataset.uid;
+      const name = profileHit.dataset.name || "کاربر";
+      if (uid) openUserBadges(uid, name);
+      return;
+    }
     if (rankRow) {
       const item = rankRow.closest(".rank-item");
       if (item) item.classList.toggle("open");
