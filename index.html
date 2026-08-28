@@ -1278,6 +1278,51 @@ function renderMountain(c){
 }
 
 /* ===== DATA ===== */
+
+async function updateStreaks() {
+  if (!currentUser) return;
+  const elC = document.getElementById("streakCurrent");
+  const elB = document.getElementById("streakBest");
+  if (!elC || !elB) return;
+
+  try {
+    const [logs, ex, mt] = await Promise.all([
+      db.from("daily_logs").select("log_date").eq("user_id", currentUser.id),
+      db.from("exercise_logs").select("log_date").eq("user_id", currentUser.id),
+      db.from("mountain_trips").select("trip_date").eq("user_id", currentUser.id)
+    ]);
+
+    const days = new Set();
+    (logs.data || []).forEach(r => { if (r.log_date) days.add(r.log_date); });
+    (ex.data || []).forEach(r => { if (r.log_date) days.add(r.log_date); });
+    (mt.data || []).forEach(r => { if (r.trip_date) days.add(r.trip_date); });
+
+    // تداوم فعلی: از امروز (یا اگر امروز خالی است از دیروز) به عقب
+    let current = 0;
+    let cursor = todayDate;
+    if (!days.has(cursor)) cursor = prevDayISO(cursor);
+    while (days.has(cursor)) {
+      current++;
+      cursor = prevDayISO(cursor);
+    }
+
+    // بهترین تداوم: بلندترین زنجیره متوالی
+    const sorted = [...days].sort();
+    let best = 0, run = 0, prev = null;
+    for (const day of sorted) {
+      if (prev && daysBetweenISO(prev, day) === 1) run++;
+      else run = 1;
+      if (run > best) best = run;
+      prev = day;
+    }
+
+    elC.textContent = fa(current);
+    elB.textContent = fa(best);
+  } catch (e) {
+    console.warn("updateStreaks", e);
+  }
+}
+
 async function loadDayData(){
   if(!currentUser||!selectedDate) return;
 
@@ -1297,6 +1342,7 @@ async function loadDayData(){
 
   updateScoreUI();
   renderItems();
+  updateStreaks();
 }
 
 
@@ -1425,6 +1471,7 @@ async function saveDailyLog(type,value,e){
   } else {
     showToast("ثبت شد ✓");
   }
+  updateStreaks();
 }
 
 async function saveExercise(e){
@@ -1444,6 +1491,7 @@ async function saveExercise(e){
   renderItems();
   floatingScore(x.score-old,e.clientX,e.clientY);
   showToast(isTimelyLog(selectedDate) ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
+  updateStreaks();
 }
 
 async function saveMountain(){
