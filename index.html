@@ -769,6 +769,75 @@ button { cursor: pointer; border: none; background: none; }
   50% { box-shadow: 0 0 16px rgba(255, 100, 130, 0.4); }
 }
 
+
+.badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 14px;
+  min-height: 36px;
+}
+.badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(180, 100, 255, 0.35);
+  background: linear-gradient(145deg, rgba(180,76,255,0.15), rgba(0,240,255,0.06));
+  color: var(--text);
+  box-shadow: 0 0 10px rgba(180, 76, 255, 0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.badge-chip:hover, .badge-chip:active {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(180, 76, 255, 0.4);
+}
+.badge-chip.week1 { border-color: rgba(0,255,157,0.4); box-shadow: 0 0 10px rgba(0,255,157,0.25); }
+.badge-chip.week2 { border-color: rgba(0,240,255,0.45); box-shadow: 0 0 12px rgba(0,240,255,0.3); }
+.badge-chip.week3 { border-color: rgba(255,215,0,0.5); box-shadow: 0 0 14px rgba(255,215,0,0.35); }
+.badge-chip.month { border-color: rgba(255,105,180,0.45); box-shadow: 0 0 12px rgba(255,105,180,0.3); }
+.badge-chip.locked {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+  box-shadow: none;
+  border-color: var(--border);
+}
+.badge-modal-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(5,6,10,0.8);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.badge-modal {
+  width: 100%; max-width: 360px;
+  background: linear-gradient(160deg, #141828, #0a0d16);
+  border: 1px solid rgba(180,100,255,0.5);
+  border-radius: 18px;
+  padding: 22px 18px 18px;
+  box-shadow: 0 0 32px rgba(180,76,255,0.35);
+  text-align: center;
+}
+.badge-modal-emoji { font-size: 42px; margin-bottom: 8px; }
+.badge-modal-title {
+  font-size: 18px; font-weight: 800; margin-bottom: 8px;
+  background: linear-gradient(90deg,#b44cff,#00f0ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.badge-modal-body { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+.badge-modal-close {
+  width: 100%; height: 42px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--card2);
+  font-weight: 700; color: var(--text);
+}
+
 </style>
 </head>
 <body>
@@ -874,6 +943,7 @@ button { cursor: pointer; border: none; background: none; }
     <span>🔥 تداوم: <b id="streakCurrent">۰</b> روز</span>
     <span>🏆 بهترین: <b id="streakBest">۰</b> روز</span>
   </div>
+  <div class="badges-row" id="badgesRow" aria-label="نشان‌ها"></div>
 
   <div class="items" id="items"></div>
 </div>
@@ -1279,6 +1349,181 @@ function renderMountain(c){
 
 /* ===== DATA ===== */
 
+
+/* ===== نشان‌ها (هفتگی / ماهانه) =====
+   روز خوب: امتیاز روز >= 7
+   هفته خوب: میانگین روزهای آن هفته >= 7 و حداقل 5 روز فعال
+   ماه خوب: میانگین روزهای فعال ماه >= 7 و حداقل 15 روز فعال
+   ماه درخشان: میانگین >= 10 و حداقل 20 روز فعال
+*/
+const BADGE_DEFS = {
+  w1: {
+    id: "w1", emoji: "🌿", title: "هفتهٔ اول", cls: "week1",
+    body: "هر هفته با میانگین ≥ ۷ و حداقل ۵ روز فعال یک «هفته خوب» است. عدد کنار نشان = تعداد کل هفته‌های خوب (مثل چیپ AA)."
+  },
+  w2: {
+    id: "w2", emoji: "⚡", title: "دو هفته پشت‌سرهم", cls: "week2",
+    body: "دو هفتهٔ متوالی که هر کدام میانگین ≥ ۷ و حداقل ۵ روز فعال داشته‌اند. ثبات داری."
+  },
+  w3: {
+    id: "w3", emoji: "🔥", title: "سه هفته فولادی", cls: "week3",
+    body: "سه هفتهٔ متوالی با همان معیار. این یعنی نظم واقعی — کمیاب و ارزشمند."
+  },
+  m1: {
+    id: "m1", emoji: "🌙", title: "ماه خوب", cls: "month",
+    body: "هر ماه شمسی با میانگین روزهای فعال ≥ ۷ و حداقل ۱۵ روز ثبت = یک ماه خوب. عدد = چند ماه از این نوع داشته‌ای."
+  },
+  m2: {
+    id: "m2", emoji: "💎", title: "ماه درخشان", cls: "month",
+    body: "هر ماه با میانگین ≥ ۱۰ و حداقل ۲۰ روز ثبت = ماه درخشان. عدد کنار نشان = تعداد ماه‌های درخشان در کل مسیر."
+  }
+};
+
+function shamsiWeekKey(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const j = jalaali.toJalaali(y, m, d);
+  // شنبه = شروع هفته شمسی تقریبی: day of week from gregorian
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  // JS: 0=Sun ... 6=Sat. ایرانی: شنبه شروع → shift
+  const dow = dt.getUTCDay(); // 0 Sun
+  // days since Saturday: Sat=6 → 0, Sun=0 → 1, ... Fri=5 → 6
+  const sinceSat = (dow + 1) % 7;
+  const start = new Date(dt);
+  start.setUTCDate(start.getUTCDate() - sinceSat);
+  return start.toISOString().slice(0, 10);
+}
+
+async function updateBadges() {
+  const row = document.getElementById("badgesRow");
+  if (!row || !currentUser) return;
+
+  try {
+    const [logs, ex] = await Promise.all([
+      db.from("daily_logs").select("log_date, score").eq("user_id", currentUser.id),
+      db.from("exercise_logs").select("log_date, score").eq("user_id", currentUser.id)
+    ]);
+
+    const dayScore = {};
+    (logs.data || []).forEach(r => {
+      if (!r.log_date) return;
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+    (ex.data || []).forEach(r => {
+      if (!r.log_date) return;
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+
+    // weeks: map weekStart → { sum, days: Set }
+    const weeks = {};
+    Object.keys(dayScore).forEach(iso => {
+      const wk = shamsiWeekKey(iso);
+      if (!weeks[wk]) weeks[wk] = { sum: 0, n: 0 };
+      weeks[wk].sum += dayScore[iso];
+      weeks[wk].n += 1;
+    });
+
+    const isGoodWeek = (w) => w && w.n >= 5 && (w.sum / w.n) >= 7;
+
+    // consecutive good weeks ending at most recent week that has data or current week
+    const weekStarts = Object.keys(weeks).sort();
+    // build timeline of last ~12 week starts from today backwards
+    const timeline = [];
+    let cur = shamsiWeekKey(todayDate);
+    for (let i = 0; i < 16; i++) {
+      timeline.push(cur);
+      // prev week = cur - 7 days
+      const [y, m, d] = cur.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      dt.setUTCDate(dt.getUTCDate() - 7);
+      cur = dt.toISOString().slice(0, 10);
+    }
+
+    let streakWeeks = 0;
+    for (const wk of timeline) {
+      if (isGoodWeek(weeks[wk])) streakWeeks++;
+      else {
+        // allow current incomplete week to skip if not good yet
+        if (wk === shamsiWeekKey(todayDate) && !isGoodWeek(weeks[wk])) continue;
+        break;
+      }
+    }
+
+    // شمارش کل هفته‌های خوب (مثل چیپ AA)
+    let goodWeekCount = 0;
+    Object.keys(weeks).forEach(wk => { if (isGoodWeek(weeks[wk])) goodWeekCount++; });
+
+    // شمارش ماه‌های خوب / درخشان در کل تاریخچه
+    const byMonth = {};
+    Object.keys(dayScore).forEach(iso => {
+      const [y, m, d] = iso.split("-").map(Number);
+      const j = jalaali.toJalaali(y, m, d);
+      const key = j.jy + "-" + String(j.jm).padStart(2, "0");
+      if (!byMonth[key]) byMonth[key] = { sum: 0, n: 0 };
+      byMonth[key].sum += dayScore[iso];
+      byMonth[key].n += 1;
+    });
+    let goodMonthCount = 0, shineMonthCount = 0;
+    Object.keys(byMonth).forEach(k => {
+      const m = byMonth[k];
+      const avg = m.n ? m.sum / m.n : 0;
+      if (m.n >= 15 && avg >= 7) goodMonthCount++;
+      if (m.n >= 20 && avg >= 10) shineMonthCount++;
+    });
+
+    const counts = {
+      w1: goodWeekCount >= 1 ? goodWeekCount : 0,
+      w2: streakWeeks >= 2 ? streakWeeks : 0,
+      w3: streakWeeks >= 3 ? streakWeeks : 0,
+      m1: goodMonthCount,
+      m2: shineMonthCount
+    };
+    // نمایش: هفته‌های خوب (تعداد)، زنجیره فعلی ۲/۳، ماه‌ها
+    const display = [
+      { id: "w1", count: goodWeekCount, on: goodWeekCount >= 1 },
+      { id: "w2", count: streakWeeks, on: streakWeeks >= 2 },
+      { id: "w3", count: streakWeeks, on: streakWeeks >= 3 },
+      { id: "m1", count: goodMonthCount, on: goodMonthCount >= 1 },
+      { id: "m2", count: shineMonthCount, on: shineMonthCount >= 1 }
+    ];
+
+    row.innerHTML = display.map(({ id, count, on }) => {
+      const b = BADGE_DEFS[id];
+      const cnt = count > 0 ? ` ×${fa(count)}` : "";
+      return `<button type="button" class="badge-chip ${b.cls} ${on ? "" : "locked"}" data-badge="${id}" data-count="${count}">
+        <span>${b.emoji}</span><span>${b.title}${cnt}</span>
+      </button>`;
+    }).join("");
+
+    row.querySelectorAll("[data-badge]").forEach(btn => {
+      btn.onclick = () => showBadgeModal(btn.dataset.badge, Number(btn.dataset.count) > 0, Number(btn.dataset.count) || 0);
+    });
+  } catch (e) {
+    console.warn("updateBadges", e);
+  }
+}
+
+function showBadgeModal(id, earned, count = 0) {
+  const b = BADGE_DEFS[id];
+  if (!b) return;
+  const status = earned
+    ? (count > 1 ? `این نشان را ${fa(count)} بار گرفته‌ای ✓` : "این نشان را داری ✓")
+    : "هنوز باز نشده — با ادامهٔ مسیر می‌گیری.";
+  const overlay = document.createElement("div");
+  overlay.className = "badge-modal-overlay";
+  overlay.innerHTML = `
+    <div class="badge-modal">
+      <div class="badge-modal-emoji">${b.emoji}</div>
+      <div class="badge-modal-title">${b.title}</div>
+      <div class="badge-modal-body">${b.body}<br><br><strong style="color:var(--neon2)">${status}</strong></div>
+      <button type="button" class="badge-modal-close">باشه</button>
+    </div>`;
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  overlay.querySelector(".badge-modal-close").onclick = close;
+  document.body.appendChild(overlay);
+}
+
+
 async function updateStreaks() {
   if (!currentUser) return;
   const elC = document.getElementById("streakCurrent");
@@ -1343,6 +1588,7 @@ async function loadDayData(){
   updateScoreUI();
   renderItems();
   updateStreaks();
+  updateBadges();
 }
 
 
