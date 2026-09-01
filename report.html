@@ -853,6 +853,119 @@ a.rank-item-link {
   font-weight: 700; color: var(--text); cursor: pointer;
 }
 
+
+.rank-km, .podium-km {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7ef9ff;
+  text-shadow:
+    0 0 6px rgba(0, 240, 255, 0.85),
+    0 0 14px rgba(0, 200, 255, 0.45),
+    0 0 22px rgba(180, 76, 255, 0.25);
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+.podium-km {
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.28);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}
+.rank-km {
+  min-width: 52px;
+  text-align: left;
+  flex-shrink: 0;
+}
+.rank-km.zero, .podium-km.zero {
+  opacity: 0.35;
+  text-shadow: none;
+  box-shadow: none;
+  color: var(--muted);
+  border-color: var(--border);
+  background: transparent;
+}
+
+
+.km-glow {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #7ef9ff;
+  text-shadow:
+    0 0 6px rgba(0, 240, 255, 0.9),
+    0 0 14px rgba(0, 200, 255, 0.55),
+    0 0 24px rgba(180, 76, 255, 0.35);
+  animation: kmPulse 2.4s ease-in-out infinite;
+}
+.km-glow.zero {
+  color: var(--muted);
+  text-shadow: none;
+  animation: none;
+  font-weight: 600;
+  opacity: 0.7;
+}
+@keyframes kmPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+.podium-km { margin-top: 6px; }
+.rank-km {
+  font-size: 11px;
+  margin-top: 2px;
+}
+.weight-strip-card { margin-bottom: 14px; }
+.weight-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding: 6px 2px 12px;
+  scrollbar-width: thin;
+}
+.weight-strip::-webkit-scrollbar { height: 4px; }
+.weight-strip::-webkit-scrollbar-thumb {
+  background: rgba(180, 100, 255, 0.35);
+  border-radius: 4px;
+}
+.weight-chip {
+  flex: 0 0 auto;
+  min-width: 72px;
+  scroll-snap-align: start;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+}
+.weight-chip-day {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.weight-chip-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--neon2);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+.weight-chip-unit {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.weight-chip.empty .weight-chip-val {
+  color: var(--muted);
+  text-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 </style>
 
 </head>
@@ -1322,7 +1435,7 @@ async function loadReport() {
   const range = jalaliRange(selectedYear, selectedMonth);
 
   try {
-    const [statsRes, boardRes, logsRes, exRes, kmRes] = await Promise.all([
+    const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes, weightRes] = await Promise.all([
       db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
       db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
       db.from("daily_logs")
@@ -1331,11 +1444,18 @@ async function loadReport() {
         .gte("log_date", range.start)
         .lte("log_date", range.end),
       db.from("exercise_logs")
-        .select("score, log_date, total_km, aerobic_equivalent_km, running_km")
+        .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
         .eq("user_id", currentUser.id)
         .gte("log_date", range.start)
         .lte("log_date", range.end),
-      db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end })
+      db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
+      db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end }),
+      db.from("user_weights")
+        .select("weight_kg, log_date, created_at")
+        .eq("user_id", currentUser.id)
+        .gte("log_date", range.start)
+        .lte("log_date", range.end)
+        .order("log_date", { ascending: true })
     ]);
 
     if (statsRes.error) throw statsRes.error;
@@ -1447,6 +1567,25 @@ async function loadReport() {
     }
     leaderboard.sort((a, b) => b.avg - a.avg);
 
+    // کیلومتر هر نفر در بازه ماه
+    try {
+      const kmRes = await db.rpc("get_monthly_user_km", {
+        p_start: range.start,
+        p_end: range.end
+      });
+      if (!kmRes.error && kmRes.data) {
+        const kmMap = {};
+        (Array.isArray(kmRes.data) ? kmRes.data : []).forEach(row => {
+          const id = row.user_id;
+          kmMap[id] = Number(row.total_km) || 0;
+          kmMap[String(id)] = Number(row.total_km) || 0;
+        });
+        leaderboard.forEach(u => {
+          u.km = kmMap[u.user_id] || kmMap[String(u.user_id)] || 0;
+        });
+      }
+    } catch (e) {}
+
     const habitMap = {};
     (logsRes.data || []).forEach(r => {
       if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
@@ -1465,6 +1604,31 @@ async function loadReport() {
     const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
     const communityKm = Number(kmStats.total_km) || 0;
     const activePeople = Number(kmStats.active_users) || 0;
+    
+    const kmByUser = {};
+    if (userKmRes && !userKmRes.error && Array.isArray(userKmRes.data)) {
+      userKmRes.data.forEach(row => {
+        kmByUser[row.user_id] = Number(row.total_km) || 0;
+        kmByUser[String(row.user_id)] = Number(row.total_km) || 0;
+      });
+    }
+    leaderboard.forEach(u => {
+      u.month_km = kmByUser[u.user_id] || kmByUser[String(u.user_id)] || 0;
+    });
+
+    // وزن روزانه از user_weights یا exercise_logs
+    const weightByDay = {};
+    if (weightRes && !weightRes.error && weightRes.data) {
+      weightRes.data.forEach(w => {
+        if (w.log_date && w.weight_kg != null) weightByDay[w.log_date] = Number(w.weight_kg);
+      });
+    }
+    (exRes.data || []).forEach(e => {
+      if (e.log_date && e.weight_kg != null && !weightByDay[e.log_date]) {
+        weightByDay[e.log_date] = Number(e.weight_kg);
+      }
+    });
+
     const dayStatus = {};
     const daysInM = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
     for (let d = 1; d <= daysInM; d++) {
@@ -1491,7 +1655,7 @@ async function loadReport() {
       else s.status = "missed";
     });
     if (seq !== reportLoadSeq) return; // پاسخ قدیمی — رندر نکن
-    renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus);
+    renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus, weightByDay);
   } catch (err) {
     const content = document.getElementById("content");
     content.innerHTML = `
@@ -1520,7 +1684,7 @@ function avatarHtml(name, kind) {
   return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
 }
 
-function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {}) {
+function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {}, weightByDay = {}) {
   const content = document.getElementById("content");
 
   const total = Number(stats.total_score) || 0;
@@ -1613,6 +1777,7 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
           <div class="podium-name">${name}</div>
           </div>
           <div class="podium-score">${scoreText(sc)}</div>
+          <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10) + " km" : "— km"}</div>
           <div class="podium-bar">${num}</div>
           ${adminBtn}
         </div>`;
@@ -1641,7 +1806,11 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
             ${avatarHtml(u.display_name || "کاربر", "rank")}
             <div class="rank-name">${u.display_name || "کاربر"}</div>
             </div>
-            <div class="rank-score">${scoreText(avg)}</div>
+            <div class="rank-km ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10) + " km" : "—"}</div>
+            <div style="text-align:left;flex-shrink:0">
+              <div class="rank-score">${scoreText(avg)}</div>
+              <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10)+" km" : "—"}</div>
+            </div>
             ${adminBtn}
             <div class="rank-chevron">›</div>
           </div>
@@ -1692,6 +1861,27 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
     topName: leaderboard[0] ? (leaderboard[0].display_name || null) : null
   };
 
+  
+  // نوار وزن روزانه (اسکرول افقی)
+  const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+  let weightChips = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+    const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+    const w = weightByDay[iso];
+    if (w != null && !Number.isNaN(w)) {
+      weightChips.push(`<div class="weight-chip"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">${scoreText(Math.round(w*10)/10)}</div><div class="weight-chip-unit">kg</div></div>`);
+    } else {
+      weightChips.push(`<div class="weight-chip empty"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">—</div><div class="weight-chip-unit">kg</div></div>`);
+    }
+  }
+  const weightStripHtml = `
+    <div class="card weight-strip-card">
+      <div class="card-title">وزن روزانه</div>
+      <div class="card-sub">بکش به چپ و راست · ${fa(daysInMonth)} روز</div>
+      <div class="weight-strip">${weightChips.join("")}</div>
+    </div>`;
+
   content.innerHTML = `
     <div class="summary">
       <div class="stat">
@@ -1735,6 +1925,8 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {})
         </div>
       </div>
     </div>
+
+    ${weightStripHtml}
 
     <div class="card">
       <div class="card-title">جدول امتیازات</div>
