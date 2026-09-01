@@ -922,7 +922,7 @@ a.rank-item-link {
 }
 .weight-strip-card { margin-bottom: 14px; }
 .weight-strip {
-  direction: ltr;
+  direction: rtl;
   display: flex;
   gap: 10px;
   overflow-x: auto;
@@ -991,6 +991,40 @@ a.rank-item-link {
   color: var(--muted);
   text-shadow: none;
   font-size: 13px;
+  font-weight: 600;
+}
+
+
+.km-ltr {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.km-ltr .km-num {
+  font-weight: 800;
+}
+.km-ltr .km-unit {
+  font-weight: 600;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+
+.km-pair {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.km-pair .km-unit {
+  font-size: 11px;
+  color: var(--muted);
   font-weight: 600;
 }
 
@@ -1453,15 +1487,12 @@ async function openUserBadges(userId, displayName) {
 
 function initWeightStrip(strip) {
   if (!strip) return;
-  // re-bind after each render
   const clone = strip.cloneNode(true);
   strip.parentNode.replaceChild(clone, strip);
   strip = clone;
+  strip.style.direction = "rtl";
 
-  // LTR scroll math (page is RTL)
-  strip.style.direction = "ltr";
-
-  const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+  const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
 
   const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
   let maxEl = null, maxV = -Infinity;
@@ -1475,50 +1506,28 @@ function initWeightStrip(strip) {
 
   const centerOn = (el) => {
     if (!el) return;
-    const mid = el.offsetLeft - (strip.clientWidth / 2) + (el.offsetWidth / 2);
-    strip.scrollLeft = Math.max(0, Math.min(strip.scrollWidth - strip.clientWidth, mid));
+    el.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
   };
-
-  // center once after layout
   requestAnimationFrame(() => requestAnimationFrame(() => centerOn(maxEl)));
 
   let vel = 0, lastX = 0, lastT = 0, dragging = false;
   let raf = null;
-  let userMoved = false;
 
   const stopRaf = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
-
-  const maxScroll = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
 
   const coast = () => {
     stopRaf();
     const step = () => {
-      if (Math.abs(vel) < 0.15) {
-        // clamp without bounce-to-start
-        const ms = maxScroll();
-        if (strip.scrollLeft < 0) strip.scrollLeft = 0;
-        if (strip.scrollLeft > ms) strip.scrollLeft = ms;
-        return;
-      }
-      strip.scrollLeft += vel;
-      const ms = maxScroll();
-      if (strip.scrollLeft < 0) {
-        strip.scrollLeft = 0;
-        vel = 0;
-      } else if (strip.scrollLeft > ms) {
-        strip.scrollLeft = ms;
-        vel = 0;
-      } else {
-        vel *= 0.95;
-        raf = requestAnimationFrame(step);
-      }
+      if (Math.abs(vel) < 0.2) return;
+      strip.scrollBy({ left: vel, behavior: "instant" });
+      vel *= 0.94;
+      if (Math.abs(vel) >= 0.2) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   };
 
-  const onDown = (x, e) => {
+  const onDown = (x) => {
     dragging = true;
-    userMoved = false;
     stopRaf();
     vel = 0;
     lastX = x;
@@ -1530,8 +1539,8 @@ function initWeightStrip(strip) {
     const now = performance.now();
     const dx = x - lastX;
     const dt = Math.max(8, now - lastT);
-    if (Math.abs(dx) > 1) userMoved = true;
-    strip.scrollLeft -= dx;
+    // finger moves right → content follows (natural)
+    strip.scrollBy({ left: -dx, behavior: "instant" });
     vel = (-dx / dt) * 14;
     lastX = x;
     lastT = now;
@@ -1540,29 +1549,19 @@ function initWeightStrip(strip) {
     if (!dragging) return;
     dragging = false;
     strip.classList.remove("is-dragging");
-    if (userMoved) coast();
+    coast();
   };
 
-  strip.addEventListener("mousedown", e => {
-    onDown(e.clientX);
-    e.preventDefault();
-  });
+  strip.addEventListener("mousedown", e => { onDown(e.clientX); e.preventDefault(); });
   window.addEventListener("mousemove", e => onMove(e.clientX));
   window.addEventListener("mouseup", onUp);
   strip.addEventListener("touchstart", e => onDown(e.touches[0].clientX), { passive: true });
-  strip.addEventListener("touchmove", e => {
-    if (!dragging) return;
-    onMove(e.touches[0].clientX);
-  }, { passive: true });
+  strip.addEventListener("touchmove", e => { if (dragging) onMove(e.touches[0].clientX); }, { passive: true });
   strip.addEventListener("touchend", onUp);
   strip.addEventListener("touchcancel", onUp);
-
-  // native wheel horizontal
   strip.addEventListener("wheel", e => {
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-      strip.scrollLeft += e.deltaY;
-      e.preventDefault();
-    }
+    strip.scrollBy({ left: e.deltaY, behavior: "instant" });
+    e.preventDefault();
   }, { passive: false });
 }
 
@@ -1911,7 +1910,7 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
           <div class="podium-name">${name}</div>
           </div>
           <div class="podium-score">${scoreText(sc)}</div>
-          <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10) + " km" : "— km"}</div>
+          <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span><span class="km-unit">km</span></span>`}</div>
           <div class="podium-bar">${num}</div>
           ${adminBtn}
         </div>`;
@@ -1943,7 +1942,7 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
             <div class="rank-spacer" style="flex:1;min-width:8px;align-self:stretch"></div>
             <div style="text-align:left;flex-shrink:0">
               <div class="rank-score">${scoreText(avg)}</div>
-              <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10)+" km" : "—"}</div>
+              <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span></span>`}</div>
             </div>
             ${adminBtn}
             <div class="rank-chevron">›</div>
@@ -2044,13 +2043,11 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
       <div class="km-grid">
         <div class="km-stat">
           <div class="km-label">کیلومتر من</div>
-          <div class="km-value" id="myKmVal">۰</div>
-          <div class="km-unit">km</div>
+          <div class="km-pair" dir="ltr"><span class="km-value" id="myKmVal">۰</span><span class="km-unit">km</span></div>
         </div>
         <div class="km-stat">
           <div class="km-label">جمع افراد فعال</div>
-          <div class="km-value" id="communityKmVal">۰</div>
-          <div class="km-unit">km</div>
+          <div class="km-pair" dir="ltr"><span class="km-value" id="communityKmVal">۰</span><span class="km-unit">km</span></div>
         </div>
         <div class="km-stat">
           <div class="km-label">افراد فعال</div>
