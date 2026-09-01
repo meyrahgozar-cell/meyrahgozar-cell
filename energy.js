@@ -4,9 +4,9 @@
 const ENERGY_CONFIG = {
     MAX_ENERGY: 100,
     NUM_CELLS: 12,          // ØªØ¹Ø¯Ø§Ø¯ Ø³ÙÙÙâÙØ§ Ú©ÙØªØ±Ø ÙØ±Ú©Ø¯Ø§Ù Ø¨ÙÙØ¯ØªØ±
-    CHARGE_RATE: 0.0005,     // Û±/Û²Û° Ø³Ø±Ø¹Øª ÙØ¨ÙÛ
+    CHARGE_RATE: 0.00001,     // Û±/Û²Û° Ø³Ø±Ø¹Øª ÙØ¨ÙÛ
     SPEED_EXP: 1.5,
-    CONSUMPTION_RATE: 20.0,  // Û² Ø¨Ø±Ø§Ø¨Ø± Ø³Ø±Ø¹Øª ØªØ®ÙÛÙ
+    CONSUMPTION_RATE: 40,  // Û² Ø¨Ø±Ø§Ø¨Ø± Ø³Ø±Ø¹Øª ØªØ®ÙÛÙ
     CHARGE_THRESHOLD: 0.3,
     DIM_THRESHOLD: 30,
 };
