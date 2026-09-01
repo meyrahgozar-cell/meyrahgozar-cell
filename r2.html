@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="apple-touch-icon" href="images/favicon.png">
+    <title>HQL | گزارش ماهانه</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #05060a;
+            --card: #0d1019;
+            --card2: #131722;
+            --border: rgba(180, 100, 255, 0.18);
+            --text: #f0f2ff;
+            --muted: #8b92b0;
+            --neon: #b44cff;
+            --neon2: #00f0ff;
+            --positive: #00ff9d;
+            --negative: #ff4d6d;
+            --glow: 0 0 18px rgba(180, 76, 255, 0.3);
+            --radius: 16px;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html,
+        body {
+            min-height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Vazirmatn", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+        .page {
+            position: relative;
+            z-index: 1;
+        }
+        body {
+            background:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.06), transparent),
+                var(--bg);
+            min-height: 100vh;
+        }
+        button,
+        select {
+            font: inherit;
+            color: inherit;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .page {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 14px 14px 80px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .brand {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #b44cff, #00f0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+        }
+        .brand::after {
+            content: "HQL";
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            transition: transform .15s, border-color .15s, background-color .15s;
+        }
+        .icon-btn:hover {
+            border-color: rgba(180, 76, 255, 0.4);
+            background: rgba(180, 76, 255, 0.08);
+        }
+        .icon-btn:active {
+            transform: scale(0.92);
+        }
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .icon-btn:disabled:hover {
+            border-color: var(--border);
+            background: var(--card);
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .icon-btn.spin {
+            animation: spin 0.6s linear;
+        }
+        .page-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .page-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 18px;
+        }
+        .month-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .select {
+            flex: 1;
+            height: 44px;
+            padding: 0 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            outline: none;
+            appearance: none;
+            transition: border-color .15s, box-shadow .15s;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b92b0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 12px center;
+        }
+        .select:hover {
+            border-color: rgba(180, 76, 255, 0.35);
+        }
+        .select:focus {
+            border-color: var(--neon);
+            box-shadow: 0 0 0 2px rgba(180, 76, 255, 0.15);
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media (min-width: 640px) {
+            .summary {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .stat-value.positive {
+            color: var(--positive);
+        }
+        .stat-value.negative {
+            color: var(--negative);
+        }
+        .stat-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 14px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+            mix-blend-mode: overlay;
+            z-index: 1;
+            border-radius: var(--radius);
+        }
+        .card>* {
+            position: relative;
+            z-index: 2;
+        }
+        .card:hover {
+            border-color: rgba(180, 76, 255, 0.3);
+            box-shadow: 0 0 16px rgba(180, 76, 255, 0.08);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .card-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+        .podium {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            align-items: end;
+            gap: 10px;
+            padding: 10px 0 6px;
+            min-height: 160px;
+        }
+        .podium .podium-place {
+            max-width: none;
+            width: 100%;
+        }
+        .podium-place {
+            flex: 1;
+            max-width: 120px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .podium-medal {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+        .podium-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .podium-score {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .podium-bar {
+            width: 100%;
+            border-radius: 10px 10px 4px 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            transition: height .5s cubic-bezier(.22, 1, .36, 1);
+        }
+        .podium-place.first .podium-bar {
+            height: 90px;
+            background: linear-gradient(180deg, #ffd700, #b8860b);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);
+        }
+        .podium-place.second .podium-bar {
+            height: 70px;
+            background: linear-gradient(180deg, #e8e8e8, #888);
+            box-shadow: 0 0 15px rgba(192, 192, 192, 0.25);
+        }
+        .podium-place.third .podium-bar {
+            height: 55px;
+            background: linear-gradient(180deg, #cd7f32, #8b4513);
+            box-shadow: 0 0 12px rgba(205, 127, 50, 0.25);
+        }
+        .podium-place.first .podium-score {
+            color: var(--gold);
+        }
+        .podium-place.second .podium-score {
+            color: var(--silver);
+        }
+        .podium-place.third .podium-score {
+            color: var(--bronze);
+        }
+        .ranking-list {
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 4px;
+        }
+        .rank-item {
+            border-bottom: 1px solid var(--border);
+        }
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+        .rank-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 4px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color .15s;
+        }
+        .rank-row:hover {
+            background: rgba(180, 76, 255, 0.06);
+        }
+        .rank-row:active {
+            background: rgba(180, 76, 255, 0.1);
+        }
+        .rank-num {
+            width: 24px;
+            text-align: center;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .rank-name {
+            flex: 1;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .rank-score {
+            font-weight: 700;
+            color: var(--neon2);
+        }
+        .rank-chevron {
+            color: var(--muted);
+            font-size: 12px;
+            transition: transform .2s;
+            flex-shrink: 0;
+        }
+        .rank-item.open .rank-chevron {
+            transform: rotate(90deg);
+            color: var(--neon2);
+        }
+        .rank-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .25s ease, opacity .2s ease;
+            font-size: 11px;
+            color: var(--muted);
+            opacity: 0;
+            padding: 0 4px;
+        }
+        .rank-item.open .rank-detail {
+            max-height: 36px;
+            opacity: 1;
+            padding: 0 4px 10px;
+        }
+        .chart-wrap {
+            position: relative;
+        }
+        .chart.dense {
+            gap: 2px;
+        }
+        .chart.dense .bar {
+            max-width: 10px;
+        }
+        .chart.dense .bar-label {
+            font-size: 8px;
+        }
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 140px;
+            padding-top: 10px;
+        }
+        .bar-wrap {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .bar {
+            width: 100%;
+            max-width: 18px;
+            border-radius: 4px 4px 2px 2px;
+            background: linear-gradient(180deg, #b44cff, #5a2db0);
+            min-height: 2px;
+            height: 0px;
+            transition: height 0.45s cubic-bezier(.22, 1, .36, 1);
+        }
+        .bar.positive {
+            background: linear-gradient(180deg, #00ff9d, #00a86b);
+        }
+        .bar.negative {
+            background: linear-gradient(180deg, #ff4d6d, #b03040);
+        }
+        .bar.zero {
+            background: var(--card2);
+        }
+        .bar-wrap.best .bar {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.65);
+        }
+        .bar-wrap.best .bar-label {
+            color: var(--gold);
+            font-weight: 700;
+        }
+        .bar-label {
+            font-size: 9px;
+            color: var(--muted);
+            transform: rotate(-40deg);
+            white-space: nowrap;
+        }
+        .chart-tip {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            transform: translateX(-50%) translateY(4px);
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s, transform .15s;
+            box-shadow: var(--glow);
+            z-index: 5;
+        }
+        .chart-tip.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        .habit-item {
+            border-bottom: 1px solid var(--border);
+        }
+        .habit-item:last-child {
+            border-bottom: none;
+        }
+        .habit-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0 6px;
+            gap: 10px;
+        }
+        .habit-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .habit-stats {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 14px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .habit-stats b {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .habit-stats b.pos {
+            color: var(--positive);
+        }
+        .habit-stats b.neg {
+            color: var(--negative);
+        }
+        .habit-bar-track {
+            height: 4px;
+            background: var(--card2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0 0 10px;
+        }
+        .habit-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 3px;
+            transition: width .7s cubic-bezier(.22, 1, .36, 1);
+        }
+        .habit-bar-fill.positive {
+            background: linear-gradient(90deg, #00ff9d, #00a86b);
+        }
+        .habit-bar-fill.negative {
+            background: linear-gradient(90deg, #ff4d6d, #b03040);
+        }
+        .habit-bar-fill.zero {
+            background: var(--muted);
+            opacity: .35;
+        }
+        .empty {
+            text-align: center;
+            padding: 30px 10px;
+            color: var(--muted);
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .empty-icon {
+            font-size: 26px;
+            opacity: .75;
+            margin-bottom: 2px;
+        }
+        .error-box .retry-btn {
+            margin-top: 8px;
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
+            transition: border-color .15s, transform .15s;
+        }
+        .error-box .retry-btn:hover {
+            border-color: rgba(180, 76, 255, .45);
+        }
+        .error-box .retry-btn:active {
+            transform: scale(.95);
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        .skel {
+            background: linear-gradient(90deg, var(--card2) 25%, rgba(180, 76, 255, 0.14) 50%, var(--card2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+        }
+        .skel-line {
+            height: 12px;
+        }
+        .skel-podium {
+            height: 150px;
+            border-radius: var(--radius);
+        }
+        .skel-chart {
+            height: 140px;
+            border-radius: 12px;
+        }
+        .skel-row {
+            height: 40px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .header,
+        .page-title,
+        .page-sub,
+        .month-bar,
+        .card,
+        .summary .stat {
+            animation: fadeInUp .45s ease both;
+        }
+        .page-title {
+            animation-delay: .03s;
+        }
+        .page-sub {
+            animation-delay: .06s;
+        }
+        .month-bar {
+            animation-delay: .09s;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            box-shadow: var(--glow);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s, transform .25s;
+            z-index: 50;
+            max-width: 85vw;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (max-width: 640px) {
+            .page {
+                padding: 12px 10px 70px;
+            }
+            .page-title {
+                font-size: 20px;
+            }
+            .stat-value {
+                font-size: 22px;
+            }
+            .summary {
+                gap: 8px;
+            }
+            .stat {
+                padding: 14px 10px;
+            }
+            .podium {
+                gap: 6px;
+                min-height: 140px;
+            }
+            .podium-name {
+                font-size: 12px;
+            }
+            .podium-score {
+                font-size: 13px;
+            }
+            .podium-medal {
+                font-size: 24px;
+            }
+            .podium-place.first .podium-bar {
+                height: 75px;
+            }
+            .podium-place.second .podium-bar {
+                height: 58px;
+            }
+            .podium-place.third .podium-bar {
+                height: 45px;
+            }
+            .habit-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .habit-stats {
+                gap: 10px;
+                width: 100%;
+                justify-content: space-between;
+            }
+            .card {
+                padding: 14px 12px;
+            }
+            .month-bar {
+                gap: 6px;
+            }
+            .select {
+                height: 42px;
+                font-size: 13px;
+            }
+            .chart {
+                height: 120px;
+                gap: 2px;
+            }
+            .bar-label {
+                font-size: 8px;
+            }
+        }
+        @media (max-width: 380px) {
+            .stat-value {
+                font-size: 18px;
+            }
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+            .podium-name {
+                font-size: 11px;
+            }
+        }
+        .theme-btn {
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(145deg, rgba(180, 76, 255, 0.12), rgba(0, 240, 255, 0.06));
+            border: 1px solid rgba(180, 100, 255, 0.28);
+            box-shadow: inset 0 0 12px rgba(180, 76, 255, 0.08), 0 0 10px rgba(180, 76, 255, 0.12);
+        }
+        .theme-btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(0, 240, 255, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+        .theme-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            border-radius: 5px;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: brightness(1.35) contrast(1.05) drop-shadow(0 0 3px rgba(180, 140, 255, 0.55)) drop-shadow(0 0 6px rgba(0, 200, 255, 0.25));
+            opacity: 0.92;
+            transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+        }
+        .theme-btn:hover {
+            border-color: rgba(0, 240, 255, 0.35);
+            box-shadow: inset 0 0 14px rgba(0, 240, 255, 0.1), 0 0 14px rgba(180, 76, 255, 0.2);
+        }
+        .theme-btn:hover .theme-icon {
+            transform: scale(1.06);
+            opacity: 1;
+            filter: brightness(1.5) contrast(1.08) drop-shadow(0 0 4px rgba(200, 160, 255, 0.7)) drop-shadow(0 0 8px rgba(0, 220, 255, 0.35));
+        }
+        .theme-btn:active .theme-icon {
+            transform: scale(0.94);
+        }
+        .rank-avatar,
+        .podium-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(180, 100, 255, 0.35);
+            box-shadow: 0 0 8px rgba(180, 76, 255, 0.25);
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .podium-avatar {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 6px;
+            border-width: 2px;
+            border-color: rgba(180, 100, 255, 0.4);
+            background: #fff;
+            box-shadow: 0 0 10px rgba(180, 76, 255, 0.55), 0 0 22px rgba(180, 76, 255, 0.3);
+        }
+        .podium-place.first .podium-avatar {
+            border: 2px solid rgba(255, 215, 0, 0.55);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+        }
+        .podium-place.second .podium-avatar {
+            border: 2px solid rgba(192, 192, 192, 0.5);
+            box-shadow: 0 0 10px rgba(192, 192, 192, 0.2);
+        }
+        .podium-place.third .podium-avatar {
+            border: 2px solid rgba(205, 127, 50, 0.55);
+            box-shadow: 0 0 10px rgba(205, 127, 50, 0.25);
+        }
+        .rank-avatar-fallback,
+        .podium-avatar-fallback {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            background: linear-gradient(145deg, rgba(180, 76, 255, 0.25), rgba(0, 240, 255, 0.12));
+            border: 1px solid rgba(180, 100, 255, 0.3);
+            color: var(--text);
+            flex-shrink: 0;
+        }
+        .podium-avatar-fallback {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .rank-row {
+            gap: 10px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        .km-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .km-stat {
+            text-align: center;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 8px;
+        }
+        .km-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .km-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--neon2);
+            line-height: 1.1;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+        }
+        .km-unit {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        @media (max-width: 480px) {
+            .km-grid {
+                gap: 8px;
+            }
+            .km-value {
+                font-size: 18px;
+            }
+            .km-stat {
+                padding: 12px 6px;
+            }
+        }
+        a.podium-place {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        a.podium-place:hover {
+            transform: translateY(-3px);
+        }
+        a.rank-item-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        .admin-user-btn {
+            display: inline-grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            background: rgba(180, 76, 255, 0.15);
+            border: 1px solid rgba(180, 100, 255, 0.35);
+            flex-shrink: 0;
+            transition: 0.15s;
+        }
+        .admin-user-btn:hover {
+            background: rgba(180, 76, 255, 0.3);
+            box-shadow: 0 0 10px rgba(180, 76, 255, 0.25);
+        }
+        .podium-place .admin-user-btn {
+            margin-top: 6px;
+        }
+        .bar.timely {
+            background: linear-gradient(180deg, #00ff9d, #00a86b) !important;
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.35);
+        }
+        .bar.late {
+            background: linear-gradient(180deg, #ffc14d, #e8950a) !important;
+            box-shadow: 0 0 10px rgba(255, 180, 50, 0.4);
+        }
+        .bar.missed {
+            background: linear-gradient(180deg, #ff4d6d, #8b2035) !important;
+            box-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
+            opacity: 0.85;
+            min-height: 6px !important;
+        }
+        .bar.future {
+            background: rgba(139, 146, 176, 0.25) !important;
+            min-height: 3px !important;
+            opacity: 0.4;
+            box-shadow: none;
+        }
+        .bar-wrap.missed .bar-label {
+            color: #ff4d6d;
+        }
+        .month-special-bar {
+            display: none;
+            margin-bottom: 14px;
+        }
+        .month-special-bar.show {
+            display: block;
+        }
+        .btn-go-current {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid rgba(0, 240, 200, 0.45);
+            color: #b8fff0;
+            background: linear-gradient(135deg, rgba(0, 240, 180, 0.15), rgba(0, 180, 255, 0.12));
+            box-shadow: 0 0 14px rgba(0, 220, 200, 0.3), 0 0 28px rgba(0, 160, 255, 0.15);
+            animation: cyanGlow 2.2s ease-in-out infinite;
+        }
+        .btn-go-current:hover {
+            border-color: rgba(0, 255, 220, 0.7);
+        }
+        @keyframes cyanGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(0, 220, 200, 0.25), 0 0 24px rgba(0, 160, 255, 0.12);
+            }
+            50% {
+                box-shadow: 0 0 22px rgba(0, 255, 220, 0.45), 0 0 36px rgba(0, 180, 255, 0.25);
+            }
+        }
+        .report-period-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin: -8px 0 14px;
+            line-height: 1.4;
+        }
+        .profile-hit {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .profile-hit:hover {
+            filter: brightness(1.1);
+        }
+        .badge-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(5, 6, 10, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .badge-modal {
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: linear-gradient(160deg, #141828, #0a0d16);
+            border: 1px solid rgba(180, 100, 255, 0.5);
+            border-radius: 18px;
+            padding: 20px 16px 16px;
+            box-shadow: 0 0 32px rgba(180, 76, 255, 0.35);
+        }
+        .badge-modal-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .badge-modal-name {
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .badge-modal-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .badge-list {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .badge-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .badge-row.locked {
+            opacity: 0.4;
+        }
+        .badge-row-emoji {
+            font-size: 22px;
+        }
+        .badge-row-title {
+            font-weight: 700;
+            flex: 1;
+        }
+        .badge-row-count {
+            font-weight: 800;
+            color: var(--neon2);
+            font-size: 14px;
+        }
+        .badge-modal-close {
+            width: 100%;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .rank-km,
+        .podium-km {
+            font-size: 11px;
+            font-weight: 800;
+            color: #7ef9ff;
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.85), 0 0 14px rgba(0, 200, 255, 0.45), 0 0 22px rgba(180, 76, 255, 0.25);
+            letter-spacing: 0.02em;
+            margin-top: 2px;
+        }
+        .podium-km {
+            font-size: 12px;
+            margin-top: 4px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(0, 240, 255, 0.08);
+            border: none;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+        }
+        .rank-km {
+            min-width: 52px;
+            text-align: left;
+            flex-shrink: 0;
+        }
+        .rank-km.zero,
+        .podium-km.zero {
+            opacity: 0.35;
+            text-shadow: none;
+            box-shadow: none;
+            color: var(--muted);
+            border-color: var(--border);
+            background: transparent;
+        }
+        .km-glow {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            color: #7ef9ff;
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.9), 0 0 14px rgba(0, 200, 255, 0.55), 0 0 24px rgba(180, 76, 255, 0.35);
+            animation: kmPulse 2.4s ease-in-out infinite;
+        }
+        .km-glow.zero {
+            color: var(--muted);
+            text-shadow: none;
+            animation: none;
+            font-weight: 600;
+            opacity: 0.7;
+        }
+        @keyframes kmPulse {
+            0%,
+            100% {
+                filter: brightness(1);
+            }
+            50% {
+                filter: brightness(1.25);
+            }
+        }
+        .podium-km {
+            margin-top: 6px;
+        }
+        .rank-km {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        /* ====== Weight strip – clean with energy bar ====== */
+        .weight-strip-card {
+            position: relative;
+            overflow: visible;
+        }
+
+        .weight-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 2px;
+        }
+        .weight-strip-header .card-title {
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
+        /* Energy bar – only visible when energy > 0 */
+        .energy-bar-wrap {
+            flex: 0 1 50%;
+            height: 10px;
+            display: none;
+            align-items: stretch;
+            gap: 1px;
+            background: transparent;
+        }
+        .energy-bar-wrap.active {
+            display: flex;
+        }
+
+        .energy-bar-fill {
+            display: flex;
+            gap: 1px;
+            height: 100%;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .energy-cell {
+            flex: 1 1 0;
+            min-width: 2px;
+            border-radius: 1px;
+            background: transparent;
+            transition: background 0.05s ease;
+        }
+        .energy-cell.on {
+            background: linear-gradient(180deg, #ffcc66 0%, #ff8c1a 50%, #cc5a00 100%);
+        }
+        .energy-cell.on-high {
+            background: linear-gradient(180deg, #ffdd88 0%, #ffaa33 30%, #ff7a1a 70%, #cc5a00 100%);
+        }
+
+        /* HQL Neon – visible only with energy, dims below 30% */
+        .hql-neon {
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 0.28em;
+            padding-left: 0.28em;
+            margin-bottom: -2px;
+            font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
+            color: #ffaa33;
+            -webkit-text-stroke: 1px rgba(255, 200, 140, 0.15);
+            -webkit-text-fill-color: #ffaa33;
+            transition: opacity 0.15s ease;
+            user-select: none;
+            display: inline-block;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .weight-glass {
+            position: relative;
+            height: 30px;
+            margin: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        .weight-strip-wrap {
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .weight-strip {
+            direction: ltr;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding: 4px 2px 10px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            touch-action: pan-x;
+            cursor: grab;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .weight-strip::-webkit-scrollbar {
+            display: none;
+        }
+        .weight-strip.is-dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
+            transition: none !important;
+        }
+        .weight-strip.is-dragging .weight-chip {
+            transition: none !important;
+        }
+        .weight-chip {
+            flex: 0 0 auto;
+            min-width: 64px;
+            text-align: center;
+            padding: 12px 10px;
+            border-radius: 14px;
+            background: linear-gradient(160deg, rgba(180, 76, 255, 0.12), rgba(0, 240, 255, 0.05));
+            border: none;
+            box-shadow: inset 0 0 12px rgba(180, 76, 255, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .weight-chip.max {
+            background: linear-gradient(160deg, rgba(0, 240, 255, 0.2), rgba(180, 76, 255, 0.12));
+            box-shadow: 0 0 16px rgba(0, 240, 255, 0.25), inset 0 0 12px rgba(0, 240, 255, 0.1);
+        }
+        .weight-chip.max .weight-chip-val {
+            color: #7ef9ff;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        }
+        .weight-chip-day {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .weight-chip-val {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--neon2);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+        .weight-chip-unit {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .weight-chip.empty {
+            background: rgba(13, 16, 25, 0.5);
+            box-shadow: none;
+            opacity: 0.55;
+        }
+        .weight-chip.empty .weight-chip-val {
+            color: var(--muted);
+            text-shadow: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .km-ltr {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: baseline;
+            gap: 4px;
+            direction: ltr;
+            unicode-bidi: isolate;
+        }
+        .km-ltr .km-num {
+            font-weight: 800;
+        }
+        .km-ltr .km-unit {
+            font-weight: 600;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .km-pair {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: baseline;
+            justify-content: center;
+            gap: 5px;
+            direction: ltr;
+            unicode-bidi: isolate;
+        }
+        .km-pair .km-unit {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <header class="header">
+            <div class="brand">HQL</div>
+            <div class="header-actions">
+                <button class="icon-btn" id="shareBtn" title="کپی خلاصه گزارش">⤴</button>
+                <button class="icon-btn" id="refreshBtn" title="بروزرسانی">⟳</button>
+                <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
+            </div>
+        </header>
+
+        <h1 class="page-title">گزارش ماهانه</h1>
+        <p class="page-sub">نمای کلی عملکرد و عادت‌ها</p>
+
+        <div class="month-bar">
+            <button class="icon-btn" id="nextMonthBtn" title="ماه بعد">›</button>
+            <select id="yearSelect" class="select"></select>
+            <select id="monthSelect" class="select"></select>
+            <button class="icon-btn" id="prevMonthBtn" title="ماه قبل">‹</button>
+        </div>
+        <p class="report-period-note" id="reportPeriodNote"></p>
+        <div class="month-special-bar" id="monthSpecialBar">
+            <button type="button" class="btn-go-current" id="goCurrentMonth">برو به ماه جاری ↗</button>
+        </div>
+
+        <div id="content" aria-live="polite">
+            <div class="loading">در حال بارگذاری...</div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // Clean rewrite from scratch – only energy bar and HQL dimming.
+        // No extra effects, no sparkles, no glow on strip.
+        // ================================================================
+
+        const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+
+        const J_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+        const START_YEAR = 1405;
+
+        const HABIT_LABELS = {
+            water: { icon: "💧", title: "آب" },
+            sleep: { icon: "🌙", title: "خواب" },
+            instagram: { icon: "📱", title: "اینستاگرام" },
+            sun: { icon: "☀️", title: "آفتاب" },
+            solitude: { icon: "🧘", title: "خلوت" },
+            reading: { icon: "📖", title: "مطالعه" },
+            sugar: { icon: "🍬", title: "قند" },
+            dinner: { icon: "🍽️", title: "شام" },
+            exercise: { icon: "🏃", title: "ورزش" }
+        };
+
+        let currentUser = null;
+        let reportLoadSeq = 0;
+        let reportBooted = false;
+        let isAdmin = false;
+        let selectedYear = null;
+        let selectedMonth = null;
+        let lastRenderData = null;
+
+        function fa(v) {
+            return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+        }
+
+        function scoreText(v) {
+            const n = Number(v || 0);
+            let s = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+            return fa(s);
+        }
+
+        function isoDate(d) {
+            return d.toISOString().slice(0, 10);
+        }
+
+        function jalaliRange(jy, jm) {
+            const startG = jalaali.toGregorian(jy, jm, 1);
+            const days = jalaali.jalaaliMonthLength(jy, jm);
+            const endG = jalaali.toGregorian(jy, jm, days);
+            return {
+                start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
+                end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd)))
+            };
+        }
+
+        let toastTimer;
+
+        function toast(msg) {
+            let el = document.getElementById("toast");
+            if (!el) {
+                el = document.createElement("div");
+                el.id = "toast";
+                el.className = "toast";
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.classList.add("show");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+        }
+
+        function animateNumber(el, to) {
+            if (!el) return;
+            const dur = 650;
+            const start = performance.now();
+
+            function tick(now) {
+                const p = Math.min(1, (now - start) / dur);
+                const eased = 1 - Math.pow(1 - p, 3);
+                const val = to * eased;
+                el.textContent = scoreText(Number.isInteger(to) ? Math.round(val) : Math.round(val * 100) / 100);
+                if (p < 1) requestAnimationFrame(tick);
+                else el.textContent = scoreText(to);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        async function refreshAdminFlag() {
+            isAdmin = false;
+            if (!currentUser) return;
+            try {
+                const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+                isAdmin = !!(pr.data && pr.data.is_admin);
+            } catch (e) {
+                isAdmin = false;
+            }
+        }
+
+        db.auth.onAuthStateChange((event, session) => {
+            if (event === "SIGNED_OUT") {
+                location.href = "index.html";
+            }
+        });
+
+        (async function bootReport() {
+            if (reportBooted) return;
+            let session = null;
+            for (let i = 0; i < 8; i++) {
+                const res = await db.auth.getSession();
+                session = res.data.session;
+                if (session) break;
+                await new Promise(r => setTimeout(r, 100));
+            }
+            if (!session) {
+                location.href = "index.html";
+                return;
+            }
+            reportBooted = true;
+            currentUser = session.user;
+            await refreshAdminFlag();
+            initMonthPicker();
+            await loadReport();
+        })();
+
+        document.getElementById("backBtn").onclick = () => location.href = "index.html";
+
+        function initMonthPicker() {
+            const now = new Date();
+            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const currentYear = j.jy;
+            const currentMonth = j.jm;
+            const currentDay = j.jd;
+
+            if (currentDay <= 2) {
+                if (currentMonth === 1) {
+                    selectedYear = currentYear - 1;
+                    selectedMonth = 12;
+                } else {
+                    selectedYear = currentYear;
+                    selectedMonth = currentMonth - 1;
+                }
+            } else {
+                selectedYear = currentYear;
+                selectedMonth = currentMonth;
+            }
+
+            const yearSel = document.getElementById("yearSelect");
+            const monthSel = document.getElementById("monthSelect");
+
+            yearSel.innerHTML = "";
+            for (let y = START_YEAR; y <= currentYear; y++) {
+                const opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = fa(y);
+                if (y === selectedYear) opt.selected = true;
+                yearSel.appendChild(opt);
+            }
+
+            monthSel.innerHTML = "";
+            J_MONTHS.forEach((name, i) => {
+                const opt = document.createElement("option");
+                opt.value = i + 1;
+                opt.textContent = name;
+                if (i + 1 === selectedMonth) opt.selected = true;
+                monthSel.appendChild(opt);
+            });
+
+            yearSel.onchange = () => {
+                selectedYear = Number(yearSel.value);
+                updateReportChrome();
+                loadReport();
+            };
+            monthSel.onchange = () => {
+                selectedMonth = Number(monthSel.value);
+                updateReportChrome();
+                loadReport();
+            };
+
+            document.getElementById("goCurrentMonth").onclick = () => {
+                selectedYear = currentYear;
+                selectedMonth = currentMonth;
+                yearSel.value = String(selectedYear);
+                monthSel.value = String(selectedMonth);
+                updateReportChrome();
+                loadReport();
+            };
+
+            const prevBtn = document.getElementById("prevMonthBtn");
+            const nextBtn = document.getElementById("nextMonthBtn");
+            if (prevBtn) prevBtn.onclick = () => {
+                let m = selectedMonth - 1,
+                    y = selectedYear;
+                if (m < 1) { m = 12;
+                    y -= 1; }
+                if (y < START_YEAR) return;
+                selectedYear = y;
+                selectedMonth = m;
+                document.getElementById("yearSelect").value = String(y);
+                document.getElementById("monthSelect").value = String(m);
+                updateReportChrome();
+                loadReport();
+            };
+            if (nextBtn) nextBtn.onclick = () => {
+                const now = new Date();
+                const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                let m = selectedMonth + 1,
+                    y = selectedYear;
+                if (m > 12) { m = 1;
+                    y += 1; }
+                if (y > j.jy || (y === j.jy && m > j.jm)) return;
+                selectedYear = y;
+                selectedMonth = m;
+                document.getElementById("yearSelect").value = String(y);
+                document.getElementById("monthSelect").value = String(m);
+                updateReportChrome();
+                loadReport();
+            };
+
+            updateReportChrome();
+        }
+
+        function updateReportChrome() {
+            const now = new Date();
+            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const isCurrent = selectedYear === j.jy && selectedMonth === j.jm;
+            const note = document.getElementById("reportPeriodNote");
+            const bar = document.getElementById("monthSpecialBar");
+
+            if (note) {
+                if (isCurrent) {
+                    if (j.jd <= 1) {
+                        note.textContent = "امروز اولین روز ماه است — میانگین تا دیروز هنوز خالی است. گزارش نهایی ماه قبل را ببین.";
+                    } else {
+                        note.textContent = "میانگین و رتبه فقط تا دیروز حساب می‌شود (امروز هنوز در جریان است).";
+                    }
+                } else {
+                    const past = selectedYear < j.jy || (selectedYear === j.jy && selectedMonth < j.jm);
+                    if (past && j.jd <= 2) {
+                        note.textContent = "گزارش نهایی ماه قبل — روز ۱ و ۲ برای جمع‌بندی در نظر گرفته شده.";
+                    } else if (past) {
+                        note.textContent = "گزارش کامل این ماه (روزهای تکمیل‌شده).";
+                    } else {
+                        note.textContent = "";
+                    }
+                }
+            }
+
+            if (bar) {
+                bar.classList.toggle("show", !isCurrent);
+            }
+        }
+
+        function renderSkeleton() {
+            const content = document.getElementById("content");
+            if (!content) return;
+            content.innerHTML = `
+            <div class="summary">
+              ${Array(4).fill(0).map(() => `
+                <div class="stat">
+                  <div class="skel skel-line" style="width:55%;margin:0 auto 10px"></div>
+                  <div class="skel skel-line" style="width:35%;margin:0 auto;height:22px"></div>
+                </div>`).join("")}
+            </div>
+            <div class="card">
+              <div class="skel skel-line" style="width:110px;margin-bottom:14px"></div>
+              <div class="skel skel-podium"></div>
+            </div>
+            <div class="card">
+              <div class="skel skel-line" style="width:100px;margin-bottom:14px"></div>
+              <div class="skel skel-chart"></div>
+            </div>
+            <div class="card">
+              <div class="skel skel-line" style="width:90px;margin-bottom:14px"></div>
+              <div class="skel skel-row" style="margin-bottom:8px"></div>
+              <div class="skel skel-row" style="margin-bottom:8px"></div>
+              <div class="skel skel-row"></div>
+            </div>`;
+        }
+
+        const REPORT_BADGES = {
+            w1: { emoji: "🌿", title: "هفته‌های خوب", desc: "هفته با میانگین ≥۷ و ≥۵ روز فعال" },
+            w2: { emoji: "⚡", title: "زنجیره هفته", desc: "بیشینه هفته‌های خوب پشت‌سرهم" },
+            m1: { emoji: "🌙", title: "ماه خوب", desc: "ماه با میانگین ≥۷ و ≥۱۵ روز" },
+            m2: { emoji: "💎", title: "ماه درخشان", desc: "ماه با میانگین ≥۱۰ و ≥۲۰ روز" }
+        };
+
+        function shamsiWeekKey(iso) {
+            const [y, m, d] = iso.split("-").map(Number);
+            const dt = new Date(Date.UTC(y, m - 1, d));
+            const sinceSat = (dt.getUTCDay() + 1) % 7;
+            const start = new Date(dt);
+            start.setUTCDate(start.getUTCDate() - sinceSat);
+            return start.toISOString().slice(0, 10);
+        }
+
+        function computeBadgeCounts(dayScore) {
+            const weeks = {};
+            Object.keys(dayScore).forEach(iso => {
+                const wk = shamsiWeekKey(iso);
+                if (!weeks[wk]) weeks[wk] = { sum: 0, n: 0 };
+                weeks[wk].sum += dayScore[iso];
+                weeks[wk].n += 1;
+            });
+            const isGoodWeek = w => w && w.n >= 5 && w.sum / w.n >= 7;
+            let goodWeekCount = 0;
+            Object.values(weeks).forEach(w => { if (isGoodWeek(w)) goodWeekCount++; });
+
+            const starts = Object.keys(weeks).sort();
+            let maxStreak = 0,
+                run = 0,
+                prev = null;
+            starts.forEach(wk => {
+                if (!isGoodWeek(weeks[wk])) { run = 0;
+                    prev = wk; return; }
+                if (prev) {
+                    const [y, m, d] = prev.split("-").map(Number);
+                    const dt = new Date(Date.UTC(y, m - 1, d));
+                    dt.setUTCDate(dt.getUTCDate() + 7);
+                    const expect = dt.toISOString().slice(0, 10);
+                    run = (wk === expect) ? run + 1 : 1;
+                } else run = 1;
+                maxStreak = Math.max(maxStreak, run);
+                prev = wk;
+            });
+
+            const byMonth = {};
+            Object.keys(dayScore).forEach(iso => {
+                const [y, m, d] = iso.split("-").map(Number);
+                const j = jalaali.toJalaali(y, m, d);
+                const key = j.jy + "-" + String(j.jm).padStart(2, "0");
+                if (!byMonth[key]) byMonth[key] = { sum: 0, n: 0 };
+                byMonth[key].sum += dayScore[iso];
+                byMonth[key].n += 1;
+            });
+            let goodMonthCount = 0,
+                shineMonthCount = 0;
+            Object.values(byMonth).forEach(m => {
+                const avg = m.n ? m.sum / m.n : 0;
+                if (m.n >= 15 && avg >= 7) goodMonthCount++;
+                if (m.n >= 20 && avg >= 10) shineMonthCount++;
+            });
+
+            return {
+                w1: goodWeekCount,
+                w2: maxStreak,
+                m1: goodMonthCount,
+                m2: shineMonthCount
+            };
+        }
+
+        async function fetchUserDayScores(userId) {
+            try {
+                const rpc = await db.rpc("get_user_daily_scores", { p_user_id: userId });
+                if (!rpc.error && rpc.data) {
+                    const dayScore = {};
+                    (rpc.data || []).forEach(r => {
+                        const iso = r.log_date;
+                        dayScore[iso] = Number(r.total_score) || 0;
+                    });
+                    return dayScore;
+                }
+            } catch (e) {}
+
+            if (currentUser && userId === currentUser.id) {
+                const [logs, ex] = await Promise.all([
+                    db.from("daily_logs").select("log_date, score").eq("user_id", userId),
+                    db.from("exercise_logs").select("log_date, score").eq("user_id", userId)
+                ]);
+                const dayScore = {};
+                (logs.data || []).forEach(r => {
+                    dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+                });
+                (ex.data || []).forEach(r => {
+                    dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+                });
+                return dayScore;
+            }
+            return null;
+        }
+
+        async function openUserBadges(userId, displayName) {
+            const overlay = document.createElement("div");
+            overlay.className = "badge-modal-overlay";
+            overlay.innerHTML = `
+            <div class="badge-modal">
+              <div class="badge-modal-head">
+                ${avatarHtml(displayName, "rank")}
+                <div>
+                  <div class="badge-modal-name">${displayName || "کاربر"}</div>
+                  <div class="badge-modal-sub">نشان‌های مسیر (شمارش انباشته)</div>
+                </div>
+              </div>
+              <div class="badge-list" id="badgeListModal"><div class="empty">در حال بارگذاری...</div></div>
+              <button type="button" class="badge-modal-close">بستن</button>
+            </div>`;
+            const close = () => overlay.remove();
+            overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+            overlay.querySelector(".badge-modal-close").onclick = close;
+            document.body.appendChild(overlay);
+
+            const dayScore = await fetchUserDayScores(userId);
+            const list = overlay.querySelector("#badgeListModal");
+            if (!dayScore) {
+                list.innerHTML =
+                    `<div class="empty">برای دیدن نشان دیگران تابع SQL را اجرا کن، یا فقط نشان خودت از ایندکس در دسترس است.</div>`;
+                return;
+            }
+            const counts = computeBadgeCounts(dayScore);
+            const order = ["m2", "m1", "w1", "w2"];
+            list.innerHTML = order.map(id => {
+                const b = REPORT_BADGES[id];
+                const c = counts[id] || 0;
+                const on = c > 0;
+                return `<div class="badge-row ${on ? "" : "locked"}">
+              <span class="badge-row-emoji">${b.emoji}</span>
+              <div class="badge-row-title">${b.title}<div style="font-size:11px;color:var(--muted);font-weight:500">${b.desc}</div></div>
+              <span class="badge-row-count">${on ? "×" + fa(c) : "—"}</span>
+            </div>`;
+            }).join("");
+        }
+
+        // ---- Energy system – clean, no extra effects ----
+        function initWeightStrip(strip) {
+            if (!strip) return;
+            const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
+            if (!wrap) return;
+
+            const card = strip.closest(".weight-strip-card");
+            const energyFill = card ? card.querySelector(".energy-bar-fill") : null;
+            const energyWrap = card ? card.querySelector(".energy-bar-wrap") : null;
+            const hqlNeon = card ? card.querySelector(".hql-neon") : null;
+
+            if (strip.dataset.energyReady === "1") return;
+            strip.dataset.energyReady = "1";
+
+            strip.style.direction = "ltr";
+            strip.style.overflowX = "auto";
+            strip.style.touchAction = "pan-x";
+            strip.style.webkitOverflowScrolling = "touch";
+            strip.style.cursor = "grab";
+            strip.style.scrollBehavior = "auto";
+
+            const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
+            let maxEl = null,
+                maxV = -Infinity;
+            const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+            chips.forEach(ch => {
+                const t = ch.querySelector(".weight-chip-val");
+                if (!t) return;
+                const num = parseFloat(faToEn(t.textContent).replace(/[^\d.]/g, "")) || 0;
+                if (num > maxV) { maxV = num;
+                    maxEl = ch; }
+            });
+            if (maxEl) maxEl.classList.add("max");
+
+            requestAnimationFrame(() => {
+                if (maxEl) {
+                    const mid = maxEl.offsetLeft - strip.clientWidth / 2 + maxEl.offsetWidth / 2;
+                    strip.scrollLeft = Math.max(0, mid);
+                }
+            });
+
+            // ---- Energy parameters ----
+            let energy = 0;
+            const MAX_ENERGY = 100;
+            const NUM_CELLS = 24;
+
+            // Very hard to fill, fast drain
+            const CONSUMPTION_RATE = 6.0; // per second
+            const CHARGE_RATE = 0.00005;
+            const SPEED_EXP = 6.0;
+            const CHARGE_THRESHOLD = 1.0;
+
+            let lastScrollTime = 0,
+                lastScrollPos = strip.scrollLeft,
+                velocity = 0;
+            let lastEnergyUpdate = performance.now();
+
+            const updateEnergyBar = () => {
+                if (!energyFill || !energyWrap) return;
+                const pct = Math.min(100, energy);
+                const cellsOn = Math.floor((pct / 100) * NUM_CELLS);
+
+                energyFill.innerHTML = '';
+                for (let i = 0; i < NUM_CELLS; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'energy-cell';
+                    if (i < cellsOn) {
+                        cell.classList.add('on');
+                        if (i > NUM_CELLS * 0.6) {
+                            cell.classList.add('on-high');
+                        }
+                    }
+                    energyFill.appendChild(cell);
+                }
+
+                // Show/hide energy bar
+                if (energy > 0.1) {
+                    energyWrap.classList.add('active');
+                    energyWrap.style.display = 'flex';
+                } else {
+                    energyWrap.classList.remove('active');
+                    energyWrap.style.display = 'none';
+                }
+
+                // HQL dimming: below 30% fade smoothly, above 30% full brightness
+                if (hqlNeon) {
+                    let opacity = 0;
+                    if (energy > 0) {
+                        if (energy >= 30) {
+                            opacity = 1;
+                        } else {
+                            // linear fade from 0 to 1 as energy goes 0->30
+                            opacity = Math.min(1, energy / 30);
+                        }
+                    }
+                    hqlNeon.style.opacity = opacity;
+                }
+            };
+
+            function updateEnergy(deltaTime) {
+                if (energy > 0) {
+                    energy = Math.max(0, energy - CONSUMPTION_RATE * deltaTime);
+                }
+                updateEnergyBar();
+            }
+
+            function onScroll() {
+                const now = performance.now();
+                const currentPos = strip.scrollLeft;
+                const dt = (now - lastScrollTime) / 1000;
+
+                if (dt > 0 && lastScrollTime > 0) {
+                    const dx = currentPos - lastScrollPos;
+                    velocity = dx / dt;
+                    const absV = Math.abs(velocity);
+
+                    if (absV > CHARGE_THRESHOLD) {
+                        const gain = Math.pow(absV, SPEED_EXP) * CHARGE_RATE * dt;
+                        energy = Math.min(MAX_ENERGY, energy + gain);
+                        updateEnergyBar();
+                    }
+                }
+
+                lastScrollTime = now;
+                lastScrollPos = currentPos;
+            }
+
+            strip.addEventListener('scroll', onScroll, { passive: true });
+
+            // Energy drain loop
+            function energyLoop(timestamp) {
+                const now = performance.now();
+                const delta = (now - lastEnergyUpdate) / 1000;
+                lastEnergyUpdate = now;
+                if (delta > 0 && delta < 0.1) {
+                    updateEnergy(delta);
+                }
+                requestAnimationFrame(energyLoop);
+            }
+            lastEnergyUpdate = performance.now();
+            requestAnimationFrame(energyLoop);
+
+            // ---- Mouse drag ----
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartScroll = 0;
+
+            function onMouseDown(e) {
+                e.preventDefault();
+                isDragging = true;
+                strip.classList.add('is-dragging');
+                dragStartX = e.clientX;
+                dragStartScroll = strip.scrollLeft;
+                document.body.style.userSelect = 'none';
+            }
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                const dx = e.clientX - dragStartX;
+                const delta = -dx;
+                strip.scrollLeft = dragStartScroll + delta;
+            }
+
+            function onMouseUp(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                strip.classList.remove('is-dragging');
+                document.body.style.userSelect = '';
+                const ev = new Event('scroll', { bubbles: true });
+                strip.dispatchEvent(ev);
+            }
+
+            strip.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+
+            // ---- Touch ----
+            function stopTouchPropagation(e) {
+                e.stopPropagation();
+            }
+            strip.addEventListener('touchstart', stopTouchPropagation, { passive: true });
+            strip.addEventListener('touchmove', stopTouchPropagation, { passive: true });
+            strip.addEventListener('touchend', stopTouchPropagation, { passive: true });
+
+            // ---- Wheel ----
+            strip.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
+
+            // ---- Cleanup ----
+            if (strip._cleanup) strip._cleanup();
+            strip._cleanup = () => {
+                strip.removeEventListener('scroll', onScroll);
+                strip.removeEventListener('mousedown', onMouseDown);
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                strip.removeEventListener('touchstart', stopTouchPropagation);
+                strip.removeEventListener('touchmove', stopTouchPropagation);
+                strip.removeEventListener('touchend', stopTouchPropagation);
+                strip.removeEventListener('wheel', (e) => e.stopPropagation());
+            };
+
+            updateEnergyBar();
+        }
+
+        // ---- loadReport and renderReport (standard) ----
+        async function loadReport() {
+            const seq = ++reportLoadSeq;
+
+            if (typeof renderSkeleton === "function") {
+                renderSkeleton();
+            } else {
+                const c = document.getElementById("content");
+                if (c) c.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+            }
+
+            const range = jalaliRange(selectedYear, selectedMonth);
+
+            try {
+                const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes] = await Promise.all([
+                    db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
+                    db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
+                    db.from("daily_logs")
+                    .select("item_type, score, log_date")
+                    .eq("user_id", currentUser.id)
+                    .gte("log_date", range.start)
+                    .lte("log_date", range.end),
+                    db.from("exercise_logs")
+                    .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
+                    .eq("user_id", currentUser.id)
+                    .gte("log_date", range.start)
+                    .lte("log_date", range.end),
+                    db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
+                    db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end })
+                ]);
+
+                if (statsRes.error) throw statsRes.error;
+
+                const stats = statsRes.data || {
+                    total_score: 0,
+                    avg_score: 0,
+                    best_day: null,
+                    best_score: 0,
+                    active_days: 0,
+                    daily: []
+                };
+
+                const now = new Date();
+                const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                const isCurrentMonth = selectedYear === jNow.jy && selectedMonth === jNow.jm;
+                const isFutureMonth = selectedYear > jNow.jy || (selectedYear === jNow.jy && selectedMonth > jNow.jm);
+
+                let completedDays;
+                if (isCurrentMonth) {
+                    completedDays = Math.max(0, jNow.jd - 1);
+                } else if (isFutureMonth) {
+                    completedDays = 0;
+                } else {
+                    completedDays = daysInMonth;
+                }
+
+                let boardData = boardRes.data || [];
+                if (isCurrentMonth && completedDays > 0) {
+                    const endCompleted = (() => {
+                        const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
+                        return isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+                    })();
+                    const boardCompleted = await db.rpc("get_monthly_leaderboard", {
+                        p_start: range.start,
+                        p_end: endCompleted
+                    });
+                    if (!boardCompleted.error) boardData = boardCompleted.data || [];
+                } else if (isCurrentMonth && completedDays === 0) {
+                    boardData = [];
+                }
+
+                const todayISO = isoDate(now);
+                let todayActive = new Set();
+                if (isCurrentMonth) {
+                    try {
+                        const act = await db.rpc("get_today_active_users", { p_today: todayISO });
+                        if (!act.error && Array.isArray(act.data)) {
+                            act.data.forEach(id => todayActive.add(id));
+                        } else if (!act.error && act.data) {
+                            const arr = typeof act.data === "string" ? JSON.parse(act.data) : act.data;
+                            (arr || []).forEach(id => todayActive.add(id));
+                        }
+                    } catch (e) {}
+                }
+
+                let leaderboard = boardData.map(u => {
+                    const totalScore = Number(u.total_score) || 0;
+                    const bonus = (todayActive.has(u.user_id) || todayActive.has(String(u.user_id))) ? 1 : 0;
+                    const baseAvg = completedDays > 0 ? totalScore / completedDays : 0;
+                    const avg = Math.round((baseAvg + bonus) * 100) / 100;
+                    return { ...u, avg, bonus, completedDays, totalScore };
+                });
+
+                if (isCurrentMonth && todayActive.size) {
+                    const onBoard = new Set(leaderboard.map(u => String(u.user_id)));
+                    const missing = [...todayActive].filter(id => !onBoard.has(String(id)));
+                    if (missing.length) {
+                        let nameMap = {};
+                        try {
+                            const pr = await db.from("profiles").select("id, display_name").in("id", missing);
+                            (pr.data || []).forEach(p => {
+                                nameMap[p.id] = p.display_name;
+                                nameMap[String(p.id)] = p.display_name;
+                            });
+                        } catch (e) {}
+                        missing.forEach(uid => {
+                            leaderboard.push({
+                                user_id: uid,
+                                display_name: nameMap[uid] || nameMap[String(uid)] || "کاربر",
+                                total_score: 0,
+                                totalScore: 0,
+                                avg: 1,
+                                bonus: 1,
+                                completedDays
+                            });
+                        });
+                    }
+                }
+
+                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "کاربر");
+                if (needNames.length) {
+                    try {
+                        const ids = needNames.map(u => u.user_id);
+                        const pr = await db.from("profiles").select("id, display_name").in("id", ids);
+                        const map = {};
+                        (pr.data || []).forEach(p => {
+                            if (p.display_name) {
+                                map[p.id] = p.display_name;
+                                map[String(p.id)] = p.display_name;
+                            }
+                        });
+                        leaderboard.forEach(u => {
+                            const n = map[u.user_id] || map[String(u.user_id)];
+                            if (n) u.display_name = n;
+                        });
+                    } catch (e) {}
+                }
+                leaderboard.sort((a, b) => b.avg - a.avg);
+
+                try {
+                    const kmRes = await db.rpc("get_month_user_km", {
+                        p_start: range.start,
+                        p_end: range.end
+                    });
+                    if (!kmRes.error && kmRes.data) {
+                        const kmMap = {};
+                        (Array.isArray(kmRes.data) ? kmRes.data : []).forEach(row => {
+                            const id = row.user_id;
+                            kmMap[id] = Number(row.total_km) || 0;
+                            kmMap[String(id)] = Number(row.total_km) || 0;
+                        });
+                        leaderboard.forEach(u => {
+                            u.km = kmMap[u.user_id] || kmMap[String(u.user_id)] || 0;
+                        });
+                    }
+                } catch (e) {}
+
+                const habitMap = {};
+                (logsRes.data || []).forEach(r => {
+                    if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
+                    habitMap[r.item_type].count++;
+                    habitMap[r.item_type].total += Number(r.score) || 0;
+                });
+
+                if (exRes.data && exRes.data.length) {
+                    habitMap.exercise = {
+                        count: exRes.data.length,
+                        total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
+                    };
+                }
+
+                const myKm = (exRes.data || []).reduce((s, r) => s + (Number(r.total_km) || 0), 0);
+                const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
+                const communityKm = Number(kmStats.total_km) || 0;
+                const activePeople = Number(kmStats.active_users) || 0;
+
+                const kmByUser = {};
+                if (userKmRes && !userKmRes.error && Array.isArray(userKmRes.data)) {
+                    userKmRes.data.forEach(row => {
+                        kmByUser[row.user_id] = Number(row.total_km) || 0;
+                        kmByUser[String(row.user_id)] = Number(row.total_km) || 0;
+                    });
+                }
+                leaderboard.forEach(u => {
+                    u.month_km = kmByUser[u.user_id] || kmByUser[String(u.user_id)] || 0;
+                });
+
+                const weightByDay = {};
+                (exRes.data || []).forEach(e => {
+                    if (e.log_date && e.weight_kg != null) {
+                        weightByDay[e.log_date] = Number(e.weight_kg);
+                    }
+                });
+
+                const dayStatus = {};
+                const daysInM = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                for (let d = 1; d <= daysInM; d++) {
+                    const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+                    const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+                    dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false };
+                }
+                (logsRes.data || []).forEach(row => {
+                    if (!dayStatus[row.log_date]) return;
+                    dayStatus[row.log_date].score += Number(row.score) || 0;
+                    if (row.item_type === "discipline") dayStatus[row.log_date].hasDisc = true;
+                    else dayStatus[row.log_date].hasOther = true;
+                });
+                (exRes.data || []).forEach(row => {
+                    if (!dayStatus[row.log_date]) return;
+                    dayStatus[row.log_date].score += Number(row.score) || 0;
+                    dayStatus[row.log_date].hasOther = true;
+                });
+                const todayIsoForStatus = isoDate(new Date());
+                Object.keys(dayStatus).forEach(iso => {
+                    const s = dayStatus[iso];
+                    if (iso > todayIsoForStatus) s.status = "future";
+                    else if (s.hasOther || s.hasDisc) s.status = s.hasDisc ? "timely" : "late";
+                    else s.status = "missed";
+                });
+                if (seq !== reportLoadSeq) return;
+                renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus, weightByDay);
+            } catch (err) {
+                const content = document.getElementById("content");
+                content.innerHTML = `
+              <div class="empty error-box">
+                <div class="empty-icon">⚠️</div>
+                <div>خطا در دریافت گزارش</div>
+                <small>${(err && err.message) ? err.message : ""}</small>
+                <button class="retry-btn" id="retryBtn">تلاش دوباره</button>
+              </div>`;
+                const retryBtn = document.getElementById("retryBtn");
+                if (retryBtn) retryBtn.onclick = loadReport;
+            }
+        }
+
+        function avatarSrc(name) {
+            if (!name) return null;
+            return "images/" + encodeURIComponent(String(name).trim()) + ".png";
+        }
+
+        function avatarHtml(name, kind) {
+            const cls = kind === "podium" ? "podium-avatar" : "rank-avatar";
+            const fb = kind === "podium" ? "podium-avatar-fallback" : "rank-avatar-fallback";
+            const letter = (name && name.trim()[0]) ? name.trim()[0] : "?";
+            const src = avatarSrc(name);
+            if (!src) return `<div class="${fb}">${letter}</div>`;
+            return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
+        }
+
+        function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {}, weightByDay = {}) {
+            const content = document.getElementById("content");
+
+            const total = Number(stats.total_score) || 0;
+            const avg = Number(stats.avg_score) || 0;
+            const best = Number(stats.best_score) || 0;
+            const active = Number(stats.active_days) || 0;
+            const daily = stats.daily || [];
+
+            let bestNote = "—";
+            if (stats.best_day) {
+                const [y, m, d] = stats.best_day.split("-").map(Number);
+                const j = jalaali.toJalaali(y, m, d);
+                bestNote = fa(j.jd) + " " + J_MONTHS[j.jm - 1];
+            }
+
+            const maxAbs = Math.max(...daily.map(d => Math.abs(Number(d.score) || 0)), 1);
+            const statusKeys = Object.keys(dayStatus || {}).sort();
+            const chartDays = statusKeys.length ? statusKeys : (daily || []).map(d => d.date);
+            const scoreByDate = {};
+            (daily || []).forEach(d => { scoreByDate[d.date] = Number(d.score) || 0; });
+            statusKeys.forEach(iso => {
+                if (scoreByDate[iso] === undefined && dayStatus[iso])
+                    scoreByDate[iso] = Number(dayStatus[iso].score) || 0;
+            });
+            const allScores = chartDays.map(iso => Math.abs(scoreByDate[iso] || 0));
+            const maxAbs2 = Math.max(...allScores, 1);
+            const dense = chartDays.length >= 30;
+
+            let chartHtml = "";
+            if (chartDays.length === 0) {
+                chartHtml = `<div class="empty"><div class="empty-icon">📊</div>هنوز داده‌ای برای این ماه ثبت نشده</div>`;
+            } else {
+                chartHtml =
+                    `<div class="chart-wrap"><div class="chart ${dense ? "dense" : ""}" id="dailyChart">` +
+                    chartDays.map(iso => {
+                        const sc = scoreByDate[iso] || 0;
+                        const st = (dayStatus[iso] && dayStatus[iso].status) || (sc ? "late" : "missed");
+                        const h = st === "missed" ? 8 : st === "future" ? 3 : (Math.abs(sc) < 0.001 ? 4 : Math.max(4, (
+                            Math.abs(sc) / maxAbs2) * 110));
+                        const [y, m, day] = iso.split("-").map(Number);
+                        const j = jalaali.toJalaali(y, m, day);
+                        const isBest = stats.best_day === iso && st !== "missed" && st !== "future";
+                        const statusFa = st === "timely" ? "به‌موقع" : st === "late" ? "با تأخیر" : st === "future" ?
+                            "آینده" : "بدون ثبت";
+                        const tip =
+                            `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} · ${statusFa}`;
+                        const showLabel = !dense || j.jd === 1 || j.jd === chartDays.length || j.jd % 2 === 0 || isBest;
+                        return `
+                  <div class="bar-wrap ${isBest ? "best" : ""} ${st === "missed" ? "missed" : ""}" data-tip="${tip}">
+                    <div class="bar ${st}" data-h="${h}" style="height:${h}px"></div>
+                    <div class="bar-label">${isBest ? "★ " : ""}${showLabel ? fa(j.jd) : ""}</div>
+                  </div>`;
+                    }).join("") +
+                    `</div><div class="chart-tip" id="chartTip"></div></div>`;
+            }
+
+            const top3 = leaderboard.slice(0, 3);
+            const rest = leaderboard.slice(3);
+
+            let podiumHtml = "";
+            if (top3.length === 0) {
+                podiumHtml = `<div class="empty"><div class="empty-icon">🏆</div>هنوز رتبه‌بندی‌ای وجود ندارد</div>`;
+            } else {
+                let order, placeMap, medalMap;
+                if (top3.length >= 3) {
+                    order = [top3[1], top3[0], top3[2]];
+                    placeMap = ["second", "first", "third"];
+                    medalMap = ["🥈", "🥇", "🥉"];
+                } else if (top3.length === 2) {
+                    order = [top3[1], top3[0]];
+                    placeMap = ["second", "first"];
+                    medalMap = ["🥈", "🥇"];
+                } else {
+                    order = [top3[0]];
+                    placeMap = ["first"];
+                    medalMap = ["🥇"];
+                }
+
+                podiumHtml = `<div class="podium">` + order.map((u, i) => {
+                    const place = placeMap[i];
+                    const medal = medalMap[i];
+                    const name = u.display_name || "کاربر";
+                    const sc = u.avg != null ? u.avg : 0;
+                    const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
+                    const uid = u.user_id || "";
+                    const adminBtn = isAdmin && uid ?
+                        `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>` :
+                        "";
+                    return `
+                    <div class="podium-place ${place}">
+                      <div class="podium-medal">${medal}</div>
+                      <div class="profile-hit" data-uid="${uid}" data-name="${name}">
+                      ${avatarHtml(name, "podium")}
+                      <div class="podium-name">${name}</div>
+                      </div>
+                      <div class="podium-score">${scoreText(sc)}</div>
+                      <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span><span class="km-unit">km</span></span>`}</div>
+                      <div class="podium-bar">${num}</div>
+                      ${adminBtn}
+                    </div>`;
+                }).join("") + `</div>`;
+
+                if (rest.length) {
+                    podiumHtml += `<div class="ranking-list">` + rest.map((u, i) => {
+                        const totalScore = Number(u.totalScore != null ? u.totalScore : u.total_score) || 0;
+                        const days = Number(u.completedDays) || 0;
+                        const bonus = Number(u.bonus) || 0;
+                        const avg = u.avg != null ? u.avg : 0;
+                        let detail = days > 0 ?
+                            `مجموع ${scoreText(totalScore)} ÷ ${fa(days)} روز` :
+                            `مجموع ${scoreText(totalScore)}`;
+                        if (bonus) detail += ` + جایزه امروز ${scoreText(bonus)}`;
+                        detail += ` = ${scoreText(avg)}`;
+                        const uid = u.user_id || "";
+                        const adminBtn = isAdmin && uid ?
+                            `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>` :
+                            "";
+                        return `
+                    <div class="rank-item">
+                      <div class="rank-row">
+                        <div class="rank-num">${fa(i + 4)}</div>
+                        <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:40%;min-width:0">
+                        ${avatarHtml(u.display_name || "کاربر", "rank")}
+                        <div class="rank-name">${u.display_name || "کاربر"}</div>
+                        </div>
+                        <div class="rank-spacer" style="flex:1;min-width:8px;align-self:stretch"></div>
+                        <div style="text-align:left;flex-shrink:0">
+                          <div class="rank-score">${scoreText(avg)}</div>
+                          <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span></span>`}</div>
+                        </div>
+                        ${adminBtn}
+                        <div class="rank-chevron">›</div>
+                      </div>
+                      <div class="rank-detail">${detail}</div>
+                    </div>`;
+                    }).join("") + `</div>`;
+                }
+            }
+
+            const orderH = ["water", "sleep", "instagram", "sun", "solitude", "reading", "sugar", "dinner", "exercise"];
+            const activeKeys = orderH.filter(k => habitMap[k]);
+
+            let habitsHtml = "";
+            if (!activeKeys.length) {
+                habitsHtml = `<div class="empty"><div class="empty-icon">🌱</div>هیچ عادتی ثبت نشده</div>`;
+            } else {
+                const avgs = activeKeys.map(k => {
+                    const h = habitMap[k];
+                    return h.count ? h.total / h.count : 0;
+                });
+                const maxAbsAvg = Math.max(...avgs.map(v => Math.abs(v)), 1);
+
+                habitsHtml = activeKeys.map(k => {
+                    const h = habitMap[k];
+                    const avgH = h.count ? (h.total / h.count) : 0;
+                    const info = HABIT_LABELS[k] || { icon: "•", title: k };
+                    const pct = Math.min(100, (Math.abs(avgH) / maxAbsAvg) * 100);
+                    const barCls = avgH > 0 ? "positive" : avgH < 0 ? "negative" : "zero";
+                    return `
+                    <div class="habit-item">
+                      <div class="habit-row">
+                        <div class="habit-name">${info.icon} ${info.title}</div>
+                        <div class="habit-stats">
+                          <div><b>${fa(h.count)}</b>روز</div>
+                          <div><b class="${h.total > 0 ? "pos" : h.total < 0 ? "neg" : ""}">${scoreText(h.total)}</b>مجموع</div>
+                          <div><b class="${avgH > 0 ? "pos" : avgH < 0 ? "neg" : ""}">${scoreText(avgH)}</b>میانگین</div>
+                        </div>
+                      </div>
+                      <div class="habit-bar-track"><div class="habit-bar-fill ${barCls}" data-w="${pct}"></div></div>
+                    </div>`;
+                }).join("");
+            }
+
+            const monthLabel = `${J_MONTHS[selectedMonth - 1]} ${fa(selectedYear)}`;
+            lastRenderData = {
+                total,
+                avg,
+                best,
+                active,
+                monthLabel,
+                topName: leaderboard[0] ? (leaderboard[0].display_name || null) : null
+            };
+
+            const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+            let weightChips = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+                const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+                const w = weightByDay[iso];
+                if (w != null && !Number.isNaN(w)) {
+                    weightChips.push(
+                        `<div class="weight-chip"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">${scoreText(Math.round(w*10)/10)}</div><div class="weight-chip-unit">kg</div></div>`
+                        );
+                } else {
+                    weightChips.push(
+                        `<div class="weight-chip empty"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">—</div><div class="weight-chip-unit">kg</div></div>`
+                        );
+                }
+            }
+
+            const weightStripHtml = `
+              <div class="card weight-strip-card">
+                <div class="weight-strip-header">
+                  <div class="card-title">وزن روزانه</div>
+                  <div class="energy-bar-wrap">
+                    <div class="energy-bar-fill"></div>
+                  </div>
+                </div>
+                <div class="weight-glass">
+                  <span class="hql-neon">HQL</span>
+                </div>
+                <div class="weight-strip-wrap">
+                  <div class="weight-strip">${weightChips.slice().reverse().join("")}</div>
+                </div>
+              </div>`;
+
+            content.innerHTML = `
+              <div class="summary">
+                <div class="stat">
+                  <div class="stat-label">امتیاز کل ماه</div>
+                  <div class="stat-value ${total > 0 ? "positive" : total < 0 ? "negative" : ""}" id="statTotal">۰</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">میانگین روزانه</div>
+                  <div class="stat-value ${avg > 0 ? "positive" : avg < 0 ? "negative" : ""}" id="statAvg">۰</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">بهترین روز</div>
+                  <div class="stat-value positive" id="statBest">۰</div>
+                  <div class="stat-note">${bestNote}</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">روزهای فعال</div>
+                  <div class="stat-value" id="statActive">۰</div>
+                  <div class="stat-note">از ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} روز</div>
+                </div>
+              </div>
+
+              <div class="card km-card">
+                <div class="card-title">کیلومتر این ماه</div>
+                <div class="card-sub">معادل کل (هوازی + دویدن)</div>
+                <div class="km-grid">
+                  <div class="km-stat">
+                    <div class="km-label">کیلومتر من</div>
+                    <div class="km-pair" dir="ltr"><span class="km-value" id="myKmVal">۰</span><span class="km-unit">km</span></div>
+                  </div>
+                  <div class="km-stat">
+                    <div class="km-label">جمع افراد فعال</div>
+                    <div class="km-pair" dir="ltr"><span class="km-value" id="communityKmVal">۰</span><span class="km-unit">km</span></div>
+                  </div>
+                  <div class="km-stat">
+                    <div class="km-label">افراد فعال</div>
+                    <div class="km-value" id="activePeopleVal">۰</div>
+                    <div class="km-unit">نفر</div>
+                  </div>
+                </div>
+              </div>
+
+              ${weightStripHtml}
+
+              <div class="card">
+                <div class="card-title">جدول امتیازات</div>
+                <div class="card-sub">رتبه: میانگین تا دیروز + جایزه فعالیت امروز</div>
+                ${podiumHtml}
+              </div>
+
+              <div class="card">
+                <div class="card-title">نمودار روزانه</div>
+                <div class="card-sub">امتیاز هر روز در ماه انتخاب‌شده — روی هر ستون بزن</div>
+                ${chartHtml}
+              </div>
+
+              <div class="card">
+                <div class="card-title">عملکرد عادت‌ها</div>
+                <div class="card-sub">تعداد روز، مجموع و میانگین امتیاز</div>
+                ${habitsHtml}
+              </div>
+            `;
+
+            const myKm = Number(kmInfo.myKm) || 0;
+            const communityKm = Number(kmInfo.communityKm) || 0;
+            const activePeople = Number(kmInfo.activePeople) || 0;
+            const myEl = document.getElementById("myKmVal");
+            const cEl = document.getElementById("communityKmVal");
+            const aEl = document.getElementById("activePeopleVal");
+            if (myEl) myEl.textContent = scoreText(Math.round(myKm * 100) / 100);
+            if (cEl) cEl.textContent = scoreText(Math.round(communityKm * 100) / 100);
+            if (aEl) aEl.textContent = fa(activePeople);
+
+            const wStrip = content.querySelector(".weight-strip");
+            if (wStrip) initWeightStrip(wStrip);
+
+            animateNumber(document.getElementById("statTotal"), total);
+            animateNumber(document.getElementById("statAvg"), avg);
+            animateNumber(document.getElementById("statBest"), best);
+            animateNumber(document.getElementById("statActive"), active);
+
+            requestAnimationFrame(() => {
+                document.querySelectorAll(".chart .bar").forEach((bar, i) => {
+                    bar.style.transitionDelay = (i * 14) + "ms";
+                    bar.style.height = bar.dataset.h + "px";
+                });
+                document.querySelectorAll(".habit-bar-fill").forEach((el, i) => {
+                    el.style.transitionDelay = (i * 40) + "ms";
+                    el.style.width = el.dataset.w + "%";
+                });
+            });
+        }
+
+        // ---- Interactions ----
+        function initInteractions() {
+            const content = document.getElementById("content");
+
+            content.addEventListener("click", (e) => {
+                const bar = e.target.closest(".bar-wrap");
+                if (bar) {
+                    const wrap = bar.closest(".chart-wrap");
+                    const tip = wrap ? wrap.querySelector(".chart-tip") : null;
+                    if (tip) {
+                        const barEl = bar.querySelector(".bar");
+                        const barRect = barEl.getBoundingClientRect();
+                        const wrapRect = wrap.getBoundingClientRect();
+                        tip.textContent = bar.dataset.tip;
+                        tip.style.left = (barRect.left - wrapRect.left + barRect.width / 2) + "px";
+                        tip.style.bottom = (wrapRect.bottom - barRect.top + 8) + "px";
+                        tip.classList.add("show");
+                        clearTimeout(tip._hideTimer);
+                        tip._hideTimer = setTimeout(() => tip.classList.remove("show"), 1800);
+                    }
+                    return;
+                }
+
+                const rankRow = e.target.closest(".rank-row");
+                const profileHit = e.target.closest(".profile-hit");
+                if (profileHit) {
+                    e.stopPropagation();
+                    const uid = profileHit.dataset.uid;
+                    const name = profileHit.dataset.name || "کاربر";
+                    if (uid) openUserBadges(uid, name);
+                    return;
+                }
+                if (rankRow) {
+                    const item = rankRow.closest(".rank-item");
+                    if (item) item.classList.toggle("open");
+                    return;
+                }
+            });
+
+            let sx = 0,
+                sy = 0,
+                tracking = false;
+            content.addEventListener("touchstart", (e) => {
+                if (e.touches.length !== 1) return;
+                const target = e.target;
+                const strip = target.closest?.(".weight-strip");
+                if (strip) return;
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+                tracking = true;
+            }, { passive: true });
+            content.addEventListener("touchend", (e) => {
+                if (!tracking) return;
+                tracking = false;
+                const t = e.changedTouches[0];
+                const dx = t.clientX - sx;
+                const dy = t.clientY - sy;
+                if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+                    changeMonth(dx < 0 ? 1 : -1);
+                }
+            }, { passive: true });
+        }
+
+        function changeMonth(delta) {
+            let m = selectedMonth + delta,
+                y = selectedYear;
+            if (m < 1) { m = 12;
+                y -= 1; }
+            if (m > 12) { m = 1;
+                y += 1; }
+            if (y < START_YEAR) return;
+            const now = new Date();
+            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            if (y > j.jy || (y === j.jy && m > j.jm)) return;
+            selectedYear = y;
+            selectedMonth = m;
+            document.getElementById("yearSelect").value = String(y);
+            document.getElementById("monthSelect").value = String(m);
+            updateReportChrome();
+            loadReport();
+        }
+
+        initInteractions();
+    </script>
+</body>
+</html>
