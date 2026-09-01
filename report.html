@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js">
     </script>
     <style>
-        /* ====== all styles unchanged, only weight-strip scrollbar hidden ====== */
+        /* ====== all styles unchanged ====== */
         :root {
             --bg: #05060a;
             --card: #0d1019;
@@ -1790,9 +1790,12 @@
 
         /**
          * ================================================================
-         * FIXED: initWeightStrip – works on PC (mouse drag + wheel) and
-         *        phone (touch scroll). Stops propagation to avoid month
-         *        swipe interference.
+         * FIXED: spark direction logic
+         * - scroll right (velocity > 0) -> sparks on left  (sparkFromLeft = true)
+         * - scroll left  (velocity < 0) -> sparks on right (sparkFromLeft = false)
+         * - drag right (dx > 0) -> sparkFromLeft = true
+         * - drag left  (dx < 0) -> sparkFromLeft = false
+         * - wheel deltaX > 0 (scroll right) -> sparkFromLeft = true
          * ================================================================
          */
         function initWeightStrip(strip) {
@@ -1800,7 +1803,6 @@
             const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
             if (!wrap) return;
 
-            // Ensure spark layer exists
             let sparkLayer = wrap.querySelector(".weight-spark-layer");
             if (!sparkLayer) {
                 sparkLayer = document.createElement("div");
@@ -1811,11 +1813,9 @@
             const endL = document.getElementById("weightEndL");
             const endR = document.getElementById("weightEndR");
 
-            // Prevent double init
             if (strip.dataset.lavaReady === "1") return;
             strip.dataset.lavaReady = "1";
 
-            // Reset styles for native scroll
             strip.style.direction = "ltr";
             strip.style.overflowX = "auto";
             strip.style.touchAction = "pan-x";
@@ -1823,7 +1823,6 @@
             strip.style.cursor = "grab";
             strip.style.scrollBehavior = "auto";
 
-            // Mark max chip
             const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
             let maxEl = null,
                 maxV = -Infinity;
@@ -1837,7 +1836,6 @@
             });
             if (maxEl) maxEl.classList.add("max");
 
-            // Scroll to max on init
             requestAnimationFrame(() => {
                 if (maxEl) {
                     const mid = maxEl.offsetLeft - strip.clientWidth / 2 + maxEl.offsetWidth / 2;
@@ -1845,7 +1843,6 @@
                 }
             });
 
-            // ---- state for sparks & glow ----
             let glow = 0,
                 endHeat = 0;
             let lastScrollTime = 0,
@@ -1970,7 +1967,7 @@
                 trimSparks();
             };
 
-            // ---- Scroll handler for sparks ----
+            // ---- Scroll handler ----
             function onScroll() {
                 const now = performance.now();
                 const currentPos = strip.scrollLeft;
@@ -1980,7 +1977,7 @@
                     const dx = currentPos - lastScrollPos;
                     velocity = dx / dt * 16;
                     const absV = Math.abs(velocity);
-                    if (absV > 0.5) sparkFromLeft = velocity > 0;
+                    if (absV > 0.5) sparkFromLeft = velocity > 0; // right scroll -> left sparks
                     if (absV > 1.0) spawnSparks(absV, sparkFromLeft);
 
                     glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
@@ -2001,7 +1998,6 @@
                 lastScrollTime = now;
                 lastScrollPos = currentPos;
 
-                // Decay after scrolling stops
                 clearTimeout(strip._decayTimer);
                 strip._decayTimer = setTimeout(() => {
                     const decay = () => {
@@ -2030,10 +2026,9 @@
                 paint();
             }
 
-            // Attach scroll listener
             strip.addEventListener("scroll", onScroll, { passive: true });
 
-            // ---- Mouse drag support (PC) ----
+            // ---- Mouse drag ----
             let isDragging = false;
             let dragStartX = 0;
             let dragStartScroll = 0;
@@ -2044,7 +2039,6 @@
                 strip.classList.add("is-dragging");
                 dragStartX = e.clientX;
                 dragStartScroll = strip.scrollLeft;
-                // Prevent text selection
                 document.body.style.userSelect = 'none';
             }
 
@@ -2052,11 +2046,10 @@
                 if (!isDragging) return;
                 e.preventDefault();
                 const dx = e.clientX - dragStartX;
-                // In LTR, moving mouse left (negative dx) should scroll right (positive scrollLeft)
                 const delta = -dx;
                 strip.scrollLeft = dragStartScroll + delta;
-                // Update spark direction
-                if (Math.abs(dx) > 2) sparkFromLeft = dx < 0;
+                // Set spark direction: drag right (dx > 0) => scroll right => sparks on left
+                if (Math.abs(dx) > 2) sparkFromLeft = dx > 0;
             }
 
             function onMouseUp(e) {
@@ -2064,8 +2057,6 @@
                 isDragging = false;
                 strip.classList.remove("is-dragging");
                 document.body.style.userSelect = '';
-                // Let scroll event handle final glow/sparks
-                // Trigger a scroll event to update velocity
                 const ev = new Event('scroll', { bubbles: true });
                 strip.dispatchEvent(ev);
             }
@@ -2082,11 +2073,14 @@
             strip.addEventListener("touchmove", stopTouchPropagation, { passive: true });
             strip.addEventListener("touchend", stopTouchPropagation, { passive: true });
 
-            // ---- Wheel: already triggers scroll, but we can prevent page scroll ----
+            // ---- Wheel ----
             strip.addEventListener("wheel", (e) => {
-                // let default scroll happen; we already have scroll listener
-                // but we can stop propagation to avoid accidental page scroll
                 e.stopPropagation();
+                // Use deltaX for horizontal scroll, fallback to deltaY if deltaX is zero
+                let delta = e.deltaX;
+                if (Math.abs(delta) < 1) delta = e.deltaY; // some mice only send deltaY
+                // For right scroll (delta > 0) sparks on left
+                if (Math.abs(delta) > 2) sparkFromLeft = delta > 0;
             }, { passive: true });
 
             // ---- Cleanup ----
@@ -2103,7 +2097,6 @@
                 clearTimeout(strip._decayTimer);
             };
 
-            // Initial paint
             paint();
         }
 
@@ -2710,13 +2703,9 @@
                 tracking = false;
             content.addEventListener("touchstart", (e) => {
                 if (e.touches.length !== 1) return;
-                // Check if touch is inside a weight strip
                 const target = e.target;
                 const strip = target.closest?.(".weight-strip");
-                if (strip) {
-                    // Let weight strip handle it, don't start month swipe
-                    return;
-                }
+                if (strip) return; // let weight strip handle it
                 sx = e.touches[0].clientX;
                 sy = e.touches[0].clientY;
                 tracking = true;
