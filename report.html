@@ -622,8 +622,8 @@ button { cursor: pointer; border: none; background: none; }
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid rgba(180, 100, 255, 0.35);
-  box-shadow: 0 0 8px rgba(180, 76, 255, 0.25);
+  border: none;
+  box-shadow: 0 0 8px rgba(180, 76, 255, 0.2);
   background: #fff;
   flex-shrink: 0;
 }
@@ -636,15 +636,11 @@ button { cursor: pointer; border: none; background: none; }
   background: #fff;
   box-shadow: 0 0 10px rgba(180, 76, 255, 0.55), 0 0 22px rgba(180, 76, 255, 0.3);
 }
-.podium-place.first .podium-avatar {
-  border-color: rgba(255, 215, 0, 0.55);
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
-}
-.podium-place.second .podium-avatar {
-  border-color: rgba(192, 192, 192, 0.5);
-}
+.podium-place.first .podium-avatar,
+.podium-place.second .podium-avatar,
 .podium-place.third .podium-avatar {
-  border-color: rgba(205, 127, 50, 0.55);
+  border: none;
+  box-shadow: none;
 }
 .rank-avatar-fallback, .podium-avatar-fallback {
   width: 28px;
@@ -871,7 +867,7 @@ a.rank-item-link {
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(0, 240, 255, 0.08);
-  border: 1px solid rgba(0, 240, 255, 0.28);
+  border: none;
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
 }
 .rank-km {
@@ -1806,7 +1802,6 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
             ${avatarHtml(u.display_name || "کاربر", "rank")}
             <div class="rank-name">${u.display_name || "کاربر"}</div>
             </div>
-            <div class="rank-km ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10) + " km" : "—"}</div>
             <div style="text-align:left;flex-shrink:0">
               <div class="rank-score">${scoreText(avg)}</div>
               <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10)+" km" : "—"}</div>
