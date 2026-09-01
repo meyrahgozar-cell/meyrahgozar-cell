@@ -928,7 +928,7 @@ a.rank-item-link {
   box-sizing: border-box;
 }
 .weight-strip {
-  direction: rtl;
+  direction: ltr;
   display: flex;
   max-width: 100%;
   width: 100%;
@@ -1064,7 +1064,15 @@ a.rank-item-link {
 }
 .weight-strip {
   position: relative;
-  z-index: 1;
+  z-index: 5;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
+  cursor: grab;
+}
+.weight-strip.is-dragging { cursor: grabbing; }
+.weight-ends, .weight-spark-layer {
+  pointer-events: none !important;
 }
 .weight-spark-layer {
   position: absolute;
@@ -1658,7 +1666,6 @@ function initWeightStrip(strip) {
   const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
   if (!wrap) return;
 
-  const page = document.querySelector(".page") || document.body;
   let sparkLayer = wrap.querySelector(".weight-spark-layer");
   if (!sparkLayer) {
     sparkLayer = document.createElement("div");
@@ -1671,7 +1678,12 @@ function initWeightStrip(strip) {
 
   if (strip.dataset.lavaReady === "1") return;
   strip.dataset.lavaReady = "1";
-  strip.style.direction = "rtl";
+
+  // اسکرول پایدار: LTR برای ریاضی، ظاهر روزها همان ترتیب DOM (روز ۱ اول)
+  strip.style.direction = "ltr";
+  strip.style.overflowX = "auto";
+  strip.style.touchAction = "pan-x";
+  strip.style.webkitOverflowScrolling = "touch";
 
   const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
 
@@ -1685,36 +1697,35 @@ function initWeightStrip(strip) {
   });
   if (maxEl) maxEl.classList.add("max");
   requestAnimationFrame(() => {
-    if (maxEl) maxEl.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
+    if (maxEl) {
+      const mid = maxEl.offsetLeft - strip.clientWidth / 2 + maxEl.offsetWidth / 2;
+      strip.scrollLeft = Math.max(0, mid);
+    }
   });
 
   let vel = 0, lastX = 0, lastT = 0, dragging = false;
   let raf = null;
-  let glow = 0;       // بدنه — سرد شدن عادی
-  let endHeat = 0;    // دو سر — سرد شدن ۳ برابر کندتر
+  let glow = 0;
+  let endHeat = 0;
   let lastSpark = 0;
   let sparkFromLeft = true;
   let moveAccum = 0;
   const MAX_SPARKS = 28;
 
   const stopRaf = () => { if (raf) { cancelAnimationFrame(raf); raf = null; } };
-
   const trimSparks = () => {
-    while (sparkLayer.childElementCount > MAX_SPARKS) {
-      sparkLayer.removeChild(sparkLayer.firstChild);
-    }
+    while (sparkLayer.childElementCount > MAX_SPARKS) sparkLayer.removeChild(sparkLayer.firstChild);
   };
+  const scrollMax = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
 
   const paint = () => {
     const heat = glow;
     const eh = endHeat;
-    // شیشه حکاکی HQL
     if (glass) {
       const etch = Math.max(heat, eh * 0.85);
       glass.style.setProperty("--etch", etch.toFixed(3));
       glass.classList.toggle("lit", etch > 0.02);
     }
-    // بدنه
     if (wrap) {
       wrap.classList.toggle("lava-hot", heat > 0.18 || eh > 0.2);
       if (heat > 0.06) {
@@ -1729,7 +1740,6 @@ function initWeightStrip(strip) {
     strip.style.filter = heat > 0.1
       ? `brightness(${1 + heat * 0.25}) saturate(${1 + heat * 0.3})`
       : "";
-    // دو سر: سالید گداخته + گلو — بیرون کادر
     const solid = Math.min(1, eh * 1.2);
     [endL, endR].forEach((el) => {
       if (!el) return;
@@ -1743,7 +1753,7 @@ function initWeightStrip(strip) {
 
   const setHeat = (body, ends) => {
     glow = Math.max(0, Math.min(1, body));
-    endHeat = Math.max(0, Math.min(1, ends != null ? ends : Math.max(endHeat, body * 1.05)));
+    endHeat = Math.max(0, Math.min(1, ends != null ? ends : endHeat));
     paint();
   };
 
@@ -1752,156 +1762,55 @@ function initWeightStrip(strip) {
     const now = performance.now();
     if (now - lastSpark < 30) return;
     lastSpark = now;
-
-    const w = strip.clientWidth;
-    const h = strip.clientHeight;
+    const w = strip.clientWidth, h = strip.clientHeight;
     if (w < 8 || h < 8) return;
-
     const edgeX = fromLeft ? 6 : (w - 6);
     const trailSign = fromLeft ? 1 : -1;
     const n = Math.min(3, 1 + Math.floor((speed - 1.2) * 0.7));
-
-    // دنبالهٔ معمولی
     for (let i = 0; i < n; i++) {
       const sp = document.createElement("div");
       sp.className = "weight-spark";
-      const size = 2 + Math.random() * (2 + Math.min(2.5, speed * 0.35));
-      sp.style.width = size + "px";
-      sp.style.height = size + "px";
-      const y = 8 + Math.random() * Math.max(8, h - 16);
-      const x = edgeX + (Math.random() - 0.5) * 5;
-      sp.style.left = x + "px";
-      sp.style.top = y + "px";
+      const size = 2 + Math.random() * 2.5;
+      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX}px;top:${8 + Math.random() * (h - 16)}px`;
       const hue = 18 + Math.random() * 40;
-      sp.style.background = `hsl(${hue}, 100%, ${52 + Math.random() * 25}%)`;
-      sp.style.boxShadow = `0 0 6px hsl(${hue},100%,60%), 0 0 12px rgba(255,80,0,0.7)`;
+      sp.style.background = `hsl(${hue},100%,60%)`;
+      sp.style.boxShadow = `0 0 8px hsl(${hue},100%,55%)`;
       sparkLayer.appendChild(sp);
-
-      const trail = trailSign * (24 + speed * 32 + Math.random() * 28);
-      const outward = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 18 + speed * 3);
-      const life = 240 + Math.random() * 260;
+      const trail = trailSign * (24 + speed * 30 + Math.random() * 24);
+      const outward = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 16);
+      const life = 240 + Math.random() * 240;
       const t0 = performance.now();
       const anim = (t) => {
         const p = Math.min(1, (t - t0) / life);
         if (p >= 1) { sp.remove(); return; }
-        const ease = 1 - Math.pow(1 - p, 1.5);
-        sp.style.transform = `translate(${trail * ease}px, ${outward * ease}px) scale(${1 - p * 0.7})`;
+        const e = 1 - Math.pow(1 - p, 1.5);
+        sp.style.transform = `translate(${trail * e}px,${outward * e}px) scale(${1 - p * 0.7})`;
         sp.style.opacity = String(1 - p);
         requestAnimationFrame(anim);
       };
       requestAnimationFrame(anim);
     }
-
-    // انفجار برخورد روی لبه (اصطکاک)
-    if (speed > 1.6) {
-      const burst = Math.min(8, 3 + Math.floor(speed * 1.2));
-      for (let i = 0; i < burst; i++) {
-        const sp = document.createElement("div");
-        sp.className = "weight-spark";
-        const size = 2.5 + Math.random() * 4;
-        sp.style.width = size + "px";
-        sp.style.height = size + "px";
-        sp.style.left = (edgeX + (Math.random() - 0.5) * 10) + "px";
-        sp.style.top = (h * 0.15 + Math.random() * h * 0.7) + "px";
-        sp.style.background = Math.random() > 0.4 ? "#ffe08a" : "#ff6a00";
-        sp.style.boxShadow = "0 0 10px #ff9400, 0 0 18px #ff3d00";
-        sparkLayer.appendChild(sp);
-        // پرتاب شعاعی به بیرون از لبه
-        const ang = (Math.random() - 0.5) * Math.PI; // نیم‌دایره به بیرون
-        const outwardDir = fromLeft ? -1 : 1; // به خارج کادر
-        const dist = 20 + speed * 18 + Math.random() * 40;
-        const tx = outwardDir * Math.cos(ang * 0.5) * dist + trailSign * Math.random() * 15;
-        const ty = Math.sin(ang) * dist * 0.7;
-        const life = 200 + Math.random() * 220;
-        const t0 = performance.now();
-        const anim = (t) => {
-          const p = Math.min(1, (t - t0) / life);
-          if (p >= 1) { sp.remove(); return; }
-          const e = 1 - Math.pow(1 - p, 2);
-          sp.style.transform = `translate(${tx * e}px, ${ty * e}px) scale(${1.3 - p})`;
-          sp.style.opacity = String(1 - p);
-          requestAnimationFrame(anim);
-        };
-        requestAnimationFrame(anim);
-      }
-    }
     trimSparks();
   };
 
-  const coast = () => {
-    stopRaf();
-    const lockedFromLeft = sparkFromLeft;
-    let exploded = false;
-    const step = () => {
-      const speed = Math.abs(vel);
-      const maxS = Math.max(0, strip.scrollWidth - strip.clientWidth);
-      const atStart = strip.scrollLeft <= 1;
-      const atEnd = strip.scrollLeft >= maxS - 1;
-
-      if (speed >= 0.12) {
-        strip.scrollLeft += vel;
-        // برخورد به انتها → انفجار و توقف جرقه‌های دنباله‌دار
-        const hitStart = vel < 0 && strip.scrollLeft <= 0;
-        const hitEnd = vel > 0 && strip.scrollLeft >= maxS;
-        if ((hitStart || hitEnd) && !exploded && speed > 0.8) {
-          exploded = true;
-          strip.scrollLeft = hitStart ? 0 : maxS;
-          edgeExplosion(hitStart);
-          vel = 0;
-          glow = Math.max(glow, 0.85);
-          endHeat = Math.max(endHeat, 1);
-        } else {
-          vel *= 0.975;
-          if (!exploded && speed > 1.4) spawnSparks(speed, lockedFromLeft);
-        }
-        const target = Math.min(1, speed / 10);
-        glow = Math.max(target * 0.5, glow * 0.97);
-        endHeat = Math.max(target * 0.55, endHeat * 0.988);
-      } else {
-        vel = 0;
-        // سرد شدن خیلی نرم و طولانی
-        glow *= 0.982;
-        endHeat *= 0.991;
-        if (glow < 0.008) glow = 0;
-        if (endHeat < 0.008) endHeat = 0;
-      }
-      paint();
-      if (vel !== 0 || glow > 0.008 || endHeat > 0.008) {
-        raf = requestAnimationFrame(step);
-      } else {
-        setHeat(0, 0);
-        stopRaf();
-      }
-    };
-    raf = requestAnimationFrame(step);
-  };
-
-  // انفجار انتهای اسکرول — جرقه‌ها با جاذبه به پایین
   const edgeExplosion = (atLeft) => {
     if (!sparkLayer) return;
-    const w = strip.clientWidth;
-    const h = strip.clientHeight;
+    const w = strip.clientWidth, h = strip.clientHeight;
     const edgeX = atLeft ? 8 : (w - 8);
-    const count = 18;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 18; i++) {
       const sp = document.createElement("div");
       sp.className = "weight-spark";
       const size = 2.5 + Math.random() * 4.5;
-      sp.style.width = size + "px";
-      sp.style.height = size + "px";
-      sp.style.left = (edgeX + (Math.random() - 0.5) * 14) + "px";
-      sp.style.top = (h * 0.2 + Math.random() * h * 0.5) + "px";
+      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX + (Math.random() - 0.5) * 12}px;top:${h * 0.2 + Math.random() * h * 0.5}px`;
       sp.style.background = Math.random() > 0.35 ? "#ffe59a" : "#ff6a1a";
-      sp.style.boxShadow = "0 0 10px #ff9400, 0 0 20px #ff3d00";
+      sp.style.boxShadow = "0 0 10px #ff9400,0 0 20px #ff3d00";
       sparkLayer.appendChild(sp);
-
-      const vx = (atLeft ? -1 : 1) * (15 + Math.random() * 55) + (Math.random() - 0.5) * 20;
-      let vy = -30 - Math.random() * 70; // اول کمی بالا
-      const g = 420; // جاذبه
+      const vx = (atLeft ? -1 : 1) * (12 + Math.random() * 50) + (Math.random() - 0.5) * 18;
+      let vy = -40 - Math.random() * 70;
+      const g = 480;
       const life = 500 + Math.random() * 400;
       const t0 = performance.now();
-      let last = t0;
-      let x = 0, y = 0;
+      let last = t0, x = 0, y = 0;
       const anim = (t) => {
         const dt = Math.min(0.032, (t - last) / 1000);
         last = t;
@@ -1910,13 +1819,58 @@ function initWeightStrip(strip) {
         vy += g * dt;
         x += vx * dt;
         y += vy * dt;
-        sp.style.transform = `translate(${x}px, ${y}px) scale(${1.1 - p * 0.8})`;
-        sp.style.opacity = String(Math.max(0, 1 - p * 1.05));
+        sp.style.transform = `translate(${x}px,${y}px) scale(${1.1 - p * 0.8})`;
+        sp.style.opacity = String(Math.max(0, 1 - p));
         requestAnimationFrame(anim);
       };
       requestAnimationFrame(anim);
     }
     trimSparks();
+  };
+
+  // حرکت واقعی با تشخیص برخورد: اگر scroll جابه‌جا نشد → لبه
+  const doScroll = (delta) => {
+    const before = strip.scrollLeft;
+    strip.scrollLeft = before + delta;
+    const after = strip.scrollLeft;
+    const moved = after - before;
+    const blocked = Math.abs(delta) > 2 && Math.abs(moved) < 0.5;
+    return { moved, blocked, atLeft: after <= 0.5, atRight: after >= scrollMax() - 0.5 };
+  };
+
+  const coast = () => {
+    stopRaf();
+    const lockedFromLeft = sparkFromLeft;
+    let exploded = false;
+    const step = () => {
+      const speed = Math.abs(vel);
+      if (speed >= 0.12) {
+        const { blocked, atLeft, atRight } = doScroll(vel);
+        if (blocked && !exploded && speed > 0.7) {
+          exploded = true;
+          edgeExplosion(atLeft || (!atRight && vel < 0));
+          vel = 0;
+          glow = Math.max(glow, 0.9);
+          endHeat = 1;
+        } else {
+          vel *= 0.975;
+          if (!exploded && speed > 1.4) spawnSparks(speed, lockedFromLeft);
+        }
+        const target = Math.min(1, speed / 10);
+        glow = Math.max(target * 0.45, glow * 0.97);
+        endHeat = Math.max(target * 0.5, endHeat * 0.988);
+      } else {
+        vel = 0;
+        glow *= 0.982;
+        endHeat *= 0.991;
+        if (glow < 0.008) glow = 0;
+        if (endHeat < 0.008) endHeat = 0;
+      }
+      paint();
+      if (vel !== 0 || glow > 0 || endHeat > 0) raf = requestAnimationFrame(step);
+      else { setHeat(0, 0); stopRaf(); }
+    };
+    raf = requestAnimationFrame(step);
   };
 
   const onDown = (x) => {
@@ -1935,16 +1889,28 @@ function initWeightStrip(strip) {
     const dx = x - lastX;
     const dt = Math.max(12, now - lastT);
     moveAccum += Math.abs(dx);
-    strip.scrollLeft -= dx;
-    vel = (-dx / dt) * 17;
     lastX = x;
     lastT = now;
-    if (moveAccum < 14) return;
+
+    // انگشت راست → محتوا به راست (scrollLeft کم در LTR)
+    const { blocked, atLeft, atRight } = doScroll(-dx);
+    vel = (-dx / dt) * 17;
+
+    if (moveAccum < 10) return;
     if (Math.abs(dx) > 2) sparkFromLeft = dx > 0;
+
+    if (blocked && Math.abs(dx) > 4) {
+      edgeExplosion(atLeft || dx > 0);
+      glow = Math.max(glow, 0.85);
+      endHeat = 1;
+      vel = 0;
+      paint();
+      return;
+    }
+
     const speed = Math.abs(vel);
-    const h = Math.min(1, speed / 8);
-    glow = Math.max(glow * 0.85, h);
-    endHeat = Math.max(endHeat, h * 1.1); // انتها زودتر داغ می‌شود
+    glow = Math.max(glow * 0.85, Math.min(1, speed / 8));
+    endHeat = Math.max(endHeat, Math.min(1, speed / 7));
     paint();
     if (speed > 1.3) spawnSparks(speed, sparkFromLeft);
   };
@@ -1953,10 +1919,9 @@ function initWeightStrip(strip) {
     if (!dragging) return;
     dragging = false;
     strip.classList.remove("is-dragging");
-    if (moveAccum >= 14 && Math.abs(vel) > 0.6) coast();
+    if (moveAccum >= 10 && Math.abs(vel) > 0.5) coast();
     else {
       vel = 0;
-      // حتی بدون اینرسی قوی، انتها آرام سرد شود
       const cool = () => {
         glow *= 0.98;
         endHeat *= 0.99;
@@ -1974,22 +1939,31 @@ function initWeightStrip(strip) {
   window.addEventListener("mousemove", e => onMove(e.clientX));
   window.addEventListener("mouseup", onUp);
   strip.addEventListener("touchstart", e => onDown(e.touches[0].clientX), { passive: true });
-  strip.addEventListener("touchmove", e => { if (dragging) onMove(e.touches[0].clientX); }, { passive: true });
+  strip.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    onMove(e.touches[0].clientX);
+  }, { passive: true });
   strip.addEventListener("touchend", onUp);
   strip.addEventListener("touchcancel", onUp);
   strip.addEventListener("wheel", e => {
-    const dy = e.deltaY;
+    const dy = e.deltaY + e.deltaX;
     if (Math.abs(dy) < 1) return;
-    strip.scrollLeft += dy;
-    vel = dy * 0.2;
-    if (Math.abs(dy) > 4) sparkFromLeft = dy > 0;
+    const { blocked, atLeft } = doScroll(dy);
+    vel = dy * 0.25;
+    if (Math.abs(dy) > 4) sparkFromLeft = dy < 0;
     moveAccum = 20;
-    const h = Math.min(1, Math.abs(vel) / 6);
-    glow = Math.max(glow, h);
-    endHeat = Math.max(endHeat, h * 1.1);
+    if (blocked && Math.abs(dy) > 6) {
+      edgeExplosion(atLeft || dy < 0);
+      glow = 0.9;
+      endHeat = 1;
+      vel = 0;
+    } else {
+      glow = Math.max(glow, Math.min(1, Math.abs(vel) / 6));
+      endHeat = Math.max(endHeat, glow);
+      if (Math.abs(vel) > 1.3) spawnSparks(Math.abs(vel), sparkFromLeft);
+      coast();
+    }
     paint();
-    if (Math.abs(vel) > 1.3) spawnSparks(Math.abs(vel), sparkFromLeft);
-    coast();
     e.preventDefault();
   }, { passive: false });
 }
@@ -2449,7 +2423,7 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
           <div class="weight-end left" id="weightEndL"></div>
           <div class="weight-end right" id="weightEndR"></div>
         </div>
-        <div class="weight-strip">${weightChips.join("")}</div>
+        <div class="weight-strip">${weightChips.slice().reverse().join("")}</div>
       </div>
     </div>`;
 
