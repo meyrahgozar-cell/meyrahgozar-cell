@@ -1091,8 +1091,8 @@
         /* ---- Metal bars at ends of strip ---- */
         .strip-end-bar {
             position: absolute;
-            top: 8px;
-            bottom: 8px;
+            top: 6px;
+            bottom: 12px;
             width: 10px;
             border-radius: 3px;
             z-index: 20;
@@ -1868,7 +1868,7 @@
 
         /**
          * ================================================================
-         * initWeightStrip – with metal bars + screws that glow with heat
+         * initWeightStrip – with metal bars that match scroll height
          * ================================================================
          */
         function initWeightStrip(strip) {
@@ -2679,11 +2679,10 @@
                 }
             }
 
-            // ---- weight strip with metal bars ----
+            // ---- weight strip with metal bars (no extra text) ----
             const weightStripHtml = `
               <div class="card weight-strip-card">
                 <div class="card-title">وزن روزانه</div>
-                <div class="card-sub">اسکرول کنید — نوارهای فلزی گداخته می‌شوند</div>
                 <div class="weight-glass" id="weightGlass">
                   <div class="weight-glass-etch">HQL</div>
                 </div>
