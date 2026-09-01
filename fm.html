@@ -86,6 +86,10 @@
         header button:hover {
             background: #00f0ff22;
         }
+        header button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
         .status {
             font-size: 13px;
             color: #888;
@@ -624,10 +628,10 @@
 
     <!-- ─── HEADER ─── -->
     <header>
-        <form id="auth">
-            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" />
-            <input id="token" type="password" placeholder="GitHub Token" />
-            <button type="submit">Connect</button>
+        <form id="auth" autocomplete="off">
+            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" autocomplete="off" />
+            <input id="token" type="password" placeholder="GitHub Token" autocomplete="new-password" />
+            <button type="submit" id="connectBtn">Connect</button>
         </form>
         <div class="status" id="status">Not connected</div>
     </header>
@@ -700,10 +704,4 @@
         const editor = {
             file: null, // { path, sha, name, content, size }
             dirty: false,
-            savedContent: '',
-            isOpen: false,
-        };
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  DOM REFS
-        // ━━━━━━━━━━━━
+      
