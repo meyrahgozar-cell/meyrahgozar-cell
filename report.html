@@ -1097,18 +1097,12 @@
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x mandatory;
             padding: 6px 2px 12px;
-            scrollbar-width: thin;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             touch-action: pan-x;
             cursor: grab;
             -webkit-user-select: none;
             user-select: none;
-        }
-        .weight-strip::-webkit-scrollbar {
-            height: 4px;
-        }
-        .weight-strip::-webkit-scrollbar-thumb {
-            background: rgba(180, 100, 255, 0.35);
-            border-radius: 4px;
         }
         .weight-strip::-webkit-scrollbar {
             display: none;
@@ -1795,7 +1789,7 @@
 
         /**
          * ============================================================
-         * FIXED: initWeightStrip – proper touch + drag + wheel + coast
+         * FIXED: initWeightStrip – natural scrolling with sparks & glow
          * ============================================================
          */
         function initWeightStrip(strip) {
@@ -1816,13 +1810,13 @@
             if (strip.dataset.lavaReady === "1") return;
             strip.dataset.lavaReady = "1";
 
-            // reset any inline style that might interfere
+            // reset styles for natural scrolling
             strip.style.direction = "ltr";
             strip.style.overflowX = "auto";
             strip.style.touchAction = "pan-x";
             strip.style.webkitOverflowScrolling = "touch";
             strip.style.cursor = "grab";
-            strip.style.scrollBehavior = "auto";
+            strip.style.scrollBehavior = "smooth"; // optional, but we want native
 
             // mark max chip
             const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
@@ -1847,33 +1841,18 @@
             });
 
             // ---- state ----
-            let isDragging = false;
-            let startX = 0,
-                startScroll = 0;
-            let vel = 0;
-            let lastMoveX = 0,
-                lastMoveTime = 0;
-            let raf = null;
             let glow = 0,
                 endHeat = 0;
+            let lastScrollTime = 0,
+                lastScrollPos = 0,
+                velocity = 0;
+            let raf = null;
             let sparkFromLeft = true;
             let lastSparkTime = 0;
             const MAX_SPARKS = 28;
 
-            const scrollMax = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
-
-            // ---- helpers ----
-            const stopRaf = () => { if (raf) { cancelAnimationFrame(raf);
-                    raf = null; } };
-
             const trimSparks = () => {
                 while (sparkLayer.childElementCount > MAX_SPARKS) sparkLayer.removeChild(sparkLayer.firstChild);
-            };
-
-            const setHeat = (body, ends) => {
-                glow = Math.max(0, Math.min(1, body));
-                endHeat = Math.max(0, Math.min(1, ends != null ? ends : endHeat));
-                paint();
             };
 
             const paint = () => {
@@ -1910,16 +1889,16 @@
             };
 
             const spawnSparks = (speed, fromLeft) => {
-                if (!sparkLayer || speed < 1.2) return;
+                if (!sparkLayer || speed < 1.0) return;
                 const now = performance.now();
-                if (now - lastSparkTime < 28) return;
+                if (now - lastSparkTime < 25) return;
                 lastSparkTime = now;
                 const w = strip.clientWidth,
                     h = strip.clientHeight;
                 if (w < 8 || h < 8) return;
                 const edgeX = fromLeft ? 6 : (w - 6);
                 const trailSign = fromLeft ? 1 : -1;
-                const n = Math.min(3, 1 + Math.floor((speed - 1.0) * 0.6));
+                const n = Math.min(3, 1 + Math.floor((speed - 0.8) * 0.6));
                 for (let i = 0; i < n; i++) {
                     const sp = document.createElement("div");
                     sp.className = "weight-spark";
@@ -1930,9 +1909,9 @@
                     sp.style.background = `hsl(${hue},100%,60%)`;
                     sp.style.boxShadow = `0 0 8px hsl(${hue},100%,55%)`;
                     sparkLayer.appendChild(sp);
-                    const trail = trailSign * (24 + speed * 28 + Math.random() * 20);
-                    const outward = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 14);
-                    const life = 220 + Math.random() * 220;
+                    const trail = trailSign * (20 + speed * 25 + Math.random() * 18);
+                    const outward = (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 12);
+                    const life = 200 + Math.random() * 200;
                     const t0 = performance.now();
                     const anim = (t) => {
                         const p = Math.min(1, (t - t0) / life);
@@ -1986,200 +1965,100 @@
                 trimSparks();
             };
 
-            const doScroll = (delta) => {
-                const before = strip.scrollLeft;
-                strip.scrollLeft = before + delta;
-                const after = strip.scrollLeft;
-                const moved = after - before;
-                const blocked = Math.abs(delta) > 2 && Math.abs(moved) < 0.5;
-                return { moved, blocked, atLeft: after <= 0.5, atRight: after >= scrollMax() - 0.5 };
-            };
+            // ---- Scroll handling ----
+            let scrollDecayRaf = null;
 
-            // ---- coast ----
-            const coast = () => {
-                stopRaf();
-                let exploded = false;
-                const lockedFromLeft = sparkFromLeft;
-
-                const step = () => {
-                    const speed = Math.abs(vel);
-                    if (speed >= 0.08) {
-                        const { blocked, atLeft, atRight } = doScroll(vel);
-                        if (blocked && !exploded && speed > 0.6) {
-                            exploded = true;
-                            edgeExplosion(atLeft || (!atRight && vel < 0));
-                            vel = 0;
-                            glow = Math.max(glow, 0.9);
-                            endHeat = 1;
-                            paint();
-                        } else {
-                            vel *= 0.975;
-                            if (!exploded && speed > 1.2) spawnSparks(speed, lockedFromLeft);
-                        }
-                        const target = Math.min(1, speed / 10);
-                        glow = Math.max(target * 0.45, glow * 0.97);
-                        endHeat = Math.max(target * 0.5, endHeat * 0.988);
-                    } else {
-                        vel = 0;
-                        glow *= 0.982;
-                        endHeat *= 0.991;
-                        if (glow < 0.008) glow = 0;
-                        if (endHeat < 0.008) endHeat = 0;
-                    }
-                    paint();
-                    if (vel !== 0 || glow > 0.01 || endHeat > 0.01) {
-                        raf = requestAnimationFrame(step);
-                    } else {
-                        setHeat(0, 0);
-                        stopRaf();
-                    }
-                };
-                raf = requestAnimationFrame(step);
-            };
-
-            // ---- pointer / touch / mouse ----
-            const onDragStart = (x) => {
-                if (isDragging) return;
-                isDragging = true;
-                stopRaf();
-                vel = 0;
-                startX = x;
-                startScroll = strip.scrollLeft;
-                lastMoveX = x;
-                lastMoveTime = performance.now();
-                strip.classList.add("is-dragging");
-                strip.style.scrollBehavior = "auto";
-                // prevent snap during drag
-                strip.style.scrollSnapType = "none";
-            };
-
-            const onDragMove = (x) => {
-                if (!isDragging) return;
-                const dx = x - startX;
-                // In LTR, drag left (negative dx) scrolls right (positive scrollLeft)
-                const delta = -dx;
-                doScroll(delta);
-
+            function onScroll() {
                 const now = performance.now();
-                const dt = Math.max(10, now - lastMoveTime);
-                const v = (x - lastMoveX) / dt * 16;
-                vel = v * 0.85;
-                lastMoveX = x;
-                lastMoveTime = now;
-                sparkFromLeft = dx > 0;
+                const currentPos = strip.scrollLeft;
+                const dt = now - lastScrollTime;
 
-                const speed = Math.abs(vel);
-                glow = Math.max(glow * 0.92, Math.min(1, speed / 7));
-                endHeat = Math.max(endHeat, Math.min(1, speed / 6));
-                if (speed > 1.2) spawnSparks(speed, sparkFromLeft);
-                paint();
+                if (dt > 0) {
+                    const dx = currentPos - lastScrollPos;
+                    velocity = dx / dt * 16; // pixels per frame ~ 60fps
+                    const absV = Math.abs(velocity);
 
-                // check if we hit an edge
-                const maxScroll = scrollMax();
-                if (strip.scrollLeft <= 0.5 || strip.scrollLeft >= maxScroll - 0.5) {
-                    if (Math.abs(dx) > 6) {
-                        edgeExplosion(strip.scrollLeft <= 0.5);
-                        glow = 0.85;
-                        endHeat = 1;
-                        vel = 0;
-                        paint();
+                    // determine direction
+                    if (absV > 0.5) sparkFromLeft = velocity > 0;
+
+                    // spawn sparks based on speed
+                    if (absV > 1.0) spawnSparks(absV, sparkFromLeft);
+
+                    // update glow
+                    glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
+                    endHeat = Math.max(endHeat * 0.92, Math.min(1, absV / 10));
+
+                    // check edges
+                    const maxScroll = strip.scrollWidth - strip.clientWidth;
+                    if (currentPos <= 1 || currentPos >= maxScroll - 1) {
+                        if (absV > 2) {
+                            edgeExplosion(currentPos <= 1);
+                            glow = 0.9;
+                            endHeat = 1;
+                            velocity = 0;
+                        }
                     }
-                }
-            };
 
-            const onDragEnd = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                strip.classList.remove("is-dragging");
-                strip.style.scrollSnapType = "";
-                if (Math.abs(vel) > 0.4) {
-                    coast();
-                } else {
-                    vel = 0;
-                    const cool = () => {
+                    paint();
+                }
+
+                lastScrollTime = now;
+                lastScrollPos = currentPos;
+
+                // decay glow when scrolling stops
+                if (scrollDecayRaf) cancelAnimationFrame(scrollDecayRaf);
+                // we'll use a decay loop that runs when velocity is low
+                // but we can also use a simple timeout
+                clearTimeout(strip._decayTimer);
+                strip._decayTimer = setTimeout(() => {
+                    // gradually reduce glow
+                    const decay = () => {
+                        if (Math.abs(velocity) < 0.1 && glow < 0.02 && endHeat < 0.02) {
+                            setHeat(0, 0);
+                            return;
+                        }
                         glow *= 0.98;
                         endHeat *= 0.99;
-                        if (glow < 0.008) glow = 0;
-                        if (endHeat < 0.008) endHeat = 0;
+                        if (glow < 0.01) glow = 0;
+                        if (endHeat < 0.01) endHeat = 0;
                         paint();
-                        if (glow > 0.01 || endHeat > 0.01) raf = requestAnimationFrame(cool);
-                        else setHeat(0, 0);
+                        if (glow > 0.01 || endHeat > 0.01) {
+                            requestAnimationFrame(decay);
+                        } else {
+                            setHeat(0, 0);
+                        }
                     };
-                    raf = requestAnimationFrame(cool);
-                }
-            };
+                    decay();
+                }, 150);
+            }
 
-            // ---- Mouse events ----
-            strip.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                onDragStart(e.clientX);
-            });
-
-            document.addEventListener("mousemove", (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                onDragMove(e.clientX);
-            });
-
-            document.addEventListener("mouseup", () => {
-                if (isDragging) onDragEnd();
-            });
-
-            // ---- Touch events (non-passive for precise control) ----
-            strip.addEventListener("touchstart", (e) => {
-                const t = e.touches[0];
-                if (!t) return;
-                // allow native scroll if not dragging
-                onDragStart(t.clientX);
-            }, { passive: true });
-
-            strip.addEventListener("touchmove", (e) => {
-                if (!isDragging) return;
-                const t = e.touches[0];
-                if (!t) return;
-                // prevent native scroll while dragging
-                e.preventDefault();
-                onDragMove(t.clientX);
-            }, { passive: false });
-
-            strip.addEventListener("touchend", (e) => {
-                if (isDragging) onDragEnd();
-            }, { passive: true });
-
-            strip.addEventListener("touchcancel", () => {
-                if (isDragging) onDragEnd();
-            }, { passive: true });
-
-            // ---- Wheel ----
-            strip.addEventListener("wheel", (e) => {
-                e.preventDefault();
-                const dy = e.deltaY + e.deltaX;
-                if (Math.abs(dy) < 1) return;
-                const delta = dy;
-                const { blocked, atLeft, atRight } = doScroll(delta);
-                vel = dy * 0.25;
-                if (Math.abs(dy) > 4) sparkFromLeft = dy < 0;
-                if (blocked && Math.abs(dy) > 6) {
-                    edgeExplosion(atLeft || dy < 0);
-                    glow = 0.9;
-                    endHeat = 1;
-                    vel = 0;
-                } else {
-                    glow = Math.max(glow, Math.min(1, Math.abs(vel) / 6));
-                    endHeat = Math.max(endHeat, glow);
-                    if (Math.abs(vel) > 1.2) spawnSparks(Math.abs(vel), sparkFromLeft);
-                }
+            function setHeat(body, ends) {
+                glow = Math.max(0, Math.min(1, body));
+                endHeat = Math.max(0, Math.min(1, ends != null ? ends : endHeat));
                 paint();
-                // coast after wheel
-                if (Math.abs(vel) > 0.3) coast();
-            }, { passive: false });
+            }
 
-            // ---- Cleanup on re-render ----
-            // store cleanup reference
+            // attach scroll listener (passive for performance)
+            strip.addEventListener("scroll", onScroll, { passive: true });
+
+            // wheel events: scroll already fires, but we can also catch wheel for extra effects
+            strip.addEventListener("wheel", (e) => {
+                // let default scroll happen; we'll detect via scroll event
+                // but we can pre-set direction for sparks
+                const delta = e.deltaX || e.deltaY;
+                if (Math.abs(delta) > 2) sparkFromLeft = delta < 0;
+            }, { passive: true });
+
+            // clean up on re-render
             if (strip._cleanup) strip._cleanup();
             strip._cleanup = () => {
-                // no-op for now, but we could remove listeners if needed
+                strip.removeEventListener("scroll", onScroll);
+                clearTimeout(strip._decayTimer);
+                if (scrollDecayRaf) cancelAnimationFrame(scrollDecayRaf);
             };
+
+            // initial paint
+            paint();
         }
 
         async function loadReport() {
