@@ -922,6 +922,7 @@ a.rank-item-link {
 }
 .weight-strip-card { margin-bottom: 14px; }
 .weight-strip {
+  direction: ltr;
   display: flex;
   gap: 10px;
   overflow-x: auto;
@@ -1451,67 +1452,73 @@ async function openUserBadges(userId, displayName) {
 
 
 function initWeightStrip(strip) {
-  if (!strip || strip.dataset.ready) return;
-  strip.dataset.ready = "1";
+  if (!strip) return;
+  // re-bind after each render
+  const clone = strip.cloneNode(true);
+  strip.parentNode.replaceChild(clone, strip);
+  strip = clone;
 
-  // highlight + center on max weight
+  // LTR scroll math (page is RTL)
+  strip.style.direction = "ltr";
+
+  const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+
   const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
   let maxEl = null, maxV = -Infinity;
   chips.forEach(ch => {
     const t = ch.querySelector(".weight-chip-val");
     if (!t) return;
-    const v = parseFloat(String(t.textContent).replace(/[^\d.]/g, "").replace("٫", ".")) || 0;
-    // Persian digits
-    const raw = t.textContent;
-    const norm = raw.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[^\d.]/g, "");
-    const num = parseFloat(norm) || 0;
+    const num = parseFloat(faToEn(t.textContent).replace(/[^\d.]/g, "")) || 0;
     if (num > maxV) { maxV = num; maxEl = ch; }
   });
-  if (maxEl) {
-    maxEl.classList.add("max");
-    requestAnimationFrame(() => {
-      const mid = maxEl.offsetLeft - (strip.clientWidth / 2) + (maxEl.offsetWidth / 2);
-      strip.scrollLeft = Math.max(0, mid);
-    });
-  }
+  if (maxEl) maxEl.classList.add("max");
 
-  // drag + inertia
-  let vel = 0, lastX = 0, lastT = 0, dragging = false, moved = false;
+  const centerOn = (el) => {
+    if (!el) return;
+    const mid = el.offsetLeft - (strip.clientWidth / 2) + (el.offsetWidth / 2);
+    strip.scrollLeft = Math.max(0, Math.min(strip.scrollWidth - strip.clientWidth, mid));
+  };
+
+  // center once after layout
+  requestAnimationFrame(() => requestAnimationFrame(() => centerOn(maxEl)));
+
+  let vel = 0, lastX = 0, lastT = 0, dragging = false;
   let raf = null;
+  let userMoved = false;
 
   const stopRaf = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
+
+  const maxScroll = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
 
   const coast = () => {
     stopRaf();
     const step = () => {
+      if (Math.abs(vel) < 0.15) {
+        // clamp without bounce-to-start
+        const ms = maxScroll();
+        if (strip.scrollLeft < 0) strip.scrollLeft = 0;
+        if (strip.scrollLeft > ms) strip.scrollLeft = ms;
+        return;
+      }
       strip.scrollLeft += vel;
-      vel *= 0.95; // friction
-      if (Math.abs(vel) > 0.3) {
-        // soft elastic edges
-        const maxScroll = strip.scrollWidth - strip.clientWidth;
-        if (strip.scrollLeft < 0) { strip.scrollLeft = 0; vel *= -0.4; }
-        else if (strip.scrollLeft > maxScroll) { strip.scrollLeft = maxScroll; vel *= -0.4; }
-        raf = requestAnimationFrame(step);
+      const ms = maxScroll();
+      if (strip.scrollLeft < 0) {
+        strip.scrollLeft = 0;
+        vel = 0;
+      } else if (strip.scrollLeft > ms) {
+        strip.scrollLeft = ms;
+        vel = 0;
       } else {
-        // settle elastic
-        const maxScroll = Math.max(0, strip.scrollWidth - strip.clientWidth);
-        if (strip.scrollLeft < 0 || strip.scrollLeft > maxScroll) {
-          const target = Math.max(0, Math.min(maxScroll, strip.scrollLeft));
-          const ease = () => {
-            const d = target - strip.scrollLeft;
-            strip.scrollLeft += d * 0.18;
-            if (Math.abs(d) > 0.5) raf = requestAnimationFrame(ease);
-          };
-          raf = requestAnimationFrame(ease);
-        }
+        vel *= 0.95;
+        raf = requestAnimationFrame(step);
       }
     };
     raf = requestAnimationFrame(step);
   };
 
-  const onDown = (x) => {
+  const onDown = (x, e) => {
     dragging = true;
-    moved = false;
+    userMoved = false;
     stopRaf();
     vel = 0;
     lastX = x;
@@ -1522,10 +1529,10 @@ function initWeightStrip(strip) {
     if (!dragging) return;
     const now = performance.now();
     const dx = x - lastX;
-    const dt = Math.max(1, now - lastT);
-    if (Math.abs(dx) > 2) moved = true;
+    const dt = Math.max(8, now - lastT);
+    if (Math.abs(dx) > 1) userMoved = true;
     strip.scrollLeft -= dx;
-    vel = -dx / dt * 16; // scale to frame
+    vel = (-dx / dt) * 14;
     lastX = x;
     lastT = now;
   };
@@ -1533,16 +1540,30 @@ function initWeightStrip(strip) {
     if (!dragging) return;
     dragging = false;
     strip.classList.remove("is-dragging");
-    coast();
+    if (userMoved) coast();
   };
 
-  strip.addEventListener("mousedown", e => { onDown(e.clientX); e.preventDefault(); });
+  strip.addEventListener("mousedown", e => {
+    onDown(e.clientX);
+    e.preventDefault();
+  });
   window.addEventListener("mousemove", e => onMove(e.clientX));
   window.addEventListener("mouseup", onUp);
   strip.addEventListener("touchstart", e => onDown(e.touches[0].clientX), { passive: true });
-  strip.addEventListener("touchmove", e => onMove(e.touches[0].clientX), { passive: true });
+  strip.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    onMove(e.touches[0].clientX);
+  }, { passive: true });
   strip.addEventListener("touchend", onUp);
   strip.addEventListener("touchcancel", onUp);
+
+  // native wheel horizontal
+  strip.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      strip.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, { passive: false });
 }
 
 
@@ -1559,7 +1580,7 @@ async function loadReport() {
   const range = jalaliRange(selectedYear, selectedMonth);
 
   try {
-    const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes, weightRes] = await Promise.all([
+    const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes] = await Promise.all([
       db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
       db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
       db.from("daily_logs")
@@ -1573,13 +1594,7 @@ async function loadReport() {
         .gte("log_date", range.start)
         .lte("log_date", range.end),
       db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
-      db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end }),
-      db.from("user_weights")
-        .select("weight_kg, log_date, created_at")
-        .eq("user_id", currentUser.id)
-        .gte("log_date", range.start)
-        .lte("log_date", range.end)
-        .order("log_date", { ascending: true })
+      db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end })
     ]);
 
     if (statsRes.error) throw statsRes.error;
@@ -1693,7 +1708,7 @@ async function loadReport() {
 
     // کیلومتر هر نفر در بازه ماه
     try {
-      const kmRes = await db.rpc("get_monthly_user_km", {
+      const kmRes = await db.rpc("get_month_user_km", {
         p_start: range.start,
         p_end: range.end
       });
@@ -1740,15 +1755,10 @@ async function loadReport() {
       u.month_km = kmByUser[u.user_id] || kmByUser[String(u.user_id)] || 0;
     });
 
-    // وزن روزانه از user_weights یا exercise_logs
+    // وزن روزانه از exercise_logs (جدول user_weights ستون سازگار نداشت)
     const weightByDay = {};
-    if (weightRes && !weightRes.error && weightRes.data) {
-      weightRes.data.forEach(w => {
-        if (w.log_date && w.weight_kg != null) weightByDay[w.log_date] = Number(w.weight_kg);
-      });
-    }
     (exRes.data || []).forEach(e => {
-      if (e.log_date && e.weight_kg != null && !weightByDay[e.log_date]) {
+      if (e.log_date && e.weight_kg != null) {
         weightByDay[e.log_date] = Number(e.weight_kg);
       }
     });
