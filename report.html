@@ -1032,7 +1032,8 @@ a.rank-item-link {
 .weight-strip-wrap {
   position: relative;
   border-radius: 16px;
-  overflow: visible;
+  overflow: hidden;
+  contain: layout paint;
 }
 .weight-strip-wrap::after {
   content: "";
@@ -1055,9 +1056,14 @@ a.rank-item-link {
 }
 .weight-spark-layer {
   position: absolute;
-  inset: -20px -12px;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
   z-index: 3;
 }
 .weight-spark {
@@ -1534,8 +1540,10 @@ async function openUserBadges(userId, displayName) {
 function initWeightStrip(strip) {
   if (!strip) return;
   const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
-  let sparkLayer = wrap && wrap.querySelector(".weight-spark-layer");
-  if (wrap && !sparkLayer) {
+  if (!wrap) return;
+
+  let sparkLayer = wrap.querySelector(".weight-spark-layer");
+  if (!sparkLayer) {
     sparkLayer = document.createElement("div");
     sparkLayer.className = "weight-spark-layer";
     wrap.insertBefore(sparkLayer, strip);
@@ -1564,11 +1572,17 @@ function initWeightStrip(strip) {
   let raf = null;
   let glow = 0;
   let lastSpark = 0;
-  // جهت پایدار اسپارکل (تا وسط اینرسی عوض نشود)
   let sparkFromLeft = true;
-  let moveAccum = 0; // حرکت واقعی انگشت برای آستانه
+  let moveAccum = 0;
+  const MAX_SPARKS = 28;
 
-  const stopRaf = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
+  const stopRaf = () => { if (raf) { cancelAnimationFrame(raf); raf = null; } };
+
+  const trimSparks = () => {
+    while (sparkLayer.childElementCount > MAX_SPARKS) {
+      sparkLayer.removeChild(sparkLayer.firstChild);
+    }
+  };
 
   const setGlow = (v) => {
     glow = Math.max(0, Math.min(1, v));
@@ -1586,100 +1600,73 @@ function initWeightStrip(strip) {
       }
     }
     strip.style.filter = heat > 0.12
-      ? `brightness(${1 + heat * 0.3}) saturate(${1 + heat * 0.4})`
+      ? `brightness(${1 + heat * 0.28}) saturate(${1 + heat * 0.35})`
       : "";
   };
 
+  // مختصات فقط نسبت به خود weight-strip (بدون آفست لایه)
   const spawnSparks = (speed, fromLeft) => {
-    // فقط در حرکت واقعی و با آستانه بالاتر
-    if (!sparkLayer || speed < 1.2) return;
+    if (!sparkLayer || speed < 1.3) return;
     const now = performance.now();
-    if (now - lastSpark < 28) return; // کمتر اسپم
+    if (now - lastSpark < 32) return;
     lastSpark = now;
 
-    const rect = strip.getBoundingClientRect();
-    const w = rect.width;
-    const h = Math.max(36, rect.height);
-    const edgeX = fromLeft ? 10 : (w - 10);
-    const trailSign = fromLeft ? 1 : -1;
+    const w = strip.clientWidth;
+    const h = strip.clientHeight;
+    if (w < 8 || h < 8) return;
 
-    const n = Math.min(4, 1 + Math.floor((speed - 1) * 0.9));
+    const edgeX = fromLeft ? 8 : (w - 8);
+    const trailSign = fromLeft ? 1 : -1;
+    const n = Math.min(3, 1 + Math.floor((speed - 1.2) * 0.7));
+
     for (let i = 0; i < n; i++) {
       const sp = document.createElement("div");
       sp.className = "weight-spark";
-      const size = 2 + Math.random() * (2.5 + Math.min(3, speed * 0.4));
+      const size = 2 + Math.random() * (2 + Math.min(2.5, speed * 0.35));
       sp.style.width = size + "px";
       sp.style.height = size + "px";
-      const y = 6 + Math.random() * (h - 12);
-      const x = edgeX + (Math.random() - 0.5) * 8;
+      const y = 8 + Math.random() * Math.max(8, h - 16);
+      const x = edgeX + (Math.random() - 0.5) * 6;
       sp.style.left = x + "px";
       sp.style.top = y + "px";
-      const hue = 15 + Math.random() * 45;
-      sp.style.background = `hsl(${hue}, 100%, ${50 + Math.random() * 30}%)`;
-      sp.style.boxShadow = `0 0 ${4 + speed * 0.5}px hsl(${hue},100%,60%), 0 0 12px rgba(255,80,0,0.75)`;
+      const hue = 18 + Math.random() * 40;
+      sp.style.background = `hsl(${hue}, 100%, ${52 + Math.random() * 25}%)`;
+      sp.style.boxShadow = `0 0 6px hsl(${hue},100%,60%), 0 0 12px rgba(255,80,0,0.7)`;
       sparkLayer.appendChild(sp);
 
-      const trail = trailSign * (28 + speed * 40 + Math.random() * 40);
-      const outward = (Math.random() < 0.5 ? -1 : 1) * (12 + Math.random() * 28 + speed * 5);
-      const life = 280 + Math.random() * 320;
+      const trail = trailSign * (24 + speed * 32 + Math.random() * 28);
+      const outward = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 20 + speed * 3);
+      const life = 240 + Math.random() * 260;
       const t0 = performance.now();
       const anim = (t) => {
         const p = Math.min(1, (t - t0) / life);
-        const ease = 1 - Math.pow(1 - p, 1.6);
-        const drag = ease * (1 + p * 0.25);
-        sp.style.transform = `translate(${trail * drag}px, ${outward * ease}px) scale(${1 - p * 0.75})`;
-        sp.style.opacity = String(Math.max(0, 1 - p * 1.05));
-        if (p < 1) requestAnimationFrame(anim);
-        else sp.remove();
+        if (p >= 1) { sp.remove(); return; }
+        const ease = 1 - Math.pow(1 - p, 1.5);
+        sp.style.transform = `translate(${trail * ease}px, ${outward * ease}px) scale(${1 - p * 0.7})`;
+        sp.style.opacity = String(1 - p);
+        requestAnimationFrame(anim);
       };
       requestAnimationFrame(anim);
     }
-
-    if (speed > 2.2) {
-      for (let i = 0; i < 1; i++) {
-        const fr = document.createElement("div");
-        fr.className = "weight-spark";
-        const sz = 2.5 + Math.random() * 2.5;
-        fr.style.width = sz + "px";
-        fr.style.height = sz + "px";
-        fr.style.left = (edgeX + (Math.random() - 0.5) * 6) + "px";
-        fr.style.top = (h * 0.25 + Math.random() * h * 0.5) + "px";
-        fr.style.background = "#ffe08a";
-        fr.style.boxShadow = "0 0 8px #ff9400, 0 0 14px #ff4d00";
-        sparkLayer.appendChild(fr);
-        const ox = trailSign * (6 + Math.random() * 16);
-        const oy = (Math.random() - 0.5) * 32;
-        const t0 = performance.now();
-        const life = 160 + Math.random() * 100;
-        const anim = (t) => {
-          const p = Math.min(1, (t - t0) / life);
-          fr.style.transform = `translate(${ox * p}px, ${oy * p}px) scale(${1.1 - p})`;
-          fr.style.opacity = String(1 - p);
-          if (p < 1) requestAnimationFrame(anim);
-          else fr.remove();
-        };
-        requestAnimationFrame(anim);
-      }
-    }
+    trimSparks();
   };
 
   const coast = () => {
     stopRaf();
-    // جهت اسپارکل در کل اینرسی قفل است روی sparkFromLeft
     const lockedFromLeft = sparkFromLeft;
     const step = () => {
       const speed = Math.abs(vel);
-      if (speed < 0.08) {
-        setGlow(glow * 0.88);
+      if (speed < 0.1) {
+        setGlow(glow * 0.86);
         if (glow > 0.03) raf = requestAnimationFrame(step);
-        else setGlow(0);
+        else { setGlow(0); stopRaf(); }
         return;
       }
-      strip.scrollBy({ left: vel, behavior: "instant" });
-      // اصطکاک کم → اینرسی بیشتر
-      vel *= 0.978;
+      // یک مسیر اسکرول برای هر دو جهت (بدون scrollBy ناپایدار در RTL)
+      strip.scrollLeft += vel;
+      vel *= 0.975;
       setGlow(Math.min(1, speed / 10));
-      spawnSparks(speed, lockedFromLeft);
+      if (speed > 1.4) spawnSparks(speed, lockedFromLeft);
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -1694,35 +1681,33 @@ function initWeightStrip(strip) {
     lastT = performance.now();
     strip.classList.add("is-dragging");
   };
+
   const onMove = (x) => {
     if (!dragging) return;
     const now = performance.now();
     const dx = x - lastX;
-    const dt = Math.max(10, now - lastT);
+    const dt = Math.max(12, now - lastT);
     moveAccum += Math.abs(dx);
-    strip.scrollBy({ left: -dx, behavior: "instant" });
-    // اینرسی اولیه قوی‌تر
-    vel = (-dx / dt) * 18;
+
+    // اسکرول مستقیم — هر دو جهت یکسان
+    strip.scrollLeft -= dx;
+    vel = (-dx / dt) * 17;
     lastX = x;
     lastT = now;
 
-    // فقط بعد از حرکت واقعی (~۱۲px) جهت و اسپارکل
-    if (moveAccum < 12) return;
+    if (moveAccum < 14) return;
+    if (Math.abs(dx) > 2) sparkFromLeft = dx > 0;
 
-    if (Math.abs(dx) > 2) {
-      // انگشت به راست → fromLeft true (لبه چپ) مطابق حس قبلی کاربر
-      sparkFromLeft = dx > 0;
-    }
     const speed = Math.abs(vel);
     setGlow(Math.min(1, speed / 8));
-    spawnSparks(speed, sparkFromLeft);
+    if (speed > 1.3) spawnSparks(speed, sparkFromLeft);
   };
+
   const onUp = () => {
     if (!dragging) return;
     dragging = false;
     strip.classList.remove("is-dragging");
-    // فقط اگر واقعاً کشیده شده اینرسی
-    if (moveAccum >= 12 && Math.abs(vel) > 0.5) coast();
+    if (moveAccum >= 14 && Math.abs(vel) > 0.6) coast();
     else {
       vel = 0;
       setGlow(0);
@@ -1739,12 +1724,12 @@ function initWeightStrip(strip) {
   strip.addEventListener("wheel", e => {
     const dy = e.deltaY;
     if (Math.abs(dy) < 1) return;
-    strip.scrollBy({ left: dy, behavior: "instant" });
-    vel = dy * 0.22;
+    strip.scrollLeft += dy;
+    vel = dy * 0.2;
     if (Math.abs(dy) > 4) sparkFromLeft = dy > 0;
     moveAccum = 20;
     setGlow(Math.min(1, Math.abs(vel) / 6));
-    spawnSparks(Math.abs(vel), sparkFromLeft);
+    if (Math.abs(vel) > 1.3) spawnSparks(Math.abs(vel), sparkFromLeft);
     coast();
     e.preventDefault();
   }, { passive: false });
