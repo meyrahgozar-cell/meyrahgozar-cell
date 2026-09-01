@@ -14,6 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js">
     </script>
     <style>
+        /* ====== global styles (unchanged) ====== */
         :root {
             --bg: #05060a;
             --card: #0d1019;
@@ -45,7 +46,6 @@
             -webkit-font-smoothing: antialiased;
             position: relative;
         }
-        /* ---- Noise texture overlay ---- */
         body::before {
             content: "";
             position: fixed;
@@ -1130,27 +1130,32 @@
             margin-top: 2px;
         }
 
-        /* ====== Weight strip with retro bar energy ====== */
+        /* ====== Energy bar – retro vertical cells, hidden when off ====== */
         .weight-strip-card {
             position: relative;
             overflow: visible;
         }
 
-        /* ---- Energy bar - retro vertical bars ---- */
         .energy-bar-wrap {
             position: relative;
             height: 28px;
             margin: 0 0 6px 0;
-            background: rgba(0, 0, 0, 0.7);
             border-radius: 3px;
-            border: 1px solid rgba(80, 60, 30, 0.5);
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 0 10px rgba(80, 50, 20, 0.1);
             overflow: hidden;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             padding: 3px 4px;
             gap: 2px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(80, 60, 30, 0.5);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 0 10px rgba(80, 50, 20, 0.1);
         }
+        .energy-bar-wrap.active {
+            opacity: 1;
+        }
+        /* noise overlay */
         .energy-bar-wrap::before {
             content: "";
             position: absolute;
@@ -1179,18 +1184,18 @@
             display: flex;
             gap: 2px;
             height: 100%;
-            align-items: center;
-            transition: width 0.05s linear;
-            width: 0%;
+            width: 100%;
+            align-items: stretch;
+            position: relative;
+            z-index: 1;
         }
 
         .energy-cell {
-            flex: 0 0 6px;
-            height: 100%;
+            flex: 1 1 0;
+            min-width: 4px;
             border-radius: 1px;
-            background: #1a0a00;
+            background: transparent;
             transition: background 0.05s ease, box-shadow 0.05s ease;
-            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
         }
         .energy-cell.on {
             background: linear-gradient(180deg, #ffcc66 0%, #ff8c1a 40%, #cc6a0a 100%);
@@ -1228,7 +1233,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* ---- HQL neon glow (now powered by energy) ---- */
+        /* ---- HQL neon glow (powered by energy) ---- */
         .hql-neon {
             font-size: 34px;
             font-weight: 900;
@@ -1510,6 +1515,11 @@
     </div>
 
     <script>
+        // ================================================================
+        // All JavaScript remains the same as previous version, except for
+        // the energy parameters and the visibility toggle in updateEnergyBar.
+        // ================================================================
+
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
         const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
@@ -1930,16 +1940,16 @@
             }).join("");
         }
 
-        // --- initWeightStrip with retro bar energy system ---
+        // --- initWeightStrip with retro bar energy, harder storage, faster consumption ---
         function initWeightStrip(strip) {
             if (!strip) return;
             const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
             if (!wrap) return;
 
-            // find energy bar elements
             const card = strip.closest(".weight-strip-card");
             const energyFill = card ? card.querySelector(".energy-bar-fill") : null;
             const energyPct = card ? card.querySelector(".energy-pct") : null;
+            const energyWrap = card ? card.querySelector(".energy-bar-wrap") : null;
             const hqlNeon = card ? card.querySelector(".hql-neon") : null;
 
             let sparkLayer = wrap.querySelector(".weight-spark-layer");
@@ -1982,13 +1992,15 @@
                 }
             });
 
-            // ---- Energy system state ----
+            // ---- Energy system ----
             let energy = 0;
             const MAX_ENERGY = 100;
-            const NUM_CELLS = 20;
+            const NUM_CELLS = 24;
 
-            const CONSUMPTION_RATE = 1.2; // faster consumption
-            const CHARGE_RATE = 0.015; // much lower conversion rate (harder to store)
+            // MUCH FASTER consumption, MUCH HARDER storage
+            const CONSUMPTION_RATE = 2.8; // per second
+            const CHARGE_RATE = 0.004; // very low
+            const SPEED_EXP = 2.3; // high exponent for speed → gain
 
             let glow = 0;
             let endHeat = 0;
@@ -2006,12 +2018,11 @@
             };
 
             const updateEnergyBar = () => {
-                if (!energyFill) return;
-                // create cells
+                if (!energyFill || !energyWrap) return;
                 const pct = Math.min(100, energy);
                 const cellsOn = Math.floor((pct / 100) * NUM_CELLS);
 
-                // rebuild cells
+                // Clear and rebuild cells
                 energyFill.innerHTML = '';
                 for (let i = 0; i < NUM_CELLS; i++) {
                     const cell = document.createElement('div');
@@ -2029,16 +2040,27 @@
                     energyPct.textContent = Math.round(pct) + '%';
                 }
 
-                // update HQL neon intensity
+                // Toggle visibility of the whole energy bar
+                if (energy > 0.5) {
+                    energyWrap.classList.add('active');
+                } else {
+                    energyWrap.classList.remove('active');
+                }
+
+                // Update HQL neon intensity: flat until 20, then linear fade below 20
                 if (hqlNeon) {
-                    const intensity = Math.min(1, energy / 20); // 20% threshold
+                    let intensity = 0;
+                    if (energy >= 20) {
+                        intensity = 1.0;
+                    } else {
+                        intensity = Math.max(0, energy / 20);
+                    }
                     hqlNeon.style.setProperty('--neon-intensity', intensity);
                     hqlNeon.classList.toggle('lit', intensity > 0.02);
                 }
             };
 
             const getGlowIntensity = () => {
-                // flat until 20%, then gradual fade to 0
                 if (energy >= 20) {
                     return 1.0;
                 } else {
@@ -2079,16 +2101,16 @@
             };
 
             const spawnSparks = (speed, fromLeft) => {
-                if (!sparkLayer || speed < 1.0) return;
+                if (!sparkLayer || speed < 0.6) return; // lower threshold
                 const now = performance.now();
-                if (now - lastSparkTime < 25) return;
+                if (now - lastSparkTime < 20) return;
                 lastSparkTime = now;
                 const w = strip.clientWidth,
                     h = strip.clientHeight;
                 if (w < 8 || h < 8) return;
                 const edgeX = fromLeft ? 6 : (w - 6);
                 const trailSign = fromLeft ? 1 : -1;
-                const n = Math.min(3, 1 + Math.floor((speed - 0.8) * 0.6));
+                const n = Math.min(3, 1 + Math.floor((speed - 0.4) * 0.5));
                 for (let i = 0; i < n; i++) {
                     const sp = document.createElement('div');
                     sp.className = 'weight-spark';
@@ -2155,9 +2177,7 @@
                 trimSparks();
             };
 
-            // ---- Energy update ----
             function updateEnergy(deltaTime) {
-                // consume energy - faster consumption
                 if (energy > 0) {
                     energy = Math.max(0, energy - CONSUMPTION_RATE * deltaTime);
                 }
@@ -2165,7 +2185,6 @@
                 paint();
             }
 
-            // ---- Scroll handler ----
             function onScroll() {
                 const now = performance.now();
                 const currentPos = strip.scrollLeft;
@@ -2178,17 +2197,15 @@
 
                     if (absV > 0.5) sparkFromLeft = velocity < 0;
 
-                    // Charge energy based on speed - very low conversion (hard to store)
-                    if (absV > 0.8) {
-                        // energy gain = speed^1.8 * CHARGE_RATE (very hard to gain)
-                        const gain = Math.pow(absV, 1.8) * CHARGE_RATE * dt;
+                    // Charge energy: very hard (speed^2.3 * 0.004)
+                    if (absV > 0.6) {
+                        const gain = Math.pow(absV, SPEED_EXP) * CHARGE_RATE * dt;
                         energy = Math.min(MAX_ENERGY, energy + gain);
                         updateEnergyBar();
 
-                        // spawn sparks
-                        spawnSparks(absV, sparkFromLeft);
+                        // Spawn sparks at lower threshold
+                        if (absV > 0.6) spawnSparks(absV, sparkFromLeft);
 
-                        // glow from scroll
                         glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
                         endHeat = Math.max(endHeat * 0.92, Math.min(1, absV / 10));
                     }
@@ -2238,7 +2255,7 @@
 
             strip.addEventListener('scroll', onScroll, { passive: true });
 
-            // ---- Energy consumption loop ----
+            // Energy loop
             function energyLoop(timestamp) {
                 const now = performance.now();
                 const delta = (now - lastEnergyUpdate) / 1000;
@@ -2248,7 +2265,6 @@
                 }
                 requestAnimationFrame(energyLoop);
             }
-            // start energy loop
             lastEnergyUpdate = performance.now();
             requestAnimationFrame(energyLoop);
 
@@ -2288,7 +2304,7 @@
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
 
-            // ---- Touch: stop propagation ----
+            // ---- Touch ----
             function stopTouchPropagation(e) {
                 e.stopPropagation();
             }
@@ -2321,6 +2337,10 @@
             updateEnergyBar();
             paint();
         }
+
+        // ======== loadReport and renderReport are unchanged ========
+        // (they use the same weight strip HTML with energy bar)
+        // I'll keep them concise.
 
         async function loadReport() {
             const seq = ++reportLoadSeq;
@@ -2772,7 +2792,6 @@
                 }
             }
 
-            // weight strip with retro bar energy
             const weightStripHtml = `
               <div class="card weight-strip-card">
                 <div class="card-title">وزن روزانه</div>
