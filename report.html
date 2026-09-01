@@ -922,7 +922,7 @@ a.rank-item-link {
 }
 .weight-strip-card {
   margin-bottom: 14px;
-  overflow: hidden;
+  overflow: visible;
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
@@ -936,7 +936,7 @@ a.rank-item-link {
   gap: 10px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: none;
   padding: 6px 2px 12px;
   scrollbar-width: thin;
 }
@@ -1202,6 +1202,35 @@ a.rank-item-link {
 @keyframes moltenPulse {
   from { filter: contrast(1.1) saturate(1.15) brightness(1); }
   to { filter: contrast(1.25) saturate(1.35) brightness(1.12); }
+}
+
+
+/* === weight scroller core (stable) === */
+.weight-strip {
+  direction: ltr !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 4px 12px;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 5;
+}
+.weight-strip::-webkit-scrollbar { display: none; }
+.weight-strip.is-dragging { cursor: grabbing; }
+.weight-chip {
+  scroll-snap-align: none !important;
+  flex: 0 0 auto !important;
 }
 
 </style>
@@ -1662,133 +1691,107 @@ async function openUserBadges(userId, displayName) {
 
 
 function initWeightStrip(strip) {
-  if (!strip) return;
-  const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
-  if (!wrap) return;
+  if (!strip || strip.dataset.lavaReady === "1") return;
+  strip.dataset.lavaReady = "1";
 
-  let sparkLayer = wrap.querySelector(".weight-spark-layer");
-  if (!sparkLayer) {
-    sparkLayer = document.createElement("div");
-    sparkLayer.className = "weight-spark-layer";
-    wrap.insertBefore(sparkLayer, strip);
-  }
+  const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
+  const sparkLayer = wrap && wrap.querySelector(".weight-spark-layer");
   const glass = document.getElementById("weightGlass");
   const endL = document.getElementById("weightEndL");
   const endR = document.getElementById("weightEndR");
 
-  if (strip.dataset.lavaReady === "1") return;
-  strip.dataset.lavaReady = "1";
-
-  // اسکرول پایدار: LTR برای ریاضی، ظاهر روزها همان ترتیب DOM (روز ۱ اول)
   strip.style.direction = "ltr";
-  strip.style.overflowX = "auto";
-  strip.style.touchAction = "pan-x";
-  strip.style.webkitOverflowScrolling = "touch";
+  strip.style.scrollSnapType = "none";
+  strip.style.scrollBehavior = "auto";
 
   const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
 
-  const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
-  let maxEl = null, maxV = -Infinity;
-  chips.forEach(ch => {
-    const t = ch.querySelector(".weight-chip-val");
-    if (!t) return;
-    const num = parseFloat(faToEn(t.textContent).replace(/[^\d.]/g, "")) || 0;
-    if (num > maxV) { maxV = num; maxEl = ch; }
-  });
-  if (maxEl) maxEl.classList.add("max");
-  requestAnimationFrame(() => {
+  // فقط یک‌بار مرکز روی بیشترین وزن — بدون تکرار
+  if (!strip.dataset.centered) {
+    strip.dataset.centered = "1";
+    const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
+    let maxEl = null, maxV = -Infinity;
+    chips.forEach(ch => {
+      const t = ch.querySelector(".weight-chip-val");
+      if (!t) return;
+      const num = parseFloat(faToEn(t.textContent).replace(/[^\d.]/g, "")) || 0;
+      if (num > maxV) { maxV = num; maxEl = ch; }
+    });
     if (maxEl) {
-      const mid = maxEl.offsetLeft - strip.clientWidth / 2 + maxEl.offsetWidth / 2;
-      strip.scrollLeft = Math.max(0, mid);
+      maxEl.classList.add("max");
+      // بعد از layout
+      setTimeout(() => {
+        if (strip.dataset.userScrolled === "1") return;
+        const mid = maxEl.offsetLeft - strip.clientWidth / 2 + maxEl.offsetWidth / 2;
+        strip.scrollLeft = Math.max(0, Math.min(strip.scrollWidth - strip.clientWidth, mid));
+      }, 40);
     }
-  });
+  }
 
-  let vel = 0, lastX = 0, lastT = 0, dragging = false;
+  let glow = 0, endHeat = 0, lastSpark = 0;
   let raf = null;
-  let glow = 0;
-  let endHeat = 0;
-  let lastSpark = 0;
   let sparkFromLeft = true;
-  let moveAccum = 0;
-  const MAX_SPARKS = 28;
+  const MAX_SPARKS = 24;
 
   const stopRaf = () => { if (raf) { cancelAnimationFrame(raf); raf = null; } };
   const trimSparks = () => {
+    if (!sparkLayer) return;
     while (sparkLayer.childElementCount > MAX_SPARKS) sparkLayer.removeChild(sparkLayer.firstChild);
   };
-  const scrollMax = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
+  const maxScroll = () => Math.max(0, strip.scrollWidth - strip.clientWidth);
 
   const paint = () => {
-    const heat = glow;
-    const eh = endHeat;
+    const heat = glow, eh = endHeat;
     if (glass) {
       const etch = Math.max(heat, eh * 0.85);
       glass.style.setProperty("--etch", etch.toFixed(3));
       glass.classList.toggle("lit", etch > 0.02);
     }
     if (wrap) {
-      wrap.classList.toggle("lava-hot", heat > 0.18 || eh > 0.2);
       if (heat > 0.06) {
         const g1 = (14 + heat * 32).toFixed(0);
-        const a1 = (0.1 + heat * 0.35).toFixed(2);
-        wrap.style.boxShadow =
-          `0 0 ${g1}px rgba(255, 90, 20, ${a1}), inset 0 0 ${10 + heat * 18}px rgba(255, 120, 40, ${0.06 + heat * 0.25})`;
-      } else if (eh < 0.08) {
-        wrap.style.boxShadow = "";
-      }
+        wrap.style.boxShadow = `0 0 ${g1}px rgba(255,90,20,${(0.1 + heat * 0.35).toFixed(2)}), inset 0 0 ${10 + heat * 18}px rgba(255,120,40,${(0.06 + heat * 0.25).toFixed(2)})`;
+      } else if (eh < 0.08) wrap.style.boxShadow = "";
     }
-    strip.style.filter = heat > 0.1
-      ? `brightness(${1 + heat * 0.25}) saturate(${1 + heat * 0.3})`
-      : "";
     const solid = Math.min(1, eh * 1.2);
-    [endL, endR].forEach((el) => {
+    [endL, endR].forEach(el => {
       if (!el) return;
       el.style.opacity = String(solid);
-      el.style.transform = solid > 0.05
-        ? `scaleX(${0.7 + solid * 0.55}) scaleY(${0.85 + solid * 0.25})`
-        : "scaleX(0.5)";
+      el.style.transform = solid > 0.05 ? `scaleX(${0.7 + solid * 0.55}) scaleY(${0.85 + solid * 0.25})` : "scaleX(0.5)";
       el.classList.toggle("hot", solid > 0.35);
     });
   };
 
-  const setHeat = (body, ends) => {
-    glow = Math.max(0, Math.min(1, body));
-    endHeat = Math.max(0, Math.min(1, ends != null ? ends : endHeat));
-    paint();
-  };
-
   const spawnSparks = (speed, fromLeft) => {
-    if (!sparkLayer || speed < 1.3) return;
+    if (!sparkLayer || speed < 1.4) return;
     const now = performance.now();
-    if (now - lastSpark < 30) return;
+    if (now - lastSpark < 32) return;
     lastSpark = now;
     const w = strip.clientWidth, h = strip.clientHeight;
-    if (w < 8 || h < 8) return;
-    const edgeX = fromLeft ? 6 : (w - 6);
+    if (w < 8) return;
+    const edgeX = fromLeft ? 6 : w - 6;
     const trailSign = fromLeft ? 1 : -1;
-    const n = Math.min(3, 1 + Math.floor((speed - 1.2) * 0.7));
+    const n = Math.min(3, 1 + Math.floor(speed * 0.5));
     for (let i = 0; i < n; i++) {
       const sp = document.createElement("div");
       sp.className = "weight-spark";
       const size = 2 + Math.random() * 2.5;
-      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX}px;top:${8 + Math.random() * (h - 16)}px`;
-      const hue = 18 + Math.random() * 40;
-      sp.style.background = `hsl(${hue},100%,60%)`;
-      sp.style.boxShadow = `0 0 8px hsl(${hue},100%,55%)`;
+      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX}px;top:${8 + Math.random() * Math.max(8, h - 16)}px`;
+      sp.style.background = `hsl(${18 + Math.random() * 40},100%,60%)`;
+      sp.style.boxShadow = "0 0 8px #ff8c00";
       sparkLayer.appendChild(sp);
-      const trail = trailSign * (24 + speed * 30 + Math.random() * 24);
-      const outward = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 16);
-      const life = 240 + Math.random() * 240;
-      const t0 = performance.now();
-      const anim = (t) => {
-        const p = Math.min(1, (t - t0) / life);
+      const trail = trailSign * (20 + speed * 28);
+      const up = (Math.random() - 0.5) * 24;
+      const t0 = performance.now(), life = 280;
+      const tick = (t) => {
+        const p = (t - t0) / life;
         if (p >= 1) { sp.remove(); return; }
-        const e = 1 - Math.pow(1 - p, 1.5);
-        sp.style.transform = `translate(${trail * e}px,${outward * e}px) scale(${1 - p * 0.7})`;
+        const e = 1 - (1 - p) * (1 - p);
+        sp.style.transform = `translate(${trail * e}px,${up * e}px)`;
         sp.style.opacity = String(1 - p);
-        requestAnimationFrame(anim);
+        requestAnimationFrame(tick);
       };
-      requestAnimationFrame(anim);
+      requestAnimationFrame(tick);
     }
     trimSparks();
   };
@@ -1796,176 +1799,171 @@ function initWeightStrip(strip) {
   const edgeExplosion = (atLeft) => {
     if (!sparkLayer) return;
     const w = strip.clientWidth, h = strip.clientHeight;
-    const edgeX = atLeft ? 8 : (w - 8);
-    for (let i = 0; i < 18; i++) {
+    const edgeX = atLeft ? 8 : w - 8;
+    for (let i = 0; i < 16; i++) {
       const sp = document.createElement("div");
       sp.className = "weight-spark";
-      const size = 2.5 + Math.random() * 4.5;
-      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX + (Math.random() - 0.5) * 12}px;top:${h * 0.2 + Math.random() * h * 0.5}px`;
-      sp.style.background = Math.random() > 0.35 ? "#ffe59a" : "#ff6a1a";
-      sp.style.boxShadow = "0 0 10px #ff9400,0 0 20px #ff3d00";
+      const size = 2.5 + Math.random() * 4;
+      sp.style.cssText = `width:${size}px;height:${size}px;left:${edgeX}px;top:${h * 0.25 + Math.random() * h * 0.4}px`;
+      sp.style.background = Math.random() > 0.4 ? "#ffe59a" : "#ff6a1a";
+      sp.style.boxShadow = "0 0 12px #ff6a00";
       sparkLayer.appendChild(sp);
-      const vx = (atLeft ? -1 : 1) * (12 + Math.random() * 50) + (Math.random() - 0.5) * 18;
-      let vy = -40 - Math.random() * 70;
-      const g = 480;
-      const life = 500 + Math.random() * 400;
-      const t0 = performance.now();
+      const vx = (atLeft ? -1 : 1) * (10 + Math.random() * 45);
+      let vy = -50 - Math.random() * 60;
+      const g = 500, t0 = performance.now();
       let last = t0, x = 0, y = 0;
-      const anim = (t) => {
+      const tick = (t) => {
         const dt = Math.min(0.032, (t - last) / 1000);
         last = t;
-        const p = (t - t0) / life;
+        const p = (t - t0) / 600;
         if (p >= 1) { sp.remove(); return; }
-        vy += g * dt;
-        x += vx * dt;
-        y += vy * dt;
-        sp.style.transform = `translate(${x}px,${y}px) scale(${1.1 - p * 0.8})`;
-        sp.style.opacity = String(Math.max(0, 1 - p));
-        requestAnimationFrame(anim);
+        vy += g * dt; x += vx * dt; y += vy * dt;
+        sp.style.transform = `translate(${x}px,${y}px)`;
+        sp.style.opacity = String(1 - p);
+        requestAnimationFrame(tick);
       };
-      requestAnimationFrame(anim);
+      requestAnimationFrame(tick);
     }
     trimSparks();
   };
 
-  // حرکت واقعی با تشخیص برخورد: اگر scroll جابه‌جا نشد → لبه
-  const doScroll = (delta) => {
-    const before = strip.scrollLeft;
-    strip.scrollLeft = before + delta;
-    const after = strip.scrollLeft;
-    const moved = after - before;
-    const blocked = Math.abs(delta) > 2 && Math.abs(moved) < 0.5;
-    return { moved, blocked, atLeft: after <= 0.5, atRight: after >= scrollMax() - 0.5 };
-  };
+  // ——— اسکرول اصلی: pointer capture، بدون تداخل با native jump ———
+  let dragging = false;
+  let startX = 0;
+  let startScroll = 0;
+  let samples = []; // {t, x} for velocity
+  let lastScrollLeft = strip.scrollLeft;
+  let edgeLock = false;
 
-  const coast = () => {
+  const coolLoop = () => {
     stopRaf();
-    const lockedFromLeft = sparkFromLeft;
-    let exploded = false;
     const step = () => {
-      const speed = Math.abs(vel);
-      if (speed >= 0.12) {
-        const { blocked, atLeft, atRight } = doScroll(vel);
-        if (blocked && !exploded && speed > 0.7) {
-          exploded = true;
-          edgeExplosion(atLeft || (!atRight && vel < 0));
-          vel = 0;
-          glow = Math.max(glow, 0.9);
-          endHeat = 1;
-        } else {
-          vel *= 0.975;
-          if (!exploded && speed > 1.4) spawnSparks(speed, lockedFromLeft);
-        }
-        const target = Math.min(1, speed / 10);
-        glow = Math.max(target * 0.45, glow * 0.97);
-        endHeat = Math.max(target * 0.5, endHeat * 0.988);
-      } else {
-        vel = 0;
-        glow *= 0.982;
-        endHeat *= 0.991;
-        if (glow < 0.008) glow = 0;
-        if (endHeat < 0.008) endHeat = 0;
-      }
+      glow *= 0.982;
+      endHeat *= 0.991;
+      if (glow < 0.008) glow = 0;
+      if (endHeat < 0.008) endHeat = 0;
       paint();
-      if (vel !== 0 || glow > 0 || endHeat > 0) raf = requestAnimationFrame(step);
-      else { setHeat(0, 0); stopRaf(); }
+      if (glow > 0 || endHeat > 0) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   };
 
-  const onDown = (x) => {
-    dragging = true;
+  const inertia = (v0) => {
     stopRaf();
-    vel = 0;
-    moveAccum = 0;
-    lastX = x;
-    lastT = performance.now();
-    strip.classList.add("is-dragging");
+    let v = v0;
+    let exploded = false;
+    const step = () => {
+      if (Math.abs(v) < 0.15) {
+        coolLoop();
+        return;
+      }
+      const before = strip.scrollLeft;
+      strip.scrollLeft = before + v;
+      const after = strip.scrollLeft;
+      const blocked = Math.abs(v) > 1 && Math.abs(after - before) < 0.5;
+      if (blocked && !exploded) {
+        exploded = true;
+        edgeExplosion(after <= 1);
+        glow = Math.max(glow, 0.9);
+        endHeat = 1;
+        paint();
+        coolLoop();
+        return;
+      }
+      v *= 0.976;
+      const speed = Math.abs(v);
+      glow = Math.max(glow * 0.97, Math.min(1, speed / 12));
+      endHeat = Math.max(endHeat * 0.988, Math.min(1, speed / 10));
+      paint();
+      if (speed > 1.5) spawnSparks(speed, sparkFromLeft);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
   };
 
-  const onMove = (x) => {
+  const onPointerDown = (e) => {
+    if (e.button != null && e.button !== 0) return;
+    dragging = true;
+    strip.dataset.userScrolled = "1";
+    stopRaf();
+    edgeLock = false;
+    startX = e.clientX;
+    startScroll = strip.scrollLeft;
+    samples = [{ t: performance.now(), x: e.clientX }];
+    strip.classList.add("is-dragging");
+    try { strip.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+
+  const onPointerMove = (e) => {
     if (!dragging) return;
+    const dx = e.clientX - startX;
+    // حرکت مستقیم — بدون scrollBy ناپایدار
+    strip.scrollLeft = startScroll - dx;
     const now = performance.now();
-    const dx = x - lastX;
-    const dt = Math.max(12, now - lastT);
-    moveAccum += Math.abs(dx);
-    lastX = x;
-    lastT = now;
+    samples.push({ t: now, x: e.clientX });
+    if (samples.length > 6) samples.shift();
 
-    // انگشت راست → محتوا به راست (scrollLeft کم در LTR)
-    const { blocked, atLeft, atRight } = doScroll(-dx);
-    vel = (-dx / dt) * 17;
-
-    if (moveAccum < 10) return;
-    if (Math.abs(dx) > 2) sparkFromLeft = dx > 0;
-
-    if (blocked && Math.abs(dx) > 4) {
-      edgeExplosion(atLeft || dx > 0);
-      glow = Math.max(glow, 0.85);
-      endHeat = 1;
-      vel = 0;
+    const moved = Math.abs(dx);
+    if (moved > 8) {
+      sparkFromLeft = dx > 0;
+      const speed = Math.min(12, moved / 8);
+      glow = Math.max(glow * 0.9, Math.min(1, speed / 6));
+      endHeat = Math.max(endHeat, Math.min(1, speed / 5));
       paint();
-      return;
+      if (speed > 1.5) spawnSparks(speed, sparkFromLeft);
     }
 
-    const speed = Math.abs(vel);
-    glow = Math.max(glow * 0.85, Math.min(1, speed / 8));
-    endHeat = Math.max(endHeat, Math.min(1, speed / 7));
-    paint();
-    if (speed > 1.3) spawnSparks(speed, sparkFromLeft);
+    // برخورد حین درگ
+    const sl = strip.scrollLeft;
+    const ms = maxScroll();
+    if (!edgeLock && moved > 12 && (sl <= 0.5 || sl >= ms - 0.5)) {
+      edgeLock = true;
+      edgeExplosion(sl <= 0.5);
+      glow = Math.max(glow, 0.85);
+      endHeat = 1;
+      paint();
+    }
   };
 
-  const onUp = () => {
+  const onPointerUp = (e) => {
     if (!dragging) return;
     dragging = false;
     strip.classList.remove("is-dragging");
-    if (moveAccum >= 10 && Math.abs(vel) > 0.5) coast();
-    else {
-      vel = 0;
-      const cool = () => {
-        glow *= 0.98;
-        endHeat *= 0.99;
-        if (glow < 0.008) glow = 0;
-        if (endHeat < 0.008) endHeat = 0;
-        paint();
-        if (glow > 0 || endHeat > 0) raf = requestAnimationFrame(cool);
-        else setHeat(0, 0);
-      };
-      raf = requestAnimationFrame(cool);
+    try { strip.releasePointerCapture(e.pointerId); } catch (_) {}
+
+    // سرعت از نمونه‌های آخر
+    let v = 0;
+    if (samples.length >= 2) {
+      const a = samples[0], b = samples[samples.length - 1];
+      const dt = Math.max(16, b.t - a.t);
+      v = -(b.x - a.x) / dt * 18;
     }
+    if (Math.abs(v) > 0.6) inertia(v);
+    else coolLoop();
   };
 
-  strip.addEventListener("mousedown", e => { onDown(e.clientX); e.preventDefault(); });
-  window.addEventListener("mousemove", e => onMove(e.clientX));
-  window.addEventListener("mouseup", onUp);
-  strip.addEventListener("touchstart", e => onDown(e.touches[0].clientX), { passive: true });
-  strip.addEventListener("touchmove", e => {
-    if (!dragging) return;
-    onMove(e.touches[0].clientX);
-  }, { passive: true });
-  strip.addEventListener("touchend", onUp);
-  strip.addEventListener("touchcancel", onUp);
-  strip.addEventListener("wheel", e => {
-    const dy = e.deltaY + e.deltaX;
-    if (Math.abs(dy) < 1) return;
-    const { blocked, atLeft } = doScroll(dy);
-    vel = dy * 0.25;
-    if (Math.abs(dy) > 4) sparkFromLeft = dy < 0;
-    moveAccum = 20;
-    if (blocked && Math.abs(dy) > 6) {
-      edgeExplosion(atLeft || dy < 0);
-      glow = 0.9;
-      endHeat = 1;
-      vel = 0;
-    } else {
-      glow = Math.max(glow, Math.min(1, Math.abs(vel) / 6));
+  strip.addEventListener("pointerdown", onPointerDown);
+  strip.addEventListener("pointermove", onPointerMove);
+  strip.addEventListener("pointerup", onPointerUp);
+  strip.addEventListener("pointercancel", onPointerUp);
+
+  // native trackpad / touch leftover scroll — فقط افکت، مسیر اسکرول را دست نمی‌زنیم
+  let lastSl = strip.scrollLeft;
+  strip.addEventListener("scroll", () => {
+    const sl = strip.scrollLeft;
+    const d = sl - lastSl;
+    lastSl = sl;
+    if (Math.abs(d) < 0.5) return;
+    strip.dataset.userScrolled = "1";
+    sparkFromLeft = d < 0;
+    const speed = Math.min(10, Math.abs(d));
+    if (speed > 2) {
+      glow = Math.max(glow, Math.min(1, speed / 8));
       endHeat = Math.max(endHeat, glow);
-      if (Math.abs(vel) > 1.3) spawnSparks(Math.abs(vel), sparkFromLeft);
-      coast();
+      paint();
+      spawnSparks(speed, sparkFromLeft);
     }
-    paint();
-    e.preventDefault();
-  }, { passive: false });
+  }, { passive: true });
 }
 
 
