@@ -1093,38 +1093,42 @@ a.rank-item-link {
 
 .weight-glass {
   position: relative;
-  height: 52px;
-  margin: 0 0 6px;
+  height: 36px;
+  margin: 0 0 2px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
 }
 .weight-glass-etch {
-  font-size: 42px;
+  font-size: 34px;
   font-weight: 900;
   letter-spacing: 0.28em;
   padding-left: 0.28em;
+  margin-bottom: -2px;
   font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
-  /* invisible glass cut until lit */
   color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.03);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.02);
   text-shadow: none;
-  opacity: 0.15;
-  transition: opacity 0.15s linear, text-shadow 0.12s linear, filter 0.12s linear;
+  opacity: 0.08;
+  transition: none;
   user-select: none;
+  will-change: opacity, text-shadow, filter;
 }
-.weight-glass.lit .weight-glass-etch {
-  opacity: 1;
+.weight-glass.lit .weight-glass-etch,
+.weight-glass-etch {
+  /* intensity driven purely by --etch for smooth spectrum fade */
+  opacity: calc(0.06 + var(--etch, 0) * 0.94);
   color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 200, 140, 0.35);
+  -webkit-text-stroke: 1px rgba(255, 200, 140, calc(var(--etch, 0) * 0.45));
   text-shadow:
-    0 0 8px rgba(255, 140, 40, calc(var(--etch, 0) * 0.7)),
-    0 0 20px rgba(255, 80, 0, calc(var(--etch, 0) * 0.55)),
-    0 0 40px rgba(255, 60, 0, calc(var(--etch, 0) * 0.4)),
-    0 0 2px rgba(255, 220, 160, calc(var(--etch, 0) * 0.9));
-  filter: brightness(calc(0.6 + var(--etch, 0) * 1.2));
+    0 0 4px rgba(255, 230, 180, calc(var(--etch, 0) * 0.85)),
+    0 0 10px rgba(255, 170, 60, calc(var(--etch, 0) * 0.75)),
+    0 0 22px rgba(255, 100, 20, calc(var(--etch, 0) * 0.55)),
+    0 0 42px rgba(255, 50, 0, calc(var(--etch, 0) * 0.4)),
+    0 0 60px rgba(180, 40, 255, calc(var(--etch, 0) * 0.22));
+  filter: brightness(calc(0.35 + var(--etch, 0) * 1.35)) saturate(calc(0.4 + var(--etch, 0) * 0.9));
 }
 .weight-strip-wrap {
   overflow: visible;
@@ -1708,7 +1712,7 @@ function initWeightStrip(strip) {
     if (glass) {
       const etch = Math.max(heat, eh * 0.85);
       glass.style.setProperty("--etch", etch.toFixed(3));
-      glass.classList.toggle("lit", etch > 0.06);
+      glass.classList.toggle("lit", etch > 0.02);
     }
     // بدنه
     if (wrap) {
@@ -1827,30 +1831,92 @@ function initWeightStrip(strip) {
   const coast = () => {
     stopRaf();
     const lockedFromLeft = sparkFromLeft;
+    let exploded = false;
     const step = () => {
       const speed = Math.abs(vel);
-      if (speed < 0.1 && glow < 0.02 && endHeat < 0.02) {
-        setHeat(0, 0);
-        stopRaf();
-        return;
-      }
-      if (speed >= 0.1) {
+      const maxS = Math.max(0, strip.scrollWidth - strip.clientWidth);
+      const atStart = strip.scrollLeft <= 1;
+      const atEnd = strip.scrollLeft >= maxS - 1;
+
+      if (speed >= 0.12) {
         strip.scrollLeft += vel;
-        vel *= 0.975;
-        // بدنه سریع‌تر سرد، دو سر ۳× کندتر
+        // برخورد به انتها → انفجار و توقف جرقه‌های دنباله‌دار
+        const hitStart = vel < 0 && strip.scrollLeft <= 0;
+        const hitEnd = vel > 0 && strip.scrollLeft >= maxS;
+        if ((hitStart || hitEnd) && !exploded && speed > 0.8) {
+          exploded = true;
+          strip.scrollLeft = hitStart ? 0 : maxS;
+          edgeExplosion(hitStart);
+          vel = 0;
+          glow = Math.max(glow, 0.85);
+          endHeat = Math.max(endHeat, 1);
+        } else {
+          vel *= 0.975;
+          if (!exploded && speed > 1.4) spawnSparks(speed, lockedFromLeft);
+        }
         const target = Math.min(1, speed / 10);
-        glow = Math.max(target, glow * 0.92); // سرد شدن عادی
-        endHeat = Math.max(target, endHeat * 0.973); // ≈۳× ماندگاری بیشتر
-        if (speed > 1.4) spawnSparks(speed, lockedFromLeft);
+        glow = Math.max(target * 0.5, glow * 0.97);
+        endHeat = Math.max(target * 0.55, endHeat * 0.988);
       } else {
-        glow *= 0.9;
-        endHeat *= 0.965; // سرد شدن آهستهٔ انتها
         vel = 0;
+        // سرد شدن خیلی نرم و طولانی
+        glow *= 0.982;
+        endHeat *= 0.991;
+        if (glow < 0.008) glow = 0;
+        if (endHeat < 0.008) endHeat = 0;
       }
       paint();
-      raf = requestAnimationFrame(step);
+      if (vel !== 0 || glow > 0.008 || endHeat > 0.008) {
+        raf = requestAnimationFrame(step);
+      } else {
+        setHeat(0, 0);
+        stopRaf();
+      }
     };
     raf = requestAnimationFrame(step);
+  };
+
+  // انفجار انتهای اسکرول — جرقه‌ها با جاذبه به پایین
+  const edgeExplosion = (atLeft) => {
+    if (!sparkLayer) return;
+    const w = strip.clientWidth;
+    const h = strip.clientHeight;
+    const edgeX = atLeft ? 8 : (w - 8);
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const sp = document.createElement("div");
+      sp.className = "weight-spark";
+      const size = 2.5 + Math.random() * 4.5;
+      sp.style.width = size + "px";
+      sp.style.height = size + "px";
+      sp.style.left = (edgeX + (Math.random() - 0.5) * 14) + "px";
+      sp.style.top = (h * 0.2 + Math.random() * h * 0.5) + "px";
+      sp.style.background = Math.random() > 0.35 ? "#ffe59a" : "#ff6a1a";
+      sp.style.boxShadow = "0 0 10px #ff9400, 0 0 20px #ff3d00";
+      sparkLayer.appendChild(sp);
+
+      const vx = (atLeft ? -1 : 1) * (15 + Math.random() * 55) + (Math.random() - 0.5) * 20;
+      let vy = -30 - Math.random() * 70; // اول کمی بالا
+      const g = 420; // جاذبه
+      const life = 500 + Math.random() * 400;
+      const t0 = performance.now();
+      let last = t0;
+      let x = 0, y = 0;
+      const anim = (t) => {
+        const dt = Math.min(0.032, (t - last) / 1000);
+        last = t;
+        const p = (t - t0) / life;
+        if (p >= 1) { sp.remove(); return; }
+        vy += g * dt;
+        x += vx * dt;
+        y += vy * dt;
+        sp.style.transform = `translate(${x}px, ${y}px) scale(${1.1 - p * 0.8})`;
+        sp.style.opacity = String(Math.max(0, 1 - p * 1.05));
+        requestAnimationFrame(anim);
+      };
+      requestAnimationFrame(anim);
+    }
+    trimSparks();
   };
 
   const onDown = (x) => {
@@ -1892,10 +1958,12 @@ function initWeightStrip(strip) {
       vel = 0;
       // حتی بدون اینرسی قوی، انتها آرام سرد شود
       const cool = () => {
-        glow *= 0.9;
-        endHeat *= 0.965;
+        glow *= 0.98;
+        endHeat *= 0.99;
+        if (glow < 0.008) glow = 0;
+        if (endHeat < 0.008) endHeat = 0;
         paint();
-        if (glow > 0.02 || endHeat > 0.02) raf = requestAnimationFrame(cool);
+        if (glow > 0 || endHeat > 0) raf = requestAnimationFrame(cool);
         else setHeat(0, 0);
       };
       raf = requestAnimationFrame(cool);
@@ -2372,7 +2440,6 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
   const weightStripHtml = `
     <div class="card weight-strip-card">
       <div class="card-title">وزن روزانه</div>
-      <div class="card-sub">بکش به چپ و راست · ${fa(daysInMonth)} روز</div>
       <div class="weight-glass" id="weightGlass">
         <div class="weight-glass-etch">HQL</div>
       </div>
