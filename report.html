@@ -1790,12 +1790,9 @@
 
         /**
          * ================================================================
-         * FIXED: spark direction logic
-         * - scroll right (velocity > 0) -> sparks on left  (sparkFromLeft = true)
-         * - scroll left  (velocity < 0) -> sparks on right (sparkFromLeft = false)
-         * - drag right (dx > 0) -> sparkFromLeft = true
-         * - drag left  (dx < 0) -> sparkFromLeft = false
-         * - wheel deltaX > 0 (scroll right) -> sparkFromLeft = true
+         * REVERSED SPARK DIRECTION:
+         * - right scroll (velocity > 0) => sparks on right (fromLeft = false)
+         * - left scroll  (velocity < 0) => sparks on left  (fromLeft = true)
          * ================================================================
          */
         function initWeightStrip(strip) {
@@ -1977,7 +1974,8 @@
                     const dx = currentPos - lastScrollPos;
                     velocity = dx / dt * 16;
                     const absV = Math.abs(velocity);
-                    if (absV > 0.5) sparkFromLeft = velocity > 0; // right scroll -> left sparks
+                    // REVERSED: right scroll (velocity > 0) => sparkFromLeft = false (sparks on right)
+                    if (absV > 0.5) sparkFromLeft = velocity < 0;
                     if (absV > 1.0) spawnSparks(absV, sparkFromLeft);
 
                     glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
@@ -2048,8 +2046,8 @@
                 const dx = e.clientX - dragStartX;
                 const delta = -dx;
                 strip.scrollLeft = dragStartScroll + delta;
-                // Set spark direction: drag right (dx > 0) => scroll right => sparks on left
-                if (Math.abs(dx) > 2) sparkFromLeft = dx > 0;
+                // REVERSED: drag right (dx > 0) => scroll right => sparkFromLeft = false
+                if (Math.abs(dx) > 2) sparkFromLeft = dx < 0;
             }
 
             function onMouseUp(e) {
@@ -2076,11 +2074,10 @@
             // ---- Wheel ----
             strip.addEventListener("wheel", (e) => {
                 e.stopPropagation();
-                // Use deltaX for horizontal scroll, fallback to deltaY if deltaX is zero
                 let delta = e.deltaX;
-                if (Math.abs(delta) < 1) delta = e.deltaY; // some mice only send deltaY
-                // For right scroll (delta > 0) sparks on left
-                if (Math.abs(delta) > 2) sparkFromLeft = delta > 0;
+                if (Math.abs(delta) < 1) delta = e.deltaY;
+                // REVERSED: scroll right (delta > 0) => sparkFromLeft = false
+                if (Math.abs(delta) > 2) sparkFromLeft = delta < 0;
             }, { passive: true });
 
             // ---- Cleanup ----
