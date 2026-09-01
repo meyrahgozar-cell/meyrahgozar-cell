@@ -622,8 +622,8 @@ button { cursor: pointer; border: none; background: none; }
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: none;
-  box-shadow: 0 0 8px rgba(180, 76, 255, 0.2);
+  border: 1px solid rgba(180, 100, 255, 0.35);
+  box-shadow: 0 0 8px rgba(180, 76, 255, 0.25);
   background: #fff;
   flex-shrink: 0;
 }
@@ -636,11 +636,17 @@ button { cursor: pointer; border: none; background: none; }
   background: #fff;
   box-shadow: 0 0 10px rgba(180, 76, 255, 0.55), 0 0 22px rgba(180, 76, 255, 0.3);
 }
-.podium-place.first .podium-avatar,
-.podium-place.second .podium-avatar,
+.podium-place.first .podium-avatar {
+  border: 2px solid rgba(255, 215, 0, 0.55);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+.podium-place.second .podium-avatar {
+  border: 2px solid rgba(192, 192, 192, 0.5);
+  box-shadow: 0 0 10px rgba(192, 192, 192, 0.2);
+}
 .podium-place.third .podium-avatar {
-  border: none;
-  box-shadow: none;
+  border: 2px solid rgba(205, 127, 50, 0.55);
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.25);
 }
 .rank-avatar-fallback, .podium-avatar-fallback {
   width: 28px;
@@ -929,15 +935,35 @@ a.rank-item-link {
   background: rgba(180, 100, 255, 0.35);
   border-radius: 4px;
 }
+.weight-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: none;
+  padding: 8px 4px 14px;
+  scrollbar-width: none;
+  cursor: grab;
+}
+.weight-strip::-webkit-scrollbar { display: none; }
+.weight-strip.is-dragging { cursor: grabbing; }
 .weight-chip {
   flex: 0 0 auto;
-  min-width: 72px;
-  scroll-snap-align: start;
+  min-width: 64px;
   text-align: center;
   padding: 12px 10px;
   border-radius: 14px;
-  background: var(--card2);
-  border: 1px solid var(--border);
+  background: linear-gradient(160deg, rgba(180,76,255,0.12), rgba(0,240,255,0.05));
+  border: none;
+  box-shadow: inset 0 0 12px rgba(180, 76, 255, 0.08);
+}
+.weight-chip.max {
+  background: linear-gradient(160deg, rgba(0,240,255,0.2), rgba(180,76,255,0.12));
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25), inset 0 0 12px rgba(0, 240, 255, 0.1);
+}
+.weight-chip.max .weight-chip-val {
+  color: #7ef9ff;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
 }
 .weight-chip-day {
   font-size: 11px;
@@ -954,6 +980,11 @@ a.rank-item-link {
   font-size: 10px;
   color: var(--muted);
   margin-top: 2px;
+}
+.weight-chip.empty {
+  background: rgba(13, 16, 25, 0.5);
+  box-shadow: none;
+  opacity: 0.55;
 }
 .weight-chip.empty .weight-chip-val {
   color: var(--muted);
@@ -1418,6 +1449,103 @@ async function openUserBadges(userId, displayName) {
 }
 
 
+
+function initWeightStrip(strip) {
+  if (!strip || strip.dataset.ready) return;
+  strip.dataset.ready = "1";
+
+  // highlight + center on max weight
+  const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
+  let maxEl = null, maxV = -Infinity;
+  chips.forEach(ch => {
+    const t = ch.querySelector(".weight-chip-val");
+    if (!t) return;
+    const v = parseFloat(String(t.textContent).replace(/[^\d.]/g, "").replace("٫", ".")) || 0;
+    // Persian digits
+    const raw = t.textContent;
+    const norm = raw.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[^\d.]/g, "");
+    const num = parseFloat(norm) || 0;
+    if (num > maxV) { maxV = num; maxEl = ch; }
+  });
+  if (maxEl) {
+    maxEl.classList.add("max");
+    requestAnimationFrame(() => {
+      const mid = maxEl.offsetLeft - (strip.clientWidth / 2) + (maxEl.offsetWidth / 2);
+      strip.scrollLeft = Math.max(0, mid);
+    });
+  }
+
+  // drag + inertia
+  let vel = 0, lastX = 0, lastT = 0, dragging = false, moved = false;
+  let raf = null;
+
+  const stopRaf = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
+
+  const coast = () => {
+    stopRaf();
+    const step = () => {
+      strip.scrollLeft += vel;
+      vel *= 0.95; // friction
+      if (Math.abs(vel) > 0.3) {
+        // soft elastic edges
+        const maxScroll = strip.scrollWidth - strip.clientWidth;
+        if (strip.scrollLeft < 0) { strip.scrollLeft = 0; vel *= -0.4; }
+        else if (strip.scrollLeft > maxScroll) { strip.scrollLeft = maxScroll; vel *= -0.4; }
+        raf = requestAnimationFrame(step);
+      } else {
+        // settle elastic
+        const maxScroll = Math.max(0, strip.scrollWidth - strip.clientWidth);
+        if (strip.scrollLeft < 0 || strip.scrollLeft > maxScroll) {
+          const target = Math.max(0, Math.min(maxScroll, strip.scrollLeft));
+          const ease = () => {
+            const d = target - strip.scrollLeft;
+            strip.scrollLeft += d * 0.18;
+            if (Math.abs(d) > 0.5) raf = requestAnimationFrame(ease);
+          };
+          raf = requestAnimationFrame(ease);
+        }
+      }
+    };
+    raf = requestAnimationFrame(step);
+  };
+
+  const onDown = (x) => {
+    dragging = true;
+    moved = false;
+    stopRaf();
+    vel = 0;
+    lastX = x;
+    lastT = performance.now();
+    strip.classList.add("is-dragging");
+  };
+  const onMove = (x) => {
+    if (!dragging) return;
+    const now = performance.now();
+    const dx = x - lastX;
+    const dt = Math.max(1, now - lastT);
+    if (Math.abs(dx) > 2) moved = true;
+    strip.scrollLeft -= dx;
+    vel = -dx / dt * 16; // scale to frame
+    lastX = x;
+    lastT = now;
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    strip.classList.remove("is-dragging");
+    coast();
+  };
+
+  strip.addEventListener("mousedown", e => { onDown(e.clientX); e.preventDefault(); });
+  window.addEventListener("mousemove", e => onMove(e.clientX));
+  window.addEventListener("mouseup", onUp);
+  strip.addEventListener("touchstart", e => onDown(e.touches[0].clientX), { passive: true });
+  strip.addEventListener("touchmove", e => onMove(e.touches[0].clientX), { passive: true });
+  strip.addEventListener("touchend", onUp);
+  strip.addEventListener("touchcancel", onUp);
+}
+
+
 async function loadReport() {
   const seq = ++reportLoadSeq;
 
@@ -1798,10 +1926,11 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
         <div class="rank-item">
           <div class="rank-row">
             <div class="rank-num">${fa(i + 4)}</div>
-            <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:40%;min-width:0">
             ${avatarHtml(u.display_name || "کاربر", "rank")}
             <div class="rank-name">${u.display_name || "کاربر"}</div>
             </div>
+            <div class="rank-spacer" style="flex:1;min-width:8px;align-self:stretch"></div>
             <div style="text-align:left;flex-shrink:0">
               <div class="rank-score">${scoreText(avg)}</div>
               <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? scoreText(Math.round((Number(u.month_km)||0)*10)/10)+" km" : "—"}</div>
@@ -1951,6 +2080,9 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
   if (myEl) myEl.textContent = scoreText(Math.round(myKm * 100) / 100);
   if (cEl) cEl.textContent = scoreText(Math.round(communityKm * 100) / 100);
   if (aEl) aEl.textContent = fa(activePeople);
+
+  const wStrip = content.querySelector(".weight-strip");
+  if (wStrip) initWeightStrip(wStrip);
 
   animateNumber(document.getElementById("statTotal"), total);
   animateNumber(document.getElementById("statAvg"), avg);
