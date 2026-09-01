@@ -920,7 +920,7 @@ a.rank-item-link {
   font-size: 11px;
   margin-top: 2px;
 }
-.weight-strip-card { margin-bottom: 14px; }
+.weight-strip-card { margin-bottom: 14px; overflow: visible; }
 .weight-strip {
   direction: rtl;
   display: flex;
@@ -1032,8 +1032,7 @@ a.rank-item-link {
 .weight-strip-wrap {
   position: relative;
   border-radius: 16px;
-  overflow: hidden;
-  contain: layout paint;
+  overflow: visible;
 }
 .weight-strip-wrap::after {
   content: "";
@@ -1056,14 +1055,12 @@ a.rank-item-link {
 }
 .weight-spark-layer {
   position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
+  left: -40px;
+  right: -40px;
+  top: -30px;
+  bottom: -50px;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
   z-index: 3;
 }
 .weight-spark {
@@ -1742,17 +1739,19 @@ function initWeightStrip(strip) {
     const now = performance.now();
     if (now - lastEdgeHit < 400) return;
     lastEdgeHit = now;
-    sparksMutedUntil = now + 900; // موقتاً اسپارکل معمولی نساز
+    sparksMutedUntil = now + 900;
     vel = 0;
     stopRaf();
     setGlow(1);
-
     playImpactSound(intensity);
 
     const w = strip.clientWidth;
     const h = strip.clientHeight;
-    const originX = fromLeft ? 12 : (w - 12);
-    const count = Math.min(36, 18 + Math.floor(intensity * 12));
+    // مبدأ روی لبه weight-strip (لایه اسپارکل بزرگ‌تر است)
+    const originX = fromLeft ? 48 : (w + 32); // +40 لایه؛ لبه چپ≈40+8
+    // مختصات لایه با inset منفی: left -40 → لبه چپ strip در x=40
+    const ox = fromLeft ? 40 + 8 : 40 + w - 8;
+    const count = Math.min(40, 20 + Math.floor(intensity * 14));
 
     for (let i = 0; i < count; i++) {
       const sp = document.createElement("div");
@@ -1760,60 +1759,62 @@ function initWeightStrip(strip) {
       const size = 2 + Math.random() * 5;
       sp.style.width = size + "px";
       sp.style.height = size + "px";
-      sp.style.left = originX + "px";
-      sp.style.top = (h * 0.3 + Math.random() * h * 0.4) + "px";
+      sp.style.left = ox + "px";
+      sp.style.top = (30 + h * 0.25 + Math.random() * h * 0.45) + "px";
       const hue = 10 + Math.random() * 50;
       sp.style.background = `hsl(${hue}, 100%, ${55 + Math.random() * 25}%)`;
       sp.style.boxShadow = `0 0 8px hsl(${hue},100%,55%), 0 0 16px rgba(255,60,0,0.85)`;
       sparkLayer.appendChild(sp);
 
-      // سرعت اولیه پخش به همه طرف
-      let vx = (Math.random() - 0.5) * (6 + intensity * 8);
-      if (fromLeft) vx = Math.abs(vx) * (0.3 + Math.random());
-      else vx = -Math.abs(vx) * (0.3 + Math.random());
-      let vy = - (2 + Math.random() * 6 + intensity * 2); // اول کمی بالا
-      const gravity = 0.35 + Math.random() * 0.15;
+      // پخش قوی به بیرون کادر (چپ → x منفی، راست → x مثبت)
+      let vx = (Math.random() - 0.5) * (8 + intensity * 10);
+      if (fromLeft) vx = -(Math.abs(vx) + 4 + Math.random() * 14);
+      else vx = (Math.abs(vx) + 4 + Math.random() * 14);
+      // کمی هم به داخل
+      if (Math.random() < 0.2) vx *= -0.35;
+
+      let vy = -(3 + Math.random() * 8 + intensity * 2);
+      const gravity = 0.38 + Math.random() * 0.12;
       let x = 0, y = 0;
       const t0 = performance.now();
-      const life = 700 + Math.random() * 500;
+      const life = 800 + Math.random() * 600;
 
       const anim = (t) => {
-        const dt = 1;
-        vy += gravity * dt;
-        x += vx * dt;
-        y += vy * dt;
         const p = Math.min(1, (t - t0) / life);
-        sp.style.transform = `translate(${x}px, ${y}px) scale(${1 - p * 0.5})`;
+        vy += gravity;
+        x += vx;
+        y += vy;
+        sp.style.transform = `translate(${x}px, ${y}px) scale(${1 - p * 0.45})`;
         sp.style.opacity = String(Math.max(0, 1 - p));
-        if (p < 1 && y < h + 40) requestAnimationFrame(anim);
+        if (p < 1) requestAnimationFrame(anim);
         else sp.remove();
       };
       requestAnimationFrame(anim);
     }
     trimSparks();
-
-    // خاموش شدن گلو
     setTimeout(() => setGlow(0), 500);
   };
 
   const checkEdge = (intensity) => {
     const ms = maxScroll();
-    const sl = strip.scrollLeft;
-    // RTL: در مرورگرها scrollLeft ممکن است ۰ یا منفی باشد — هر دو انتها
-    const atStart = sl <= 1 || sl <= -ms + 1;
-    const atEnd = sl >= ms - 1 || (sl < 0 && sl <= -ms + 1);
-    // ساده‌تر: نزدیک ۰ یا نزدیک max
-    const nearLeft = Math.abs(sl) < 2;
-    const nearRight = Math.abs(sl - ms) < 2 || (ms > 0 && sl > ms - 2);
-    if (nearLeft || nearRight) {
-      const fromLeft = nearLeft;
-      explodeEdge(fromLeft, Math.max(0.5, intensity));
-      // گیر کردن روی لبه
-      if (nearLeft) strip.scrollLeft = 0;
-      else strip.scrollLeft = ms;
-      return true;
+    if (ms <= 1) return false;
+    const raw = strip.scrollLeft;
+    const sl = Math.abs(raw);
+    const eps = 4;
+    const atOneEnd = sl <= eps || sl >= ms - eps;
+    if (!atOneEnd) return false;
+
+    // جهت برخورد = همان جهت حرکت کاربر (پایدار برای چپ و راست)
+    const fromLeft = sparkFromLeft;
+    explodeEdge(fromLeft, Math.max(0.55, intensity));
+
+    // گیر کردن روی لبه بدون پرش عجیب
+    if (sl <= eps) {
+      strip.scrollLeft = raw < 0 ? 0 : 0;
+    } else {
+      strip.scrollLeft = raw < 0 ? -ms : ms;
     }
-    return false;
+    return true;
   };
 
   const coast = () => {
@@ -1860,10 +1861,22 @@ function initWeightStrip(strip) {
     lastX = x;
     lastT = now;
 
-    if (checkEdge(Math.abs(vel) / 3)) {
-      dragging = false;
-      strip.classList.remove("is-dragging");
-      return;
+    // تشخیص انتها برای هر دو جهت (از جمله RTL با scrollLeft منفی)
+    const ms = maxScroll();
+    const raw = strip.scrollLeft;
+    const sl = Math.abs(raw);
+    const pushingPast = (Math.abs(dx) > 2) && (
+      (sl <= 4 && dx * (raw <= 0 ? 1 : -1) !== 0) ||
+      (sl >= ms - 4)
+    );
+    // اگر روی لبه هستیم و هنوز می‌کشد → انفجار
+    if (ms > 1 && (sl <= 4 || sl >= ms - 4) && moveAccum >= 10 && Math.abs(vel) > 0.8) {
+      if (Math.abs(dx) > 1) sparkFromLeft = dx > 0;
+      if (checkEdge(Math.abs(vel) / 2.5)) {
+        dragging = false;
+        strip.classList.remove("is-dragging");
+        return;
+      }
     }
 
     if (moveAccum < 14) return;
