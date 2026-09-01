@@ -1129,29 +1129,36 @@
             margin-top: 2px;
         }
 
-        /* ====== Energy bar – no band, only 3D embossed lights ====== */
+        /* ====== Energy bar – no empty lights, in front of title ====== */
         .weight-strip-card {
             position: relative;
             overflow: visible;
         }
 
+        /* Title row with energy bar inline */
+        .weight-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 2px;
+        }
+        .weight-strip-header .card-title {
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
         .energy-bar-wrap {
-            position: relative;
-            height: 18px;
-            margin: 0 auto 6px auto;
-            max-width: 60%;
+            flex: 0 1 50%;
+            height: 14px;
             display: flex;
             align-items: stretch;
             gap: 1px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            /* no background, no border, no padding */
-            background: transparent;
-            border: none;
-            padding: 0;
+            /* hidden by default, shown when energy > 0 */
+            display: none;
         }
         .energy-bar-wrap.active {
-            opacity: 1;
+            display: flex;
         }
 
         .energy-bar-fill {
@@ -1168,7 +1175,7 @@
             border-radius: 2px;
             background: transparent;
             transition: all 0.04s ease;
-            /* 3D embossed effect when on */
+            position: relative;
         }
         .energy-cell.on {
             background: linear-gradient(180deg, #ffdd77 0%, #ffaa33 30%, #ff7a1a 70%, #cc5a00 100%);
@@ -1189,7 +1196,6 @@
                 0 0 12px rgba(255, 180, 60, 0.3);
             border-radius: 2px;
         }
-        /* subtle embossed edge on all cells to give depth */
         .energy-cell::after {
             content: "";
             position: absolute;
@@ -1198,9 +1204,6 @@
             pointer-events: none;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
             opacity: 0.3;
-        }
-        .energy-cell {
-            position: relative;
         }
 
         /* ---- HQL neon – hidden when no energy ---- */
@@ -1249,8 +1252,8 @@
 
         .weight-glass {
             position: relative;
-            height: 36px;
-            margin: 0 0 2px;
+            height: 30px;
+            margin: 0 0 0px;
             display: flex;
             align-items: flex-end;
             justify-content: center;
@@ -1290,7 +1293,7 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x mandatory;
-            padding: 6px 2px 12px;
+            padding: 4px 2px 10px;
             scrollbar-width: none;
             -ms-overflow-style: none;
             touch-action: pan-x;
@@ -1388,7 +1391,7 @@
             font-weight: 600;
         }
 
-        /* spark layer – moving sparks + edge explosions */
+        /* spark layer */
         .weight-spark-layer {
             position: absolute;
             inset: 0;
@@ -1490,8 +1493,10 @@
 
     <script>
         // ================================================================
-        // Energy parameters tuned: harder to fill, faster consume.
-        // Moving sparks restored. Impact sparks increased.
+        // Energy: even harder to fill (0.00025, exp 4.5)
+        // Energy bar: display:none when energy=0
+        // Energy bar: inline with title
+        // Less empty space above scroller
         // ================================================================
 
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
@@ -1970,10 +1975,10 @@
             const MAX_ENERGY = 100;
             const NUM_CELLS = 24;
 
-            // VERY HARD to fill, VERY FAST to consume
-            const CONSUMPTION_RATE = 6.0; // per second
-            const CHARGE_RATE = 0.0005; // even lower
-            const SPEED_EXP = 4.0; // higher exponent
+            // EXTREMELY HARD to fill, EXTREMELY FAST to consume
+            const CONSUMPTION_RATE = 6.0;
+            const CHARGE_RATE = 0.00025;
+            const SPEED_EXP = 4.5;
 
             let glow = 0;
             let endHeat = 0;
@@ -2009,11 +2014,13 @@
                     energyFill.appendChild(cell);
                 }
 
-                // Toggle visibility
-                if (energy > 0.3) {
+                // Show/hide energy bar based on energy
+                if (energy > 0.1) {
                     energyWrap.classList.add('active');
+                    energyWrap.style.display = 'flex';
                 } else {
                     energyWrap.classList.remove('active');
+                    energyWrap.style.display = 'none';
                 }
 
                 // HQL
@@ -2070,7 +2077,7 @@
                 });
             };
 
-            // ---- Moving sparks (restored) ----
+            // ---- Moving sparks ----
             const spawnMovingSparks = (speed, fromLeft) => {
                 if (!sparkLayer || speed < 0.5) return;
                 const now = performance.now();
@@ -2115,7 +2122,7 @@
                 const w = strip.clientWidth,
                     h = strip.clientHeight;
                 const edgeX = atLeft ? 8 : (w - 8);
-                const count = 30; // more sparks
+                const count = 30;
                 for (let i = 0; i < count; i++) {
                     const sp = document.createElement('div');
                     sp.className = 'weight-spark';
@@ -2176,7 +2183,6 @@
                         energy = Math.min(MAX_ENERGY, energy + gain);
                         updateEnergyBar();
 
-                        // Moving sparks
                         spawnMovingSparks(absV, sparkFromLeft);
 
                         glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
@@ -2311,12 +2317,8 @@
             paint();
         }
 
-        // loadReport and renderReport unchanged (they already use the updated HTML)
-        // For brevity, I'll keep them as in previous version.
-        // The only changes above are the energy parameters and spark functions.
-
-        // ----------------------- loadReport and renderReport (unchanged) -----------------------
-        // (I'll include them for completeness)
+        // loadReport and renderReport unchanged (they use the updated HTML)
+        // ----------------------- loadReport and renderReport -----------------------
         async function loadReport() {
             const seq = ++reportLoadSeq;
 
@@ -2769,9 +2771,11 @@
 
             const weightStripHtml = `
               <div class="card weight-strip-card">
-                <div class="card-title">وزن روزانه</div>
-                <div class="energy-bar-wrap">
-                  <div class="energy-bar-fill"></div>
+                <div class="weight-strip-header">
+                  <div class="card-title">وزن روزانه</div>
+                  <div class="energy-bar-wrap">
+                    <div class="energy-bar-fill"></div>
+                  </div>
                 </div>
                 <div class="weight-glass">
                   <span class="hql-neon">HQL</span>
