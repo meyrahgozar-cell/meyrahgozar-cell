@@ -1,12 +1,12 @@
 // ================================================================
-// ENERGY SYSTEM – adjustable parameters (energy.js)
+// ENERGY SYSTEM â adjustable parameters (energy.js)
 // ================================================================
 const ENERGY_CONFIG = {
     MAX_ENERGY: 100,
-    NUM_CELLS: 12,          // تعداد سلول‌ها کمتر، هرکدام بلندتر
-    CHARGE_RATE: 0.004,     // ۱/۲۰ سرعت قبلی
+    NUM_CELLS: 12,          // ØªØ¹Ø¯Ø§Ø¯ Ø³ÙÙÙâÙØ§ Ú©ÙØªØ±Ø ÙØ±Ú©Ø¯Ø§Ù Ø¨ÙÙØ¯ØªØ±
+    CHARGE_RATE: 0.0005,     // Û±/Û²Û° Ø³Ø±Ø¹Øª ÙØ¨ÙÛ
     SPEED_EXP: 1.5,
-    CONSUMPTION_RATE: 4.0,  // ۲ برابر سرعت تخلیه
+    CONSUMPTION_RATE: 20.0,  // Û² Ø¨Ø±Ø§Ø¨Ø± Ø³Ø±Ø¹Øª ØªØ®ÙÛÙ
     CHARGE_THRESHOLD: 0.3,
     DIM_THRESHOLD: 30,
 };
@@ -35,7 +35,7 @@ function initWeightStrip(strip) {
     const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
     let maxEl = null,
         maxV = -Infinity;
-    const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+    const faToEn = (s) => String(s || "").replace(/[Û°-Û¹]/g, d => String("Û°Û±Û²Û³Û´ÛµÛ¶Û·Û¸Û¹".indexOf(d)));
     chips.forEach(ch => {
         const t = ch.querySelector(".weight-chip-val");
         if (!t) return;
