@@ -920,10 +920,19 @@ a.rank-item-link {
   font-size: 11px;
   margin-top: 2px;
 }
-.weight-strip-card { margin-bottom: 14px; overflow: visible; }
+.weight-strip-card {
+  margin-bottom: 14px;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
 .weight-strip {
   direction: rtl;
   display: flex;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
   gap: 10px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1032,7 +1041,11 @@ a.rank-item-link {
 .weight-strip-wrap {
   position: relative;
   border-radius: 16px;
-  overflow: visible;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  contain: paint;
 }
 .weight-strip-wrap::after {
   content: "";
@@ -1055,12 +1068,12 @@ a.rank-item-link {
 }
 .weight-spark-layer {
   position: absolute;
-  left: -40px;
-  right: -40px;
-  top: -30px;
-  bottom: -50px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
   z-index: 3;
 }
 .weight-spark {
@@ -1573,7 +1586,7 @@ function initWeightStrip(strip) {
   let moveAccum = 0;
   let sparksMutedUntil = 0; // بعد از برخورد لبه
   let lastEdgeHit = 0;
-  const MAX_SPARKS = 40;
+  const MAX_SPARKS = 56;
 
   /* —— صدای فلزی سنتزشده (Web Audio) — بدون فایل کپی‌رایت —— */
   let audioCtx = null;
@@ -1702,7 +1715,7 @@ function initWeightStrip(strip) {
 
     const edgeX = fromLeft ? 8 : (w - 8);
     const trailSign = fromLeft ? 1 : -1;
-    const n = Math.min(3, 1 + Math.floor((speed - 1.2) * 0.7));
+    const n = Math.min(6, 2 + Math.floor((speed - 1.0) * 1.1));
 
     for (let i = 0; i < n; i++) {
       const sp = document.createElement("div");
@@ -1747,11 +1760,9 @@ function initWeightStrip(strip) {
 
     const w = strip.clientWidth;
     const h = strip.clientHeight;
-    // مبدأ روی لبه weight-strip (لایه اسپارکل بزرگ‌تر است)
-    const originX = fromLeft ? 48 : (w + 32); // +40 لایه؛ لبه چپ≈40+8
-    // مختصات لایه با inset منفی: left -40 → لبه چپ strip در x=40
-    const ox = fromLeft ? 40 + 8 : 40 + w - 8;
-    const count = Math.min(40, 20 + Math.floor(intensity * 14));
+    // مبدأ روی لبه weight-strip
+    const ox = fromLeft ? 8 : (w - 8);
+    const count = Math.min(64, 32 + Math.floor(intensity * 22));
 
     for (let i = 0; i < count; i++) {
       const sp = document.createElement("div");
@@ -1773,8 +1784,8 @@ function initWeightStrip(strip) {
       // کمی هم به داخل
       if (Math.random() < 0.2) vx *= -0.35;
 
-      let vy = -(3 + Math.random() * 8 + intensity * 2);
-      const gravity = 0.38 + Math.random() * 0.12;
+      let vy = -(1 + Math.random() * 5 + intensity); // کمتر بالا، جاذبه سریع‌تر می‌کشد
+      const gravity = 0.72 + Math.random() * 0.25;
       let x = 0, y = 0;
       const t0 = performance.now();
       const life = 800 + Math.random() * 600;
