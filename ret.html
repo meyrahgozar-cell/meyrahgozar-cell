@@ -14,7 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js">
     </script>
     <style>
-        /* ====== global styles (unchanged) ====== */
         :root {
             --bg: #05060a;
             --card: #0d1019;
@@ -1130,7 +1129,7 @@
             margin-top: 2px;
         }
 
-        /* ====== Energy bar – retro vertical cells, hidden when off ====== */
+        /* ====== Energy bar – narrow, single neon rectangles, no horizontal lines ====== */
         .weight-strip-card {
             position: relative;
             overflow: visible;
@@ -1138,51 +1137,28 @@
 
         .energy-bar-wrap {
             position: relative;
-            height: 28px;
-            margin: 0 0 6px 0;
-            border-radius: 3px;
+            height: 16px;
+            margin: 0 auto 6px auto;
+            max-width: 60%;
+            border-radius: 2px;
             overflow: hidden;
             display: flex;
             align-items: stretch;
-            padding: 3px 4px;
-            gap: 2px;
+            padding: 1px 2px;
+            gap: 1px;
             opacity: 0;
             transition: opacity 0.2s ease;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(80, 60, 30, 0.5);
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 0 10px rgba(80, 50, 20, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            box-shadow: none;
         }
         .energy-bar-wrap.active {
             opacity: 1;
         }
-        /* noise overlay */
-        .energy-bar-wrap::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 3;
-            opacity: 0.05;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            background-size: 128px 128px;
-            mix-blend-mode: overlay;
-        }
-        .energy-bar-wrap::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-            background: repeating-linear-gradient(0deg,
-                    transparent 0px,
-                    transparent 2px,
-                    rgba(0, 0, 0, 0.2) 2px,
-                    rgba(0, 0, 0, 0.2) 3px);
-        }
 
         .energy-bar-fill {
             display: flex;
-            gap: 2px;
+            gap: 1px;
             height: 100%;
             width: 100%;
             align-items: stretch;
@@ -1192,48 +1168,27 @@
 
         .energy-cell {
             flex: 1 1 0;
-            min-width: 4px;
+            min-width: 2px;
             border-radius: 1px;
             background: transparent;
-            transition: background 0.05s ease, box-shadow 0.05s ease;
+            transition: background 0.04s ease, box-shadow 0.04s ease;
         }
         .energy-cell.on {
-            background: linear-gradient(180deg, #ffcc66 0%, #ff8c1a 40%, #cc6a0a 100%);
-            box-shadow: 0 0 6px rgba(255, 180, 60, 0.3), inset 0 1px 2px rgba(255, 220, 150, 0.3);
+            background: linear-gradient(180deg, #ffcc55 0%, #ff8c1a 50%, #cc6a0a 100%);
+            box-shadow: 0 0 8px rgba(255, 180, 60, 0.4), inset 0 0 4px rgba(255, 220, 150, 0.3);
         }
         .energy-cell.on-high {
-            background: linear-gradient(180deg, #ffdd88 0%, #ffaa33 30%, #ff7a1a 70%, #cc5a00 100%);
-            box-shadow: 0 0 12px rgba(255, 180, 60, 0.5), 0 0 24px rgba(255, 120, 20, 0.2), inset 0 1px 2px rgba(255, 220, 150,
+            background: linear-gradient(180deg, #ffdd77 0%, #ffaa33 35%, #ff7a1a 70%, #cc5a00 100%);
+            box-shadow: 0 0 14px rgba(255, 180, 60, 0.6), 0 0 28px rgba(255, 120, 20, 0.25), inset 0 0 6px rgba(255, 220, 150,
                     0.4);
         }
 
-        .energy-label {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 8px;
-            font-weight: 700;
-            color: rgba(255, 180, 80, 0.35);
-            letter-spacing: 2px;
-            text-shadow: 0 0 8px rgba(255, 150, 50, 0.1);
-            z-index: 4;
-            font-family: monospace;
-        }
+        .energy-label,
         .energy-pct {
-            position: absolute;
-            left: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 9px;
-            font-weight: 700;
-            color: rgba(255, 180, 80, 0.3);
-            font-family: monospace;
-            z-index: 4;
-            letter-spacing: 0.5px;
+            display: none;
         }
 
-        /* ---- HQL neon glow (powered by energy) ---- */
+        /* ---- HQL neon – hidden when no energy ---- */
         .hql-neon {
             font-size: 34px;
             font-weight: 900;
@@ -1243,11 +1198,13 @@
             font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
             color: transparent;
             -webkit-text-stroke: 1px rgba(255, 200, 100, 0.1);
-            transition: opacity 0.15s ease, text-shadow 0.15s ease, filter 0.15s ease;
+            transition: opacity 0.2s ease, text-shadow 0.15s ease, filter 0.15s ease;
             user-select: none;
             will-change: opacity, text-shadow, filter;
             position: relative;
             display: inline-block;
+            opacity: 0;
+            pointer-events: none;
         }
         .hql-neon::after {
             content: "HQL";
@@ -1261,6 +1218,8 @@
             background-clip: text;
         }
         .hql-neon.lit {
+            opacity: 1;
+            pointer-events: none;
             color: transparent;
             -webkit-text-stroke: 1px rgba(255, 200, 140, calc(var(--neon-intensity, 0) * 0.45));
             text-shadow:
@@ -1271,7 +1230,6 @@
                 0 0 60px rgba(180, 40, 255, calc(var(--neon-intensity, 0) * 0.22));
             filter: brightness(calc(0.35 + var(--neon-intensity, 0) * 1.35)) saturate(calc(0.4 + var(--neon-intensity, 0) *
                         0.9));
-            opacity: calc(0.06 + var(--neon-intensity, 0) * 0.94);
         }
 
         .weight-glass {
@@ -1415,6 +1373,7 @@
             font-weight: 600;
         }
 
+        /* spark layer – only for edge explosions now, no moving sparks */
         .weight-spark-layer {
             position: absolute;
             inset: 0;
@@ -1516,8 +1475,7 @@
 
     <script>
         // ================================================================
-        // All JavaScript remains the same as previous version, except for
-        // the energy parameters and the visibility toggle in updateEnergyBar.
+        // All logic unchanged except energy parameters and spark removal
         // ================================================================
 
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
@@ -1940,7 +1898,7 @@
             }).join("");
         }
 
-        // --- initWeightStrip with retro bar energy, harder storage, faster consumption ---
+        // --- initWeightStrip: no moving sparks, energy very hard to fill, very fast to consume ---
         function initWeightStrip(strip) {
             if (!strip) return;
             const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
@@ -1948,10 +1906,10 @@
 
             const card = strip.closest(".weight-strip-card");
             const energyFill = card ? card.querySelector(".energy-bar-fill") : null;
-            const energyPct = card ? card.querySelector(".energy-pct") : null;
             const energyWrap = card ? card.querySelector(".energy-bar-wrap") : null;
             const hqlNeon = card ? card.querySelector(".hql-neon") : null;
 
+            // spark layer for edge explosions only
             let sparkLayer = wrap.querySelector(".weight-spark-layer");
             if (!sparkLayer) {
                 sparkLayer = document.createElement("div");
@@ -1997,10 +1955,10 @@
             const MAX_ENERGY = 100;
             const NUM_CELLS = 24;
 
-            // MUCH FASTER consumption, MUCH HARDER storage
-            const CONSUMPTION_RATE = 2.8; // per second
-            const CHARGE_RATE = 0.004; // very low
-            const SPEED_EXP = 2.3; // high exponent for speed → gain
+            // VERY HARD to fill, VERY FAST to consume
+            const CONSUMPTION_RATE = 5.0; // per second
+            const CHARGE_RATE = 0.0008; // very low
+            const SPEED_EXP = 3.5; // very high exponent
 
             let glow = 0;
             let endHeat = 0;
@@ -2010,7 +1968,7 @@
             let raf = null;
             let sparkFromLeft = true;
             let lastSparkTime = 0;
-            const MAX_SPARKS = 28;
+            const MAX_SPARKS = 40;
             let lastEnergyUpdate = performance.now();
 
             const trimSparks = () => {
@@ -2022,7 +1980,6 @@
                 const pct = Math.min(100, energy);
                 const cellsOn = Math.floor((pct / 100) * NUM_CELLS);
 
-                // Clear and rebuild cells
                 energyFill.innerHTML = '';
                 for (let i = 0; i < NUM_CELLS; i++) {
                     const cell = document.createElement('div');
@@ -2036,35 +1993,39 @@
                     energyFill.appendChild(cell);
                 }
 
-                if (energyPct) {
-                    energyPct.textContent = Math.round(pct) + '%';
-                }
-
-                // Toggle visibility of the whole energy bar
-                if (energy > 0.5) {
+                // Toggle visibility
+                if (energy > 0.3) {
                     energyWrap.classList.add('active');
                 } else {
                     energyWrap.classList.remove('active');
                 }
 
-                // Update HQL neon intensity: flat until 20, then linear fade below 20
+                // HQL: only visible when energy > 0
                 if (hqlNeon) {
                     let intensity = 0;
                     if (energy >= 20) {
                         intensity = 1.0;
-                    } else {
+                    } else if (energy > 0) {
                         intensity = Math.max(0, energy / 20);
+                    } else {
+                        intensity = 0;
                     }
                     hqlNeon.style.setProperty('--neon-intensity', intensity);
-                    hqlNeon.classList.toggle('lit', intensity > 0.02);
+                    if (intensity > 0.02) {
+                        hqlNeon.classList.add('lit');
+                    } else {
+                        hqlNeon.classList.remove('lit');
+                    }
                 }
             };
 
             const getGlowIntensity = () => {
                 if (energy >= 20) {
                     return 1.0;
-                } else {
+                } else if (energy > 0) {
                     return Math.max(0, energy / 20);
+                } else {
+                    return 0;
                 }
             };
 
@@ -2100,62 +2061,26 @@
                 });
             };
 
-            const spawnSparks = (speed, fromLeft) => {
-                if (!sparkLayer || speed < 0.6) return; // lower threshold
-                const now = performance.now();
-                if (now - lastSparkTime < 20) return;
-                lastSparkTime = now;
-                const w = strip.clientWidth,
-                    h = strip.clientHeight;
-                if (w < 8 || h < 8) return;
-                const edgeX = fromLeft ? 6 : (w - 6);
-                const trailSign = fromLeft ? 1 : -1;
-                const n = Math.min(3, 1 + Math.floor((speed - 0.4) * 0.5));
-                for (let i = 0; i < n; i++) {
-                    const sp = document.createElement('div');
-                    sp.className = 'weight-spark';
-                    const size = 2 + Math.random() * 2.5;
-                    sp.style.cssText =
-                        `width:${size}px;height:${size}px;left:${edgeX}px;top:${8 + Math.random() * (h - 16)}px`;
-                    const hue = 18 + Math.random() * 40;
-                    sp.style.background = `hsl(${hue},100%,60%)`;
-                    sp.style.boxShadow = `0 0 8px hsl(${hue},100%,55%)`;
-                    sparkLayer.appendChild(sp);
-                    const trail = trailSign * (20 + speed * 25 + Math.random() * 18);
-                    const outward = (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 12);
-                    const life = 200 + Math.random() * 200;
-                    const t0 = performance.now();
-                    const anim = (t) => {
-                        const p = Math.min(1, (t - t0) / life);
-                        if (p >= 1) { sp.remove(); return; }
-                        const e = 1 - Math.pow(1 - p, 1.5);
-                        sp.style.transform = `translate(${trail * e}px,${outward * e}px) scale(${1 - p * 0.7})`;
-                        sp.style.opacity = String(1 - p);
-                        requestAnimationFrame(anim);
-                    };
-                    requestAnimationFrame(anim);
-                }
-                trimSparks();
-            };
-
+            // ---- Edge explosion only (no moving sparks) ----
             const edgeExplosion = (atLeft) => {
                 if (!sparkLayer) return;
                 const w = strip.clientWidth,
                     h = strip.clientHeight;
                 const edgeX = atLeft ? 8 : (w - 8);
-                for (let i = 0; i < 18; i++) {
+                const count = 22; // more sparks on impact
+                for (let i = 0; i < count; i++) {
                     const sp = document.createElement('div');
                     sp.className = 'weight-spark';
-                    const size = 2.5 + Math.random() * 4.5;
+                    const size = 2.5 + Math.random() * 5;
                     sp.style.cssText =
-                        `width:${size}px;height:${size}px;left:${edgeX + (Math.random() - 0.5) * 12}px;top:${h * 0.2 + Math.random() * h * 0.5}px`;
-                    sp.style.background = Math.random() > 0.35 ? '#ffe59a' : '#ff6a1a';
-                    sp.style.boxShadow = '0 0 10px #ff9400,0 0 20px #ff3d00';
+                        `width:${size}px;height:${size}px;left:${edgeX + (Math.random() - 0.5) * 14}px;top:${h * 0.15 + Math.random() * h * 0.6}px`;
+                    sp.style.background = Math.random() > 0.3 ? '#ffe59a' : '#ff6a1a';
+                    sp.style.boxShadow = '0 0 12px #ff9400,0 0 24px #ff3d00';
                     sparkLayer.appendChild(sp);
-                    const vx = (atLeft ? -1 : 1) * (12 + Math.random() * 50) + (Math.random() - 0.5) * 18;
-                    let vy = -40 - Math.random() * 70;
-                    const g = 480;
-                    const life = 500 + Math.random() * 400;
+                    const vx = (atLeft ? -1 : 1) * (15 + Math.random() * 60) + (Math.random() - 0.5) * 20;
+                    let vy = -50 - Math.random() * 80;
+                    const g = 520;
+                    const life = 400 + Math.random() * 500;
                     const t0 = performance.now();
                     let last = t0,
                         x = 0,
@@ -2197,14 +2122,11 @@
 
                     if (absV > 0.5) sparkFromLeft = velocity < 0;
 
-                    // Charge energy: very hard (speed^2.3 * 0.004)
-                    if (absV > 0.6) {
+                    // Charge energy: extremely hard (speed^3.5 * 0.0008)
+                    if (absV > 0.8) {
                         const gain = Math.pow(absV, SPEED_EXP) * CHARGE_RATE * dt;
                         energy = Math.min(MAX_ENERGY, energy + gain);
                         updateEnergyBar();
-
-                        // Spawn sparks at lower threshold
-                        if (absV > 0.6) spawnSparks(absV, sparkFromLeft);
 
                         glow = Math.max(glow * 0.9, Math.min(1, absV / 12));
                         endHeat = Math.max(endHeat * 0.92, Math.min(1, absV / 10));
@@ -2212,7 +2134,7 @@
 
                     const maxScroll = strip.scrollWidth - strip.clientWidth;
                     if (currentPos <= 1 || currentPos >= maxScroll - 1) {
-                        if (absV > 2) {
+                        if (absV > 1.5) {
                             edgeExplosion(currentPos <= 1);
                             glow = 0.9;
                             endHeat = 1;
@@ -2338,9 +2260,8 @@
             paint();
         }
 
-        // ======== loadReport and renderReport are unchanged ========
-        // (they use the same weight strip HTML with energy bar)
-        // I'll keep them concise.
+        // loadReport and renderReport unchanged (use same HTML without "اسکرول کنید")
+        // I'll keep the full implementation but the key changes are in the energy system above.
 
         async function loadReport() {
             const seq = ++reportLoadSeq;
@@ -2792,14 +2713,12 @@
                 }
             }
 
+            // weight strip HTML – no "اسکرول کنید" text
             const weightStripHtml = `
               <div class="card weight-strip-card">
                 <div class="card-title">وزن روزانه</div>
-                <div class="card-sub">اسکرول کنید — انرژی ذخیره می‌شود</div>
                 <div class="energy-bar-wrap">
                   <div class="energy-bar-fill"></div>
-                  <span class="energy-pct">۰%</span>
-                  <span class="energy-label">⚡ ENERGY</span>
                 </div>
                 <div class="weight-glass">
                   <span class="hql-neon">HQL</span>
