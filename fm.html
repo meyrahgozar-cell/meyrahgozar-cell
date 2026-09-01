@@ -1,261 +1,709 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>File Manager</title>
-<style>
-body{margin:0;font-family:system-ui,sans-serif;background:#0a0a12;color:#e0e0ff;min-height:100vh}
-header{padding:16px;background:#11111b;border-bottom:1px solid #222;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-input{background:#1a1a2e;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:8px;font-size:14px}
-input:focus{outline:none;border-color:#00f0ff}
-button{background:transparent;border:1px solid #00f0ff;color:#00f0ff;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-button:hover{background:#00f0ff22}
-.status{font-size:13px;color:#888;margin-left:auto}
-.status.ok{color:#00ff9f}
-.status.err{color:#ff4d6d}
-.toolbar{padding:12px 16px;display:none;gap:10px;border-bottom:1px solid #222;background:#0f0f18}
-.path{padding:10px 16px;font-family:monospace;font-size:13px;color:#00f0ff;border-bottom:1px solid #222}
-.files{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-.card{background:#141420;border:1px solid #2a2a3a;border-radius:10px;padding:16px 10px;text-align:center;cursor:pointer;position:relative}
-.card:hover{border-color:#00f0ff}
-.card .name{font-size:13px;word-break:break-all;margin-top:8px}
-.card .meta{font-size:11px;color:#888;margin-top:4px}
-.card .del{position:absolute;top:6px;right:6px;background:#2a0a0a;border:1px solid #ff4d6d;color:#ff4d6d;width:24px;height:24px;border-radius:6px;font-size:12px;display:none;cursor:pointer}
-.card:hover .del{display:block}
-.upload-area{margin:16px;border:2px dashed #333;border-radius:10px;padding:30px;text-align:center;color:#888;display:none;cursor:pointer}
-.upload-area.drag{border-color:#00f0ff;background:#00f0ff11}
-.msg{padding:40px;text-align:center;color:#888}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub File Manager</title>
+    <style>
+        /* ─── Reset & base ─── */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a12;
+            color: #e0e0ff;
+            min-height: 100vh;
+        }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #141420;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a4a;
+        }
+
+        /* ─── Header ─── */
+        header {
+            padding: 14px 20px;
+            background: #11111b;
+            border-bottom: 1px solid #222;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        header form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
+        }
+        header input {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3a;
+            color: #e0e0ff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border .2s;
+            min-width: 180px;
+        }
+        header input:focus {
+            outline: none;
+            border-color: #00f0ff;
+            box-shadow: 0 0 0 3px #00f0ff22;
+        }
+        header input::placeholder {
+            color: #555;
+        }
+        header button {
+            background: transparent;
+            border: 1px solid #00f0ff;
+            color: #00f0ff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background .2s;
+            white-space: nowrap;
+        }
+        header button:hover {
+            background: #00f0ff22;
+        }
+        .status {
+            font-size: 13px;
+            color: #888;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+        .status.ok {
+            color: #00ff9f;
+        }
+        .status.err {
+            color: #ff4d6d;
+        }
+        .status.loading {
+            color: #ffd93d;
+        }
+
+        /* ─── Path bar ─── */
+        .path {
+            padding: 10px 20px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: #00f0ff;
+            border-bottom: 1px solid #1a1a2a;
+            background: #0d0d18;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .path .crumb {
+            color: #888;
+            cursor: pointer;
+            transition: color .2s;
+        }
+        .path .crumb:hover {
+            color: #00f0ff;
+        }
+        .path .sep {
+            color: #333;
+            user-select: none;
+        }
+
+        /* ─── Toolbar ─── */
+        .toolbar {
+            padding: 10px 20px;
+            display: none;
+            gap: 10px;
+            border-bottom: 1px solid #1a1a2a;
+            background: #0d0d18;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .toolbar button {
+            background: transparent;
+            border: 1px solid #2a2a3a;
+            color: #c0c0e0;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .2s;
+        }
+        .toolbar button:hover {
+            border-color: #00f0ff;
+            color: #00f0ff;
+            background: #00f0ff11;
+        }
+        .toolbar .count {
+            font-size: 12px;
+            color: #666;
+            margin-left: 4px;
+        }
+        .toolbar .spacer {
+            flex: 1;
+        }
+
+        /* ─── Drop area ─── */
+        .upload-area {
+            margin: 16px 20px 8px;
+            border: 2px dashed #2a2a3a;
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            transition: all .3s;
+            display: none;
+            background: #0d0d18;
+        }
+        .upload-area:hover {
+            border-color: #444;
+            background: #11111f;
+        }
+        .upload-area.drag {
+            border-color: #00f0ff;
+            background: #00f0ff11;
+        }
+        .upload-area .icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* ─── File grid ─── */
+        .files {
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+        }
+        .card {
+            background: #141420;
+            border: 1px solid #22223a;
+            border-radius: 12px;
+            padding: 18px 10px 14px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: all .25s;
+            user-select: none;
+        }
+        .card:hover {
+            border-color: #00f0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 240, 255, 0.06);
+        }
+        .card .icon-big {
+            font-size: 32px;
+            line-height: 1.2;
+        }
+        .card .name {
+            font-size: 13px;
+            word-break: break-all;
+            margin-top: 8px;
+            font-weight: 500;
+            color: #e0e0ff;
+        }
+        .card .meta {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .card .del {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #2a0a0a;
+            border: 1px solid #ff4d6d;
+            color: #ff4d6d;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s;
+            z-index: 2;
+        }
+        .card .del:hover {
+            background: #ff4d6d22;
+        }
+        .card:hover .del {
+            display: flex;
+        }
+        .card .ext-badge {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            font-size: 9px;
+            background: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+        .card.folder .icon-big {
+            filter: drop-shadow(0 2px 4px rgba(0, 240, 255, 0.1));
+        }
+
+        /* ─── Message ─── */
+        .msg {
+            padding: 60px 20px;
+            text-align: center;
+            color: #555;
+            font-size: 15px;
+        }
+        .msg .emoji {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        /* ─── Editor Modal ─── */
+        .editor-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .78);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn .2s ease;
+        }
+        .editor-overlay.open {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(.97);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .editor-modal {
+            background: #11111f;
+            border: 1px solid #2a2a3a;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 920px;
+            height: min(90vh, 800px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, .8);
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #1a1a2a;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+            background: #0d0d18;
+        }
+        .editor-header .file-icon {
+            font-size: 20px;
+        }
+        .editor-header .file-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #e0e0ff;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .editor-header .file-path {
+            font-size: 11px;
+            color: #555;
+            font-family: monospace;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .editor-header .editor-status {
+            font-size: 12px;
+            color: #888;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #1a1a2e;
+        }
+        .editor-header .editor-status.saved {
+            color: #00ff9f;
+        }
+        .editor-header .editor-status.dirty {
+            color: #ffd93d;
+        }
+        .editor-header .editor-status.error {
+            color: #ff4d6d;
+        }
+        .editor-header .close-btn {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 6px;
+            line-height: 1;
+            transition: color .2s;
+        }
+        .editor-header .close-btn:hover {
+            color: #ff4d6d;
+        }
+
+        .editor-body {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background: #0a0a12;
+            min-height: 0;
+        }
+
+        /* The actual editor container (line numbers + code) */
+        .editor-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            background: #0a0a12;
+        }
+
+        /* Line number gutter */
+        .line-gutter {
+            flex-shrink: 0;
+            width: 44px;
+            background: #0a0a12;
+            color: #444;
+            text-align: right;
+            padding: 12px 10px 12px 0;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid #1a1a2a;
+            font-size: 13px;
+            line-height: 1.6;
+            font-family: inherit;
+            position: sticky;
+            left: 0;
+            top: 0;
+            height: 100%;
+            z-index: 2;
+        }
+        .line-gutter .ln {
+            display: block;
+            padding-right: 4px;
+        }
+
+        /* Code container (pre + textarea overlay) */
+        .code-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            min-height: 100%;
+        }
+
+        .code-container pre {
+            margin: 0;
+            padding: 12px 16px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #e0e0ff;
+            background: transparent;
+            min-height: 100%;
+            pointer-events: none;
+        }
+        .code-container pre .token {
+            pointer-events: none;
+        }
+        /* syntax highlighting colors */
+        .code-container pre .kw {
+            color: #ff79c6;
+        }
+        .code-container pre .str {
+            color: #f1fa8c;
+        }
+        .code-container pre .cmt {
+            color: #6272a4;
+            font-style: italic;
+        }
+        .code-container pre .fn {
+            color: #50fa7b;
+        }
+        .code-container pre .num {
+            color: #bd93f9;
+        }
+        .code-container pre .op {
+            color: #ff79c6;
+        }
+        .code-container pre .cls {
+            color: #8be9fd;
+        }
+        .code-container pre .tag {
+            color: #ff79c6;
+        }
+        .code-container pre .attr {
+            color: #50fa7b;
+        }
+        .code-container pre .val {
+            color: #f1fa8c;
+        }
+        .code-container pre .prop {
+            color: #8be9fd;
+        }
+        .code-container pre .bool {
+            color: #bd93f9;
+        }
+        .code-container pre .null {
+            color: #ff5555;
+        }
+
+        .code-container textarea {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            color: transparent;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            caret-color: #e0e0ff;
+            overflow: auto;
+            width: 100%;
+            height: 100%;
+            tab-size: 2;
+            z-index: 3;
+            letter-spacing: 0;
+        }
+        .code-container textarea::selection {
+            background: #00f0ff33;
+            color: transparent;
+        }
+
+        /* editor footer */
+        .editor-footer {
+            padding: 10px 20px;
+            border-top: 1px solid #1a1a2a;
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+            background: #0d0d18;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .editor-footer .info {
+            font-size: 12px;
+            color: #555;
+            flex: 1;
+        }
+        .editor-footer .info span {
+            color: #888;
+        }
+        .editor-footer button {
+            padding: 6px 18px;
+            border-radius: 6px;
+            border: 1px solid #2a2a3a;
+            background: transparent;
+            color: #c0c0e0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all .2s;
+        }
+        .editor-footer button:hover {
+            border-color: #00f0ff;
+            color: #00f0ff;
+        }
+        .editor-footer button.primary {
+            background: #00f0ff;
+            border-color: #00f0ff;
+            color: #0a0a12;
+        }
+        .editor-footer button.primary:hover {
+            background: #00d4e8;
+            border-color: #00d4e8;
+        }
+        .editor-footer button.primary:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 640px) {
+            header form input {
+                min-width: 120px;
+                width: 100%;
+            }
+            .files {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+                padding: 12px;
+            }
+            .editor-modal {
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            .editor-overlay {
+                padding: 0;
+            }
+            .editor-header .file-path {
+                max-width: 80px;
+            }
+            .line-gutter {
+                width: 32px;
+                font-size: 11px;
+                padding: 10px 6px 10px 0;
+            }
+            .code-container pre,
+            .code-container textarea {
+                font-size: 12px;
+                padding: 10px 12px;
+            }
+            .card .del {
+                display: flex;
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
+            }
+        }
+
+        /* ─── Utilities ─── */
+        .hidden {
+            display: none !important;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 </head>
 <body>
-<header>
-<form id="auth" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex:1">
-<input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" style="width:240px">
-<input id="token" type="password" placeholder="GitHub Token" style="width:260px">
-<button type="submit">Connect</button>
-</form>
-<div class="status" id="status">Not connected</div>
-</header>
 
-<div class="path" id="path"></div>
+    <!-- ─── HEADER ─── -->
+    <header>
+        <form id="auth">
+            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" />
+            <input id="token" type="password" placeholder="GitHub Token" />
+            <button type="submit">Connect</button>
+        </form>
+        <div class="status" id="status">Not connected</div>
+    </header>
 
-<div class="toolbar" id="toolbar">
-<button type="button" id="uploadBtn">Upload Files</button>
-<button type="button" id="newFolder">New Folder</button>
-<input type="file" id="fileInput" multiple hidden>
-</div>
+    <!-- ─── PATH ─── -->
+    <div class="path" id="path"></div>
 
-<div class="upload-area" id="drop">Drop files here or click Upload</div>
-<div class="files" id="files"></div>
-<div class="msg" id="msg">Enter your token and click Connect</div>
+    <!-- ─── TOOLBAR ─── -->
+    <div class="toolbar" id="toolbar">
+        <button type="button" id="uploadBtn">📤 Upload</button>
+        <button type="button" id="newFolder">📁 New Folder</button>
+        <button type="button" id="refreshBtn">⟳ Refresh</button>
+        <input type="file" id="fileInput" multiple hidden />
+        <span class="count" id="fileCount"></span>
+        <span class="spacer"></span>
+        <span style="font-size:12px;color:#555" id="branchLabel">main</span>
+    </div>
 
-<script>
-const state = { owner: "meyrahgozar-cell", repo: "meyrahgozar-cell", token: "", path: "", branch: "main", connected: false };
-const $ = id => document.getElementById(id);
+    <!-- ─── DROP ZONE ─── -->
+    <div class="upload-area" id="drop">
+        <span class="icon">📂</span>
+        Drop files here or click to upload
+    </div>
 
-const saved = localStorage.getItem("fm_token");
-if (saved) $("token").value = saved;
+    <!-- ─── FILE GRID ─── -->
+    <div class="files" id="files"></div>
+    <div class="msg" id="msg"><span class="emoji">🔑</span>Enter your token and click Connect</div>
 
-async function api(method, path, body) {
-  const url = "https://api.github.com/repos/" + state.owner + "/" + state.repo + path;
-  const opt = {
-    method: method,
-    headers: {
-      "Accept": "application/vnd.github.v3+json",
-      "Authorization": "token " + state.token,
-      "Content-Type": "application/json"
-    }
-  };
-  if (body) opt.body = JSON.stringify(body);
-  const res = await fetch(url, opt);
-  if (res.status === 204) return null;
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Error " + res.status);
-  return data;
-}
+    <!-- ─── EDITOR OVERLAY ─── -->
+    <div class="editor-overlay" id="editorOverlay">
+        <div class="editor-modal">
+            <div class="editor-header">
+                <span class="file-icon" id="edIcon">📄</span>
+                <span class="file-name" id="edFileName">file.html</span>
+                <span class="file-path" id="edFilePath">path/to/file</span>
+                <span class="editor-status" id="edStatus">● saved</span>
+                <button class="close-btn" id="edClose">✕</button>
+            </div>
+            <div class="editor-body" id="edBody">
+                <div class="editor-wrap">
+                    <div class="line-gutter" id="lineGutter"></div>
+                    <div class="code-container" id="codeContainer">
+                        <pre id="codePre"><code id="codeHighlight"></code></pre>
+                        <textarea id="codeEditor" spellcheck="false" autofocus></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-footer">
+                <div class="info" id="edInfo"><span id="edLines">0</span> lines · <span id="edSize">0</span> B</div>
+                <button id="edCancel">Cancel</button>
+                <button class="primary" id="edSave">💾 Save</button>
+            </div>
+        </div>
+    </div>
 
-async function connect() {
-  const repoVal = $("repo").value.trim();
-  const token = $("token").value.trim();
-  if (!repoVal.includes("/") || !token) {
-    alert("Fill both fields");
-    return;
-  }
-  const parts = repoVal.split("/");
-  state.owner = parts[0];
-  state.repo = parts[1];
-  state.token = token;
-  state.path = "";
-
-  $("status").textContent = "Connecting...";
-  $("status").className = "status";
-
-  try {
-    const info = await api("GET", "");
-    state.branch = info.default_branch || "main";
-    state.connected = true;
-    localStorage.setItem("fm_token", token);
-    $("status").textContent = "Connected: " + info.full_name;
-    $("status").className = "status ok";
-    $("toolbar").style.display = "flex";
-    $("drop").style.display = "block";
-    $("msg").style.display = "none";
-    await load();
-  } catch (e) {
-    $("status").textContent = "Failed";
-    $("status").className = "status err";
-    alert(e.message);
-  }
-}
-
-async function load() {
-  $("files").innerHTML = "";
-  $("path").textContent = state.owner + "/" + state.repo + (state.path ? "/" + state.path : "");
-
-  try {
-    const data = await api("GET", "/contents/" + state.path + "?ref=" + state.branch);
-    const items = Array.isArray(data) ? data : [data];
-    items.sort(function(a, b) {
-      if (a.type === b.type) return a.name.localeCompare(b.name);
-      return a.type === "dir" ? -1 : 1;
-    });
-
-    if (state.path) {
-      const back = document.createElement("div");
-      back.className = "card";
-      back.innerHTML = "<div style='font-size:28px'>⬅️</div><div class='name'>..</div>";
-      back.onclick = function() {
-        const parts = state.path.split("/");
-        parts.pop();
-        state.path = parts.join("/");
-        load();
-      };
-      $("files").appendChild(back);
-    }
-
-    items.forEach(function(item) {
-      const card = document.createElement("div");
-      card.className = "card";
-      const icon = item.type === "dir" ? "📁" : "📄";
-      card.innerHTML = "<div style='font-size:28px'>" + icon + "</div><div class='name'>" + item.name + "</div><div class='meta'>" + (item.type === "dir" ? "Folder" : formatSize(item.size)) + "</div>" + (item.type === "file" ? "<button class='del' title='Delete'>✕</button>" : "");
-
-      if (item.type === "file") {
-        card.querySelector(".del").onclick = function(e) {
-          e.stopPropagation();
-          if (confirm("Delete " + item.name + "?")) {
-            deleteFile(item.path, item.sha, item.name);
-          }
+    <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  STATE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const state = {
+            owner: 'meyrahgozar-cell',
+            repo: 'meyrahgozar-cell',
+            token: '',
+            path: '',
+            branch: 'main',
+            connected: false,
         };
-      }
 
-      card.onclick = function() {
-        if (item.type === "dir") {
-          state.path = item.path;
-          load();
-        } else {
-          window.open(item.download_url || item.html_url, "_blank");
-        }
-      };
+        // editor state
+        const editor = {
+            file: null, // { path, sha, name, content, size }
+            dirty: false,
+            savedContent: '',
+            isOpen: false,
+        };
 
-      $("files").appendChild(card);
-    });
-  } catch (e) {
-    $("files").innerHTML = "<div class='msg'>" + e.message + "</div>";
-  }
-}
-
-function formatSize(b) {
-  if (!b) return "";
-  if (b < 1024) return b + " B";
-  if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
-  return (b / 1048576).toFixed(1) + " MB";
-}
-
-async function deleteFile(path, sha, name) {
-  try {
-    await api("DELETE", "/contents/" + path, {
-      message: "Delete " + name,
-      sha: sha,
-      branch: state.branch
-    });
-    load();
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-function fileToBase64(file) {
-  return new Promise(function(resolve, reject) {
-    const r = new FileReader();
-    r.onload = function() { resolve(r.result.split(",")[1]); };
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-
-async function upload(files) {
-  if (!files.length) return;
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    try {
-      const base64 = await fileToBase64(file);
-      const path = state.path ? state.path + "/" + file.name : file.name;
-
-      let sha = null;
-      try {
-        const exist = await api("GET", "/contents/" + path + "?ref=" + state.branch);
-        sha = exist.sha;
-      } catch (e) {}
-
-      const body = {
-        message: "Upload " + file.name,
-        content: base64,
-        branch: state.branch
-      };
-      if (sha) body.sha = sha;
-
-      await api("PUT", "/contents/" + path, body);
-    } catch (e) {
-      alert("Failed " + file.name + ": " + e.message);
-    }
-  }
-  load();
-}
-
-async function newFolder() {
-  const name = prompt("Folder name:");
-  if (!name) return;
-  const path = state.path ? state.path + "/" + name + "/.gitkeep" : name + "/.gitkeep";
-  try {
-    await api("PUT", "/contents/" + path, {
-      message: "Create folder " + name,
-      content: btoa(""),
-      branch: state.branch
-    });
-    load();
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-$("auth").onsubmit = function(e) {
-  e.preventDefault();
-  connect();
-};
-$("uploadBtn").onclick = function() { $("fileInput").click(); };
-$("fileInput").onchange = function(e) { upload(e.target.files); };
-$("newFolder").onclick = newFolder;
-
-const drop = $("drop");
-drop.onclick = function() { $("fileInput").click(); };
-drop.ondragover = function(e) { e.preventDefault(); drop.classList.add("drag"); };
-drop.ondragleave = function() { drop.classList.remove("drag"); };
-drop.ondrop = function(e) {
-  e.preventDefault();
-  drop.classList.remove("drag");
-  upload(e.dataTransfer.files);
-};
-</script>
-</body>
-</html>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  DOM REFS
+        // ━━━━━━━━━━━━
