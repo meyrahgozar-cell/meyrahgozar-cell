@@ -532,7 +532,7 @@
             tab-size: 2;
             z-index: 3;
             letter-spacing: 0;
-            text-shadow: 0 0 0 rgba(0,0,0,0);
+            text-shadow: 0 0 0 rgba(0, 0, 0, 0);
         }
         .code-container textarea::selection {
             background: #00f0ff33;
@@ -754,45 +754,59 @@
         if (savedToken) tokenInput.value = savedToken;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  GITHUB API
+        //  GITHUB API - with retry logic and better timeout
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function apiUrl(path) {
             return `https://api.github.com/repos/${state.owner}/${state.repo}${path}`;
         }
 
-        async function api(method, path, body) {
+        async function api(method, path, body, retries = 2) {
             const url = apiUrl(path);
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
 
-            const opts = {
-                method,
-                headers: {
-                    Accept: 'application/vnd.github.v3+json',
-                    Authorization: `token ${state.token}`,
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'GitHub-File-Manager/1.0',
-                },
-                signal: controller.signal,
-            };
-            if (body) opts.body = JSON.stringify(body);
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
 
-            try {
-                const res = await fetch(url, opts);
-                clearTimeout(timeout);
-                if (res.status === 204) return null;
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message || `HTTP ${res.status}`);
+                const opts = {
+                    method,
+                    headers: {
+                        Accept: 'application/vnd.github.v3+json',
+                        Authorization: `token ${state.token}`,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'GitHub-File-Manager/1.0',
+                    },
+                    signal: controller.signal,
+                };
+                if (body) opts.body = JSON.stringify(body);
+
+                try {
+                    const res = await fetch(url, opts);
+                    clearTimeout(timeout);
+                    if (res.status === 204) return null;
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || `HTTP ${res.status}`);
+                    }
+                    return data;
+                } catch (err) {
+                    clearTimeout(timeout);
+                    if (err.name === 'AbortError') {
+                        if (attempt < retries) {
+                            console.log(`Retry ${attempt + 1}/${retries} for ${path}`);
+                            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                            continue;
+                        }
+                        throw new Error('Connection timeout. Please check your internet and try again.');
+                    }
+                    if (attempt < retries && err.message.includes('network')) {
+                        console.log(`Retry ${attempt + 1}/${retries} for ${path}`);
+                        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                        continue;
+                    }
+                    throw err;
                 }
-                return data;
-            } catch (err) {
-                clearTimeout(timeout);
-                if (err.name === 'AbortError') {
-                    throw new Error('Request timed out. Please check your internet connection.');
-                }
-                throw err;
             }
+            throw new Error('Max retries exceeded');
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -819,7 +833,8 @@
             setStatus('Connecting…', 'loading');
 
             try {
-                const info = await api('GET', '');
+                // Test with a simple GET request to verify token
+                const info = await api('GET', '', null, 3);
                 state.branch = info.default_branch || 'main';
                 state.connected = true;
                 localStorage.setItem('fm_token', token);
@@ -832,7 +847,7 @@
             } catch (err) {
                 console.error('Connection error:', err);
                 setStatus('✗ Failed: ' + err.message, 'err');
-                alert('Connection failed: ' + err.message);
+                alert('Connection failed: ' + err.message + '\n\nMake sure:\n• Token has repo scope\n• Repo exists and is public/accessible');
                 state.connected = false;
             } finally {
                 connectBtn.disabled = false;
@@ -1082,7 +1097,6 @@
             edFilePath.textContent = f.path;
             edOverlay.classList.add('open');
             editor.isOpen = true;
-            // Sync scroll position
             setTimeout(() => {
                 edEditor.focus();
                 edEditor.scrollTop = 0;
@@ -1105,7 +1119,6 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
-            // Force scroll sync
             edEditor.scrollTop = 0;
             edPre.parentElement.scrollTop = 0;
         }
@@ -1407,7 +1420,6 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
-            // Sync scroll
             edPre.parentElement.scrollTop = edEditor.scrollTop;
         });
 
@@ -1420,11 +1432,6 @@
                 e.preventDefault();
                 saveFile();
             }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                saveFile();
-            }
-            // Tab key support
             if (e.key === 'Tab') {
                 e.preventDefault();
                 const start = edEditor.selectionStart;
