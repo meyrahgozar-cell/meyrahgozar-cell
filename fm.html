@@ -622,6 +622,34 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* ─── UI Twicks ─── */
+        .toolbar button.primary {
+            background: #00f0ff;
+            border-color: #00f0ff;
+            color: #0a0a12;
+        }
+        .toolbar button.primary:hover {
+            background: #00d4e8;
+            border-color: #00d4e8;
+        }
+        .card .name {
+            font-weight: 500;
+        }
+        .card .meta {
+            color: #777;
+        }
+        .upload-area .sub {
+            font-size: 12px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .editor-status {
+            font-size: 11px;
+        }
+        .path .root-icon {
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -641,7 +669,7 @@
 
     <!-- ─── TOOLBAR ─── -->
     <div class="toolbar" id="toolbar">
-        <button type="button" id="uploadBtn">📤 Upload</button>
+        <button type="button" class="primary" id="uploadBtn">📤 Upload</button>
         <button type="button" id="newFolder">📁 New Folder</button>
         <button type="button" id="refreshBtn">⟳ Refresh</button>
         <input type="file" id="fileInput" multiple hidden />
@@ -654,6 +682,7 @@
     <div class="upload-area" id="drop">
         <span class="icon">📂</span>
         Drop files here or click to upload
+        <div class="sub">Supports multiple files</div>
     </div>
 
     <!-- ─── FILE GRID ─── -->
@@ -745,7 +774,7 @@
         if (savedToken) tokenInput.value = savedToken;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  GITHUB API
+        //  GITHUB API (with User-Agent and timeout handling)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function apiUrl(path) {
             return `https://api.github.com/repos/${state.owner}/${state.repo}${path}`;
@@ -753,34 +782,47 @@
 
         async function api(method, path, body) {
             const url = apiUrl(path);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
             const opts = {
                 method,
                 headers: {
                     Accept: 'application/vnd.github.v3+json',
                     Authorization: `token ${state.token}`,
                     'Content-Type': 'application/json',
+                    'User-Agent': 'GitHub-File-Manager/1.0',
                 },
+                signal: controller.signal,
             };
             if (body) opts.body = JSON.stringify(body);
-            const res = await fetch(url, opts);
-            if (res.status === 204) return null;
-            const data = await res.json();
-            if (!res.ok) {
-                const msg = data.message || `HTTP ${res.status}`;
-                throw new Error(msg);
+
+            try {
+                const res = await fetch(url, opts);
+                clearTimeout(timeout);
+                if (res.status === 204) return null;
+                const data = await res.json();
+                if (!res.ok) {
+                    const msg = data.message || `HTTP ${res.status}`;
+                    throw new Error(msg);
+                }
+                return data;
+            } catch (err) {
+                clearTimeout(timeout);
+                if (err.name === 'AbortError') {
+                    throw new Error('Request timed out. Please check your internet connection.');
+                }
+                throw err;
             }
-            return data;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  CONNECT
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         async function connect() {
-            // read values
             const repoVal = repoInput.value.trim();
             const token = tokenInput.value.trim();
 
-            // validate
             if (!repoVal.includes('/') || !token) {
                 setStatus('Please fill both fields', 'err');
                 alert('Please fill both fields (owner/repo and token)');
@@ -793,14 +835,11 @@
             state.token = token;
             state.path = '';
 
-            // disable button during connection
             connectBtn.disabled = true;
             connectBtn.textContent = 'Connecting…';
-
             setStatus('Connecting…', 'loading');
 
             try {
-                // test API call
                 const info = await api('GET', '');
                 state.branch = info.default_branch || 'main';
                 state.connected = true;
@@ -816,7 +855,6 @@
                 setStatus('✗ Failed: ' + err.message, 'err');
                 alert('Connection failed: ' + err.message);
                 state.connected = false;
-                // don't remove token – user might want to try again
             } finally {
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect';
@@ -839,7 +877,6 @@
                     return a.type === 'dir' ? -1 : 1;
                 });
 
-                // ".." parent folder
                 if (state.path) {
                     const back = makeCard('..', '⬅️', 'folder', null, true);
                     back.onclick = () => {
@@ -859,7 +896,6 @@
                     const card = makeCard(item.name, icon, isDir ? 'folder' : 'file', meta);
                     const ext = item.name.split('.').pop().toLowerCase();
 
-                    // delete button
                     const delBtn = document.createElement('button');
                     delBtn.className = 'del';
                     delBtn.textContent = '✕';
@@ -880,7 +916,6 @@
                     };
                     card.appendChild(delBtn);
 
-                    // extension badge
                     if (!isDir) {
                         const badge = document.createElement('span');
                         badge.className = 'ext-badge';
@@ -929,7 +964,6 @@
                     html += `<span class="crumb" data-path="${cur}">${p}</span>`;
                 }
             });
-            // attach click handlers after render
             setTimeout(() => {
                 pathEl.querySelectorAll('.crumb[data-path]').forEach(el => {
                     el.onclick = () => {
@@ -1019,605 +1053,4 @@
             'htm',
             'css',
             'js',
-            'mjs',
-            'json',
-            'xml',
-            'svg',
-            'txt',
-            'md',
-            'markdown',
-            'yml',
-            'yaml',
-            'toml',
-            'sh',
-            'bash',
-            'zsh',
-            'py',
-            'rb',
-            'php',
-            'go',
-            'rs',
-            'c',
-            'cpp',
-            'h',
-            'hpp',
-            'vue',
-            'ts',
-            'tsx',
-            'jsx',
-            'scss',
-            'less',
-            'sql',
-            'log',
-            'env',
-            'gitignore',
-            'lock',
-            'conf',
-            'config',
-            'ini',
-            'cfg',
-        ]);
-
-        function isTextFile(name) {
-            const ext = name.split('.').pop().toLowerCase();
-            return TEXT_EXTS.has(ext) || name.includes('.');
-        }
-
-        async function openFile(item) {
-            if (!isTextFile(item.name)) {
-                if (item.download_url) {
-                    window.open(item.download_url, '_blank');
-                } else {
-                    alert('This file type cannot be previewed.');
-                }
-                return;
-            }
-
-            // fetch content
-            setEditorStatus('loading…', 'loading');
-            try {
-                const data = await api('GET', `/contents/${item.path}?ref=${state.branch}`);
-                const content = atob(data.content);
-                editor.file = {
-                    path: item.path,
-                    sha: data.sha,
-                    name: item.name,
-                    content: content,
-                    size: data.size || content.length,
-                };
-                editor.savedContent = content;
-                editor.dirty = false;
-                openEditor();
-                setEditorContent(content);
-                setEditorStatus('● saved', 'saved');
-            } catch (e) {
-                console.error('Open file error:', e);
-                alert('Failed to load file: ' + e.message);
-            }
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EDITOR UI
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function openEditor() {
-            const f = editor.file;
-            edIcon.textContent = getFileIcon(f.name, false);
-            edFileName.textContent = f.name;
-            edFilePath.textContent = f.path;
-            edOverlay.classList.add('open');
-            editor.isOpen = true;
-            setTimeout(() => edEditor.focus(), 100);
-        }
-
-        function closeEditor() {
-            if (editor.dirty) {
-                if (!confirm('You have unsaved changes. Discard them?')) return;
-            }
-            edOverlay.classList.remove('open');
-            editor.isOpen = false;
-            editor.file = null;
-            editor.dirty = false;
-        }
-
-        function setEditorContent(content) {
-            edEditor.value = content;
-            edPre.textContent = content;
-            updateLineNumbers();
-            updateEditorInfo();
-            highlightSyntax();
-        }
-
-        function setEditorStatus(text, type) {
-            edStatus.textContent = text;
-            edStatus.className = 'editor-status' + (type ? ' ' + type : '');
-        }
-
-        function updateLineNumbers() {
-            const lines = edEditor.value.split('\n');
-            const count = lines.length;
-            edGutter.innerHTML = '';
-            for (let i = 1; i <= count; i++) {
-                const span = document.createElement('span');
-                span.className = 'ln';
-                span.textContent = i;
-                edGutter.appendChild(span);
-            }
-            edLines.textContent = count;
-        }
-
-        function updateEditorInfo() {
-            const size = new Blob([edEditor.value]).size;
-            edSize.textContent = formatSize(size);
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  SYNTAX HIGHLIGHTER (HTML / CSS / JS / JSON / XML / plain)
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function highlightSyntax() {
-            const code = edEditor.value;
-            const ext = editor.file ? editor.file.name.split('.').pop().toLowerCase() : 'txt';
-            let html = '';
-            if (ext === 'html' || ext === 'htm') {
-                html = highlightHTML(code);
-            } else if (ext === 'css') {
-                html = highlightCSS(code);
-            } else if (ext === 'js' || ext === 'mjs' || ext === 'ts' || ext === 'jsx' || ext === 'tsx') {
-                html = highlightJS(code);
-            } else if (ext === 'json') {
-                html = highlightJSON(code);
-            } else if (ext === 'xml' || ext === 'svg') {
-                html = highlightXML(code);
-            } else {
-                html = escapeHTML(code);
-            }
-            edPre.innerHTML = html;
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
-        function wrapToken(text, cls) {
-            return `<span class="token ${cls}">${escapeHTML(text)}</span>`;
-        }
-
-        function highlightHTML(code) {
-            // Very simple but effective HTML highlighter
-            let out = '';
-            let i = 0;
-            const len = code.length;
-            while (i < len) {
-                const ch = code[i];
-                if (ch === '<') {
-                    if (code[i + 1] === '/') {
-                        // closing tag
-                        let j = i + 2;
-                        while (j < len && code[j] !== '>') j++;
-                        const tag = code.slice(i, j + 1);
-                        out += wrapToken(tag, 'tag');
-                        i = j + 1;
-                    } else if (code[i + 1] === '!') {
-                        // comment or doctype
-                        let j = i + 2;
-                        if (code.slice(i, i + 4) === '<!--') {
-                            while (j < len && !(code[j - 2] === '-' && code[j - 1] === '-')) j++;
-                            const cmt = code.slice(i, j + 1);
-                            out += wrapToken(cmt, 'cmt');
-                            i = j + 1;
-                        } else {
-                            while (j < len && code[j] !== '>') j++;
-                            const doctype = code.slice(i, j + 1);
-                            out += wrapToken(doctype, 'tag');
-                            i = j + 1;
-                        }
-                    } else {
-                        // opening tag
-                        let j = i + 1;
-                        while (j < len && code[j] !== '>' && code[j] !== ' ') j++;
-                        const tagName = code.slice(i, j);
-                        out += wrapToken(tagName, 'tag');
-                        i = j;
-                        // attributes
-                        while (i < len && code[i] !== '>') {
-                            if (code[i] === ' ') {
-                                out += ' ';
-                                i++;
-                                continue;
-                            }
-                            // attr name
-                            let aStart = i;
-                            while (i < len && code[i] !== '=' && code[i] !== ' ' && code[i] !== '>') i++;
-                            const attrName = code.slice(aStart, i);
-                            out += wrapToken(attrName, 'attr');
-                            if (code[i] === '=') {
-                                out += '=';
-                                i++;
-                                // value
-                                const quote = code[i];
-                                if (quote === '"' || quote === "'") {
-                                    out += quote;
-                                    i++;
-                                    let vStart = i;
-                                    while (i < len && code[i] !== quote) i++;
-                                    const val = code.slice(vStart, i);
-                                    out += wrapToken(val, 'val');
-                                    out += quote;
-                                    i++;
-                                } else {
-                                    let vStart = i;
-                                    while (i < len && code[i] !== ' ' && code[i] !== '>') i++;
-                                    const val = code.slice(vStart, i);
-                                    out += wrapToken(val, 'val');
-                                }
-                            }
-                        }
-                        if (i < len && code[i] === '>') {
-                            out += wrapToken('>', 'tag');
-                            i++;
-                        }
-                    }
-                } else {
-                    // text content
-                    let j = i;
-                    while (j < len && code[j] !== '<') j++;
-                    const text = code.slice(i, j);
-                    out += escapeHTML(text);
-                    i = j;
-                }
-            }
-            return out;
-        }
-
-        function highlightCSS(code) {
-            const tokens = code.split(/(\/\*[\s\S]*?\*\/|#[\w-]+|\.[\w-]+|@[\w-]+|[\{\}])/g);
-            return tokens.map(t => {
-                if (t.startsWith('/*') && t.endsWith('*/')) return wrapToken(t, 'cmt');
-                if (/^#[\w-]+$/.test(t)) return wrapToken(t, 'cls');
-                if (/^\.[\w-]+$/.test(t)) return wrapToken(t, 'cls');
-                if (/^@[\w-]+$/.test(t)) return wrapToken(t, 'kw');
-                if (/^[\{\}]$/.test(t)) return wrapToken(t, 'op');
-                return escapeHTML(t);
-            }).join('');
-        }
-
-        function highlightJS(code) {
-            const keywords = ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'switch',
-                'case', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'class', 'extends',
-                'super', 'import', 'export', 'default', 'from', 'async', 'await', 'yield', 'of', 'in', 'typeof',
-                'instanceof', 'void', 'delete', 'null', 'undefined', 'true', 'false', 'NaN', 'Infinity'
-            ];
-            const kwSet = new Set(keywords);
-            let out = '';
-            let i = 0;
-            const len = code.length;
-            while (i < len) {
-                const ch = code[i];
-                // strings
-                if (ch === '"' || ch === "'" || ch === '`') {
-                    const quote = ch;
-                    let j = i + 1;
-                    while (j < len && code[j] !== quote) {
-                        if (code[j] === '\\') j += 2;
-                        else j++;
-                    }
-                    const str = code.slice(i, j + 1);
-                    out += wrapToken(str, 'str');
-                    i = j + 1;
-                    continue;
-                }
-                // comments
-                if (ch === '/' && (code[i + 1] === '/' || code[i + 1] === '*')) {
-                    if (code[i + 1] === '/') {
-                        let j = i + 2;
-                        while (j < len && code[j] !== '\n') j++;
-                        const cmt = code.slice(i, j);
-                        out += wrapToken(cmt, 'cmt');
-                        i = j;
-                        continue;
-                    } else {
-                        let j = i + 2;
-                        while (j < len && !(code[j - 1] === '*' && code[j] === '/')) j++;
-                        const cmt = code.slice(i, j + 1);
-                        out += wrapToken(cmt, 'cmt');
-                        i = j + 1;
-                        continue;
-                    }
-                }
-                // numbers
-                if (/[0-9]/.test(ch)) {
-                    let j = i;
-                    while (j < len && /[0-9.]/.test(code[j])) j++;
-                    const num = code.slice(i, j);
-                    out += wrapToken(num, 'num');
-                    i = j;
-                    continue;
-                }
-                // words
-                if (/[a-zA-Z_$]/.test(ch)) {
-                    let j = i;
-                    while (j < len && /[a-zA-Z0-9_$]/.test(code[j])) j++;
-                    const word = code.slice(i, j);
-                    if (kwSet.has(word)) out += wrapToken(word, 'kw');
-                    else if (/^[A-Z]/.test(word)) out += wrapToken(word, 'cls');
-                    else out += escapeHTML(word);
-                    i = j;
-                    continue;
-                }
-                // operators
-                if (/[+\-*/%&|^!~=<>?]/.test(ch)) {
-                    let j = i;
-                    while (j < len && /[+\-*/%&|^!~=<>?]/.test(code[j])) j++;
-                    const op = code.slice(i, j);
-                    out += wrapToken(op, 'op');
-                    i = j;
-                    continue;
-                }
-                out += escapeHTML(ch);
-                i++;
-            }
-            return out;
-        }
-
-        function highlightJSON(code) {
-            let out = '';
-            let i = 0;
-            const len = code.length;
-            while (i < len) {
-                const ch = code[i];
-                if (ch === '"') {
-                    let j = i + 1;
-                    while (j < len && code[j] !== '"') {
-                        if (code[j] === '\\') j += 2;
-                        else j++;
-                    }
-                    const str = code.slice(i, j + 1);
-                    out += wrapToken(str, 'str');
-                    i = j + 1;
-                    continue;
-                }
-                if (/[0-9]/.test(ch)) {
-                    let j = i;
-                    while (j < len && /[0-9.eE+-]/.test(code[j])) j++;
-                    const num = code.slice(i, j);
-                    out += wrapToken(num, 'num');
-                    i = j;
-                    continue;
-                }
-                if (/[a-zA-Z]/.test(ch)) {
-                    let j = i;
-                    while (j < len && /[a-zA-Z]/.test(code[j])) j++;
-                    const word = code.slice(i, j);
-                    if (word === 'true' || word === 'false') out += wrapToken(word, 'bool');
-                    else if (word === 'null') out += wrapToken(word, 'null');
-                    else out += escapeHTML(word);
-                    i = j;
-                    continue;
-                }
-                if (/[{}[\],:]/.test(ch)) {
-                    out += wrapToken(ch, 'op');
-                    i++;
-                    continue;
-                }
-                out += escapeHTML(ch);
-                i++;
-            }
-            return out;
-        }
-
-        function highlightXML(code) {
-            // simple XML highlighting
-            let out = '';
-            let i = 0;
-            const len = code.length;
-            while (i < len) {
-                if (code[i] === '<') {
-                    let j = i + 1;
-                    while (j < len && code[j] !== '>') j++;
-                    const tag = code.slice(i, j + 1);
-                    out += wrapToken(tag, 'tag');
-                    i = j + 1;
-                } else {
-                    let j = i;
-                    while (j < len && code[j] !== '<') j++;
-                    const text = code.slice(i, j);
-                    out += escapeHTML(text);
-                    i = j;
-                }
-            }
-            return out;
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EDITOR EVENTS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        edEditor.addEventListener('input', () => {
-            const content = edEditor.value;
-            const isDirty = content !== editor.savedContent;
-            editor.dirty = isDirty;
-            setEditorStatus(isDirty ? '● unsaved' : '● saved', isDirty ? 'dirty' : 'saved');
-            updateLineNumbers();
-            updateEditorInfo();
-            highlightSyntax();
-        });
-
-        edEditor.addEventListener('keydown', e => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                saveFile();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                saveFile();
-            }
-        });
-
-        edClose.addEventListener('click', closeEditor);
-        edCancel.addEventListener('click', closeEditor);
-
-        // close on overlay click
-        edOverlay.addEventListener('click', e => {
-            if (e.target === edOverlay) closeEditor();
-        });
-
-        // ESC to close
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && editor.isOpen) closeEditor();
-        });
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  SAVE FILE
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        async function saveFile() {
-            if (!editor.file) return;
-            if (!editor.dirty) {
-                setEditorStatus('● no changes', 'saved');
-                return;
-            }
-            const content = edEditor.value;
-            const base64 = btoa(unescape(encodeURIComponent(content)));
-            edSave.disabled = true;
-            setEditorStatus('Saving…', 'loading');
-            try {
-                await api('PUT', `/contents/${editor.file.path}`, {
-                    message: `Update ${editor.file.name}`,
-                    content: base64,
-                    sha: editor.file.sha,
-                    branch: state.branch,
-                });
-                editor.savedContent = content;
-                editor.dirty = false;
-                // update sha for next save
-                const data = await api('GET', `/contents/${editor.file.path}?ref=${state.branch}`);
-                editor.file.sha = data.sha;
-                editor.file.size = data.size || content.length;
-                setEditorStatus('● saved ✓', 'saved');
-                // refresh file list
-                load();
-            } catch (e) {
-                console.error('Save error:', e);
-                setEditorStatus('✕ save failed', 'error');
-                alert('Save failed: ' + e.message);
-            } finally {
-                edSave.disabled = false;
-            }
-        }
-
-        edSave.addEventListener('click', saveFile);
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  UPLOAD
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const r = new FileReader();
-                r.onload = () => resolve(r.result.split(',')[1]);
-                r.onerror = reject;
-                r.readAsDataURL(file);
-            });
-        }
-
-        async function uploadFiles(files) {
-            if (!files.length) return;
-            const total = files.length;
-            let done = 0;
-            for (const file of files) {
-                try {
-                    const base64 = await fileToBase64(file);
-                    const path = state.path ? state.path + '/' + file.name : file.name;
-                    let sha = null;
-                    try {
-                        const exist = await api('GET', `/contents/${path}?ref=${state.branch}`);
-                        sha = exist.sha;
-                    } catch (_) { /* file does not exist */ }
-                    await api('PUT', `/contents/${path}`, {
-                        message: `Upload ${file.name}`,
-                        content: base64,
-                        sha: sha || undefined,
-                        branch: state.branch,
-                    });
-                    done++;
-                } catch (e) {
-                    console.error('Upload error:', e);
-                    alert(`Failed to upload "${file.name}": ${e.message}`);
-                }
-            }
-            if (done) {
-                load();
-                setStatus(`Uploaded ${done} file${done !== 1 ? 's' : ''}`, 'ok');
-            }
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  NEW FOLDER
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        async function newFolder() {
-            const name = prompt('Enter folder name:');
-            if (!name || !name.trim()) return;
-            const clean = name.trim();
-            const path = state.path ? state.path + '/' + clean + '/.gitkeep' : clean + '/.gitkeep';
-            try {
-                await api('PUT', `/contents/${path}`, {
-                    message: `Create folder ${clean}`,
-                    content: btoa(''),
-                    branch: state.branch,
-                });
-                load();
-            } catch (e) {
-                console.error('New folder error:', e);
-                alert('Failed to create folder: ' + e.message);
-            }
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  HELPERS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function setStatus(text, type) {
-            statusEl.textContent = text;
-            statusEl.className = 'status' + (type ? ' ' + type : '');
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EVENT BINDING
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Connect button is type="button", so no form submit
-        connectBtn.addEventListener('click', connect);
-
-        // Also allow Enter key on inputs to trigger connect
-        repoInput.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
-        tokenInput.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
-
-        $('uploadBtn').onclick = () => fileInput.click();
-        fileInput.onchange = e => {
-            if (e.target.files.length) {
-                uploadFiles(e.target.files);
-                e.target.value = '';
-            }
-        };
-
-        $('newFolder').onclick = newFolder;
-        $('refreshBtn').onclick = load;
-
-        // drop zone
-        drop.onclick = () => fileInput.click();
-        drop.ondragover = e => {
-            e.preventDefault();
-            drop.classList.add('drag');
-        };
-        drop.ondragleave = () => drop.classList.remove('drag');
-        drop.ondrop = e => {
-            e.preventDefault();
-            drop.classList.remove('drag');
-            if (e.dataTransfer.files.length) {
-                uploadFiles(e.dataTransfer.files);
-            }
-        };
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  AUTO-CONNECT if token exists
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        if (savedToken) {
-            setTimeout(connect, 100);
-        }
-    </script>
-</body>
-</html>
+            'm
