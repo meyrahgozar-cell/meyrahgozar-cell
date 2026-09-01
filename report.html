@@ -1028,6 +1028,52 @@ a.rank-item-link {
   font-weight: 600;
 }
 
+
+.weight-strip-wrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.weight-strip-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 0 transparent;
+  transition: box-shadow 0.08s linear;
+  z-index: 2;
+}
+.weight-strip-wrap.lava-hot::after {
+  box-shadow:
+    inset 0 0 20px rgba(255, 100, 40, 0.35),
+    inset 0 0 40px rgba(255, 60, 0, 0.2);
+}
+.weight-strip {
+  position: relative;
+  z-index: 1;
+}
+.weight-spark-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
+}
+.weight-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: #ffb347;
+  box-shadow:
+    0 0 6px #ff6a00,
+    0 0 12px #ff3d00,
+    0 0 18px rgba(255, 200, 80, 0.8);
+  will-change: transform, opacity;
+}
+
 </style>
 
 </head>
@@ -1487,9 +1533,17 @@ async function openUserBadges(userId, displayName) {
 
 function initWeightStrip(strip) {
   if (!strip) return;
-  const clone = strip.cloneNode(true);
-  strip.parentNode.replaceChild(clone, strip);
-  strip = clone;
+  const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
+  let sparkLayer = wrap && wrap.querySelector(".weight-spark-layer");
+  if (wrap && !sparkLayer) {
+    sparkLayer = document.createElement("div");
+    sparkLayer.className = "weight-spark-layer";
+    wrap.insertBefore(sparkLayer, strip);
+  }
+
+  // avoid double-binding
+  if (strip.dataset.lavaReady === "1") return;
+  strip.dataset.lavaReady = "1";
   strip.style.direction = "rtl";
 
   const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
@@ -1503,25 +1557,91 @@ function initWeightStrip(strip) {
     if (num > maxV) { maxV = num; maxEl = ch; }
   });
   if (maxEl) maxEl.classList.add("max");
-
-  const centerOn = (el) => {
-    if (!el) return;
-    el.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
-  };
-  requestAnimationFrame(() => requestAnimationFrame(() => centerOn(maxEl)));
+  requestAnimationFrame(() => {
+    if (maxEl) maxEl.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
+  });
 
   let vel = 0, lastX = 0, lastT = 0, dragging = false;
   let raf = null;
+  let glow = 0;
+  let lastSpark = 0;
 
   const stopRaf = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
+
+  const setGlow = (v) => {
+    glow = Math.max(0, Math.min(1, v));
+    const heat = glow;
+    if (wrap) {
+      wrap.classList.toggle("lava-hot", heat > 0.15);
+      wrap.style.setProperty("--lava", String(heat));
+      const g1 = (20 + heat * 40).toFixed(0);
+      const a1 = (0.15 + heat * 0.45).toFixed(2);
+      const a2 = (0.05 + heat * 0.35).toFixed(2);
+      wrap.style.boxShadow = heat > 0.05
+        ? `0 0 ${g1}px rgba(255, 90, 20, ${a1}), 0 0 ${g1 * 2}px rgba(255, 40, 0, ${a2}), inset 0 0 ${12 + heat * 24}px rgba(255, 120, 40, ${0.1 + heat * 0.35})`
+        : "";
+    }
+    // chip heat
+    strip.style.filter = heat > 0.08
+      ? `brightness(${1 + heat * 0.35}) saturate(${1 + heat * 0.5})`
+      : "";
+  };
+
+  const spawnSparks = (speed, dirSign) => {
+    if (!sparkLayer || speed < 0.4) return;
+    const now = performance.now();
+    if (now - lastSpark < 16) return;
+    lastSpark = now;
+    const rect = strip.getBoundingClientRect();
+    const n = Math.min(5, 1 + Math.floor(speed * 2));
+    for (let i = 0; i < n; i++) {
+      const sp = document.createElement("div");
+      sp.className = "weight-spark";
+      // trail BEHIND motion: opposite to scroll direction
+      const x = rect.width * (0.25 + Math.random() * 0.5);
+      const y = 8 + Math.random() * Math.max(20, rect.height - 16);
+      const size = 2 + Math.random() * 4 * Math.min(1, speed / 3);
+      sp.style.width = size + "px";
+      sp.style.height = size + "px";
+      sp.style.left = x + "px";
+      sp.style.top = y + "px";
+      const hue = 20 + Math.random() * 40; // orange-yellow
+      sp.style.background = `hsl(${hue}, 100%, ${55 + Math.random() * 25}%)`;
+      sparkLayer.appendChild(sp);
+
+      const trail = dirSign * (40 + speed * 50 + Math.random() * 40);
+      const rise = -10 - Math.random() * 30;
+      const life = 280 + Math.random() * 320;
+      const t0 = performance.now();
+      const anim = (t) => {
+        const p = Math.min(1, (t - t0) / life);
+        const ease = 1 - Math.pow(1 - p, 2);
+        sp.style.transform = `translate(${trail * ease}px, ${rise * ease}px) scale(${1 - p * 0.7})`;
+        sp.style.opacity = String(1 - p);
+        if (p < 1) requestAnimationFrame(anim);
+        else sp.remove();
+      };
+      requestAnimationFrame(anim);
+    }
+  };
 
   const coast = () => {
     stopRaf();
     const step = () => {
-      if (Math.abs(vel) < 0.2) return;
+      const speed = Math.abs(vel);
+      if (speed < 0.15) {
+        setGlow(glow * 0.85);
+        if (glow > 0.02) raf = requestAnimationFrame(step);
+        else setGlow(0);
+        return;
+      }
       strip.scrollBy({ left: vel, behavior: "instant" });
       vel *= 0.94;
-      if (Math.abs(vel) >= 0.2) raf = requestAnimationFrame(step);
+      setGlow(Math.min(1, speed / 8));
+      // sparks trail opposite to velocity
+      const dirSign = vel > 0 ? 1 : -1;
+      spawnSparks(speed, dirSign);
+      raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   };
@@ -1539,11 +1659,13 @@ function initWeightStrip(strip) {
     const now = performance.now();
     const dx = x - lastX;
     const dt = Math.max(8, now - lastT);
-    // finger moves right → content follows (natural)
     strip.scrollBy({ left: -dx, behavior: "instant" });
     vel = (-dx / dt) * 14;
     lastX = x;
     lastT = now;
+    const speed = Math.abs(vel);
+    setGlow(Math.min(1, speed / 6));
+    spawnSparks(speed, vel > 0 ? 1 : -1);
   };
   const onUp = () => {
     if (!dragging) return;
@@ -1561,6 +1683,10 @@ function initWeightStrip(strip) {
   strip.addEventListener("touchcancel", onUp);
   strip.addEventListener("wheel", e => {
     strip.scrollBy({ left: e.deltaY, behavior: "instant" });
+    vel = e.deltaY * 0.15;
+    setGlow(Math.min(1, Math.abs(vel) / 5));
+    spawnSparks(Math.abs(vel), vel > 0 ? 1 : -1);
+    coast();
     e.preventDefault();
   }, { passive: false });
 }
@@ -2012,7 +2138,10 @@ function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {},
     <div class="card weight-strip-card">
       <div class="card-title">وزن روزانه</div>
       <div class="card-sub">بکش به چپ و راست · ${fa(daysInMonth)} روز</div>
-      <div class="weight-strip">${weightChips.join("")}</div>
+      <div class="weight-strip-wrap" id="weightStripWrap">
+        <div class="weight-spark-layer" id="weightSparkLayer"></div>
+        <div class="weight-strip">${weightChips.join("")}</div>
+      </div>
     </div>`;
 
   content.innerHTML = `
