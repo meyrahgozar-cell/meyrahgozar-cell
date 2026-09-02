@@ -895,8 +895,6 @@ button { cursor: pointer; border: none; background: none; }
   <header class="header">
     <div class="brand">HQL</div>
     <div class="header-actions">
-      <button class="icon-btn hidden" id="adminButton" title="ادمین">🛡️</button>
-      <button class="icon-btn" id="reportButton" title="گزارش">📊</button>
       <button class="icon-btn theme-btn" id="themeButton" title="تم" aria-label="تم">
         <img src="images/favicon.png" alt="" class="theme-icon" width="22" height="22">
       </button>
@@ -1856,8 +1854,8 @@ document.getElementById("btnToday")?.addEventListener("click", async () => {
   await loadDayData();
 });
 
-document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
-document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
+/* reportButton removed — glass nav */ };
+/* adminButton removed — glass nav */ };
 
 /* ===== OPEN ===== */
 async function openApp(user){
@@ -1893,9 +1891,7 @@ async function openApp(user){
   await loadDayData();
   try {
     const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
-    const adminBtn = document.getElementById("adminButton");
-    if (adminBtn && pr.data && pr.data.is_admin) adminBtn.classList.remove("hidden");
-    else if (adminBtn) adminBtn.classList.add("hidden");
+    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(pr.data && pr.data.is_admin));
   } catch (e) {}
 }
 
