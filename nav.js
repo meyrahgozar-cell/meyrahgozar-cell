@@ -38,14 +38,14 @@
       gap: 4px;
       padding: 8px 10px;
       border-radius: 22px;
-      background: rgba(18, 20, 32, 0.55);
+      background: rgba(14, 16, 26, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.14);
       box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.45),
         0 0 0 1px rgba(180, 76, 255, 0.08) inset,
         0 0 24px rgba(180, 76, 255, 0.12);
-      -webkit-backdrop-filter: blur(24px) saturate(1.6);
-      backdrop-filter: blur(24px) saturate(1.6);
+      -webkit-backdrop-filter: blur(8px) saturate(1.25);
+      backdrop-filter: blur(8px) saturate(1.25);
       transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
       opacity: 1;
       pointer-events: auto;
@@ -92,9 +92,7 @@
     .hql-glass-nav a:active {
       transform: scale(0.94);
     }
-    .hql-glass-nav a.admin-link.hidden-nav {
-      display: none;
-    }
+    .hql-glass-nav
     @media (min-width: 900px) {
       .hql-glass-nav {
         width: min(420px, 100%);
@@ -116,7 +114,7 @@
       <span class="ico">📊</span>
       <span>گزارش</span>
     </a>
-    <a href="admin.html" class="admin-link ${isAdmin ? "active" : ""}" data-nav="admin" id="hqlNavAdmin">
+    <a href="admin.html" class="${isAdmin ? "active" : ""}" data-nav="admin" id="hqlNavAdmin">
       <span class="ico">🛡️</span>
       <span>ادمین</span>
     </a>
@@ -190,23 +188,6 @@
 
   // API برای صفحات: پس از دانستن is_admin
   window.hqlNavSetAdmin = function (isAdmin) {
-    const link = document.getElementById("hqlNavAdmin");
-    if (!link) return;
-    if (isAdmin) {
-      link.classList.remove("hidden-nav");
-      try { sessionStorage.setItem("hql_is_admin", "1"); } catch (_) {}
-    } else {
-      link.classList.add("hidden-nav");
-      try { sessionStorage.setItem("hql_is_admin", "0"); } catch (_) {}
-    }
+    try { sessionStorage.setItem("hql_is_admin", isAdmin ? "1" : "0"); } catch (_) {}
   };
-
-  // پیش‌فرض: از sessionStorage
-  try {
-    const flag = sessionStorage.getItem("hql_is_admin");
-    if (flag === "0") {
-      const link = document.getElementById("hqlNavAdmin");
-      if (link) link.classList.add("hidden-nav");
-    }
-  } catch (_) {}
 })();
