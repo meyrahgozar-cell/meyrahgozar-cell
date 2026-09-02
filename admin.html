@@ -335,7 +335,7 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 <div class="page">
   <header class="header">
     <div class="brand">HQL</div>
-    <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
+    
   </header>
 
   <div id="denyBox" class="deny hidden">دسترسی ادمین نداری.</div>
@@ -433,7 +433,7 @@ function avatarHtml(name) {
   return `<img class="avatar" src="${src}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${letter}</div>`;
 }
 
-document.getElementById("backBtn").onclick = () => location.href = "index.html";
+/* backBtn removed — glass nav */
 document.getElementById("backToList").onclick = () => {
   document.getElementById("detailView").classList.add("hidden");
   document.getElementById("listView").classList.remove("hidden");
