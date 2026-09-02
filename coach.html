@@ -276,6 +276,104 @@
       color: var(--text);
     }
 
+
+/* ===== گردونه نظرات ===== */
+.wheel-section {
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+.wheel-section .card-title { margin-bottom: 4px; }
+.wheel-section .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.wheel-shell {
+  position: relative;
+  height: 280px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(0, 240, 255, 0.03);
+  overflow: hidden;
+  transition: box-shadow 0.08s linear, border-color 0.12s;
+}
+.wheel-shell.glow {
+  border-color: rgba(0, 240, 255, 0.45);
+}
+.wheel-track {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 40px 16px;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+}
+.wheel-track::-webkit-scrollbar { display: none; }
+.wheel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform-style: preserve-3d;
+}
+.wheel-card {
+  scroll-snap-align: center;
+  flex: 0 0 auto;
+  min-height: 96px;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(20,24,38,0.95), rgba(12,14,22,0.9));
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease-out, opacity 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+}
+.wheel-card:active { border-color: rgba(0, 240, 255, 0.55); }
+.wheel-card .wc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.wheel-card .wc-name {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text);
+}
+.wheel-card .wc-topic {
+  font-size: 11px;
+  color: var(--neon2);
+  font-weight: 700;
+}
+.wheel-card .wc-body {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wheel-card .wc-date {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(139,146,176,0.8);
+}
+.wheel-loading, .wheel-end {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 12px;
+}
+.wheel-empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 40px 12px;
+}
+
 </style>
 </head>
 <body>
@@ -349,6 +447,20 @@
           </div>
         </div>
       </div>
+
+      <!-- گردونه نظرات -->
+      <div class="card wheel-section hidden" id="wheelSection">
+        <div class="card-title">گردونه نظرات</div>
+        <div class="card-sub">اسکرول کن · هر کارت یک نظر · بزن برای ادامهٔ کامنت همان شاگرد</div>
+        <div class="wheel-shell" id="wheelShell">
+          <div class="wheel-track" id="wheelTrack">
+            <div class="wheel-list" id="wheelList"></div>
+            <div class="wheel-loading hidden" id="wheelLoading">در حال بارگذاری...</div>
+            <div class="wheel-end hidden" id="wheelEnd">همهٔ نظرات لود شد</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -912,6 +1024,7 @@
       document.getElementById("pageSub").textContent = "سه مرحله: شاگرد ← موضوع و گزارش ← یادداشت";
       document.getElementById("adminView").classList.remove("hidden");
       initMonthPicker();
+      initWheel();
       document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("changeUserBtn").onclick = () => setStep(1);
       document.getElementById("toStep3").onclick = () => {
@@ -931,6 +1044,186 @@
   }
 
   db.auth.onAuthStateChange((e) => { if (e === "SIGNED_OUT") location.href = "index.html"; });
+  function faNumber(v){ return String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+
+  /* ===== گردونه نظرات (AJAX-like، ۱۰تایی) ===== */
+  let wheelOffset = 0;
+  const WHEEL_PAGE = 10;
+  let wheelLoading = false;
+  let wheelDone = false;
+  let wheelNameMap = {};
+
+  function faDate(iso) {
+    try {
+      const d = new Date(iso);
+      const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+      return fa(j.jy) + "/" + fa(String(j.jm).padStart(2,"0")) + "/" + fa(String(j.jd).padStart(2,"0"));
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function applyWheelTransforms() {
+    const track = document.getElementById("wheelTrack");
+    const list = document.getElementById("wheelList");
+    if (!track || !list) return;
+    const cards = list.querySelectorAll(".wheel-card");
+    const mid = track.scrollTop + track.clientHeight / 2;
+    cards.forEach(card => {
+      const cMid = card.offsetTop + card.offsetHeight / 2;
+      const dist = (cMid - mid) / track.clientHeight; // ~-1..1
+      const rot = Math.max(-55, Math.min(55, dist * 70));
+      const scale = 1 - Math.min(0.28, Math.abs(dist) * 0.35);
+      const opacity = 1 - Math.min(0.65, Math.abs(dist) * 0.75);
+      const z = 100 - Math.abs(dist) * 80;
+      card.style.transform = `rotateX(${(-rot).toFixed(2)}deg) scale(${scale.toFixed(3)}) translateZ(${(z * 0.2).toFixed(1)}px)`;
+      card.style.opacity = String(Math.max(0.25, opacity));
+      card.style.zIndex = String(Math.round(200 - Math.abs(dist) * 100));
+    });
+  }
+
+  function wheelGlowFromSpeed(speed) {
+    const shell = document.getElementById("wheelShell");
+    if (!shell) return;
+    const heat = Math.min(1, Math.abs(speed) / 40);
+    if (heat > 0.08) {
+      shell.classList.add("glow");
+      const a = (0.15 + heat * 0.55).toFixed(2);
+      const b = (0.08 + heat * 0.4).toFixed(2);
+      const blur = (12 + heat * 36).toFixed(0);
+      shell.style.boxShadow =
+        `0 0 ${blur}px rgba(0, 240, 255, ${a}), 0 0 ${blur * 2}px rgba(0, 200, 255, ${b}), inset 0 0 ${10 + heat * 20}px rgba(0, 240, 255, ${0.06 + heat * 0.2})`;
+    } else {
+      shell.classList.remove("glow");
+      shell.style.boxShadow = "";
+    }
+  }
+
+  async function ensureWheelNames(userIds) {
+    const missing = userIds.filter(id => id && !wheelNameMap[id]);
+    if (!missing.length) return;
+    const { data } = await db.from("profiles").select("id, display_name").in("id", missing);
+    (data || []).forEach(p => { wheelNameMap[p.id] = p.display_name || "کاربر"; });
+  }
+
+  function renderWheelCards(rows, append) {
+    const list = document.getElementById("wheelList");
+    if (!list) return;
+    if (!append) list.innerHTML = "";
+    if (!rows.length && !append) {
+      list.innerHTML = `<div class="wheel-empty">هنوز نظری ثبت نشده</div>`;
+      return;
+    }
+    const html = rows.map(n => {
+      const name = wheelNameMap[n.user_id] || "کاربر";
+      const ti = topicInfo(n.topic);
+      const parsed = parseNoteBody(n.body);
+      const body = (parsed && parsed.text) ? parsed.text : (n.body || "");
+      const topicLabel = (ti && ti.label) ? ti.label : (n.topic || "عمومی");
+      return `<div class="wheel-card" data-uid="${n.user_id || ""}" data-name="${name.replace(/"/g, "&quot;")}">
+        <div class="wc-top">
+          <span class="wc-name">${name}</span>
+          <span class="wc-topic">${topicLabel}</span>
+        </div>
+        <div class="wc-body">${body.replace(/</g, "&lt;")}</div>
+        <div class="wc-date">${faDate(n.created_at)}</div>
+      </div>`;
+    }).join("");
+    list.insertAdjacentHTML("beforeend", html);
+    requestAnimationFrame(applyWheelTransforms);
+  }
+
+  async function loadWheelPage() {
+    if (wheelLoading || wheelDone) return;
+    wheelLoading = true;
+    const loading = document.getElementById("wheelLoading");
+    if (loading) loading.classList.remove("hidden");
+    try {
+      const { data, error } = await db.from("coach_notes")
+        .select("id, user_id, topic, body, created_at")
+        .order("created_at", { ascending: false })
+        .range(wheelOffset, wheelOffset + WHEEL_PAGE - 1);
+      if (error) throw error;
+      const rows = data || [];
+      if (!rows.length) {
+        wheelDone = true;
+        const end = document.getElementById("wheelEnd");
+        if (end && wheelOffset > 0) end.classList.remove("hidden");
+        if (wheelOffset === 0) renderWheelCards([], false);
+      } else {
+        await ensureWheelNames(rows.map(r => r.user_id));
+        renderWheelCards(rows, wheelOffset > 0);
+        wheelOffset += rows.length;
+        if (rows.length < WHEEL_PAGE) {
+          wheelDone = true;
+          const end = document.getElementById("wheelEnd");
+          if (end) end.classList.remove("hidden");
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+      const list = document.getElementById("wheelList");
+      if (list && wheelOffset === 0) list.innerHTML = `<div class="wheel-empty">${e.message || "خطا"}</div>`;
+    } finally {
+      wheelLoading = false;
+      if (loading) loading.classList.add("hidden");
+    }
+  }
+
+  function openCommentForUser(uid, name) {
+    if (!uid) return;
+    selectedUserId = uid;
+    selectedUserName = name || "کاربر";
+    // پیدا کردن در کش
+    const u = (allUsersCache || []).find(x => x.id === uid);
+    if (u) {
+      selectedUserId = u.id;
+      selectedUserName = u.display_name || name;
+    }
+    const pill = document.getElementById("pillUser");
+    if (pill) pill.textContent = selectedUserName;
+    if (typeof setStep === "function") setStep(2);
+    toast("ادامهٔ کامنت برای " + selectedUserName);
+  }
+
+  function initWheel() {
+    const section = document.getElementById("wheelSection");
+    const track = document.getElementById("wheelTrack");
+    if (!section || !track) return;
+    section.classList.remove("hidden");
+    wheelOffset = 0;
+    wheelDone = false;
+    wheelLoading = false;
+    const list = document.getElementById("wheelList");
+    if (list) list.innerHTML = "";
+    const end = document.getElementById("wheelEnd");
+    if (end) end.classList.add("hidden");
+    loadWheelPage();
+
+    let lastY = track.scrollTop;
+    let lastT = performance.now();
+    track.addEventListener("scroll", () => {
+      applyWheelTransforms();
+      const now = performance.now();
+      const dy = track.scrollTop - lastY;
+      const dt = Math.max(16, now - lastT);
+      const speed = dy / (dt / 16);
+      lastY = track.scrollTop;
+      lastT = now;
+      wheelGlowFromSpeed(speed);
+
+      if (track.scrollTop + track.clientHeight > track.scrollHeight - 80) {
+        loadWheelPage();
+      }
+    }, { passive: true });
+
+    track.addEventListener("click", (e) => {
+      const card = e.target.closest(".wheel-card");
+      if (!card) return;
+      openCommentForUser(card.dataset.uid, card.dataset.name);
+    });
+  }
+
   init();
   </script>
   <script src="nav.js"></script>
