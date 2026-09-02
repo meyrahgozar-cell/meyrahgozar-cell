@@ -1113,17 +1113,17 @@ function exerciseCalc(w,a,r){
 }
 async function loadGenderAndKmFactors(){
   if(!currentUser) return;
-  try{
-    const [prof, sett] = await Promise.all([
-      db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle(),
-      db.from("app_settings").select("key, value").in("key", ["km_factor_male","km_factor_female"])
-    ]);
-    if(prof.data && prof.data.gender) userGender = prof.data.gender;
-    (sett.data||[]).forEach(r=>{
-      if(r.key==="km_factor_male") kmFactorMale = Number(r.value)||1;
-      if(r.key==="km_factor_female") kmFactorFemale = Number(r.value)||1.15;
+  try {
+    const prof = await db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle();
+    if (prof.data && prof.data.gender) userGender = prof.data.gender;
+  } catch (e) { console.warn("gender", e); }
+  try {
+    const sett = await db.from("app_settings").select("key, value").in("key", ["km_factor_male","km_factor_female"]);
+    (sett.data || []).forEach(r => {
+      if (r.key === "km_factor_male") kmFactorMale = Number(r.value) || 1;
+      if (r.key === "km_factor_female") kmFactorFemale = Number(r.value) || 1.15;
     });
-  }catch(e){ console.warn("loadGenderAndKmFactors", e); }
+  } catch (e) { console.warn("app_settings", e); }
 }
 
 /* ===== AUTH ===== */
@@ -1841,47 +1841,73 @@ document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html
 
 /* ===== OPEN ===== */
 async function openApp(user){
+  if (!user) return;
   currentUser = user;
-  await loadGenderAndKmFactors();
+  try {
+    document.getElementById("authPage").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+  } catch (_) {}
+
+  try {
+    const now = new Date();
+    todayDate = isoDate(now);
+    if (!selectedDate) selectedDate = todayDate;
+    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    viewYear = j.jy;
+    viewMonth = j.jm;
+    if (typeof updateCalLabel === "function") updateCalLabel();
+    if (typeof renderCalendar === "function") renderCalendar();
+  } catch (e) { console.warn("openApp calendar", e); }
+
+  try { await loadGenderAndKmFactors(); } catch (e) { console.warn(e); }
   try {
     const __pa = await db.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
     if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(__pa.data && __pa.data.is_admin));
-  } catch(_){}
-  const now=new Date();
-  todayDate=isoDate(now);
-  selectedDate=todayDate;
-
-  const j=jalaali.toJalaali(now.getFullYear(),now.getMonth()+1,now.getDate());
-  viewYear=j.jy;
-  viewMonth=j.jm;
-
-  document.getElementById("authPage").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-
-  updateCalLabel();
-  renderCalendar();
-  await loadDayData();
+  } catch (_) {}
+  try { await loadDayData(); } catch (e) { console.warn("loadDayData", e); }
   try {
-    const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
-    const adminBtn = document.getElementById("adminButton");
-    if (adminBtn && pr.data && pr.data.is_admin) adminBtn.classList.remove("hidden");
-    else if (adminBtn) adminBtn.classList.add("hidden");
-  } catch (e) {}
+    if (typeof updateStreaks === "function") updateStreaks();
+    if (typeof updateBadges === "function") updateBadges();
+  } catch (_) {}
 }
 
-db.auth.onAuthStateChange(async(event,session)=>{
-  if(session&&(event==="SIGNED_IN"||event==="INITIAL_SESSION")) await openApp(session.user);
-  if(event==="SIGNED_OUT"){
-    document.getElementById("app").classList.add("hidden");
-    document.getElementById("authPage").classList.remove("hidden");
-    setMode("login");
+let __appOpened = false;
+async function bootSession() {
+  try {
+    let r = await db.auth.getSession();
+    if (!r.data.session) {
+      await new Promise(res => setTimeout(res, 250));
+      r = await db.auth.getSession();
+    }
+    if (r.data.session && r.data.session.user) {
+      __appOpened = true;
+      await openApp(r.data.session.user);
+    }
+  } catch (e) {
+    console.warn("bootSession", e);
+  }
+}
+
+db.auth.onAuthStateChange(async (event, session) => {
+  if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+    if (event === "TOKEN_REFRESHED" && __appOpened) return;
+    __appOpened = true;
+    try { await openApp(session.user); } catch (e) { console.warn(e); }
+  }
+  if (event === "SIGNED_OUT") {
+    __appOpened = false;
+    currentUser = null;
+    try {
+      document.getElementById("app").classList.add("hidden");
+      document.getElementById("authPage").classList.remove("hidden");
+      if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
+      setMode("login");
+    } catch (_) {}
   }
 });
 
-(async()=>{
-  const r=await db.auth.getSession();
-  if(r.data.session) await openApp(r.data.session.user);
-})();
+bootSession();
+
 </script>
   <script src="nav.js"></script>
 </body>
