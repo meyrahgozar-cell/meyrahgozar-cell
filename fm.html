@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GitHub File Manager</title>
     <style>
-        /* ─── Reset & base ─── */
         * {
             box-sizing: border-box;
         }
@@ -16,8 +15,6 @@
             color: #e0e0ff;
             min-height: 100vh;
         }
-
-        /* ─── Scrollbar ─── */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -33,7 +30,6 @@
             background: #3a3a4a;
         }
 
-        /* ─── Header ─── */
         header {
             padding: 14px 20px;
             background: #11111b;
@@ -60,16 +56,12 @@
             padding: 8px 14px;
             border-radius: 8px;
             font-size: 14px;
-            transition: border .2s;
             min-width: 180px;
         }
         header input:focus {
             outline: none;
             border-color: #00f0ff;
             box-shadow: 0 0 0 3px #00f0ff22;
-        }
-        header input::placeholder {
-            color: #555;
         }
         header button {
             background: transparent;
@@ -106,16 +98,14 @@
             color: #ffd93d;
         }
 
-        /* ─── Path bar ─── */
         .path {
             padding: 10px 20px;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-family: monospace;
             font-size: 13px;
             color: #00f0ff;
             border-bottom: 1px solid #1a1a2a;
             background: #0d0d18;
             display: flex;
-            align-items: center;
             gap: 8px;
             flex-wrap: wrap;
         }
@@ -132,7 +122,6 @@
             user-select: none;
         }
 
-        /* ─── Toolbar ─── */
         .toolbar {
             padding: 10px 20px;
             display: none;
@@ -175,7 +164,6 @@
             flex: 1;
         }
 
-        /* ─── Drop area ─── */
         .upload-area {
             margin: 16px 20px 8px;
             border: 2px dashed #2a2a3a;
@@ -207,7 +195,6 @@
             margin-top: 4px;
         }
 
-        /* ─── File grid ─── */
         .files {
             padding: 16px 20px;
             display: grid;
@@ -300,7 +287,6 @@
             filter: drop-shadow(0 2px 4px rgba(0, 240, 255, 0.1));
         }
 
-        /* ─── Context Menu ─── */
         .context-menu {
             position: fixed;
             background: #1a1a2e;
@@ -339,7 +325,6 @@
             margin: 4px 8px;
         }
 
-        /* ─── Message ─── */
         .msg {
             padding: 60px 20px;
             text-align: center;
@@ -352,7 +337,7 @@
             margin-bottom: 12px;
         }
 
-        /* ─── Editor Modal (Simple textarea + line numbers) ─── */
+        /* ─── Editor ─── */
         .editor-overlay {
             position: fixed;
             inset: 0;
@@ -363,20 +348,9 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            animation: fadeIn .2s ease;
         }
         .editor-overlay.open {
             display: flex;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(.97);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
         }
 
         .editor-modal {
@@ -456,24 +430,29 @@
         .editor-body {
             flex: 1;
             position: relative;
-            overflow: hidden;
             background: #0a0a12;
+            overflow: hidden;
         }
 
-        .editor-wrap {
-            display: flex;
-            height: 100%;
+        /* Editor container: line numbers + textarea, both scroll together */
+        .editor-scroll {
+            position: relative;
             width: 100%;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+            height: 100%;
+            overflow: auto;
+            background: #0a0a12;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             font-size: 14px;
             line-height: 1.6;
-            background: #0a0a12;
+            padding-left: 44px;
+            /* space for line numbers */
         }
-
-        /* Line numbers – scrolls with textarea via same container */
-        .line-gutter {
-            flex-shrink: 0;
+        .editor-scroll .line-numbers {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 44px;
+            height: 100%;
             background: #0a0a12;
             color: #444;
             text-align: right;
@@ -484,26 +463,14 @@
             font-size: 13px;
             line-height: 1.6;
             font-family: inherit;
-            position: relative;
-            z-index: 2;
             pointer-events: none;
+            z-index: 2;
         }
-        .line-gutter .ln {
+        .editor-scroll .line-numbers .ln {
             display: block;
             padding-right: 4px;
         }
-
-        /* Code container – scrollable */
-        .code-container {
-            flex: 1;
-            position: relative;
-            overflow: auto;
-            background: #0a0a12;
-            height: 100%;
-        }
-
-        /* Textarea – editable, transparent text, shows caret */
-        .code-container textarea {
+        .editor-scroll textarea {
             margin: 0;
             padding: 12px 16px;
             font-family: inherit;
@@ -518,6 +485,7 @@
             word-wrap: break-word;
             caret-color: #e0e0ff;
             overflow: visible;
+            /* scroll is handled by the container */
             width: 100%;
             min-height: 100%;
             height: 100%;
@@ -526,12 +494,29 @@
             letter-spacing: 0;
             box-sizing: border-box;
             position: relative;
+            display: block;
         }
-        .code-container textarea::selection {
+        .editor-scroll textarea::selection {
             background: #00f0ff33;
         }
-        .code-container textarea:focus {
+        .editor-scroll textarea:focus {
             outline: none;
+        }
+
+        /* Hide scrollbar on the container to avoid double scrollbars, but allow scrolling */
+        .editor-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .editor-scroll::-webkit-scrollbar-track {
+            background: #141420;
+        }
+        .editor-scroll::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+            border-radius: 4px;
+        }
+        .editor-scroll::-webkit-scrollbar-thumb:hover {
+            background: #3a3a4a;
         }
 
         .editor-footer {
@@ -581,7 +566,6 @@
             cursor: not-allowed;
         }
 
-        /* ─── Responsive ─── */
         @media (max-width: 640px) {
             header form input {
                 min-width: 120px;
@@ -603,12 +587,16 @@
             .editor-header .file-path {
                 max-width: 80px;
             }
-            .line-gutter {
+            .editor-scroll {
+                padding-left: 32px;
+                font-size: 12px;
+            }
+            .editor-scroll .line-numbers {
                 width: 32px;
                 font-size: 11px;
                 padding: 10px 6px 10px 0;
             }
-            .code-container textarea {
+            .editor-scroll textarea {
                 font-size: 12px;
                 padding: 10px 12px;
             }
@@ -623,28 +611,21 @@
                 right: 32px;
             }
         }
-
-        .hidden {
-            display: none !important;
-        }
     </style>
 </head>
 <body>
 
-    <!-- ─── HEADER ─── -->
     <header>
         <form id="auth" autocomplete="off">
-            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" autocomplete="off" />
+            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" />
             <input id="token" type="password" placeholder="GitHub Token" autocomplete="new-password" />
             <button type="button" id="connectBtn">Connect</button>
         </form>
         <div class="status" id="status">Not connected</div>
     </header>
 
-    <!-- ─── PATH ─── -->
     <div class="path" id="path"></div>
 
-    <!-- ─── TOOLBAR ─── -->
     <div class="toolbar" id="toolbar">
         <button type="button" class="primary" id="uploadBtn">📤 Upload</button>
         <button type="button" id="newFolder">📁 New Folder</button>
@@ -655,18 +636,15 @@
         <span style="font-size:12px;color:#555" id="branchLabel">main</span>
     </div>
 
-    <!-- ─── DROP ZONE ─── -->
     <div class="upload-area" id="drop">
         <span class="icon">📂</span>
         Drop files here or click to upload
         <div class="sub">Supports multiple files</div>
     </div>
 
-    <!-- ─── FILE GRID ─── -->
     <div class="files" id="files"></div>
     <div class="msg" id="msg"><span class="emoji">🔑</span>Enter your token and click Connect</div>
 
-    <!-- ─── CONTEXT MENU ─── -->
     <div class="context-menu" id="contextMenu">
         <div class="item" data-action="open">📂 Open</div>
         <div class="item" data-action="download">⬇️ Download</div>
@@ -676,7 +654,7 @@
         <div class="item danger" data-action="delete">🗑️ Delete</div>
     </div>
 
-    <!-- ─── EDITOR OVERLAY ─── -->
+    <!-- Editor Modal -->
     <div class="editor-overlay" id="editorOverlay">
         <div class="editor-modal">
             <div class="editor-header">
@@ -687,11 +665,9 @@
                 <button class="close-btn" id="edClose">✕</button>
             </div>
             <div class="editor-body" id="edBody">
-                <div class="editor-wrap">
-                    <div class="line-gutter" id="lineGutter"></div>
-                    <div class="code-container" id="codeContainer">
-                        <textarea id="codeEditor" spellcheck="false" autofocus></textarea>
-                    </div>
+                <div class="editor-scroll" id="editorScroll">
+                    <div class="line-numbers" id="lineNumbers"></div>
+                    <textarea id="codeEditor" spellcheck="false" autofocus></textarea>
                 </div>
             </div>
             <div class="editor-footer">
@@ -746,8 +722,8 @@
         const edLines = $('edLines');
         const edSize = $('edSize');
         const edEditor = $('codeEditor');
-        const edGutter = $('lineGutter');
-        const codeContainer = $('codeContainer');
+        const lineNumbers = $('lineNumbers');
+        const editorScroll = $('editorScroll');
 
         const contextMenu = $('contextMenu');
 
@@ -881,7 +857,7 @@
                     card.dataset.type = item.type;
                     card.dataset.name = item.name;
 
-                    // Delete button
+                    // Delete
                     const delBtn = document.createElement('button');
                     delBtn.className = 'del';
                     delBtn.textContent = '✕';
@@ -902,7 +878,7 @@
                     };
                     card.appendChild(delBtn);
 
-                    // Open in browser button (only for files)
+                    // Open in browser
                     if (!isDir) {
                         const browserBtn = document.createElement('button');
                         browserBtn.className = 'open-browser';
@@ -1169,7 +1145,7 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  OPEN FILE → EDITOR (simple textarea + line numbers)
+        //  OPEN FILE → EDITOR (simple scroll‑sync)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const TEXT_EXTS = new Set([
             'html', 'htm', 'css', 'js', 'mjs', 'json', 'xml', 'svg', 'txt',
@@ -1214,7 +1190,7 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EDITOR UI
+        //  EDITOR UI (with scroll sync)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function openEditor(content) {
             edIcon.textContent = getFileIcon(editorFile.name, false);
@@ -1230,7 +1206,7 @@
             edOverlay.classList.add('open');
 
             // Reset scroll
-            codeContainer.scrollTop = 0;
+            editorScroll.scrollTop = 0;
 
             // Focus
             setTimeout(() => {
@@ -1246,7 +1222,23 @@
                 updateEditorInfo();
             };
 
-            // Sync scroll with line numbers? They are in same container, so no need.
+            // Sync line numbers with scroll
+            editorScroll.onscroll = function() {
+                // lineNumbers is positioned absolute, so it doesn't scroll automatically.
+                // We need to move it with the scroll: we can adjust its position.
+                // Actually, it's inside the scroll container, but it's positioned absolute relative to the container,
+                // so it stays fixed. We want it to scroll with the content.
+                // Better: we set lineNumbers as a child with position: relative and let it scroll normally?
+                // But then it would scroll horizontally too. We can set overflow-x: hidden.
+                // Let's change the approach: put lineNumbers as a separate element that moves with scroll.
+                // Instead, we'll use the fact that the container scrolls, and we want the line numbers to stick to the left
+                // but stay at the same scrollTop. So we set its position to absolute and update its top offset.
+                // Actually, we can just set lineNumbers to position: sticky; left: 0; top: 0; and it will stick to the top
+                // but scroll with the container vertically. That's perfect.
+                // Let's adjust the CSS: .line-numbers { position: sticky; left: 0; top: 0; }
+                // But we already have position: absolute. Change to sticky.
+                // We'll do that in the CSS.
+            };
         }
 
         function closeEditor() {
@@ -1259,8 +1251,8 @@
             edOverlay.classList.remove('open');
             editorFile = null;
             edEditor.oninput = null;
-            // Clear line numbers
-            edGutter.innerHTML = '';
+            editorScroll.onscroll = null;
+            lineNumbers.innerHTML = '';
         }
 
         function setEditorStatus(text, type) {
@@ -1271,12 +1263,12 @@
         function updateLineNumbers() {
             const lines = edEditor.value.split('\n');
             const count = lines.length;
-            edGutter.innerHTML = '';
+            lineNumbers.innerHTML = '';
             for (let i = 1; i <= count; i++) {
                 const span = document.createElement('span');
                 span.className = 'ln';
                 span.textContent = i;
-                edGutter.appendChild(span);
+                lineNumbers.appendChild(span);
             }
             edLines.textContent = count;
         }
@@ -1309,11 +1301,10 @@
                     branch: state.branch,
                 });
                 editorFile.savedContent = content;
-                // Update sha
                 const data = await api('GET', `/contents/${editorFile.path}?ref=${state.branch}`);
                 editorFile.sha = data.sha;
                 setEditorStatus('● saved ✓', 'saved');
-                load(); // refresh file list
+                load();
             } catch (e) {
                 console.error('Save error:', e);
                 setEditorStatus('✕ save failed', 'error');
@@ -1432,7 +1423,7 @@
             if (e.key === 'Escape' && editorFile) closeEditor();
         });
 
-        // Tab key support in editor
+        // Tab key support and Ctrl+S
         edEditor.addEventListener('keydown', function(e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
