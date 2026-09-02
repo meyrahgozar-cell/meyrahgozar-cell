@@ -838,6 +838,30 @@ button { cursor: pointer; border: none; background: none; }
   font-weight: 700; color: var(--text);
 }
 
+
+.gender-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--card2, #131722);
+  border: 1px solid var(--border, rgba(180,100,255,.18));
+  font-size: 12px;
+  color: var(--muted, #8b92b0);
+}
+.gender-bar select {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(180,100,255,.18));
+  background: var(--card, #0d1019);
+  color: var(--text, #f0f2ff);
+  padding: 0 10px;
+  font: inherit;
+}
+
 </style>
 </head>
 <body>
@@ -945,6 +969,14 @@ button { cursor: pointer; border: none; background: none; }
   </div>
   <div class="badges-row" id="badgesRow" aria-label="نشان‌ها"></div>
 
+  <div class="gender-bar" id="genderBar">
+    <span>جنسیت (امتیاز ورزش)</span>
+    <select id="genderSelect">
+      <option value="">— انتخاب —</option>
+      <option value="male">مرد</option>
+      <option value="female">زن</option>
+    </select>
+  </div>
   <div class="items" id="items"></div>
 </div>
 
@@ -964,6 +996,9 @@ let todayDate = null;
 let viewYear = null;
 let viewMonth = null;
 let currentUser = null;
+let userGender = null;
+let kmFactorMale = 1;
+let kmFactorFemale = 1.15;
 let todayLogs = new Map();
 let exerciseLog = null;
 let mountainTrips = [];
@@ -1066,12 +1101,44 @@ function calculateScore(type,value){
     default: return 0;
   }
 }
+function genderKmFactor(){
+  if(userGender==="female") return Number(kmFactorFemale)||1.15;
+  if(userGender==="male") return Number(kmFactorMale)||1;
+  return 1; // بدون جنسیت: بدون ضریب اضافه
+}
+
+async function loadGenderAndKmFactors(){
+  if(!currentUser) return;
+  try{
+    const [prof, sett] = await Promise.all([
+      db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle(),
+      db.from("app_settings").select("key, value").in("key", ["km_factor_male","km_factor_female"])
+    ]);
+    if(prof.data && prof.data.gender) userGender = prof.data.gender;
+    (sett.data||[]).forEach(r=>{
+      if(r.key==="km_factor_male") kmFactorMale = Number(r.value)||1;
+      if(r.key==="km_factor_female") kmFactorFemale = Number(r.value)||1.15;
+    });
+    const sel = document.getElementById("genderSelect");
+    if(sel && userGender) sel.value = userGender;
+  }catch(e){ console.warn("loadGenderAndKmFactors", e); }
+}
+async function saveUserGender(g){
+  userGender = g || null;
+  if(!currentUser || !g) return;
+  try{
+    await db.from("profiles").update({ gender: g }).eq("id", currentUser.id);
+  }catch(e){ console.warn(e); }
+}
+
 function exerciseCalc(w,a,r){
   const aerobicKm=(w/60)*0.08*a;
   const totalKm=aerobicKm+r;
-  const calories=totalKm*w;
+  const factor=genderKmFactor();
+  const caloriesRaw=totalKm*w;
+  const calories=caloriesRaw*factor;
   const score=calories<100?0:calories<300?1:calories<=600?3:5;
-  return{aerobicKm,totalKm,calories,score};
+  return{aerobicKm,totalKm,calories,caloriesRaw,factor,score};
 }
 
 /* ===== AUTH ===== */
@@ -1795,6 +1862,16 @@ document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html
 /* ===== OPEN ===== */
 async function openApp(user){
   currentUser=user;
+  await loadGenderAndKmFactors();
+  const gSel = document.getElementById("genderSelect");
+  if (gSel && !gSel.dataset.bound) {
+    gSel.dataset.bound = "1";
+    gSel.addEventListener("change", () => {
+      saveUserGender(gSel.value || null);
+      if (typeof updateScoreUI === "function") updateScoreUI();
+      if (typeof renderItems === "function") renderItems();
+    });
+  }
   const now=new Date();
   todayDate=isoDate(now);
   selectedDate=todayDate;
