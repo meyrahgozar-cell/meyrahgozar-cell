@@ -458,6 +458,7 @@ async function init() {
   }
 
   document.getElementById("appBox").classList.remove("hidden");
+  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(true);
   loadKmFactors();
   const saveBtn = document.getElementById("saveKmFactors");
   if (saveBtn) saveBtn.onclick = saveKmFactors;
@@ -867,5 +868,6 @@ async function saveKmFactors() {
 
 init();
 </script>
+  <script src="nav.js"></script>
 </body>
 </html>
