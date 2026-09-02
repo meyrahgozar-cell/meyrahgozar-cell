@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
-    <title>HQL | گزارش ماهانه</title>
+    <title>HQL | Ú¯Ø²Ø§Ø±Ø´ ÙØ§ÙØ§ÙÙ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1135,7 +1135,7 @@
             margin-top: 2px;
         }
 
-        /* ====== weight strip – standard card, no extra bars ====== */
+        /* ====== weight strip â standard card, no extra bars ====== */
         .weight-strip-card {
             /* nothing special, inherits card style */
         }
@@ -1395,33 +1395,33 @@
         <header class="header">
             <div class="brand">HQL</div>
             <div class="header-actions">
-                <button class="icon-btn" id="shareBtn" title="کپی خلاصه گزارش">⤴</button>
-                <button class="icon-btn" id="refreshBtn" title="بروزرسانی">⟳</button>
-                <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
+                <button class="icon-btn" id="shareBtn" title="Ú©Ù¾Û Ø®ÙØ§ØµÙ Ú¯Ø²Ø§Ø±Ø´">â¤´</button>
+                <button class="icon-btn" id="refreshBtn" title="Ø¨Ø±ÙØ²Ø±Ø³Ø§ÙÛ">â³</button>
+                <button class="icon-btn" id="backBtn" title="Ø¨Ø§Ø²Ú¯Ø´Øª">â</button>
             </div>
         </header>
 
-        <h1 class="page-title">گزارش ماهانه</h1>
-        <p class="page-sub">نمای کلی عملکرد و عادت‌ها</p>
+        <h1 class="page-title">Ú¯Ø²Ø§Ø±Ø´ ÙØ§ÙØ§ÙÙ</h1>
+        <p class="page-sub">ÙÙØ§Û Ú©ÙÛ Ø¹ÙÙÚ©Ø±Ø¯ Ù Ø¹Ø§Ø¯ØªâÙØ§</p>
 
         <div class="month-bar">
-            <button class="icon-btn" id="nextMonthBtn" title="ماه بعد">›</button>
+            <button class="icon-btn" id="nextMonthBtn" title="ÙØ§Ù Ø¨Ø¹Ø¯">âº</button>
             <select id="yearSelect" class="select"></select>
             <select id="monthSelect" class="select"></select>
-            <button class="icon-btn" id="prevMonthBtn" title="ماه قبل">‹</button>
+            <button class="icon-btn" id="prevMonthBtn" title="ÙØ§Ù ÙØ¨Ù">â¹</button>
         </div>
         <p class="report-period-note" id="reportPeriodNote"></p>
         <div class="month-special-bar" id="monthSpecialBar">
-            <button type="button" class="btn-go-current" id="goCurrentMonth">برو به ماه جاری ↗</button>
+            <button type="button" class="btn-go-current" id="goCurrentMonth">Ø¨Ø±Ù Ø¨Ù ÙØ§Ù Ø¬Ø§Ø±Û â</button>
         </div>
 
         <div id="content" aria-live="polite">
-            <div class="loading">در حال بارگذاری...</div>
+            <div class="loading">Ø¯Ø± Ø­Ø§Ù Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±Û...</div>
         </div>
     </div>
 
     <script>
-        // All JavaScript remains exactly the same – no changes to logic.
+        // All JavaScript remains exactly the same â no changes to logic.
         // The only modifications are CSS (no metal bars, added noise texture).
         // For brevity, I'll include the entire script as before.
 
@@ -1432,19 +1432,19 @@
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
         });
 
-        const J_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+        const J_MONTHS = ["ÙØ±ÙØ±Ø¯ÛÙ", "Ø§Ø±Ø¯ÛØ¨ÙØ´Øª", "Ø®Ø±Ø¯Ø§Ø¯", "ØªÛØ±", "ÙØ±Ø¯Ø§Ø¯", "Ø´ÙØ±ÛÙØ±", "ÙÙØ±", "Ø¢Ø¨Ø§Ù", "Ø¢Ø°Ø±", "Ø¯Û", "Ø¨ÙÙÙ", "Ø§Ø³ÙÙØ¯"];
         const START_YEAR = 1405;
 
         const HABIT_LABELS = {
-            water: { icon: "💧", title: "آب" },
-            sleep: { icon: "🌙", title: "خواب" },
-            instagram: { icon: "📱", title: "اینستاگرام" },
-            sun: { icon: "☀️", title: "آفتاب" },
-            solitude: { icon: "🧘", title: "خلوت" },
-            reading: { icon: "📖", title: "مطالعه" },
-            sugar: { icon: "🍬", title: "قند" },
-            dinner: { icon: "🍽️", title: "شام" },
-            exercise: { icon: "🏃", title: "ورزش" }
+            water: { icon: "ð§", title: "Ø¢Ø¨" },
+            sleep: { icon: "ð", title: "Ø®ÙØ§Ø¨" },
+            instagram: { icon: "ð±", title: "Ø§ÛÙØ³ØªØ§Ú¯Ø±Ø§Ù" },
+            sun: { icon: "âï¸", title: "Ø¢ÙØªØ§Ø¨" },
+            solitude: { icon: "ð§", title: "Ø®ÙÙØª" },
+            reading: { icon: "ð", title: "ÙØ·Ø§ÙØ¹Ù" },
+            sugar: { icon: "ð¬", title: "ÙÙØ¯" },
+            dinner: { icon: "ð½ï¸", title: "Ø´Ø§Ù" },
+            exercise: { icon: "ð", title: "ÙØ±Ø²Ø´" }
         };
 
         let currentUser = null;
@@ -1456,7 +1456,7 @@
         let lastRenderData = null;
 
         function fa(v) {
-            return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+            return String(v).replace(/\d/g, d => "Û°Û±Û²Û³Û´ÛµÛ¶Û·Û¸Û¹"[d]);
         }
 
         function scoreText(v) {
@@ -1544,6 +1544,7 @@
             reportBooted = true;
             currentUser = session.user;
             await refreshAdminFlag();
+  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
             initMonthPicker();
             await loadReport();
         })();
@@ -1655,16 +1656,16 @@
             if (note) {
                 if (isCurrent) {
                     if (j.jd <= 1) {
-                        note.textContent = "امروز اولین روز ماه است — میانگین تا دیروز هنوز خالی است. گزارش نهایی ماه قبل را ببین.";
+                        note.textContent = "Ø§ÙØ±ÙØ² Ø§ÙÙÛÙ Ø±ÙØ² ÙØ§Ù Ø§Ø³Øª â ÙÛØ§ÙÚ¯ÛÙ ØªØ§ Ø¯ÛØ±ÙØ² ÙÙÙØ² Ø®Ø§ÙÛ Ø§Ø³Øª. Ú¯Ø²Ø§Ø±Ø´ ÙÙØ§ÛÛ ÙØ§Ù ÙØ¨Ù Ø±Ø§ Ø¨Ø¨ÛÙ.";
                     } else {
-                        note.textContent = "میانگین و رتبه فقط تا دیروز حساب می‌شود (امروز هنوز در جریان است).";
+                        note.textContent = "ÙÛØ§ÙÚ¯ÛÙ Ù Ø±ØªØ¨Ù ÙÙØ· ØªØ§ Ø¯ÛØ±ÙØ² Ø­Ø³Ø§Ø¨ ÙÛâØ´ÙØ¯ (Ø§ÙØ±ÙØ² ÙÙÙØ² Ø¯Ø± Ø¬Ø±ÛØ§Ù Ø§Ø³Øª).";
                     }
                 } else {
                     const past = selectedYear < j.jy || (selectedYear === j.jy && selectedMonth < j.jm);
                     if (past && j.jd <= 2) {
-                        note.textContent = "گزارش نهایی ماه قبل — روز ۱ و ۲ برای جمع‌بندی در نظر گرفته شده.";
+                        note.textContent = "Ú¯Ø²Ø§Ø±Ø´ ÙÙØ§ÛÛ ÙØ§Ù ÙØ¨Ù â Ø±ÙØ² Û± Ù Û² Ø¨Ø±Ø§Û Ø¬ÙØ¹âØ¨ÙØ¯Û Ø¯Ø± ÙØ¸Ø± Ú¯Ø±ÙØªÙ Ø´Ø¯Ù.";
                     } else if (past) {
-                        note.textContent = "گزارش کامل این ماه (روزهای تکمیل‌شده).";
+                        note.textContent = "Ú¯Ø²Ø§Ø±Ø´ Ú©Ø§ÙÙ Ø§ÛÙ ÙØ§Ù (Ø±ÙØ²ÙØ§Û ØªÚ©ÙÛÙâØ´Ø¯Ù).";
                     } else {
                         note.textContent = "";
                     }
@@ -1704,10 +1705,10 @@
         }
 
         const REPORT_BADGES = {
-            w1: { emoji: "🌿", title: "هفته‌های خوب", desc: "هفته با میانگین ≥۷ و ≥۵ روز فعال" },
-            w2: { emoji: "⚡", title: "زنجیره هفته", desc: "بیشینه هفته‌های خوب پشت‌سرهم" },
-            m1: { emoji: "🌙", title: "ماه خوب", desc: "ماه با میانگین ≥۷ و ≥۱۵ روز" },
-            m2: { emoji: "💎", title: "ماه درخشان", desc: "ماه با میانگین ≥۱۰ و ≥۲۰ روز" }
+            w1: { emoji: "ð¿", title: "ÙÙØªÙâÙØ§Û Ø®ÙØ¨", desc: "ÙÙØªÙ Ø¨Ø§ ÙÛØ§ÙÚ¯ÛÙ â¥Û· Ù â¥Ûµ Ø±ÙØ² ÙØ¹Ø§Ù" },
+            w2: { emoji: "â¡", title: "Ø²ÙØ¬ÛØ±Ù ÙÙØªÙ", desc: "Ø¨ÛØ´ÛÙÙ ÙÙØªÙâÙØ§Û Ø®ÙØ¨ Ù¾Ø´ØªâØ³Ø±ÙÙ" },
+            m1: { emoji: "ð", title: "ÙØ§Ù Ø®ÙØ¨", desc: "ÙØ§Ù Ø¨Ø§ ÙÛØ§ÙÚ¯ÛÙ â¥Û· Ù â¥Û±Ûµ Ø±ÙØ²" },
+            m2: { emoji: "ð", title: "ÙØ§Ù Ø¯Ø±Ø®Ø´Ø§Ù", desc: "ÙØ§Ù Ø¨Ø§ ÙÛØ§ÙÚ¯ÛÙ â¥Û±Û° Ù â¥Û²Û° Ø±ÙØ²" }
         };
 
         function shamsiWeekKey(iso) {
@@ -1812,12 +1813,12 @@
               <div class="badge-modal-head">
                 ${avatarHtml(displayName, "rank")}
                 <div>
-                  <div class="badge-modal-name">${displayName || "کاربر"}</div>
-                  <div class="badge-modal-sub">نشان‌های مسیر (شمارش انباشته)</div>
+                  <div class="badge-modal-name">${displayName || "Ú©Ø§Ø±Ø¨Ø±"}</div>
+                  <div class="badge-modal-sub">ÙØ´Ø§ÙâÙØ§Û ÙØ³ÛØ± (Ø´ÙØ§Ø±Ø´ Ø§ÙØ¨Ø§Ø´ØªÙ)</div>
                 </div>
               </div>
-              <div class="badge-list" id="badgeListModal"><div class="empty">در حال بارگذاری...</div></div>
-              <button type="button" class="badge-modal-close">بستن</button>
+              <div class="badge-list" id="badgeListModal"><div class="empty">Ø¯Ø± Ø­Ø§Ù Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±Û...</div></div>
+              <button type="button" class="badge-modal-close">Ø¨Ø³ØªÙ</button>
             </div>`;
             const close = () => overlay.remove();
             overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
@@ -1828,7 +1829,7 @@
             const list = overlay.querySelector("#badgeListModal");
             if (!dayScore) {
                 list.innerHTML =
-                    `<div class="empty">برای دیدن نشان دیگران تابع SQL را اجرا کن، یا فقط نشان خودت از ایندکس در دسترس است.</div>`;
+                    `<div class="empty">Ø¨Ø±Ø§Û Ø¯ÛØ¯Ù ÙØ´Ø§Ù Ø¯ÛÚ¯Ø±Ø§Ù ØªØ§Ø¨Ø¹ SQL Ø±Ø§ Ø§Ø¬Ø±Ø§ Ú©ÙØ ÛØ§ ÙÙØ· ÙØ´Ø§Ù Ø®ÙØ¯Øª Ø§Ø² Ø§ÛÙØ¯Ú©Ø³ Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ø§Ø³Øª.</div>`;
                 return;
             }
             const counts = computeBadgeCounts(dayScore);
@@ -1840,7 +1841,7 @@
                 return `<div class="badge-row ${on ? "" : "locked"}">
               <span class="badge-row-emoji">${b.emoji}</span>
               <div class="badge-row-title">${b.title}<div style="font-size:11px;color:var(--muted);font-weight:500">${b.desc}</div></div>
-              <span class="badge-row-count">${on ? "×" + fa(c) : "—"}</span>
+              <span class="badge-row-count">${on ? "Ã" + fa(c) : "â"}</span>
             </div>`;
             }).join("");
         }
@@ -1875,7 +1876,7 @@
             const chips = [...strip.querySelectorAll(".weight-chip:not(.empty)")];
             let maxEl = null,
                 maxV = -Infinity;
-            const faToEn = (s) => String(s || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+            const faToEn = (s) => String(s || "").replace(/[Û°-Û¹]/g, d => String("Û°Û±Û²Û³Û´ÛµÛ¶Û·Û¸Û¹".indexOf(d)));
             chips.forEach(ch => {
                 const t = ch.querySelector(".weight-chip-val");
                 if (!t) return;
@@ -2151,7 +2152,7 @@
                 renderSkeleton();
             } else {
                 const c = document.getElementById("content");
-                if (c) c.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+                if (c) c.innerHTML = `<div class="loading">Ø¯Ø± Ø­Ø§Ù Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±Û...</div>`;
             }
 
             const range = jalaliRange(selectedYear, selectedMonth);
@@ -2252,7 +2253,7 @@
                         missing.forEach(uid => {
                             leaderboard.push({
                                 user_id: uid,
-                                display_name: nameMap[uid] || nameMap[String(uid)] || "کاربر",
+                                display_name: nameMap[uid] || nameMap[String(uid)] || "Ú©Ø§Ø±Ø¨Ø±",
                                 total_score: 0,
                                 totalScore: 0,
                                 avg: 1,
@@ -2263,7 +2264,7 @@
                     }
                 }
 
-                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "کاربر");
+                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "Ú©Ø§Ø±Ø¨Ø±");
                 if (needNames.length) {
                     try {
                         const ids = needNames.map(u => u.user_id);
@@ -2369,10 +2370,10 @@
                 const content = document.getElementById("content");
                 content.innerHTML = `
               <div class="empty error-box">
-                <div class="empty-icon">⚠️</div>
-                <div>خطا در دریافت گزارش</div>
+                <div class="empty-icon">â ï¸</div>
+                <div>Ø®Ø·Ø§ Ø¯Ø± Ø¯Ø±ÛØ§ÙØª Ú¯Ø²Ø§Ø±Ø´</div>
                 <small>${(err && err.message) ? err.message : ""}</small>
-                <button class="retry-btn" id="retryBtn">تلاش دوباره</button>
+                <button class="retry-btn" id="retryBtn">ØªÙØ§Ø´ Ø¯ÙØ¨Ø§Ø±Ù</button>
               </div>`;
                 const retryBtn = document.getElementById("retryBtn");
                 if (retryBtn) retryBtn.onclick = loadReport;
@@ -2402,7 +2403,7 @@
             const active = Number(stats.active_days) || 0;
             const daily = stats.daily || [];
 
-            let bestNote = "—";
+            let bestNote = "â";
             if (stats.best_day) {
                 const [y, m, d] = stats.best_day.split("-").map(Number);
                 const j = jalaali.toJalaali(y, m, d);
@@ -2424,7 +2425,7 @@
 
             let chartHtml = "";
             if (chartDays.length === 0) {
-                chartHtml = `<div class="empty"><div class="empty-icon">📊</div>هنوز داده‌ای برای این ماه ثبت نشده</div>`;
+                chartHtml = `<div class="empty"><div class="empty-icon">ð</div>ÙÙÙØ² Ø¯Ø§Ø¯ÙâØ§Û Ø¨Ø±Ø§Û Ø§ÛÙ ÙØ§Ù Ø«Ø¨Øª ÙØ´Ø¯Ù</div>`;
             } else {
                 chartHtml =
                     `<div class="chart-wrap"><div class="chart ${dense ? "dense" : ""}" id="dailyChart">` +
@@ -2436,15 +2437,15 @@
                         const [y, m, day] = iso.split("-").map(Number);
                         const j = jalaali.toJalaali(y, m, day);
                         const isBest = stats.best_day === iso && st !== "missed" && st !== "future";
-                        const statusFa = st === "timely" ? "به‌موقع" : st === "late" ? "با تأخیر" : st === "future" ?
-                            "آینده" : "بدون ثبت";
+                        const statusFa = st === "timely" ? "Ø¨ÙâÙÙÙØ¹" : st === "late" ? "Ø¨Ø§ ØªØ£Ø®ÛØ±" : st === "future" ?
+                            "Ø¢ÛÙØ¯Ù" : "Ø¨Ø¯ÙÙ Ø«Ø¨Øª";
                         const tip =
-                            `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} · ${statusFa}`;
+                            `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} Â· ${statusFa}`;
                         const showLabel = !dense || j.jd === 1 || j.jd === chartDays.length || j.jd % 2 === 0 || isBest;
                         return `
                   <div class="bar-wrap ${isBest ? "best" : ""} ${st === "missed" ? "missed" : ""}" data-tip="${tip}">
                     <div class="bar ${st}" data-h="${h}" style="height:${h}px"></div>
-                    <div class="bar-label">${isBest ? "★ " : ""}${showLabel ? fa(j.jd) : ""}</div>
+                    <div class="bar-label">${isBest ? "â " : ""}${showLabel ? fa(j.jd) : ""}</div>
                   </div>`;
                     }).join("") +
                     `</div><div class="chart-tip" id="chartTip"></div></div>`;
@@ -2455,32 +2456,32 @@
 
             let podiumHtml = "";
             if (top3.length === 0) {
-                podiumHtml = `<div class="empty"><div class="empty-icon">🏆</div>هنوز رتبه‌بندی‌ای وجود ندارد</div>`;
+                podiumHtml = `<div class="empty"><div class="empty-icon">ð</div>ÙÙÙØ² Ø±ØªØ¨ÙâØ¨ÙØ¯ÛâØ§Û ÙØ¬ÙØ¯ ÙØ¯Ø§Ø±Ø¯</div>`;
             } else {
                 let order, placeMap, medalMap;
                 if (top3.length >= 3) {
                     order = [top3[1], top3[0], top3[2]];
                     placeMap = ["second", "first", "third"];
-                    medalMap = ["🥈", "🥇", "🥉"];
+                    medalMap = ["ð¥", "ð¥", "ð¥"];
                 } else if (top3.length === 2) {
                     order = [top3[1], top3[0]];
                     placeMap = ["second", "first"];
-                    medalMap = ["🥈", "🥇"];
+                    medalMap = ["ð¥", "ð¥"];
                 } else {
                     order = [top3[0]];
                     placeMap = ["first"];
-                    medalMap = ["🥇"];
+                    medalMap = ["ð¥"];
                 }
 
                 podiumHtml = `<div class="podium">` + order.map((u, i) => {
                     const place = placeMap[i];
                     const medal = medalMap[i];
-                    const name = u.display_name || "کاربر";
+                    const name = u.display_name || "Ú©Ø§Ø±Ø¨Ø±";
                     const sc = u.avg != null ? u.avg : 0;
-                    const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
+                    const num = place === "first" ? "Û±" : place === "second" ? "Û²" : "Û³";
                     const uid = u.user_id || "";
                     const adminBtn = isAdmin && uid ?
-                        `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>` :
+                        `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="Ø¬Ø²Ø¦ÛØ§Øª Ø§Ø¯ÙÛÙ" onclick="event.stopPropagation()">ð¡ï¸</a>` :
                         "";
                     return `
                     <div class="podium-place ${place}">
@@ -2490,7 +2491,7 @@
                       <div class="podium-name">${name}</div>
                       </div>
                       <div class="podium-score">${scoreText(sc)}</div>
-                      <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span><span class="km-unit">km</span></span>`}</div>
+                      <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 ? "" : "zero"}">${(Number(u.month_km)||0) > 0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">â</span><span class="km-unit">km</span></span>`}</div>
                       <div class="podium-bar">${num}</div>
                       ${adminBtn}
                     </div>`;
@@ -2503,29 +2504,29 @@
                         const bonus = Number(u.bonus) || 0;
                         const avg = u.avg != null ? u.avg : 0;
                         let detail = days > 0 ?
-                            `مجموع ${scoreText(totalScore)} ÷ ${fa(days)} روز` :
-                            `مجموع ${scoreText(totalScore)}`;
-                        if (bonus) detail += ` + جایزه امروز ${scoreText(bonus)}`;
+                            `ÙØ¬ÙÙØ¹ ${scoreText(totalScore)} Ã· ${fa(days)} Ø±ÙØ²` :
+                            `ÙØ¬ÙÙØ¹ ${scoreText(totalScore)}`;
+                        if (bonus) detail += ` + Ø¬Ø§ÛØ²Ù Ø§ÙØ±ÙØ² ${scoreText(bonus)}`;
                         detail += ` = ${scoreText(avg)}`;
                         const uid = u.user_id || "";
                         const adminBtn = isAdmin && uid ?
-                            `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="جزئیات ادمین" onclick="event.stopPropagation()">🛡️</a>` :
+                            `<a class="admin-user-btn" href="admin.html?u=${encodeURIComponent(uid)}" title="Ø¬Ø²Ø¦ÛØ§Øª Ø§Ø¯ÙÛÙ" onclick="event.stopPropagation()">ð¡ï¸</a>` :
                             "";
                         return `
                     <div class="rank-item">
                       <div class="rank-row">
                         <div class="rank-num">${fa(i + 4)}</div>
-                        <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:40%;min-width:0">
-                        ${avatarHtml(u.display_name || "کاربر", "rank")}
-                        <div class="rank-name">${u.display_name || "کاربر"}</div>
+                        <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "Ú©Ø§Ø±Ø¨Ø±"}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:40%;min-width:0">
+                        ${avatarHtml(u.display_name || "Ú©Ø§Ø±Ø¨Ø±", "rank")}
+                        <div class="rank-name">${u.display_name || "Ú©Ø§Ø±Ø¨Ø±"}</div>
                         </div>
                         <div class="rank-spacer" style="flex:1;min-width:8px;align-self:stretch"></div>
                         <div style="text-align:left;flex-shrink:0">
                           <div class="rank-score">${scoreText(avg)}</div>
-                          <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">—</span></span>`}</div>
+                          <div class="rank-km km-glow ${(Number(u.month_km)||0)>0?"":"zero"}">${(Number(u.month_km)||0)>0 ? `<span class="km-ltr" dir="ltr"><span class="km-num">${scoreText(Math.round((Number(u.month_km)||0)*10)/10)}</span><span class="km-unit">km</span></span>` : `<span class="km-ltr zero" dir="ltr"><span class="km-num">â</span></span>`}</div>
                         </div>
                         ${adminBtn}
-                        <div class="rank-chevron">›</div>
+                        <div class="rank-chevron">âº</div>
                       </div>
                       <div class="rank-detail">${detail}</div>
                     </div>`;
@@ -2538,7 +2539,7 @@
 
             let habitsHtml = "";
             if (!activeKeys.length) {
-                habitsHtml = `<div class="empty"><div class="empty-icon">🌱</div>هیچ عادتی ثبت نشده</div>`;
+                habitsHtml = `<div class="empty"><div class="empty-icon">ð±</div>ÙÛÚ Ø¹Ø§Ø¯ØªÛ Ø«Ø¨Øª ÙØ´Ø¯Ù</div>`;
             } else {
                 const avgs = activeKeys.map(k => {
                     const h = habitMap[k];
@@ -2549,7 +2550,7 @@
                 habitsHtml = activeKeys.map(k => {
                     const h = habitMap[k];
                     const avgH = h.count ? (h.total / h.count) : 0;
-                    const info = HABIT_LABELS[k] || { icon: "•", title: k };
+                    const info = HABIT_LABELS[k] || { icon: "â¢", title: k };
                     const pct = Math.min(100, (Math.abs(avgH) / maxAbsAvg) * 100);
                     const barCls = avgH > 0 ? "positive" : avgH < 0 ? "negative" : "zero";
                     return `
@@ -2557,9 +2558,9 @@
                       <div class="habit-row">
                         <div class="habit-name">${info.icon} ${info.title}</div>
                         <div class="habit-stats">
-                          <div><b>${fa(h.count)}</b>روز</div>
-                          <div><b class="${h.total > 0 ? "pos" : h.total < 0 ? "neg" : ""}">${scoreText(h.total)}</b>مجموع</div>
-                          <div><b class="${avgH > 0 ? "pos" : avgH < 0 ? "neg" : ""}">${scoreText(avgH)}</b>میانگین</div>
+                          <div><b>${fa(h.count)}</b>Ø±ÙØ²</div>
+                          <div><b class="${h.total > 0 ? "pos" : h.total < 0 ? "neg" : ""}">${scoreText(h.total)}</b>ÙØ¬ÙÙØ¹</div>
+                          <div><b class="${avgH > 0 ? "pos" : avgH < 0 ? "neg" : ""}">${scoreText(avgH)}</b>ÙÛØ§ÙÚ¯ÛÙ</div>
                         </div>
                       </div>
                       <div class="habit-bar-track"><div class="habit-bar-fill ${barCls}" data-w="${pct}"></div></div>
@@ -2589,15 +2590,15 @@
                         );
                 } else {
                     weightChips.push(
-                        `<div class="weight-chip empty"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">—</div><div class="weight-chip-unit">kg</div></div>`
+                        `<div class="weight-chip empty"><div class="weight-chip-day">${fa(d)}</div><div class="weight-chip-val">â</div><div class="weight-chip-unit">kg</div></div>`
                         );
                 }
             }
 
-            // weight strip – standard card, no metal bars
+            // weight strip â standard card, no metal bars
             const weightStripHtml = `
               <div class="card weight-strip-card">
-                <div class="card-title">وزن روزانه</div>
+                <div class="card-title">ÙØ²Ù Ø±ÙØ²Ø§ÙÙ</div>
                 <div class="weight-glass" id="weightGlass">
                   <div class="weight-glass-etch">HQL</div>
                 </div>
@@ -2614,41 +2615,41 @@
             content.innerHTML = `
               <div class="summary">
                 <div class="stat">
-                  <div class="stat-label">امتیاز کل ماه</div>
-                  <div class="stat-value ${total > 0 ? "positive" : total < 0 ? "negative" : ""}" id="statTotal">۰</div>
+                  <div class="stat-label">Ø§ÙØªÛØ§Ø² Ú©Ù ÙØ§Ù</div>
+                  <div class="stat-value ${total > 0 ? "positive" : total < 0 ? "negative" : ""}" id="statTotal">Û°</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-label">میانگین روزانه</div>
-                  <div class="stat-value ${avg > 0 ? "positive" : avg < 0 ? "negative" : ""}" id="statAvg">۰</div>
+                  <div class="stat-label">ÙÛØ§ÙÚ¯ÛÙ Ø±ÙØ²Ø§ÙÙ</div>
+                  <div class="stat-value ${avg > 0 ? "positive" : avg < 0 ? "negative" : ""}" id="statAvg">Û°</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-label">بهترین روز</div>
-                  <div class="stat-value positive" id="statBest">۰</div>
+                  <div class="stat-label">Ø¨ÙØªØ±ÛÙ Ø±ÙØ²</div>
+                  <div class="stat-value positive" id="statBest">Û°</div>
                   <div class="stat-note">${bestNote}</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-label">روزهای فعال</div>
-                  <div class="stat-value" id="statActive">۰</div>
-                  <div class="stat-note">از ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} روز</div>
+                  <div class="stat-label">Ø±ÙØ²ÙØ§Û ÙØ¹Ø§Ù</div>
+                  <div class="stat-value" id="statActive">Û°</div>
+                  <div class="stat-note">Ø§Ø² ${fa(jalaali.jalaaliMonthLength(selectedYear, selectedMonth))} Ø±ÙØ²</div>
                 </div>
               </div>
 
               <div class="card km-card">
-                <div class="card-title">کیلومتر این ماه</div>
-                <div class="card-sub">معادل کل (هوازی + دویدن)</div>
+                <div class="card-title">Ú©ÛÙÙÙØªØ± Ø§ÛÙ ÙØ§Ù</div>
+                <div class="card-sub">ÙØ¹Ø§Ø¯Ù Ú©Ù (ÙÙØ§Ø²Û + Ø¯ÙÛØ¯Ù)</div>
                 <div class="km-grid">
                   <div class="km-stat">
-                    <div class="km-label">کیلومتر من</div>
-                    <div class="km-pair" dir="ltr"><span class="km-value" id="myKmVal">۰</span><span class="km-unit">km</span></div>
+                    <div class="km-label">Ú©ÛÙÙÙØªØ± ÙÙ</div>
+                    <div class="km-pair" dir="ltr"><span class="km-value" id="myKmVal">Û°</span><span class="km-unit">km</span></div>
                   </div>
                   <div class="km-stat">
-                    <div class="km-label">جمع افراد فعال</div>
-                    <div class="km-pair" dir="ltr"><span class="km-value" id="communityKmVal">۰</span><span class="km-unit">km</span></div>
+                    <div class="km-label">Ø¬ÙØ¹ Ø§ÙØ±Ø§Ø¯ ÙØ¹Ø§Ù</div>
+                    <div class="km-pair" dir="ltr"><span class="km-value" id="communityKmVal">Û°</span><span class="km-unit">km</span></div>
                   </div>
                   <div class="km-stat">
-                    <div class="km-label">افراد فعال</div>
-                    <div class="km-value" id="activePeopleVal">۰</div>
-                    <div class="km-unit">نفر</div>
+                    <div class="km-label">Ø§ÙØ±Ø§Ø¯ ÙØ¹Ø§Ù</div>
+                    <div class="km-value" id="activePeopleVal">Û°</div>
+                    <div class="km-unit">ÙÙØ±</div>
                   </div>
                 </div>
               </div>
@@ -2656,20 +2657,20 @@
               ${weightStripHtml}
 
               <div class="card">
-                <div class="card-title">جدول امتیازات</div>
-                <div class="card-sub">رتبه: میانگین تا دیروز + جایزه فعالیت امروز</div>
+                <div class="card-title">Ø¬Ø¯ÙÙ Ø§ÙØªÛØ§Ø²Ø§Øª</div>
+                <div class="card-sub">Ø±ØªØ¨Ù: ÙÛØ§ÙÚ¯ÛÙ ØªØ§ Ø¯ÛØ±ÙØ² + Ø¬Ø§ÛØ²Ù ÙØ¹Ø§ÙÛØª Ø§ÙØ±ÙØ²</div>
                 ${podiumHtml}
               </div>
 
               <div class="card">
-                <div class="card-title">نمودار روزانه</div>
-                <div class="card-sub">امتیاز هر روز در ماه انتخاب‌شده — روی هر ستون بزن</div>
+                <div class="card-title">ÙÙÙØ¯Ø§Ø± Ø±ÙØ²Ø§ÙÙ</div>
+                <div class="card-sub">Ø§ÙØªÛØ§Ø² ÙØ± Ø±ÙØ² Ø¯Ø± ÙØ§Ù Ø§ÙØªØ®Ø§Ø¨âØ´Ø¯Ù â Ø±ÙÛ ÙØ± Ø³ØªÙÙ Ø¨Ø²Ù</div>
                 ${chartHtml}
               </div>
 
               <div class="card">
-                <div class="card-title">عملکرد عادت‌ها</div>
-                <div class="card-sub">تعداد روز، مجموع و میانگین امتیاز</div>
+                <div class="card-title">Ø¹ÙÙÚ©Ø±Ø¯ Ø¹Ø§Ø¯ØªâÙØ§</div>
+                <div class="card-sub">ØªØ¹Ø¯Ø§Ø¯ Ø±ÙØ²Ø ÙØ¬ÙÙØ¹ Ù ÙÛØ§ÙÚ¯ÛÙ Ø§ÙØªÛØ§Ø²</div>
                 ${habitsHtml}
               </div>
             `;
@@ -2732,7 +2733,7 @@
                 if (profileHit) {
                     e.stopPropagation();
                     const uid = profileHit.dataset.uid;
-                    const name = profileHit.dataset.name || "کاربر";
+                    const name = profileHit.dataset.name || "Ú©Ø§Ø±Ø¨Ø±";
                     if (uid) openUserBadges(uid, name);
                     return;
                 }
@@ -2788,5 +2789,6 @@
 
         initInteractions();
     </script>
+  <script src="nav.js"></script>
 </body>
 </html>
