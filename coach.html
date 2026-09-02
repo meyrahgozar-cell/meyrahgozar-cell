@@ -499,7 +499,7 @@
           </div>
           <div style="margin-top:12px">
             <div class="card-title">یادداشت‌های این ماه</div>
-            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">نمایش همهٔ کامنت‌های این فرد (این ماه)</button>
+            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
             <div id="adminNotes"><div class="empty">هنوز لود نشده</div></div>
           </div>
         </div>
@@ -868,7 +868,6 @@
       ? `<span class="nc-chip nc-day">روز <b class="${dsCls}">${fa(ctx.jd)}</b>${ctx.ds != null ? ` · <b class="${dsCls}">${scoreText(ctx.ds)}</b>` : ""}</span>`
       : "";
     return `<div class="note-ctx">
-      <span class="nc-topic">${ti.icon} ${ti.title}</span>
       <span class="nc-chip">${monthName} ${fa(ctx.jy || "")}</span>
       <span class="nc-chip">روزها <b>${fa(ctx.n || 0)}</b></span>
       <span class="nc-chip">جمع <b class="${sumCls}">${scoreText(ctx.sum || 0)}</b></span>
@@ -962,6 +961,7 @@
         const pill = document.getElementById("pillUser");
         if (pill) pill.textContent = selectedUserName;
         setStep(2);
+        loadAdminNotes();
       };
     });
   }
@@ -1098,8 +1098,15 @@
       await loadUsers();
       setStep(1);
     } else {
+      document.getElementById("pageSub").textContent = "پیام‌های استاد برای شما";
       document.getElementById("userView").classList.remove("hidden");
+      selectedUserId = currentUser.id;
+      try {
+        const pr = await db.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
+        selectedUserName = (pr.data && pr.data.display_name) || "من";
+      } catch (_) { selectedUserName = "من"; }
       await loadMyNotes();
+      initWheel();
     }
   }
 
@@ -1275,10 +1282,11 @@
     const loading = document.getElementById("wheelLoading");
     if (loading) loading.classList.remove("hidden");
     try {
-      const { data, error } = await db.from("coach_notes")
+      let q = db.from("coach_notes")
         .select("id, user_id, topic, body, created_at")
-        .order("created_at", { ascending: false })
-        .range(wheelOffset, wheelOffset + WHEEL_PAGE - 1);
+        .order("created_at", { ascending: false });
+      if (!isAdmin && currentUser) q = q.eq("user_id", currentUser.id);
+      const { data, error } = await q.range(wheelOffset, wheelOffset + WHEEL_PAGE - 1);
       if (error) throw error;
       const rows = data || [];
       if (!rows.length) {
@@ -1322,6 +1330,7 @@
     const pill = document.getElementById("pillUser");
     if (pill) pill.textContent = selectedUserName;
     if (typeof setStep === "function") setStep(2);
+    loadAdminNotes();
     toast("ادامهٔ کامنت برای " + selectedUserName);
   }
 
