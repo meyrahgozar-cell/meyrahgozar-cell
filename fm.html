@@ -286,6 +286,45 @@
             filter: drop-shadow(0 2px 4px rgba(0, 240, 255, 0.1));
         }
 
+        /* ─── Context Menu ─── */
+        .context-menu {
+            position: fixed;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3a;
+            border-radius: 8px;
+            padding: 6px 0;
+            min-width: 180px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .8);
+            z-index: 9999;
+            display: none;
+            backdrop-filter: blur(8px);
+        }
+        .context-menu .item {
+            padding: 8px 16px;
+            color: #c0c0e0;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background .15s;
+        }
+        .context-menu .item:hover {
+            background: #00f0ff22;
+            color: #e0e0ff;
+        }
+        .context-menu .item.danger {
+            color: #ff4d6d;
+        }
+        .context-menu .item.danger:hover {
+            background: #ff4d6d22;
+        }
+        .context-menu .sep {
+            height: 1px;
+            background: #2a2a3a;
+            margin: 4px 8px;
+        }
+
         /* ─── Message ─── */
         .msg {
             padding: 60px 20px;
@@ -403,9 +442,8 @@
         .editor-body {
             flex: 1;
             position: relative;
-            overflow: auto;
+            overflow: hidden;
             background: #0a0a12;
-            min-height: 0;
         }
 
         .editor-wrap {
@@ -417,6 +455,7 @@
             font-size: 14px;
             line-height: 1.6;
             background: #0a0a12;
+            overflow: hidden;
         }
 
         .line-gutter {
@@ -437,6 +476,7 @@
             top: 0;
             height: 100%;
             z-index: 2;
+            pointer-events: none;
         }
         .line-gutter .ln {
             display: block;
@@ -446,8 +486,8 @@
         .code-container {
             flex: 1;
             position: relative;
-            overflow: auto;
-            min-height: 100%;
+            overflow: hidden;
+            background: #0a0a12;
         }
 
         .code-container pre {
@@ -465,6 +505,12 @@
             position: absolute;
             inset: 0;
             z-index: 1;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .code-container pre::-webkit-scrollbar {
+            display: none;
         }
         .code-container pre .token {
             pointer-events: none;
@@ -671,6 +717,16 @@
     <div class="files" id="files"></div>
     <div class="msg" id="msg"><span class="emoji">🔑</span>Enter your token and click Connect</div>
 
+    <!-- ─── CONTEXT MENU ─── -->
+    <div class="context-menu" id="contextMenu">
+        <div class="item" data-action="open">📂 Open</div>
+        <div class="item" data-action="download">⬇️ Download</div>
+        <div class="item" data-action="rename">✏️ Rename</div>
+        <div class="item" data-action="copyPath">📋 Copy Path</div>
+        <div class="sep"></div>
+        <div class="item danger" data-action="delete">🗑️ Delete</div>
+    </div>
+
     <!-- ─── EDITOR OVERLAY ─── -->
     <div class="editor-overlay" id="editorOverlay">
         <div class="editor-modal">
@@ -750,11 +806,13 @@
         const edPre = $('codeHighlight');
         const edGutter = $('lineGutter');
 
+        const contextMenu = $('contextMenu');
+
         const savedToken = localStorage.getItem('fm_token');
         if (savedToken) tokenInput.value = savedToken;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  GITHUB API - simple, no retries, 10s timeout
+        //  GITHUB API
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function apiUrl(path) {
             return `https://api.github.com/repos/${state.owner}/${state.repo}${path}`;
@@ -789,7 +847,7 @@
             } catch (err) {
                 clearTimeout(timeout);
                 if (err.name === 'AbortError') {
-                    throw new Error('Request timed out. Please check your network and try again.');
+                    throw new Error('Request timed out. Please check your network.');
                 }
                 throw err;
             }
@@ -875,6 +933,12 @@
                     const card = makeCard(item.name, icon, isDir ? 'folder' : 'file', meta);
                     const ext = item.name.split('.').pop().toLowerCase();
 
+                    // Store item data on card
+                    card.dataset.path = item.path;
+                    card.dataset.sha = item.sha;
+                    card.dataset.type = item.type;
+                    card.dataset.name = item.name;
+
                     const delBtn = document.createElement('button');
                     delBtn.className = 'del';
                     delBtn.textContent = '✕';
@@ -910,6 +974,13 @@
                             openFile(item);
                         }
                     };
+
+                    // Right-click context menu
+                    card.addEventListener('contextmenu', e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showContextMenu(e.clientX, e.clientY, item, card);
+                    });
 
                     filesEl.appendChild(card);
                     fileCountNum++;
@@ -1025,6 +1096,129 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  CONTEXT MENU
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let contextTarget = null;
+
+        function showContextMenu(x, y, item, card) {
+            contextTarget = { item, card };
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = x + 'px';
+            contextMenu.style.top = y + 'px';
+
+            // Adjust if off screen
+            const rect = contextMenu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                contextMenu.style.left = (x - rect.width) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+                contextMenu.style.top = (y - rect.height) + 'px';
+            }
+        }
+
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+            contextTarget = null;
+        }
+
+        document.addEventListener('click', hideContextMenu);
+
+        contextMenu.addEventListener('click', async e => {
+            const action = e.target.closest('.item')?.dataset.action;
+            if (!action || !contextTarget) return;
+            hideContextMenu();
+
+            const { item, card } = contextTarget;
+            switch (action) {
+                case 'open':
+                    if (item.type === 'dir') {
+                        state.path = item.path;
+                        load();
+                    } else {
+                        openFile(item);
+                    }
+                    break;
+                case 'download':
+                    if (item.download_url) {
+                        window.open(item.download_url, '_blank');
+                    } else {
+                        alert('Download not available for this item.');
+                    }
+                    break;
+                case 'rename':
+                    const newName = prompt('Enter new name:', item.name);
+                    if (newName && newName !== item.name) {
+                        await renameItem(item, newName);
+                    }
+                    break;
+                case 'copyPath':
+                    const fullPath = item.path;
+                    if (navigator.clipboard) {
+                        await navigator.clipboard.writeText(fullPath);
+                        alert('Path copied to clipboard!');
+                    } else {
+                        // fallback
+                        const input = document.createElement('input');
+                        input.value = fullPath;
+                        document.body.appendChild(input);
+                        input.select();
+                        document.execCommand('copy');
+                        input.remove();
+                        alert('Path copied!');
+                    }
+                    break;
+                case 'delete':
+                    if (confirm(`Delete "${item.name}"?`)) {
+                        try {
+                            await api('DELETE', `/contents/${item.path}`, {
+                                message: `Delete ${item.name}`,
+                                sha: item.sha,
+                                branch: state.branch,
+                            });
+                            load();
+                        } catch (err) {
+                            alert('Delete failed: ' + err.message);
+                        }
+                    }
+                    break;
+            }
+        });
+
+        async function renameItem(item, newName) {
+            const oldPath = item.path;
+            const dir = oldPath.substring(0, oldPath.lastIndexOf('/') + 1);
+            const newPath = dir + newName;
+
+            // For folders, we need to rename the .gitkeep or just move the folder? GitHub doesn't support folder rename directly.
+            // We'll only support file rename for simplicity.
+            if (item.type === 'dir') {
+                alert('Renaming folders is not supported directly. Create a new folder and move files.');
+                return;
+            }
+
+            try {
+                // Get content of file
+                const data = await api('GET', `/contents/${oldPath}?ref=${state.branch}`);
+                const content = data.content;
+                // Create new file with same content
+                await api('PUT', `/contents/${newPath}`, {
+                    message: `Rename ${item.name} to ${newName}`,
+                    content: content,
+                    branch: state.branch,
+                });
+                // Delete old file
+                await api('DELETE', `/contents/${oldPath}`, {
+                    message: `Delete old file after rename`,
+                    sha: item.sha,
+                    branch: state.branch,
+                });
+                load();
+            } catch (err) {
+                alert('Rename failed: ' + err.message);
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  OPEN FILE → EDITOR
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const TEXT_EXTS = new Set([
@@ -1084,7 +1278,9 @@
             editor.isOpen = true;
             setTimeout(() => {
                 edEditor.focus();
+                // Reset scroll
                 edEditor.scrollTop = 0;
+                edPre.scrollTop = 0;
             }, 50);
         }
 
@@ -1104,8 +1300,9 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
+            // Reset scroll
             edEditor.scrollTop = 0;
-            edPre.parentElement.scrollTop = 0;
+            edPre.scrollTop = 0;
         }
 
         function setEditorStatus(text, type) {
@@ -1395,7 +1592,7 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EDITOR EVENTS
+        //  EDITOR EVENTS – scroll sync & input
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         edEditor.addEventListener('input', () => {
             const content = edEditor.value;
@@ -1405,11 +1602,12 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
-            edPre.parentElement.scrollTop = edEditor.scrollTop;
+            // Sync scroll after content change (keep same position)
+            edPre.scrollTop = edEditor.scrollTop;
         });
 
         edEditor.addEventListener('scroll', () => {
-            edPre.parentElement.scrollTop = edEditor.scrollTop;
+            edPre.scrollTop = edEditor.scrollTop;
         });
 
         edEditor.addEventListener('keydown', e => {
@@ -1574,10 +1772,9 @@
         };
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  AUTO-CONNECT – only if token is saved and user didn't manually disconnect
+        //  AUTO-CONNECT
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         if (savedToken) {
-            // Small delay to let DOM settle
             setTimeout(connect, 300);
         }
     </script>
