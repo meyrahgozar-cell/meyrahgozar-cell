@@ -318,8 +318,9 @@
             <button type="button" class="btn primary" id="sendNote" disabled>ثبت</button>
           </div>
           <div style="margin-top:12px">
-            <div class="card-title">سابقه همین موضوع</div>
-            <div id="adminNotes"><div class="empty">—</div></div>
+            <div class="card-title">یادداشت‌های این ماه</div>
+            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">نمایش همهٔ کامنت‌های این فرد (این ماه)</button>
+            <div id="adminNotes"><div class="empty">هنوز لود نشده</div></div>
           </div>
         </div>
       </div>
@@ -412,7 +413,8 @@
           dayBit;
       }
       document.getElementById("sendNote").disabled = !selectedTopic;
-      loadAdminNotes();
+      const notesBox = document.getElementById("adminNotes");
+      if (notesBox) notesBox.innerHTML = `<div class="empty">برای دیدن یادداشت‌های این ماه دکمه را بزن</div>`;
     }
   }
 
@@ -715,12 +717,25 @@
 
   async function loadAdminNotes() {
     const box = document.getElementById("adminNotes");
-    if (!selectedUserId) return;
-    let q = db.from("coach_notes").select("id, topic, body, created_at")
-      .eq("user_id", selectedUserId).order("created_at", { ascending: false }).limit(20);
-    if (selectedTopic) q = q.eq("topic", selectedTopic);
-    const { data, error } = await q;
+    if (!box) return;
+    if (!selectedUserId) {
+      box.innerHTML = `<div class="empty">شاگردی انتخاب نشده</div>`;
+      return;
+    }
+    box.innerHTML = `<div class="empty">در حال بارگذاری...</div>`;
+    const { start, end } = monthRange();
+    const { data, error } = await db.from("coach_notes")
+      .select("id, topic, body, created_at")
+      .eq("user_id", selectedUserId)
+      .gte("created_at", start + "T00:00:00.000Z")
+      .lte("created_at", end + "T23:59:59.999Z")
+      .order("created_at", { ascending: false })
+      .limit(50);
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    if (!data || !data.length) {
+      box.innerHTML = `<div class="empty">در ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)} یادداشتی نیست</div>`;
+      return;
+    }
     renderNotes(data, box, { editable: true });
   }
 
@@ -811,6 +826,8 @@
       };
       document.getElementById("backStep2").onclick = () => setStep(2);
       document.getElementById("sendNote").onclick = sendNote;
+      const ln = document.getElementById("loadNotesBtn");
+      if (ln) ln.onclick = () => loadAdminNotes();
       await loadUsers();
       setStep(1);
     } else {
