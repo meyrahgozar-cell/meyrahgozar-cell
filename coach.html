@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <title>HQL | چوب استاد</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,222 +13,282 @@
       --bg: #05060a; --card: #0d1019; --card2: #131722;
       --border: rgba(180, 100, 255, 0.18); --text: #f0f2ff; --muted: #8b92b0;
       --neon: #b44cff; --neon2: #00f0ff; --positive: #00ff9d; --negative: #ff4d6d;
-      --radius: 16px;
+      --radius: 14px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
-      background:
-        radial-gradient(ellipse 70% 40% at 10% 0%, rgba(180,76,255,0.12), transparent),
-        radial-gradient(ellipse 50% 30% at 100% 20%, rgba(0,240,255,0.06), transparent),
-        var(--bg);
+      background: radial-gradient(ellipse 70% 40% at 10% 0%, rgba(180,76,255,0.1), transparent), var(--bg);
       color: var(--text);
       font-family: "Vazirmatn", sans-serif;
+      overflow-x: hidden;
     }
-    .page { max-width: 720px; margin: 0 auto; padding: 16px 14px 100px; }
-    .page-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 14px 12px 110px;
+      width: 100%;
+    }
+    .page-title { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
+    .page-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
     .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px; margin-bottom: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      overflow: hidden;
     }
-    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .card-title {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      margin-bottom: 8px; text-transform: none;
+    }
     .hidden { display: none !important; }
+    .deny { text-align: center; padding: 40px 12px; color: var(--muted); }
+
+    /* steps */
+    .steps {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .step-dot {
+      flex: 1; height: 4px; border-radius: 4px;
+      background: var(--card2); border: 1px solid var(--border);
+    }
+    .step-dot.on { background: linear-gradient(90deg, var(--neon), var(--neon2)); border-color: transparent; }
+
+    /* user list compact */
+    .user-list {
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 42vh; overflow-y: auto;
+    }
     .user-chip {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 12px;
+      padding: 10px; border-radius: 12px;
       border: 1px solid var(--border); background: var(--card2);
-      cursor: pointer; margin-bottom: 8px;
+      cursor: pointer; width: 100%;
     }
     .user-chip.active {
-      border-color: rgba(180,76,255,0.5);
-      background: rgba(180,76,255,0.1);
+      border-color: rgba(0,240,255,0.45);
+      box-shadow: 0 0 12px rgba(0,240,255,0.12);
     }
-    .user-chip .name { font-weight: 700; flex: 1; }
+    .user-chip .name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .avatar {
-      width: 36px; height: 36px; border-radius: 50%; background: #fff;
-      object-fit: cover; border: 1px solid rgba(180,100,255,0.35);
+      width: 34px; height: 34px; border-radius: 50%; background: #fff;
+      object-fit: cover; flex-shrink: 0;
     }
     .avatar-fb {
-      width: 36px; height: 36px; border-radius: 50%;
-      display: grid; place-items: center; font-weight: 800; font-size: 13px;
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; font-weight: 800; font-size: 12px;
       background: linear-gradient(145deg, rgba(180,76,255,0.4), rgba(0,240,255,0.25));
     }
-    .topic-btn {
-      display: flex; align-items: center; gap: 8px;
-      width: 100%; padding: 12px 14px; margin-bottom: 10px;
-      border-radius: 12px; border: 1px dashed rgba(180,100,255,0.35);
-      background: rgba(180,76,255,0.06); color: var(--text);
-      font: inherit; font-weight: 700; cursor: pointer;
+
+    .summary-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 10px;
     }
-    .topic-btn .t-ico { font-size: 20px; }
-    .topic-btn .t-label { flex: 1; text-align: right; }
-    .topic-btn .t-hint { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      background: var(--card2); border: 1px solid var(--border);
+    }
+    .pill button {
+      border: none; background: transparent; color: var(--neon2);
+      font: inherit; font-size: 11px; cursor: pointer; padding: 0 2px;
+    }
+
+    .btn {
+      width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); font: inherit; font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, rgba(180,76,255,0.4), rgba(0,240,255,0.18));
+      border-color: rgba(180,76,255,0.45);
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row .btn { flex: 1; }
+
     .period-bar {
-      display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
     }
-    .period-bar select, .period-bar input {
-      flex: 1; min-width: 100px; height: 40px;
-      border-radius: 10px; border: 1px solid var(--border);
-      background: var(--card2); color: var(--text);
-      padding: 0 10px; font: inherit;
+    .period-bar select {
+      width: 100%; height: 40px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card2);
+      color: var(--text); padding: 0 8px; font: inherit;
     }
+
     .stats-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin-bottom: 12px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      margin-bottom: 10px;
     }
     .stat {
-      background: var(--card2); border-radius: 12px; padding: 10px 8px; text-align: center;
-      border: 1px solid var(--border);
+      background: var(--card2); border-radius: 10px; padding: 8px 4px;
+      text-align: center; border: 1px solid var(--border);
     }
-    .stat-l { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-    .stat-v { font-size: 18px; font-weight: 800; }
+    .stat-l { font-size: 9px; color: var(--muted); }
+    .stat-v { font-size: 15px; font-weight: 800; margin-top: 2px; }
     .stat-v.pos { color: var(--positive); }
     .stat-v.neg { color: var(--negative); }
+
     .day-strip {
-      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px;
-      margin-bottom: 10px; -webkit-overflow-scrolling: touch;
+      display: flex; gap: 5px; overflow-x: auto;
+      padding-bottom: 6px; margin-bottom: 8px;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .day-strip::-webkit-scrollbar { display: none; }
     .day-chip {
-      flex: 0 0 auto; min-width: 48px; padding: 8px 6px;
-      border-radius: 10px; border: 1px solid var(--border);
-      background: var(--card2); text-align: center; cursor: pointer;
-      font-size: 11px;
+      flex: 0 0 44px; padding: 6px 4px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card2);
+      text-align: center; cursor: pointer; font-size: 10px;
     }
     .day-chip.active {
       border-color: var(--neon2);
-      box-shadow: 0 0 12px rgba(0,240,255,0.25);
+      box-shadow: 0 0 10px rgba(0,240,255,0.2);
     }
-    .day-chip .d-n { font-weight: 800; font-size: 14px; }
-    .day-chip .d-v { color: var(--muted); margin-top: 2px; font-size: 10px; }
+    .day-chip .d-n { font-weight: 800; font-size: 13px; }
+    .day-chip .d-v { color: var(--muted); margin-top: 1px; }
     .day-chip.has .d-v { color: var(--neon2); }
+
     .day-detail {
-      padding: 12px; border-radius: 12px; background: rgba(0,240,255,0.06);
-      border: 1px solid rgba(0,240,255,0.2); font-size: 13px; line-height: 1.6;
+      padding: 10px; border-radius: 10px;
+      background: rgba(0,240,255,0.05);
+      border: 1px solid rgba(0,240,255,0.15);
+      font-size: 12px; line-height: 1.55;
+    }
+
+    textarea {
+      width: 100%; min-height: 88px; max-width: 100%;
+      resize: vertical; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card2);
+      color: var(--text); padding: 10px; font: inherit; line-height: 1.5;
       margin-bottom: 8px;
     }
-    textarea {
-      width: 100%; min-height: 90px; resize: vertical;
-      border-radius: 12px; border: 1px solid var(--border);
-      background: var(--card2); color: var(--text);
-      padding: 12px; font: inherit; line-height: 1.5; margin-bottom: 10px;
-    }
     textarea:focus { outline: none; border-color: var(--neon); }
-    .send-btn {
-      width: 100%; height: 46px; border: none; border-radius: 12px;
-      font: inherit; font-weight: 800; cursor: pointer; color: var(--text);
-      background: linear-gradient(135deg, rgba(180,76,255,0.45), rgba(0,240,255,0.2));
-      border: 1px solid rgba(180,76,255,0.4);
-    }
-    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
     .note {
-      padding: 12px; border-radius: 12px; background: var(--card2);
-      border: 1px solid var(--border); margin-bottom: 8px;
+      padding: 10px; border-radius: 10px; background: var(--card2);
+      border: 1px solid var(--border); margin-bottom: 6px;
     }
     .note-meta {
-      display: flex; justify-content: space-between; gap: 8px;
-      font-size: 11px; color: var(--muted); margin-bottom: 6px;
+      display: flex; justify-content: space-between; gap: 6px;
+      font-size: 10px; color: var(--muted); margin-bottom: 4px;
     }
     .note-topic { color: var(--neon2); font-weight: 700; }
-    .note-body { font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
-    .empty { text-align: center; color: var(--muted); padding: 16px; font-size: 13px; }
-    .deny { text-align: center; padding: 40px 16px; color: var(--muted); }
+    .note-body { font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+    .empty { text-align: center; color: var(--muted); padding: 14px; font-size: 12px; }
+
+    /* picker */
     .picker-overlay {
       position: fixed; inset: 0; z-index: 10000;
-      background: rgba(5,6,10,0.75); backdrop-filter: blur(6px);
-      display: flex; align-items: flex-end; justify-content: center; padding: 12px;
+      background: rgba(5,6,10,0.8);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 10px;
     }
     .picker-sheet {
-      width: min(480px, 100%); max-height: 78vh; overflow-y: auto;
-      background: linear-gradient(165deg, #161a28, #0a0d16);
-      border: 1px solid rgba(180,100,255,0.4);
-      border-radius: 20px 20px 16px 16px; padding: 16px 14px 20px;
+      width: min(400px, 100%); max-height: 75vh; overflow-y: auto;
+      background: #12151f; border: 1px solid rgba(180,100,255,0.35);
+      border-radius: 18px 18px 14px 14px; padding: 14px 12px 16px;
     }
-    .picker-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; text-align: center; }
-    .picker-sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; }
-    .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .picker-title { font-size: 15px; font-weight: 800; text-align: center; margin-bottom: 2px; }
+    .picker-sub { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+    .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
     .picker-item {
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-      padding: 14px 8px; border-radius: 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 12px 4px; border-radius: 12px;
       border: 1px solid var(--border); background: var(--card2);
-      cursor: pointer; font-size: 11px; font-weight: 700; color: var(--text);
+      cursor: pointer; font-size: 10px; font-weight: 700; color: var(--text);
     }
-    .picker-item .p-ico { font-size: 24px; }
+    .picker-item .p-ico { font-size: 22px; }
     .picker-close {
-      width: 100%; margin-top: 12px; height: 42px; border-radius: 12px;
+      width: 100%; margin-top: 10px; height: 40px; border-radius: 11px;
       border: 1px solid var(--border); background: var(--card);
       color: var(--text); font-weight: 700; cursor: pointer;
     }
     .toast {
-      position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
       background: var(--card2); border: 1px solid var(--border);
-      padding: 10px 18px; border-radius: 12px; font-size: 13px;
+      padding: 8px 14px; border-radius: 10px; font-size: 12px;
       z-index: 11000; opacity: 0; transition: opacity .2s; pointer-events: none;
+      max-width: 90vw;
     }
     .toast.show { opacity: 1; }
-    .layout-admin { display: grid; gap: 12px; }
-    @media (min-width: 700px) {
-      .layout-admin { grid-template-columns: 0.9fr 1.3fr; align-items: start; }
-    }
-    .report-panel { display: none; }
-    .report-panel.show { display: block; }
   </style>
 </head>
 <body>
   <div class="page">
     <h1 class="page-title">چوب استاد</h1>
-    <p class="page-sub" id="pageSub">یادداشت مربی روی عادت‌ها — همراه گزارش همان موضوع.</p>
+    <p class="page-sub" id="pageSub">یادداشت کوتاه روی یک عادت</p>
 
     <div id="denyBox" class="deny hidden">برای دیدن این صفحه وارد شو.</div>
 
     <div id="appBox" class="hidden">
+      <!-- کاربر -->
       <div id="userView" class="hidden">
         <div class="card">
-          <div class="card-title">پیام‌های استاد برای تو</div>
-          <div id="myNotes"><div class="empty">در حال بارگذاری...</div></div>
+          <div class="card-title">پیام‌های استاد</div>
+          <div id="myNotes"><div class="empty">...</div></div>
         </div>
       </div>
 
+      <!-- ادمین: جریان مرحله‌ای -->
       <div id="adminView" class="hidden">
-        <div class="layout-admin">
-          <div class="card">
-            <div class="card-title">انتخاب شاگرد</div>
-            <div id="userList"><div class="empty">...</div></div>
+        <div class="steps" id="steps">
+          <div class="step-dot on" data-s="1"></div>
+          <div class="step-dot" data-s="2"></div>
+          <div class="step-dot" data-s="3"></div>
+        </div>
+
+        <!-- مرحله ۱: شاگرد -->
+        <div id="step1" class="card">
+          <div class="card-title">۱ · انتخاب شاگرد</div>
+          <div class="user-list" id="userList"><div class="empty">...</div></div>
+        </div>
+
+        <!-- مرحله ۲: موضوع + گزارش -->
+        <div id="step2" class="card hidden">
+          <div class="card-title">۲ · موضوع و گزارش</div>
+          <div class="summary-row">
+            <span class="pill" id="pillUser">—</span>
+            <button type="button" class="pill" id="changeUserBtn" style="cursor:pointer">عوض کردن شاگرد</button>
           </div>
-          <div>
-            <div class="card">
-              <div class="card-title">موضوع و بازه</div>
-              <div id="selectedUserLabel" class="page-sub" style="margin-bottom:10px">اول یک نفر را انتخاب کن</div>
-              <button type="button" class="topic-btn" id="openTopicPicker">
-                <span class="t-ico" id="topicIco">🎯</span>
-                <span class="t-label">
-                  <span id="topicLabel">انتخاب موضوع</span>
-                  <div class="t-hint">با انتخاب موضوع، گزارش همان عادت می‌آید</div>
-                </span>
-                <span>▾</span>
-              </button>
-              <div class="period-bar">
-                <select id="yearSelect"></select>
-                <select id="monthSelect"></select>
-              </div>
-            </div>
+          <button type="button" class="btn" id="openTopicPicker" style="margin-bottom:10px">
+            <span id="topicIco">🎯</span>
+            <span id="topicLabel"> انتخاب موضوع</span>
+          </button>
 
-            <div class="card report-panel" id="reportPanel">
-              <div class="card-title" id="reportTitle">گزارش موضوع</div>
-              <div class="stats-grid" id="monthStats"></div>
-              <div class="day-strip" id="dayStrip"></div>
-              <div class="day-detail" id="dayDetail">یک روز را از نوار بالا انتخاب کن</div>
+          <div id="reportBlock" class="hidden">
+            <div class="period-bar">
+              <select id="yearSelect"></select>
+              <select id="monthSelect"></select>
             </div>
+            <div class="stats-grid" id="monthStats"></div>
+            <div class="day-strip" id="dayStrip"></div>
+            <div class="day-detail" id="dayDetail">روز را انتخاب کن</div>
+            <button type="button" class="btn primary" id="toStep3" style="margin-top:10px">ادامه · نوشتن یادداشت</button>
+          </div>
+        </div>
 
-            <div class="card">
-              <div class="card-title">یادداشت جدید</div>
-              <textarea id="noteBody" placeholder="با دیدن گزارش، نکته‌ات را بنویس..."></textarea>
-              <button type="button" class="send-btn" id="sendNote" disabled>ثبت چوب استاد</button>
-            </div>
-            <div class="card">
-              <div class="card-title">سابقه برای این شاگرد</div>
-              <div id="adminNotes"><div class="empty">کسی انتخاب نشده</div></div>
-            </div>
+        <!-- مرحله ۳: نوشتن -->
+        <div id="step3" class="card hidden">
+          <div class="card-title">۳ · یادداشت</div>
+          <div class="summary-row">
+            <span class="pill" id="pillUser2">—</span>
+            <span class="pill" id="pillTopic">—</span>
+            <span class="pill" id="pillDay">—</span>
+          </div>
+          <textarea id="noteBody" placeholder="نکته کوتاه..."></textarea>
+          <div class="btn-row">
+            <button type="button" class="btn" id="backStep2">بازگشت</button>
+            <button type="button" class="btn primary" id="sendNote" disabled>ثبت</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="card-title">سابقه همین موضوع</div>
+            <div id="adminNotes"><div class="empty">—</div></div>
           </div>
         </div>
       </div>
@@ -248,14 +308,13 @@
   const FA = "۰۱۲۳۴۵۶۷۸۹";
   const fa = (n) => String(n).replace(/\d/g, d => FA[+d]);
 
-  // item_type در daily_logs + موارد خاص
   const TOPICS = [
     { id: "sleep", icon: "😴", title: "خواب", source: "daily_logs", item: "sleep" },
     { id: "water", icon: "💧", title: "آب", source: "daily_logs", item: "water" },
     { id: "exercise", icon: "🏃", title: "ورزش", source: "exercise", item: "exercise" },
     { id: "reading", icon: "📖", title: "کتاب", source: "daily_logs", item: "reading" },
     { id: "sugar", icon: "🍬", title: "قند", source: "daily_logs", item: "sugar" },
-    { id: "instagram", icon: "📱", title: "اینستاگرام", source: "daily_logs", item: "instagram" },
+    { id: "instagram", icon: "📱", title: "اینستا", source: "daily_logs", item: "instagram" },
     { id: "sun", icon: "☀️", title: "آفتاب", source: "daily_logs", item: "sun" },
     { id: "solitude", icon: "🧘", title: "خلوت", source: "daily_logs", item: "solitude" },
     { id: "dinner", icon: "🍽️", title: "شام", source: "daily_logs", item: "dinner" },
@@ -265,50 +324,63 @@
     { id: "general", icon: "💬", title: "عمومی", source: "none", item: null }
   ];
 
-  let currentUser = null;
-  let isAdmin = false;
-  let selectedUserId = null;
-  let selectedUserName = "";
+  let currentUser = null, isAdmin = false;
+  let selectedUserId = null, selectedUserName = "";
   let selectedTopic = null;
   let selectedYear, selectedMonth, selectedDay;
-  let monthRows = []; // { day, iso, value, score, extra }
+  let monthRows = [];
+  let step = 1;
 
   function toast(msg) {
     const el = document.getElementById("toast");
     el.textContent = msg;
     el.classList.add("show");
-    setTimeout(() => el.classList.remove("show"), 2200);
+    setTimeout(() => el.classList.remove("show"), 2000);
   }
   function topicInfo(id) {
     return TOPICS.find(t => t.id === id) || { id, icon: "•", title: id, source: "none" };
   }
   function escapeHtml(s) {
-    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
   function avatarHtml(name) {
-    const n = (name || "؟").trim();
+    const n = (name||"؟").trim();
     return `<img class="avatar" src="images/${n}.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${n.slice(0,1)}</div>`;
   }
   function formatTime(iso) {
-    try {
-      return new Date(iso).toLocaleString("fa-IR", { dateStyle: "medium", timeStyle: "short" });
-    } catch { return iso; }
+    try { return new Date(iso).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"}); }
+    catch { return iso; }
   }
   function isoDate(d) {
-    const y = d.getUTCFullYear(), m = d.getUTCMonth()+1, day = d.getUTCDate();
-    return y + "-" + String(m).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
   }
   function scoreText(n) {
-    const x = Math.round(Number(n) * 10) / 10;
-    return fa(x);
+    return fa(Math.round(Number(n)*10)/10);
+  }
+
+  function setStep(n) {
+    step = n;
+    document.querySelectorAll(".step-dot").forEach(d => {
+      d.classList.toggle("on", +d.dataset.s <= n);
+    });
+    document.getElementById("step1").classList.toggle("hidden", n !== 1);
+    document.getElementById("step2").classList.toggle("hidden", n !== 2);
+    document.getElementById("step3").classList.toggle("hidden", n !== 3);
+    if (n === 3) {
+      const t = topicInfo(selectedTopic);
+      document.getElementById("pillUser2").textContent = selectedUserName;
+      document.getElementById("pillTopic").textContent = t.icon + " " + t.title;
+      document.getElementById("pillDay").textContent =
+        fa(selectedDay) + " " + J_MONTHS[selectedMonth-1];
+      document.getElementById("sendNote").disabled = !selectedTopic;
+      loadAdminNotes();
+    }
   }
 
   function initMonthPicker() {
     const now = new Date();
     const j = jalaali.toJalaali(now.getFullYear(), now.getMonth()+1, now.getDate());
-    selectedYear = j.jy;
-    selectedMonth = j.jm;
-    selectedDay = j.jd;
+    selectedYear = j.jy; selectedMonth = j.jm; selectedDay = j.jd;
     const ySel = document.getElementById("yearSelect");
     const mSel = document.getElementById("monthSelect");
     ySel.innerHTML = "";
@@ -318,10 +390,9 @@
       if (y === selectedYear) o.selected = true;
       ySel.appendChild(o);
     }
-    mSel.innerHTML = J_MONTHS.map((name, i) => {
-      const m = i + 1;
-      return `<option value="${m}" ${m===selectedMonth?"selected":""}>${name}</option>`;
-    }).join("");
+    mSel.innerHTML = J_MONTHS.map((name,i) =>
+      `<option value="${i+1}" ${i+1===selectedMonth?"selected":""}>${name}</option>`
+    ).join("");
     ySel.onchange = () => { selectedYear = +ySel.value; refreshReport(); };
     mSel.onchange = () => { selectedMonth = +mSel.value; refreshReport(); };
   }
@@ -330,9 +401,11 @@
     const days = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
     const g0 = jalaali.toGregorian(selectedYear, selectedMonth, 1);
     const g1 = jalaali.toGregorian(selectedYear, selectedMonth, days);
-    const start = isoDate(new Date(Date.UTC(g0.gy, g0.gm-1, g0.gd)));
-    const end = isoDate(new Date(Date.UTC(g1.gy, g1.gm-1, g1.gd)));
-    return { start, end, days };
+    return {
+      start: isoDate(new Date(Date.UTC(g0.gy,g0.gm-1,g0.gd))),
+      end: isoDate(new Date(Date.UTC(g1.gy,g1.gm-1,g1.gd))),
+      days
+    };
   }
 
   async function fetchTopicMonth() {
@@ -345,53 +418,35 @@
 
     if (t.source === "daily_logs") {
       const { data, error } = await db.from("daily_logs")
-        .select("log_date, value, score, item_type")
-        .eq("user_id", selectedUserId)
-        .eq("item_type", t.item)
-        .gte("log_date", start)
-        .lte("log_date", end);
+        .select("log_date, value, score")
+        .eq("user_id", selectedUserId).eq("item_type", t.item)
+        .gte("log_date", start).lte("log_date", end);
       if (error) throw error;
-      (data || []).forEach(r => {
-        byDay[r.log_date] = {
-          value: r.value, score: Number(r.score)||0, extra: ""
-        };
-      });
+      (data||[]).forEach(r => { byDay[r.log_date] = { value: r.value, score: Number(r.score)||0, extra: "" }; });
     } else if (t.source === "exercise") {
       const { data, error } = await db.from("exercise_logs")
-        .select("log_date, score, total_km, aerobic_minutes, running_km, weight_kg")
-        .eq("user_id", selectedUserId)
-        .gte("log_date", start)
-        .lte("log_date", end);
+        .select("log_date, score, total_km, aerobic_minutes, running_km")
+        .eq("user_id", selectedUserId).gte("log_date", start).lte("log_date", end);
       if (error) throw error;
-      (data || []).forEach(r => {
+      (data||[]).forEach(r => {
         byDay[r.log_date] = {
-          value: r.total_km,
-          score: Number(r.score)||0,
+          value: r.total_km, score: Number(r.score)||0,
           extra: `هوازی ${fa(r.aerobic_minutes||0)}د · دو ${scoreText(r.running_km||0)}km`
         };
       });
     } else if (t.source === "mountain") {
       const { data, error } = await db.from("mountain_trips")
-        .select("trip_date")
-        .eq("user_id", selectedUserId)
-        .gte("trip_date", start)
-        .lte("trip_date", end);
+        .select("trip_date").eq("user_id", selectedUserId)
+        .gte("trip_date", start).lte("trip_date", end);
       if (error) throw error;
-      (data || []).forEach(r => {
-        byDay[r.trip_date] = { value: 1, score: 0, extra: "صعود ثبت شده" };
-      });
+      (data||[]).forEach(r => { byDay[r.trip_date] = { value: 1, score: 0, extra: "صعود" }; });
     } else if (t.source === "weight") {
       const { data, error } = await db.from("exercise_logs")
-        .select("log_date, weight_kg")
-        .eq("user_id", selectedUserId)
-        .gte("log_date", start)
-        .lte("log_date", end)
-        .not("weight_kg", "is", null);
+        .select("log_date, weight_kg").eq("user_id", selectedUserId)
+        .gte("log_date", start).lte("log_date", end).not("weight_kg", "is", null);
       if (error) throw error;
-      (data || []).forEach(r => {
-        if (r.weight_kg != null) {
-          byDay[r.log_date] = { value: r.weight_kg, score: 0, extra: "kg" };
-        }
+      (data||[]).forEach(r => {
+        if (r.weight_kg != null) byDay[r.log_date] = { value: r.weight_kg, score: 0, extra: "kg" };
       });
     }
 
@@ -400,8 +455,7 @@
       const iso = isoDate(new Date(Date.UTC(g.gy, g.gm-1, g.gd)));
       const row = byDay[iso];
       monthRows.push({
-        day: d,
-        iso,
+        day: d, iso,
         value: row ? row.value : null,
         score: row ? row.score : null,
         extra: row ? row.extra : "",
@@ -411,18 +465,14 @@
   }
 
   function renderMonthStats() {
-    const t = topicInfo(selectedTopic);
     const filled = monthRows.filter(r => r.has);
     const scores = filled.map(r => r.score).filter(s => s != null);
-    const sum = scores.reduce((a,b) => a+b, 0);
-    const avg = scores.length ? sum / scores.length : 0;
+    const sum = scores.reduce((a,b)=>a+b, 0);
+    const avg = scores.length ? sum/scores.length : 0;
     document.getElementById("monthStats").innerHTML = `
-      <div class="stat"><div class="stat-l">روز ثبت‌شده</div><div class="stat-v">${fa(filled.length)}</div></div>
-      <div class="stat"><div class="stat-l">جمع امتیاز</div><div class="stat-v ${sum>0?"pos":sum<0?"neg":""}">${scoreText(sum)}</div></div>
-      <div class="stat"><div class="stat-l">میانگین</div><div class="stat-v ${avg>0?"pos":avg<0?"neg":""}">${scoreText(avg)}</div></div>
-    `;
-    document.getElementById("reportTitle").textContent =
-      `گزارش ${t.icon} ${t.title} — ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)}`;
+      <div class="stat"><div class="stat-l">روزها</div><div class="stat-v">${fa(filled.length)}</div></div>
+      <div class="stat"><div class="stat-l">جمع</div><div class="stat-v ${sum>0?"pos":sum<0?"neg":""}">${scoreText(sum)}</div></div>
+      <div class="stat"><div class="stat-l">میانگین</div><div class="stat-v ${avg>0?"pos":avg<0?"neg":""}">${scoreText(avg)}</div></div>`;
   }
 
   function renderDayStrip() {
@@ -431,15 +481,13 @@
       let v = "—";
       if (r.has) {
         if (selectedTopic === "weight") v = scoreText(r.value);
-        else if (selectedTopic === "exercise") v = scoreText(r.value) + "k";
+        else if (selectedTopic === "exercise") v = scoreText(r.value);
         else if (selectedTopic === "mountain") v = "✓";
         else if (r.score != null) v = scoreText(r.score);
         else v = scoreText(r.value);
       }
       return `<div class="day-chip ${r.has?"has":""} ${r.day===selectedDay?"active":""}" data-day="${r.day}">
-        <div class="d-n">${fa(r.day)}</div>
-        <div class="d-v">${v}</div>
-      </div>`;
+        <div class="d-n">${fa(r.day)}</div><div class="d-v">${v}</div></div>`;
     }).join("");
     strip.querySelectorAll(".day-chip").forEach(ch => {
       ch.onclick = () => {
@@ -448,102 +496,80 @@
         renderDayDetail();
       };
     });
+    // scroll active into view
+    const act = strip.querySelector(".day-chip.active");
+    if (act) act.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }
 
   function renderDayDetail() {
     const t = topicInfo(selectedTopic);
     const r = monthRows.find(x => x.day === selectedDay);
     const box = document.getElementById("dayDetail");
-    if (!r) {
-      box.textContent = "روز نامعتبر";
+    if (!r || !r.has) {
+      box.innerHTML = `<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong> — ثبتی نیست`;
       return;
     }
-    if (!r.has) {
-      box.innerHTML = `<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong><br>در این روز برای «${t.title}» ثبتی نیست.`;
-      return;
-    }
-    let lines = [`<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)}</strong>`];
+    let lines = [`<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong>`];
     if (t.source === "daily_logs") {
-      lines.push(`مقدار: ${scoreText(r.value)}`);
-      lines.push(`امتیاز: ${scoreText(r.score)}`);
+      lines.push(`مقدار ${scoreText(r.value)} · امتیاز ${scoreText(r.score)}`);
     } else if (t.source === "exercise") {
-      lines.push(`کیلومتر معادل: ${scoreText(r.value)}`);
-      lines.push(`امتیاز: ${scoreText(r.score)}`);
+      lines.push(`km ${scoreText(r.value)} · امتیاز ${scoreText(r.score)}`);
       if (r.extra) lines.push(r.extra);
     } else if (t.source === "weight") {
-      lines.push(`وزن: ${scoreText(r.value)} kg`);
+      lines.push(`${scoreText(r.value)} kg`);
     } else if (t.source === "mountain") {
-      lines.push(r.extra || "صعود ثبت شده");
+      lines.push(r.extra || "صعود");
     }
     box.innerHTML = lines.join("<br>");
   }
 
   async function refreshReport() {
-    const panel = document.getElementById("reportPanel");
-    if (!selectedUserId || !selectedTopic || selectedTopic === "general") {
-      panel.classList.remove("show");
+    const block = document.getElementById("reportBlock");
+    if (!selectedUserId || !selectedTopic) {
+      block.classList.add("hidden");
       return;
     }
-    panel.classList.add("show");
+    if (selectedTopic === "general") {
+      block.classList.remove("hidden");
+      document.getElementById("monthStats").innerHTML = "";
+      document.getElementById("dayStrip").innerHTML = "";
+      document.getElementById("dayDetail").textContent = "موضوع عمومی — بدون نمودار عادت";
+      return;
+    }
+    block.classList.remove("hidden");
     try {
       await fetchTopicMonth();
-      // keep selectedDay in range
-      const maxD = monthRows.length;
-      if (selectedDay > maxD) selectedDay = maxD;
+      if (selectedDay > monthRows.length) selectedDay = monthRows.length;
       renderMonthStats();
       renderDayStrip();
       renderDayDetail();
     } catch (e) {
-      document.getElementById("monthStats").innerHTML = "";
-      document.getElementById("dayStrip").innerHTML = "";
       document.getElementById("dayDetail").textContent = "خطا: " + (e.message || e);
     }
   }
 
-  function renderNotes(list, container) {
-    if (!list || !list.length) {
-      container.innerHTML = `<div class="empty">هنوز یادداشتی نیست</div>`;
-      return;
-    }
-    container.innerHTML = list.map(n => {
-      const t = topicInfo(n.topic);
-      return `<div class="note">
-        <div class="note-meta">
-          <span class="note-topic">${t.icon} ${t.title}</span>
-          <span>${formatTime(n.created_at)}</span>
-        </div>
-        <div class="note-body">${escapeHtml(n.body)}</div>
-      </div>`;
-    }).join("");
-  }
-
   function openTopicPicker() {
-    if (!selectedUserId) { toast("اول شاگرد را انتخاب کن"); return; }
     const overlay = document.createElement("div");
     overlay.className = "picker-overlay";
     overlay.innerHTML = `
       <div class="picker-sheet">
-        <div class="picker-title">موضوع یادداشت</div>
-        <div class="picker-sub">با انتخاب موضوع، گزارش ماه/روز همان عادت می‌آید</div>
+        <div class="picker-title">موضوع</div>
+        <div class="picker-sub">عادت مورد نظر را انتخاب کن</div>
         <div class="picker-grid">
-          ${TOPICS.map(t => `
-            <button type="button" class="picker-item" data-topic="${t.id}">
-              <span class="p-ico">${t.icon}</span>
-              <span>${t.title}</span>
-            </button>`).join("")}
+          ${TOPICS.map(t => `<button type="button" class="picker-item" data-topic="${t.id}">
+            <span class="p-ico">${t.icon}</span><span>${t.title}</span></button>`).join("")}
         </div>
         <button type="button" class="picker-close">بستن</button>
       </div>`;
     const close = () => overlay.remove();
-    overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    overlay.onclick = e => { if (e.target === overlay) close(); };
     overlay.querySelector(".picker-close").onclick = close;
     overlay.querySelectorAll("[data-topic]").forEach(btn => {
       btn.onclick = () => {
         selectedTopic = btn.dataset.topic;
         const t = topicInfo(selectedTopic);
         document.getElementById("topicIco").textContent = t.icon;
-        document.getElementById("topicLabel").textContent = t.title;
-        document.getElementById("sendNote").disabled = !selectedUserId || !selectedTopic;
+        document.getElementById("topicLabel").textContent = " " + t.title;
         close();
         refreshReport();
       };
@@ -551,44 +577,46 @@
     document.body.appendChild(overlay);
   }
 
+  function renderNotes(list, container) {
+    if (!list || !list.length) {
+      container.innerHTML = `<div class="empty">یادداشتی نیست</div>`;
+      return;
+    }
+    container.innerHTML = list.map(n => {
+      const t = topicInfo(n.topic);
+      return `<div class="note">
+        <div class="note-meta"><span class="note-topic">${t.icon} ${t.title}</span>
+        <span>${formatTime(n.created_at)}</span></div>
+        <div class="note-body">${escapeHtml(n.body)}</div></div>`;
+    }).join("");
+  }
+
   async function loadUsers() {
     const box = document.getElementById("userList");
     const { data, error } = await db.from("profiles").select("id, display_name").order("display_name");
-    if (error) { box.innerHTML = `<div class="empty">خطا: ${error.message}</div>`; return; }
-    const list = (data || []).filter(u => u.id !== currentUser.id);
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    const list = (data||[]).filter(u => u.id !== currentUser.id);
     if (!list.length) { box.innerHTML = `<div class="empty">کاربری نیست</div>`; return; }
     box.innerHTML = list.map(u => {
       const name = u.display_name || "کاربر";
       return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
-        ${avatarHtml(name)}
-        <span class="name">${escapeHtml(name)}</span>
-      </div>`;
+        ${avatarHtml(name)}<span class="name">${escapeHtml(name)}</span></div>`;
     }).join("");
     box.querySelectorAll(".user-chip").forEach(chip => {
       chip.onclick = () => {
-        box.querySelectorAll(".user-chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
         selectedUserId = chip.dataset.uid;
         selectedUserName = chip.dataset.name || "کاربر";
-        document.getElementById("selectedUserLabel").textContent = "شاگرد: " + selectedUserName;
-        document.getElementById("sendNote").disabled = !selectedTopic;
-        loadAdminNotes();
-        refreshReport();
+        document.getElementById("pillUser").textContent = selectedUserName;
+        setStep(2);
       };
     });
   }
 
   async function loadAdminNotes() {
     const box = document.getElementById("adminNotes");
-    if (!selectedUserId) {
-      box.innerHTML = `<div class="empty">کسی انتخاب نشده</div>`;
-      return;
-    }
-    let q = db.from("coach_notes")
-      .select("id, topic, body, created_at")
-      .eq("user_id", selectedUserId)
-      .order("created_at", { ascending: false })
-      .limit(40);
+    if (!selectedUserId) return;
+    let q = db.from("coach_notes").select("id, topic, body, created_at")
+      .eq("user_id", selectedUserId).order("created_at", { ascending: false }).limit(20);
     if (selectedTopic) q = q.eq("topic", selectedTopic);
     const { data, error } = await q;
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
@@ -599,22 +627,16 @@
     const box = document.getElementById("myNotes");
     const { data, error } = await db.from("coach_notes")
       .select("id, topic, body, created_at")
-      .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(50);
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
     renderNotes(data, box);
   }
 
   async function sendNote() {
-    const body = (document.getElementById("noteBody").value || "").trim();
-    if (!selectedUserId || !selectedTopic || !body) {
-      toast("موضوع، شاگرد و متن لازم است");
-      return;
-    }
+    const body = (document.getElementById("noteBody").value||"").trim();
+    if (!selectedUserId || !selectedTopic || !body) { toast("متن لازم است"); return; }
     const btn = document.getElementById("sendNote");
     btn.disabled = true;
-    // ضمیمهٔ اختیاری روز در متن ذخیره نمی‌شود جدا — فقط در body اگر بخواهند
     const { error } = await db.from("coach_notes").insert({
       admin_id: currentUser.id,
       user_id: selectedUserId,
@@ -622,47 +644,46 @@
       body
     });
     btn.disabled = false;
-    if (error) { toast("خطا: " + error.message); return; }
+    if (error) { toast(error.message); return; }
     document.getElementById("noteBody").value = "";
     toast("ثبت شد ✓");
     loadAdminNotes();
   }
 
   async function init() {
-    let r = await db.auth.getSession();
+    const r = await db.auth.getSession();
     if (!r.data.session) {
       document.getElementById("denyBox").classList.remove("hidden");
       if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
       return;
     }
     currentUser = r.data.session.user;
-    const prof = await db.from("profiles").select("is_admin, display_name").eq("id", currentUser.id).maybeSingle();
+    const prof = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
     isAdmin = !!(prof.data && prof.data.is_admin);
     if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
 
     document.getElementById("appBox").classList.remove("hidden");
-    document.getElementById("denyBox").classList.add("hidden");
-
     if (isAdmin) {
-      document.getElementById("pageSub").textContent =
-        "شاگرد و موضوع را بزن؛ گزارش ماهانه و روزانه همان عادت را ببین، بعد یادداشت بگذار.";
+      document.getElementById("pageSub").textContent = "سه مرحله: شاگرد ← موضوع و گزارش ← یادداشت";
       document.getElementById("adminView").classList.remove("hidden");
-      document.getElementById("openTopicPicker").onclick = openTopicPicker;
-      document.getElementById("sendNote").onclick = sendNote;
       initMonthPicker();
+      document.getElementById("openTopicPicker").onclick = openTopicPicker;
+      document.getElementById("changeUserBtn").onclick = () => setStep(1);
+      document.getElementById("toStep3").onclick = () => {
+        if (!selectedTopic) { toast("موضوع را انتخاب کن"); return; }
+        setStep(3);
+      };
+      document.getElementById("backStep2").onclick = () => setStep(2);
+      document.getElementById("sendNote").onclick = sendNote;
       await loadUsers();
+      setStep(1);
     } else {
-      document.getElementById("pageSub").textContent =
-        "بازخوردهای استاد روی عادت‌هایت.";
       document.getElementById("userView").classList.remove("hidden");
       await loadMyNotes();
     }
   }
 
-  db.auth.onAuthStateChange((event) => {
-    if (event === "SIGNED_OUT") location.href = "index.html";
-  });
-
+  db.auth.onAuthStateChange((e) => { if (e === "SIGNED_OUT") location.href = "index.html"; });
   init();
   </script>
   <script src="nav.js"></script>
