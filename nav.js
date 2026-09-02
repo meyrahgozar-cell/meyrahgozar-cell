@@ -62,7 +62,21 @@
       opacity: 0;
       pointer-events: none;
     }
+    .hql-glass-nav a .nav-badge {
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(12px);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff4d6d;
+      box-shadow: 0 0 8px rgba(255, 77, 109, 0.85);
+      display: none;
+    }
+    .hql-glass-nav a.has-badge .nav-badge { display: block; }
     .hql-glass-nav a {
+      position: relative;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -120,9 +134,10 @@
       <span class="ico">📊</span>
       <span>گزارش</span>
     </a>
-    <a href="coach.html" class="${isCoach ? "active" : ""}" data-nav="coach">
+    <a href="coach.html" class="${isCoach ? "active" : ""}" data-nav="coach" id="hqlNavCoach">
       <span class="ico">🪵</span>
       <span>چوب استاد</span>
+      <span class="nav-badge" aria-label="پیام جدید"></span>
     </a>
     <a href="admin.html" class="${isAdmin ? "active" : ""}" data-nav="admin" id="hqlNavAdmin">
       <span class="ico">🛡️</span>
@@ -205,6 +220,12 @@
   // پیش‌فرض: مخفی تا لاگین + ادمین بودن مشخص شود
   setAdminNavVisible(false);
 
+  window.hqlNavSetCoachBadge = function (on) {
+    const link = document.getElementById("hqlNavCoach");
+    if (!link) return;
+    link.classList.toggle("has-badge", !!on);
+  };
+
   window.hqlNavSetAdmin = function (isAdmin) {
     try { sessionStorage.setItem("hql_is_admin", isAdmin ? "1" : "0"); } catch (_) {}
     setAdminNavVisible(!!isAdmin);
@@ -214,4 +235,26 @@
   try {
     if (sessionStorage.getItem("hql_is_admin") === "1") setAdminNavVisible(true);
   } catch (_) {}
+
+  setTimeout(async () => {
+    try {
+      const client = window.__hqlDb;
+      if (!client || !client.auth) return;
+      const { data: sess } = await client.auth.getSession();
+      const uid = sess && sess.session && sess.session.user && sess.session.user.id;
+      if (!uid) return;
+      const { data } = await client.from("coach_notes")
+        .select("created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (!data || !data.length) return;
+      const latest = new Date(data[0].created_at).getTime();
+      const seen = Number(localStorage.getItem("hql_coach_seen_at") || 0);
+      if (typeof window.hqlNavSetCoachBadge === "function") {
+        window.hqlNavSetCoachBadge(latest > seen);
+      }
+    } catch (e) {}
+  }, 900);
+
 })();
