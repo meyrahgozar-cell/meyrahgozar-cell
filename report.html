@@ -1387,7 +1387,86 @@
                 filter: contrast(1.25) saturate(1.35) brightness(1.12);
             }
         }
-    </style>
+    
+.wchart-card .card-title { margin-bottom: 4px; }
+.wchart-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+.wchart-tab {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.wchart-tab.active {
+  color: var(--text);
+  border-color: rgba(0, 240, 255, 0.45);
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.12);
+}
+.wchart-stage {
+  position: relative;
+  height: 200px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(0,240,255,0.04), transparent 60%);
+  border: 1px solid rgba(180,100,255,0.12);
+  overflow: hidden;
+}
+.wchart-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.wchart-tip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -120%);
+  background: rgba(13,16,25,0.92);
+  border: 1px solid rgba(0,240,255,0.35);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 0 16px rgba(0,240,255,0.15);
+  transition: opacity .12s;
+  z-index: 5;
+}
+.wchart-tip.show { opacity: 1; }
+.wchart-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.wchart-legend b { color: var(--text); font-weight: 800; }
+.wchart-legend .down { color: var(--positive); }
+.wchart-legend .up { color: var(--negative); }
+.wchart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+</style>
 </head>
 <body>
 
@@ -1424,7 +1503,7 @@
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
         const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
         });
 
@@ -1843,7 +1922,284 @@
         }
 
         // --- initWeightStrip (no metal bars, only standard scrolling) ---
-        function initWeightStrip(strip) {
+        
+/* ===== Advanced weight charts ===== */
+let wchartMode = "month";
+let wchartMonthPoints = []; // {label, value, iso}
+let wchartYearPoints = [];  // {label, value, month}
+let wchartRaf = null;
+
+function smoothPath(ctx, pts) {
+  if (pts.length < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i === 0 ? i : i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+  }
+}
+
+function buildMonthWeightPoints(weightByDay, year, month) {
+  const days = jalaali.jalaaliMonthLength(year, month);
+  const pts = [];
+  for (let d = 1; d <= days; d++) {
+    const g = jalaali.toGregorian(year, month, d);
+    const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+    const w = weightByDay[iso];
+    if (w != null && !Number.isNaN(w)) {
+      pts.push({ label: fa(d), value: Number(w), iso, day: d });
+    }
+  }
+  return pts;
+}
+
+function buildYearWeightPoints(allWeights, year) {
+  // allWeights: {iso: kg}
+  const buckets = Array.from({ length: 12 }, () => []);
+  Object.keys(allWeights).forEach(iso => {
+    const [y, m, d] = iso.split("-").map(Number);
+    const j = jalaali.toJalaali(y, m, d);
+    if (j.jy !== year) return;
+    const w = Number(allWeights[iso]);
+    if (!Number.isNaN(w)) buckets[j.jm - 1].push(w);
+  });
+  const pts = [];
+  buckets.forEach((arr, i) => {
+    if (!arr.length) return;
+    const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+    pts.push({
+      label: J_MONTHS[i],
+      value: Math.round(avg * 10) / 10,
+      month: i + 1,
+      count: arr.length
+    });
+  });
+  return pts;
+}
+
+function drawWeightChart() {
+  const canvas = document.getElementById("wchartCanvas");
+  const stage = document.getElementById("wchartStage");
+  const tip = document.getElementById("wchartTip");
+  const empty = document.getElementById("wchartEmpty");
+  const legend = document.getElementById("wchartLegend");
+  if (!canvas || !stage) return;
+
+  const pts = wchartMode === "year" ? wchartYearPoints : wchartMonthPoints;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = stage.getBoundingClientRect();
+  const W = Math.max(1, Math.floor(rect.width));
+  const H = Math.max(1, Math.floor(rect.height));
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!pts.length) {
+    if (empty) empty.classList.remove("hidden");
+    if (legend) legend.innerHTML = "";
+    return;
+  }
+  if (empty) empty.classList.add("hidden");
+
+  const pad = { l: 36, r: 14, t: 18, b: 28 };
+  const values = pts.map(p => p.value);
+  let minV = Math.min(...values);
+  let maxV = Math.max(...values);
+  const span = Math.max(0.5, maxV - minV);
+  minV -= span * 0.12;
+  maxV += span * 0.12;
+
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+
+  const xy = pts.map((p, i) => {
+    const x = pad.l + (pts.length === 1 ? plotW / 2 : (i / (pts.length - 1)) * plotW);
+    const y = pad.t + (1 - (p.value - minV) / (maxV - minV)) * plotH;
+    return { x, y, ...p };
+  });
+
+  // grid
+  ctx.strokeStyle = "rgba(180,100,255,0.1)";
+  ctx.lineWidth = 1;
+  for (let g = 0; g < 4; g++) {
+    const y = pad.t + (plotH * g) / 3;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+    const val = maxV - ((maxV - minV) * g) / 3;
+    ctx.fillStyle = "rgba(139,146,176,0.85)";
+    ctx.font = "10px Vazirmatn, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(val.toFixed(1), pad.l - 6, y + 3);
+  }
+
+  // gradient fill under curve
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, "rgba(0, 240, 255, 0.35)");
+  grad.addColorStop(1, "rgba(180, 76, 255, 0.02)");
+  ctx.beginPath();
+  if (xy.length === 1) {
+    ctx.moveTo(xy[0].x, H - pad.b);
+    ctx.lineTo(xy[0].x, xy[0].y);
+  } else {
+    ctx.moveTo(xy[0].x, H - pad.b);
+    ctx.lineTo(xy[0].x, xy[0].y);
+    for (let i = 0; i < xy.length - 1; i++) {
+      const p0 = xy[i === 0 ? i : i - 1];
+      const p1 = xy[i];
+      const p2 = xy[i + 1];
+      const p3 = xy[i + 2 < xy.length ? i + 2 : i + 1];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+  }
+  ctx.lineTo(xy[xy.length - 1].x, H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // neon stroke
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = "#00f0ff";
+  ctx.shadowColor = "rgba(0,240,255,0.55)";
+  ctx.shadowBlur = 12;
+  smoothPath(ctx, xy);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // secondary purple outline
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(180,76,255,0.45)";
+  smoothPath(ctx, xy);
+  ctx.stroke();
+
+  // points + min/max
+  let minP = xy[0], maxP = xy[0];
+  xy.forEach(p => {
+    if (p.value < minP.value) minP = p;
+    if (p.value > maxP.value) maxP = p;
+  });
+  xy.forEach(p => {
+    const isExt = p === minP || p === maxP;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, isExt ? 4.5 : 3, 0, Math.PI * 2);
+    ctx.fillStyle = isExt ? "#ffd700" : "#00f0ff";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(5,6,10,0.9)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // x labels (sparse)
+  ctx.fillStyle = "rgba(139,146,176,0.95)";
+  ctx.font = "10px Vazirmatn, sans-serif";
+  ctx.textAlign = "center";
+  const step = Math.max(1, Math.ceil(xy.length / 8));
+  xy.forEach((p, i) => {
+    if (i % step === 0 || i === xy.length - 1) {
+      ctx.fillText(p.label, p.x, H - 10);
+    }
+  });
+
+  // legend stats
+  if (legend) {
+    const first = values[0], last = values[values.length - 1];
+    const delta = Math.round((last - first) * 10) / 10;
+    const cls = delta < 0 ? "down" : delta > 0 ? "up" : "";
+    const arrow = delta < 0 ? "↓" : delta > 0 ? "↑" : "→";
+    legend.innerHTML = `
+      <span>نقاط: <b>${fa(pts.length)}</b></span>
+      <span>کمینه: <b>${scoreText(minP.value)}</b> kg</span>
+      <span>بیشینه: <b>${scoreText(maxP.value)}</b> kg</span>
+      <span class="${cls}">تغییر: <b>${arrow} ${scoreText(Math.abs(delta))}</b> kg</span>`;
+  }
+
+  // interaction
+  canvas._wxy = xy;
+  if (!canvas._wbound) {
+    canvas._wbound = true;
+    const showTip = (clientX) => {
+      const box = canvas.getBoundingClientRect();
+      const x = clientX - box.left;
+      const pts2 = canvas._wxy || [];
+      if (!pts2.length) return;
+      let best = pts2[0], bestD = Infinity;
+      pts2.forEach(p => {
+        const d = Math.abs(p.x - x);
+        if (d < bestD) { bestD = d; best = p; }
+      });
+      if (bestD > 40) {
+        tip.classList.remove("show");
+        return;
+      }
+      const extra = best.count ? ` · ${fa(best.count)} روز` : "";
+      tip.textContent = `${best.label}: ${scoreText(best.value)} kg${extra}`;
+      tip.style.left = best.x + "px";
+      tip.style.top = best.y + "px";
+      tip.classList.add("show");
+      // crosshair
+      drawWeightChart._hoverX = best.x;
+    };
+    canvas.addEventListener("pointermove", e => showTip(e.clientX));
+    canvas.addEventListener("pointerdown", e => showTip(e.clientX));
+    canvas.addEventListener("pointerleave", () => tip && tip.classList.remove("show"));
+  }
+}
+
+function setupWeightChartTabs() {
+  document.querySelectorAll(".wchart-tab").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".wchart-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      wchartMode = btn.dataset.wmode || "month";
+      drawWeightChart();
+    };
+  });
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(wchartRaf);
+    wchartRaf = requestAnimationFrame(drawWeightChart);
+  });
+}
+
+async function loadYearWeights(userId, year) {
+  // بازه تقریبی میلادی سال شمسی
+  const g0 = jalaali.toGregorian(year, 1, 1);
+  const g1 = jalaali.toGregorian(year + 1, 1, 1);
+  const from = isoDate(new Date(Date.UTC(g0.gy, g0.gm - 1, g0.gd)));
+  const to = isoDate(new Date(Date.UTC(g1.gy, g1.gm - 1, g1.gd)));
+  const { data, error } = await db.from("exercise_logs")
+    .select("log_date, weight_kg")
+    .eq("user_id", userId)
+    .gte("log_date", from)
+    .lt("log_date", to);
+  if (error) {
+    console.warn(error);
+    return {};
+  }
+  const map = {};
+  (data || []).forEach(e => {
+    if (e.log_date && e.weight_kg != null) map[e.log_date] = Number(e.weight_kg);
+  });
+  return map;
+}
+
+
+function initWeightStrip(strip) {
             if (!strip) return;
             const wrap = strip.closest(".weight-strip-wrap") || strip.parentElement;
             if (!wrap) return;
@@ -2652,6 +3008,22 @@
 
               ${weightStripHtml}
 
+              <div class="card wchart-card">
+                <div class="card-title">نمودار وزن</div>
+                <div class="card-sub">ماهانه: روزانه · سالانه: میانگین هر ماه</div>
+                <div class="wchart-tabs">
+                  <button type="button" class="wchart-tab active" data-wmode="month" id="wTabMonth">ماهانه</button>
+                  <button type="button" class="wchart-tab" data-wmode="year" id="wTabYear">سالانه</button>
+                </div>
+                <div class="wchart-stage" id="wchartStage">
+                  <canvas id="wchartCanvas"></canvas>
+                  <div class="wchart-tip" id="wchartTip"></div>
+                  <div class="wchart-empty hidden" id="wchartEmpty">وزنی ثبت نشده</div>
+                </div>
+                <div class="wchart-legend" id="wchartLegend"></div>
+              </div>
+
+
               <div class="card">
                 <div class="card-title">جدول امتیازات</div>
                 <div class="card-sub">رتبه: میانگین تا دیروز + جایزه فعالیت امروز</div>
@@ -2683,6 +3055,25 @@
 
             const wStrip = content.querySelector(".weight-strip");
             if (wStrip) initWeightStrip(wStrip);
+
+            // نمودار وزن پیشرفته
+            wchartMonthPoints = buildMonthWeightPoints(weightByDay, selectedYear, selectedMonth);
+            setupWeightChartTabs();
+            (async () => {
+              try {
+                const uid = currentUser && currentUser.id;
+                if (uid) {
+                  const yearMap = await loadYearWeights(uid, selectedYear);
+                  wchartYearPoints = buildYearWeightPoints(yearMap, selectedYear);
+                } else {
+                  wchartYearPoints = [];
+                }
+              } catch (e) {
+                console.warn(e);
+                wchartYearPoints = [];
+              }
+              drawWeightChart();
+            })();
 
             animateNumber(document.getElementById("statTotal"), total);
             animateNumber(document.getElementById("statAvg"), avg);
