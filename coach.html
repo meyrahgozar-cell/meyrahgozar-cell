@@ -251,6 +251,31 @@
     .ctx-bar b { color: var(--neon2); font-weight: 700; }
     .ctx-sep { opacity: 0.35; margin: 0 1px; }
 
+
+    .note-ctx {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+      padding: 5px 7px; margin-bottom: 6px;
+      border-radius: 8px;
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      font-size: 9px; font-weight: 600; color: var(--muted);
+      line-height: 1.25;
+    }
+    .note-ctx .nc-topic { color: var(--neon2); font-weight: 800; font-size: 10px; }
+    .note-ctx .nc-chip {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 1px 5px; border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .note-ctx .nc-chip b { color: var(--text); font-weight: 800; }
+    .note-ctx .nc-chip b.pos { color: var(--positive); }
+    .note-ctx .nc-chip b.neg { color: var(--negative); }
+    .note-ctx .nc-day {
+      border-color: rgba(0,240,255,0.35);
+      color: var(--text);
+    }
+
 </style>
 </head>
 <body>
@@ -618,6 +643,68 @@
     document.body.appendChild(overlay);
   }
 
+
+  const CTX_OPEN = "«hql-ctx»";
+  const CTX_CLOSE = "«/hql-ctx»";
+
+  function buildCtxPayload() {
+    const filled = monthRows.filter(r => r.has);
+    const scores = filled.map(r => r.score).filter(s => s != null && !Number.isNaN(s));
+    const sum = scores.reduce((a, b) => a + b, 0);
+    const avg = scores.length ? Math.round((sum / scores.length) * 100) / 100 : 0;
+    const dayRow = monthRows.find(r => r.day === selectedDay);
+    return {
+      v: 1,
+      topic: selectedTopic,
+      jy: selectedYear,
+      jm: selectedMonth,
+      jd: selectedDay,
+      n: filled.length,
+      sum: Math.round(sum * 100) / 100,
+      avg,
+      ds: dayRow && dayRow.has ? dayRow.score : null,
+      dv: dayRow && dayRow.has ? dayRow.value : null
+    };
+  }
+
+  function packNoteBody(userText, ctx) {
+    const text = (userText || "").trim();
+    if (!ctx) return text;
+    return text + "\n" + CTX_OPEN + JSON.stringify(ctx) + CTX_CLOSE;
+  }
+
+  function parseNoteBody(raw) {
+    const s = String(raw || "");
+    const i = s.lastIndexOf(CTX_OPEN);
+    const j = s.lastIndexOf(CTX_CLOSE);
+    if (i >= 0 && j > i) {
+      let ctx = null;
+      try { ctx = JSON.parse(s.slice(i + CTX_OPEN.length, j)); } catch (_) { ctx = null; }
+      return { text: s.slice(0, i).trimEnd(), ctx };
+    }
+    return { text: s, ctx: null };
+  }
+
+  function renderCtxBar(ctx) {
+    if (!ctx || !ctx.topic) return "";
+    const ti = topicInfo(ctx.topic);
+    const monthName = J_MONTHS[(ctx.jm || 1) - 1] || "";
+    const sumCls = ctx.sum > 0 ? "pos" : ctx.sum < 0 ? "neg" : "";
+    const avgCls = ctx.avg > 0 ? "pos" : ctx.avg < 0 ? "neg" : "";
+    const dsCls = ctx.ds > 0 ? "pos" : ctx.ds < 0 ? "neg" : "";
+    const dayPart = ctx.jd != null
+      ? `<span class="nc-chip nc-day">روز <b class="${dsCls}">${fa(ctx.jd)}</b>${ctx.ds != null ? ` · <b class="${dsCls}">${scoreText(ctx.ds)}</b>` : ""}</span>`
+      : "";
+    return `<div class="note-ctx">
+      <span class="nc-topic">${ti.icon} ${ti.title}</span>
+      <span class="nc-chip">${monthName} ${fa(ctx.jy || "")}</span>
+      <span class="nc-chip">روزها <b>${fa(ctx.n || 0)}</b></span>
+      <span class="nc-chip">جمع <b class="${sumCls}">${scoreText(ctx.sum || 0)}</b></span>
+      <span class="nc-chip">میانگین <b class="${avgCls}">${scoreText(ctx.avg || 0)}</b></span>
+      ${dayPart}
+    </div>`;
+  }
+
   function renderNotes(list, container, opts) {
     const editable = opts && opts.editable;
     if (!list || !list.length) {
@@ -626,6 +713,7 @@
     }
     container.innerHTML = list.map(n => {
       const ti = topicInfo(n.topic);
+      const parsed = parseNoteBody(n.body);
       const actions = editable ? `
         <div class="note-actions">
           <button type="button" data-edit="${n.id}">ویرایش</button>
@@ -634,7 +722,8 @@
       return `<div class="note" data-id="${n.id}">
         <div class="note-meta"><span class="note-topic">${ti.icon} ${ti.title}</span>
         <span>${formatTime(n.created_at)}</span></div>
-        <div class="note-body" data-body="${n.id}">${escapeHtml(n.body)}</div>
+        ${renderCtxBar(parsed.ctx)}
+        <div class="note-body" data-body="${n.id}">${escapeHtml(parsed.text)}</div>
         ${actions}</div>`;
     }).join("");
     if (editable) {
@@ -650,12 +739,15 @@
   async function editNote(id) {
     const bodyEl = document.querySelector(`[data-body="${id}"]`);
     const current = bodyEl ? bodyEl.textContent : "";
-    const next = prompt("ویرایش یادداشت:", current);
+    const next = prompt("ویرایش متن یادداشت:", current);
     if (next == null) return;
     const text = next.trim();
     if (!text) { toast("متن خالی نباشد"); return; }
+    const { data: row } = await db.from("coach_notes").select("body").eq("id", id).maybeSingle();
+    const prev = parseNoteBody(row && row.body);
+    const packed = packNoteBody(text, prev.ctx);
     const { error } = await db.from("coach_notes")
-      .update({ body: text, updated_at: new Date().toISOString() })
+      .update({ body: packed, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) { toast(error.message); return; }
     toast("ویرایش شد");
@@ -754,11 +846,13 @@
     if (!selectedUserId || !selectedTopic || !body) { toast("متن لازم است"); return; }
     const btn = document.getElementById("sendNote");
     btn.disabled = true;
+    const ctx = (selectedTopic && selectedTopic !== "general") ? buildCtxPayload() : null;
+    const packed = packNoteBody(body, ctx);
     const { error } = await db.from("coach_notes").insert({
       admin_id: currentUser.id,
       user_id: selectedUserId,
       topic: selectedTopic,
-      body
+      body: packed
     });
     btn.disabled = false;
     if (error) { toast(error.message); return; }
