@@ -5,20 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <title>HQL | چوب استاد</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
   <style>
     :root {
-      --bg: #05060a;
-      --card: #0d1019;
-      --card2: #131722;
-      --border: rgba(180, 100, 255, 0.18);
-      --text: #f0f2ff;
-      --muted: #8b92b0;
-      --neon: #b44cff;
-      --neon2: #00f0ff;
-      --positive: #00ff9d;
+      --bg: #05060a; --card: #0d1019; --card2: #131722;
+      --border: rgba(180, 100, 255, 0.18); --text: #f0f2ff; --muted: #8b92b0;
+      --neon: #b44cff; --neon2: #00f0ff; --positive: #00ff9d; --negative: #ff4d6d;
       --radius: 16px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,13 +27,10 @@
     }
     .page { max-width: 720px; margin: 0 auto; padding: 16px 14px 100px; }
     .page-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
     .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 12px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px; margin-bottom: 12px;
     }
     .card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
     .hidden { display: none !important; }
@@ -48,17 +39,15 @@
       padding: 10px 12px; border-radius: 12px;
       border: 1px solid var(--border); background: var(--card2);
       cursor: pointer; margin-bottom: 8px;
-      transition: border-color .15s, background .15s;
     }
-    .user-chip:hover, .user-chip.active {
+    .user-chip.active {
       border-color: rgba(180,76,255,0.5);
       background: rgba(180,76,255,0.1);
     }
     .user-chip .name { font-weight: 700; flex: 1; }
     .avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: #fff; object-fit: cover;
-      border: 1px solid rgba(180,100,255,0.35);
+      width: 36px; height: 36px; border-radius: 50%; background: #fff;
+      object-fit: cover; border: 1px solid rgba(180,100,255,0.35);
     }
     .avatar-fb {
       width: 36px; height: 36px; border-radius: 50%;
@@ -75,12 +64,54 @@
     .topic-btn .t-ico { font-size: 20px; }
     .topic-btn .t-label { flex: 1; text-align: right; }
     .topic-btn .t-hint { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .period-bar {
+      display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .period-bar select, .period-bar input {
+      flex: 1; min-width: 100px; height: 40px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text);
+      padding: 0 10px; font: inherit;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat {
+      background: var(--card2); border-radius: 12px; padding: 10px 8px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .stat-l { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .stat-v { font-size: 18px; font-weight: 800; }
+    .stat-v.pos { color: var(--positive); }
+    .stat-v.neg { color: var(--negative); }
+    .day-strip {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px;
+      margin-bottom: 10px; -webkit-overflow-scrolling: touch;
+    }
+    .day-chip {
+      flex: 0 0 auto; min-width: 48px; padding: 8px 6px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card2); text-align: center; cursor: pointer;
+      font-size: 11px;
+    }
+    .day-chip.active {
+      border-color: var(--neon2);
+      box-shadow: 0 0 12px rgba(0,240,255,0.25);
+    }
+    .day-chip .d-n { font-weight: 800; font-size: 14px; }
+    .day-chip .d-v { color: var(--muted); margin-top: 2px; font-size: 10px; }
+    .day-chip.has .d-v { color: var(--neon2); }
+    .day-detail {
+      padding: 12px; border-radius: 12px; background: rgba(0,240,255,0.06);
+      border: 1px solid rgba(0,240,255,0.2); font-size: 13px; line-height: 1.6;
+      margin-bottom: 8px;
+    }
     textarea {
-      width: 100%; min-height: 100px; resize: vertical;
+      width: 100%; min-height: 90px; resize: vertical;
       border-radius: 12px; border: 1px solid var(--border);
       background: var(--card2); color: var(--text);
-      padding: 12px; font: inherit; line-height: 1.5;
-      margin-bottom: 10px;
+      padding: 12px; font: inherit; line-height: 1.5; margin-bottom: 10px;
     }
     textarea:focus { outline: none; border-color: var(--neon); }
     .send-btn {
@@ -98,54 +129,29 @@
       display: flex; justify-content: space-between; gap: 8px;
       font-size: 11px; color: var(--muted); margin-bottom: 6px;
     }
-    .note-topic {
-      color: var(--neon2); font-weight: 700;
-    }
+    .note-topic { color: var(--neon2); font-weight: 700; }
     .note-body { font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
-    .empty { text-align: center; color: var(--muted); padding: 20px; font-size: 13px; }
-    .deny {
-      text-align: center; padding: 40px 16px; color: var(--muted);
-    }
-    /* picker overlay */
+    .empty { text-align: center; color: var(--muted); padding: 16px; font-size: 13px; }
+    .deny { text-align: center; padding: 40px 16px; color: var(--muted); }
     .picker-overlay {
       position: fixed; inset: 0; z-index: 10000;
-      background: rgba(5,6,10,0.75);
-      backdrop-filter: blur(6px);
-      display: flex; align-items: flex-end; justify-content: center;
-      padding: 12px;
+      background: rgba(5,6,10,0.75); backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center; padding: 12px;
     }
     .picker-sheet {
-      width: min(480px, 100%);
-      max-height: 78vh;
-      overflow-y: auto;
+      width: min(480px, 100%); max-height: 78vh; overflow-y: auto;
       background: linear-gradient(165deg, #161a28, #0a0d16);
       border: 1px solid rgba(180,100,255,0.4);
-      border-radius: 20px 20px 16px 16px;
-      padding: 16px 14px 20px;
-      box-shadow: 0 0 40px rgba(180,76,255,0.25);
+      border-radius: 20px 20px 16px 16px; padding: 16px 14px 20px;
     }
-    .picker-title {
-      font-size: 16px; font-weight: 800; margin-bottom: 4px; text-align: center;
-    }
-    .picker-sub {
-      font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px;
-    }
-    .picker-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
+    .picker-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; text-align: center; }
+    .picker-sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+    .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .picker-item {
       display: flex; flex-direction: column; align-items: center; gap: 6px;
       padding: 14px 8px; border-radius: 14px;
       border: 1px solid var(--border); background: var(--card2);
       cursor: pointer; font-size: 11px; font-weight: 700; color: var(--text);
-      transition: border-color .15s, transform .12s, box-shadow .15s;
-    }
-    .picker-item:hover, .picker-item:active {
-      border-color: rgba(0,240,255,0.45);
-      box-shadow: 0 0 14px rgba(0,240,255,0.15);
-      transform: scale(1.03);
     }
     .picker-item .p-ico { font-size: 24px; }
     .picker-close {
@@ -157,25 +163,25 @@
       position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
       background: var(--card2); border: 1px solid var(--border);
       padding: 10px 18px; border-radius: 12px; font-size: 13px;
-      z-index: 11000; opacity: 0; transition: opacity .2s;
-      pointer-events: none;
+      z-index: 11000; opacity: 0; transition: opacity .2s; pointer-events: none;
     }
     .toast.show { opacity: 1; }
     .layout-admin { display: grid; gap: 12px; }
-    @media (min-width: 640px) {
-      .layout-admin { grid-template-columns: 1fr 1.2fr; align-items: start; }
+    @media (min-width: 700px) {
+      .layout-admin { grid-template-columns: 0.9fr 1.3fr; align-items: start; }
     }
+    .report-panel { display: none; }
+    .report-panel.show { display: block; }
   </style>
 </head>
 <body>
   <div class="page">
     <h1 class="page-title">چوب استاد</h1>
-    <p class="page-sub" id="pageSub">یادداشت مربی روی عادت‌ها — مثل چوب استاد، کوتاه و اثرگذار.</p>
+    <p class="page-sub" id="pageSub">یادداشت مربی روی عادت‌ها — همراه گزارش همان موضوع.</p>
 
     <div id="denyBox" class="deny hidden">برای دیدن این صفحه وارد شو.</div>
 
     <div id="appBox" class="hidden">
-      <!-- کاربر عادی: فقط یادداشت‌های خودش -->
       <div id="userView" class="hidden">
         <div class="card">
           <div class="card-title">پیام‌های استاد برای تو</div>
@@ -183,7 +189,6 @@
         </div>
       </div>
 
-      <!-- ادمین -->
       <div id="adminView" class="hidden">
         <div class="layout-admin">
           <div class="card">
@@ -192,17 +197,32 @@
           </div>
           <div>
             <div class="card">
-              <div class="card-title">یادداشت جدید</div>
+              <div class="card-title">موضوع و بازه</div>
               <div id="selectedUserLabel" class="page-sub" style="margin-bottom:10px">اول یک نفر را انتخاب کن</div>
               <button type="button" class="topic-btn" id="openTopicPicker">
                 <span class="t-ico" id="topicIco">🎯</span>
                 <span class="t-label">
                   <span id="topicLabel">انتخاب موضوع</span>
-                  <div class="t-hint">مثلاً خواب، آب، ورزش...</div>
+                  <div class="t-hint">با انتخاب موضوع، گزارش همان عادت می‌آید</div>
                 </span>
                 <span>▾</span>
               </button>
-              <textarea id="noteBody" placeholder="نکتهٔ کوتاه و روشن بنویس..."></textarea>
+              <div class="period-bar">
+                <select id="yearSelect"></select>
+                <select id="monthSelect"></select>
+              </div>
+            </div>
+
+            <div class="card report-panel" id="reportPanel">
+              <div class="card-title" id="reportTitle">گزارش موضوع</div>
+              <div class="stats-grid" id="monthStats"></div>
+              <div class="day-strip" id="dayStrip"></div>
+              <div class="day-detail" id="dayDetail">یک روز را از نوار بالا انتخاب کن</div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">یادداشت جدید</div>
+              <textarea id="noteBody" placeholder="با دیدن گزارش، نکته‌ات را بنویس..."></textarea>
               <button type="button" class="send-btn" id="sendNote" disabled>ثبت چوب استاد</button>
             </div>
             <div class="card">
@@ -223,20 +243,26 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
+  const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  const START_YEAR = 1405;
+  const FA = "۰۱۲۳۴۵۶۷۸۹";
+  const fa = (n) => String(n).replace(/\d/g, d => FA[+d]);
+
+  // item_type در daily_logs + موارد خاص
   const TOPICS = [
-    { id: "sleep", icon: "😴", title: "خواب" },
-    { id: "water", icon: "💧", title: "آب" },
-    { id: "exercise", icon: "🏃", title: "ورزش" },
-    { id: "reading", icon: "📖", title: "کتاب" },
-    { id: "sugar", icon: "🍬", title: "قند" },
-    { id: "instagram", icon: "📱", title: "اینستاگرام" },
-    { id: "sun", icon: "☀️", title: "آفتاب" },
-    { id: "solitude", icon: "🧘", title: "خلوت" },
-    { id: "dinner", icon: "🍽️", title: "شام" },
-    { id: "mountain", icon: "⛰️", title: "کوه" },
-    { id: "weight", icon: "⚖️", title: "وزن" },
-    { id: "discipline", icon: "🔥", title: "نظم" },
-    { id: "general", icon: "💬", title: "عمومی" }
+    { id: "sleep", icon: "😴", title: "خواب", source: "daily_logs", item: "sleep" },
+    { id: "water", icon: "💧", title: "آب", source: "daily_logs", item: "water" },
+    { id: "exercise", icon: "🏃", title: "ورزش", source: "exercise", item: "exercise" },
+    { id: "reading", icon: "📖", title: "کتاب", source: "daily_logs", item: "reading" },
+    { id: "sugar", icon: "🍬", title: "قند", source: "daily_logs", item: "sugar" },
+    { id: "instagram", icon: "📱", title: "اینستاگرام", source: "daily_logs", item: "instagram" },
+    { id: "sun", icon: "☀️", title: "آفتاب", source: "daily_logs", item: "sun" },
+    { id: "solitude", icon: "🧘", title: "خلوت", source: "daily_logs", item: "solitude" },
+    { id: "dinner", icon: "🍽️", title: "شام", source: "daily_logs", item: "dinner" },
+    { id: "mountain", icon: "⛰️", title: "کوه", source: "mountain", item: "mountain" },
+    { id: "weight", icon: "⚖️", title: "وزن", source: "weight", item: "weight" },
+    { id: "discipline", icon: "🔥", title: "نظم", source: "daily_logs", item: "discipline" },
+    { id: "general", icon: "💬", title: "عمومی", source: "none", item: null }
   ];
 
   let currentUser = null;
@@ -244,6 +270,8 @@
   let selectedUserId = null;
   let selectedUserName = "";
   let selectedTopic = null;
+  let selectedYear, selectedMonth, selectedDay;
+  let monthRows = []; // { day, iso, value, score, extra }
 
   function toast(msg) {
     const el = document.getElementById("toast");
@@ -251,22 +279,225 @@
     el.classList.add("show");
     setTimeout(() => el.classList.remove("show"), 2200);
   }
-
   function topicInfo(id) {
-    return TOPICS.find(t => t.id === id) || { id, icon: "•", title: id };
+    return TOPICS.find(t => t.id === id) || { id, icon: "•", title: id, source: "none" };
   }
-
+  function escapeHtml(s) {
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
   function avatarHtml(name) {
     const n = (name || "؟").trim();
-    const src = "images/" + n + ".png";
-    return `<img class="avatar" src="${src}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${n.slice(0,1)}</div>`;
+    return `<img class="avatar" src="images/${n}.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${n.slice(0,1)}</div>`;
   }
-
   function formatTime(iso) {
     try {
-      const d = new Date(iso);
-      return d.toLocaleString("fa-IR", { dateStyle: "medium", timeStyle: "short" });
+      return new Date(iso).toLocaleString("fa-IR", { dateStyle: "medium", timeStyle: "short" });
     } catch { return iso; }
+  }
+  function isoDate(d) {
+    const y = d.getUTCFullYear(), m = d.getUTCMonth()+1, day = d.getUTCDate();
+    return y + "-" + String(m).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+  }
+  function scoreText(n) {
+    const x = Math.round(Number(n) * 10) / 10;
+    return fa(x);
+  }
+
+  function initMonthPicker() {
+    const now = new Date();
+    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth()+1, now.getDate());
+    selectedYear = j.jy;
+    selectedMonth = j.jm;
+    selectedDay = j.jd;
+    const ySel = document.getElementById("yearSelect");
+    const mSel = document.getElementById("monthSelect");
+    ySel.innerHTML = "";
+    for (let y = START_YEAR; y <= j.jy; y++) {
+      const o = document.createElement("option");
+      o.value = y; o.textContent = fa(y);
+      if (y === selectedYear) o.selected = true;
+      ySel.appendChild(o);
+    }
+    mSel.innerHTML = J_MONTHS.map((name, i) => {
+      const m = i + 1;
+      return `<option value="${m}" ${m===selectedMonth?"selected":""}>${name}</option>`;
+    }).join("");
+    ySel.onchange = () => { selectedYear = +ySel.value; refreshReport(); };
+    mSel.onchange = () => { selectedMonth = +mSel.value; refreshReport(); };
+  }
+
+  function monthRange() {
+    const days = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+    const g0 = jalaali.toGregorian(selectedYear, selectedMonth, 1);
+    const g1 = jalaali.toGregorian(selectedYear, selectedMonth, days);
+    const start = isoDate(new Date(Date.UTC(g0.gy, g0.gm-1, g0.gd)));
+    const end = isoDate(new Date(Date.UTC(g1.gy, g1.gm-1, g1.gd)));
+    return { start, end, days };
+  }
+
+  async function fetchTopicMonth() {
+    monthRows = [];
+    if (!selectedUserId || !selectedTopic) return;
+    const t = topicInfo(selectedTopic);
+    if (t.source === "none") return;
+    const { start, end, days } = monthRange();
+    const byDay = {};
+
+    if (t.source === "daily_logs") {
+      const { data, error } = await db.from("daily_logs")
+        .select("log_date, value, score, item_type")
+        .eq("user_id", selectedUserId)
+        .eq("item_type", t.item)
+        .gte("log_date", start)
+        .lte("log_date", end);
+      if (error) throw error;
+      (data || []).forEach(r => {
+        byDay[r.log_date] = {
+          value: r.value, score: Number(r.score)||0, extra: ""
+        };
+      });
+    } else if (t.source === "exercise") {
+      const { data, error } = await db.from("exercise_logs")
+        .select("log_date, score, total_km, aerobic_minutes, running_km, weight_kg")
+        .eq("user_id", selectedUserId)
+        .gte("log_date", start)
+        .lte("log_date", end);
+      if (error) throw error;
+      (data || []).forEach(r => {
+        byDay[r.log_date] = {
+          value: r.total_km,
+          score: Number(r.score)||0,
+          extra: `هوازی ${fa(r.aerobic_minutes||0)}د · دو ${scoreText(r.running_km||0)}km`
+        };
+      });
+    } else if (t.source === "mountain") {
+      const { data, error } = await db.from("mountain_trips")
+        .select("trip_date")
+        .eq("user_id", selectedUserId)
+        .gte("trip_date", start)
+        .lte("trip_date", end);
+      if (error) throw error;
+      (data || []).forEach(r => {
+        byDay[r.trip_date] = { value: 1, score: 0, extra: "صعود ثبت شده" };
+      });
+    } else if (t.source === "weight") {
+      const { data, error } = await db.from("exercise_logs")
+        .select("log_date, weight_kg")
+        .eq("user_id", selectedUserId)
+        .gte("log_date", start)
+        .lte("log_date", end)
+        .not("weight_kg", "is", null);
+      if (error) throw error;
+      (data || []).forEach(r => {
+        if (r.weight_kg != null) {
+          byDay[r.log_date] = { value: r.weight_kg, score: 0, extra: "kg" };
+        }
+      });
+    }
+
+    for (let d = 1; d <= days; d++) {
+      const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+      const iso = isoDate(new Date(Date.UTC(g.gy, g.gm-1, g.gd)));
+      const row = byDay[iso];
+      monthRows.push({
+        day: d,
+        iso,
+        value: row ? row.value : null,
+        score: row ? row.score : null,
+        extra: row ? row.extra : "",
+        has: !!row
+      });
+    }
+  }
+
+  function renderMonthStats() {
+    const t = topicInfo(selectedTopic);
+    const filled = monthRows.filter(r => r.has);
+    const scores = filled.map(r => r.score).filter(s => s != null);
+    const sum = scores.reduce((a,b) => a+b, 0);
+    const avg = scores.length ? sum / scores.length : 0;
+    document.getElementById("monthStats").innerHTML = `
+      <div class="stat"><div class="stat-l">روز ثبت‌شده</div><div class="stat-v">${fa(filled.length)}</div></div>
+      <div class="stat"><div class="stat-l">جمع امتیاز</div><div class="stat-v ${sum>0?"pos":sum<0?"neg":""}">${scoreText(sum)}</div></div>
+      <div class="stat"><div class="stat-l">میانگین</div><div class="stat-v ${avg>0?"pos":avg<0?"neg":""}">${scoreText(avg)}</div></div>
+    `;
+    document.getElementById("reportTitle").textContent =
+      `گزارش ${t.icon} ${t.title} — ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)}`;
+  }
+
+  function renderDayStrip() {
+    const strip = document.getElementById("dayStrip");
+    strip.innerHTML = monthRows.map(r => {
+      let v = "—";
+      if (r.has) {
+        if (selectedTopic === "weight") v = scoreText(r.value);
+        else if (selectedTopic === "exercise") v = scoreText(r.value) + "k";
+        else if (selectedTopic === "mountain") v = "✓";
+        else if (r.score != null) v = scoreText(r.score);
+        else v = scoreText(r.value);
+      }
+      return `<div class="day-chip ${r.has?"has":""} ${r.day===selectedDay?"active":""}" data-day="${r.day}">
+        <div class="d-n">${fa(r.day)}</div>
+        <div class="d-v">${v}</div>
+      </div>`;
+    }).join("");
+    strip.querySelectorAll(".day-chip").forEach(ch => {
+      ch.onclick = () => {
+        selectedDay = +ch.dataset.day;
+        renderDayStrip();
+        renderDayDetail();
+      };
+    });
+  }
+
+  function renderDayDetail() {
+    const t = topicInfo(selectedTopic);
+    const r = monthRows.find(x => x.day === selectedDay);
+    const box = document.getElementById("dayDetail");
+    if (!r) {
+      box.textContent = "روز نامعتبر";
+      return;
+    }
+    if (!r.has) {
+      box.innerHTML = `<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong><br>در این روز برای «${t.title}» ثبتی نیست.`;
+      return;
+    }
+    let lines = [`<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)}</strong>`];
+    if (t.source === "daily_logs") {
+      lines.push(`مقدار: ${scoreText(r.value)}`);
+      lines.push(`امتیاز: ${scoreText(r.score)}`);
+    } else if (t.source === "exercise") {
+      lines.push(`کیلومتر معادل: ${scoreText(r.value)}`);
+      lines.push(`امتیاز: ${scoreText(r.score)}`);
+      if (r.extra) lines.push(r.extra);
+    } else if (t.source === "weight") {
+      lines.push(`وزن: ${scoreText(r.value)} kg`);
+    } else if (t.source === "mountain") {
+      lines.push(r.extra || "صعود ثبت شده");
+    }
+    box.innerHTML = lines.join("<br>");
+  }
+
+  async function refreshReport() {
+    const panel = document.getElementById("reportPanel");
+    if (!selectedUserId || !selectedTopic || selectedTopic === "general") {
+      panel.classList.remove("show");
+      return;
+    }
+    panel.classList.add("show");
+    try {
+      await fetchTopicMonth();
+      // keep selectedDay in range
+      const maxD = monthRows.length;
+      if (selectedDay > maxD) selectedDay = maxD;
+      renderMonthStats();
+      renderDayStrip();
+      renderDayDetail();
+    } catch (e) {
+      document.getElementById("monthStats").innerHTML = "";
+      document.getElementById("dayStrip").innerHTML = "";
+      document.getElementById("dayDetail").textContent = "خطا: " + (e.message || e);
+    }
   }
 
   function renderNotes(list, container) {
@@ -286,25 +517,14 @@
     }).join("");
   }
 
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   function openTopicPicker() {
-    if (!selectedUserId) {
-      toast("اول شاگرد را انتخاب کن");
-      return;
-    }
+    if (!selectedUserId) { toast("اول شاگرد را انتخاب کن"); return; }
     const overlay = document.createElement("div");
     overlay.className = "picker-overlay";
     overlay.innerHTML = `
       <div class="picker-sheet">
         <div class="picker-title">موضوع یادداشت</div>
-        <div class="picker-sub">روی چه چیزی می‌خواهی چوب بزنی؟</div>
+        <div class="picker-sub">با انتخاب موضوع، گزارش ماه/روز همان عادت می‌آید</div>
         <div class="picker-grid">
           ${TOPICS.map(t => `
             <button type="button" class="picker-item" data-topic="${t.id}">
@@ -325,6 +545,7 @@
         document.getElementById("topicLabel").textContent = t.title;
         document.getElementById("sendNote").disabled = !selectedUserId || !selectedTopic;
         close();
+        refreshReport();
       };
     });
     document.body.appendChild(overlay);
@@ -333,15 +554,9 @@
   async function loadUsers() {
     const box = document.getElementById("userList");
     const { data, error } = await db.from("profiles").select("id, display_name").order("display_name");
-    if (error) {
-      box.innerHTML = `<div class="empty">خطا: ${error.message}</div>`;
-      return;
-    }
+    if (error) { box.innerHTML = `<div class="empty">خطا: ${error.message}</div>`; return; }
     const list = (data || []).filter(u => u.id !== currentUser.id);
-    if (!list.length) {
-      box.innerHTML = `<div class="empty">کاربری نیست</div>`;
-      return;
-    }
+    if (!list.length) { box.innerHTML = `<div class="empty">کاربری نیست</div>`; return; }
     box.innerHTML = list.map(u => {
       const name = u.display_name || "کاربر";
       return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
@@ -358,6 +573,7 @@
         document.getElementById("selectedUserLabel").textContent = "شاگرد: " + selectedUserName;
         document.getElementById("sendNote").disabled = !selectedTopic;
         loadAdminNotes();
+        refreshReport();
       };
     });
   }
@@ -368,15 +584,14 @@
       box.innerHTML = `<div class="empty">کسی انتخاب نشده</div>`;
       return;
     }
-    const { data, error } = await db.from("coach_notes")
+    let q = db.from("coach_notes")
       .select("id, topic, body, created_at")
       .eq("user_id", selectedUserId)
       .order("created_at", { ascending: false })
       .limit(40);
-    if (error) {
-      box.innerHTML = `<div class="empty">${error.message}</div>`;
-      return;
-    }
+    if (selectedTopic) q = q.eq("topic", selectedTopic);
+    const { data, error } = await q;
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
     renderNotes(data, box);
   }
 
@@ -387,10 +602,7 @@
       .eq("user_id", currentUser.id)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) {
-      box.innerHTML = `<div class="empty">${error.message}</div>`;
-      return;
-    }
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
     renderNotes(data, box);
   }
 
@@ -402,6 +614,7 @@
     }
     const btn = document.getElementById("sendNote");
     btn.disabled = true;
+    // ضمیمهٔ اختیاری روز در متن ذخیره نمی‌شود جدا — فقط در body اگر بخواهند
     const { error } = await db.from("coach_notes").insert({
       admin_id: currentUser.id,
       user_id: selectedUserId,
@@ -409,10 +622,7 @@
       body
     });
     btn.disabled = false;
-    if (error) {
-      toast("خطا: " + error.message);
-      return;
-    }
+    if (error) { toast("خطا: " + error.message); return; }
     document.getElementById("noteBody").value = "";
     toast("ثبت شد ✓");
     loadAdminNotes();
@@ -435,14 +645,15 @@
 
     if (isAdmin) {
       document.getElementById("pageSub").textContent =
-        "به‌عنوان استاد، روی هر عادت یک نکتهٔ کوتاه بگذار. شاگرد در همین صفحه می‌بیند.";
+        "شاگرد و موضوع را بزن؛ گزارش ماهانه و روزانه همان عادت را ببین، بعد یادداشت بگذار.";
       document.getElementById("adminView").classList.remove("hidden");
       document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("sendNote").onclick = sendNote;
+      initMonthPicker();
       await loadUsers();
     } else {
       document.getElementById("pageSub").textContent =
-        "اینجا بازخوردهای استاد روی عادت‌هایت را می‌بینی.";
+        "بازخوردهای استاد روی عادت‌هایت.";
       document.getElementById("userView").classList.remove("hidden");
       await loadMyNotes();
     }
