@@ -1397,7 +1397,7 @@
             <div class="header-actions">
                 <button class="icon-btn" id="shareBtn" title="کپی خلاصه گزارش">⤴</button>
                 <button class="icon-btn" id="refreshBtn" title="بروزرسانی">⟳</button>
-                <button class="icon-btn" id="backBtn" title="بازگشت">←</button>
+                
             </div>
         </header>
 
@@ -1549,7 +1549,7 @@
             await loadReport();
         })();
 
-        document.getElementById("backBtn").onclick = () => location.href = "index.html";
+        /* backBtn removed — glass nav */
 
         function initMonthPicker() {
             const now = new Date();
