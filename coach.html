@@ -60,8 +60,27 @@
     /* user list compact */
     .user-list {
       display: flex; flex-direction: column; gap: 6px;
-      max-height: 42vh; overflow-y: auto;
+      max-height: none;
+      overflow: visible;
     }
+    .search-box {
+      width: 100%; height: 40px; margin-bottom: 8px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text);
+      padding: 0 12px; font: inherit; font-size: 13px;
+    }
+    .search-box:focus { outline: none; border-color: var(--neon); }
+    .note-actions {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .note-actions button {
+      flex: 1; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font: inherit; font-size: 11px; font-weight: 700;
+      cursor: pointer;
+    }
+    .note-actions button.danger { color: var(--negative); }
+
     .user-chip {
       display: flex; align-items: center; gap: 10px;
       padding: 10px; border-radius: 12px;
@@ -261,6 +280,7 @@
         <!-- مرحله ۱: شاگرد -->
         <div id="step1" class="card">
           <div class="card-title">۱ · انتخاب شاگرد</div>
+          <input type="search" class="search-box" id="userSearch" placeholder="جستجوی نام..." autocomplete="off">
           <div class="user-list" id="userList"><div class="empty">...</div></div>
         </div>
 
@@ -310,7 +330,7 @@
   <script>
   const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
   const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
@@ -596,39 +616,69 @@
     document.body.appendChild(overlay);
   }
 
-  function renderNotes(list, container) {
+  function renderNotes(list, container, opts) {
+    const editable = opts && opts.editable;
     if (!list || !list.length) {
       container.innerHTML = `<div class="empty">یادداشتی نیست</div>`;
       return;
     }
     container.innerHTML = list.map(n => {
-      const t = topicInfo(n.topic);
-      return `<div class="note">
-        <div class="note-meta"><span class="note-topic">${t.icon} ${t.title}</span>
+      const ti = topicInfo(n.topic);
+      const actions = editable ? `
+        <div class="note-actions">
+          <button type="button" data-edit="${n.id}">ویرایش</button>
+          <button type="button" class="danger" data-del="${n.id}">حذف</button>
+        </div>` : "";
+      return `<div class="note" data-id="${n.id}">
+        <div class="note-meta"><span class="note-topic">${ti.icon} ${ti.title}</span>
         <span>${formatTime(n.created_at)}</span></div>
-        <div class="note-body">${escapeHtml(n.body)}</div></div>`;
+        <div class="note-body" data-body="${n.id}">${escapeHtml(n.body)}</div>
+        ${actions}</div>`;
     }).join("");
+    if (editable) {
+      container.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.onclick = () => editNote(btn.dataset.edit);
+      });
+      container.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = () => deleteNote(btn.dataset.del);
+      });
+    }
+  }
+
+  async function editNote(id) {
+    const bodyEl = document.querySelector(`[data-body="${id}"]`);
+    const current = bodyEl ? bodyEl.textContent : "";
+    const next = prompt("ویرایش یادداشت:", current);
+    if (next == null) return;
+    const text = next.trim();
+    if (!text) { toast("متن خالی نباشد"); return; }
+    const { error } = await db.from("coach_notes")
+      .update({ body: text, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) { toast(error.message); return; }
+    toast("ویرایش شد");
+    loadAdminNotes();
+  }
+
+  async function deleteNote(id) {
+    if (!confirm("حذف این یادداشت؟")) return;
+    const { error } = await db.from("coach_notes").delete().eq("id", id);
+    if (error) { toast(error.message); return; }
+    toast("حذف شد");
+    loadAdminNotes();
   }
 
   async function loadUsers() {
     const box = document.getElementById("userList");
     const { data, error } = await db.from("profiles").select("id, display_name").order("display_name");
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
-    const list = (data||[]).filter(u => u.id !== currentUser.id);
-    if (!list.length) { box.innerHTML = `<div class="empty">کاربری نیست</div>`; return; }
-    box.innerHTML = list.map(u => {
-      const name = u.display_name || "کاربر";
-      return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
-        ${avatarHtml(name)}<span class="name">${escapeHtml(name)}</span></div>`;
-    }).join("");
-    box.querySelectorAll(".user-chip").forEach(chip => {
-      chip.onclick = () => {
-        selectedUserId = chip.dataset.uid;
-        selectedUserName = chip.dataset.name || "کاربر";
-        document.getElementById("pillUser").textContent = selectedUserName;
-        setStep(2);
-      };
-    });
+    allUsersCache = data || [];
+    renderUserList(document.getElementById("userSearch")?.value || "");
+    const search = document.getElementById("userSearch");
+    if (search && !search.dataset.bound) {
+      search.dataset.bound = "1";
+      search.addEventListener("input", () => renderUserList(search.value));
+    }
   }
 
   async function loadAdminNotes() {
@@ -639,7 +689,7 @@
     if (selectedTopic) q = q.eq("topic", selectedTopic);
     const { data, error } = await q;
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
-    renderNotes(data, box);
+    renderNotes(data, box, { editable: true });
   }
 
   async function loadMyNotes() {
@@ -648,7 +698,8 @@
       .select("id, topic, body, created_at")
       .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(50);
     if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
-    renderNotes(data, box);
+    renderNotes(data, box, { editable: false });
+    markCoachNotesSeen(data);
   }
 
   async function sendNote() {
@@ -669,6 +720,39 @@
     loadAdminNotes();
   }
 
+
+  const COACH_SEEN_KEY = "hql_coach_seen_at";
+
+  function markCoachNotesSeen(notes) {
+    try {
+      let maxT = 0;
+      (notes || []).forEach(n => {
+        const ts = new Date(n.created_at).getTime();
+        if (ts > maxT) maxT = ts;
+      });
+      if (maxT > 0) localStorage.setItem(COACH_SEEN_KEY, String(maxT));
+      if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(false);
+    } catch (_) {}
+  }
+
+  async function checkCoachBadge() {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await db.from("coach_notes")
+        .select("created_at")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error || !data || !data.length) {
+        if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(false);
+        return;
+      }
+      const latest = new Date(data[0].created_at).getTime();
+      const seen = Number(localStorage.getItem(COACH_SEEN_KEY) || 0);
+      if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(latest > seen);
+    } catch (_) {}
+  }
+
   async function init() {
     const r = await db.auth.getSession();
     if (!r.data.session) {
@@ -682,6 +766,7 @@
     if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
 
     document.getElementById("appBox").classList.remove("hidden");
+    await checkCoachBadge();
     if (isAdmin) {
       document.getElementById("pageSub").textContent = "سه مرحله: شاگرد ← موضوع و گزارش ← یادداشت";
       document.getElementById("adminView").classList.remove("hidden");
