@@ -447,17 +447,16 @@
         }
 
         .editor-wrap {
-            position: relative;
-            width: 100%;
-            height: 100%;
             display: flex;
+            height: 100%;
+            width: 100%;
             font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
             font-size: 14px;
             line-height: 1.6;
             background: #0a0a12;
-            overflow: hidden;
         }
 
+        /* ─── Line gutter ─── */
         .line-gutter {
             flex-shrink: 0;
             width: 44px;
@@ -483,13 +482,17 @@
             padding-right: 4px;
         }
 
+        /* ─── Code container – single scrollable area ─── */
         .code-container {
             flex: 1;
             position: relative;
-            overflow: hidden;
+            overflow: auto;
             background: #0a0a12;
+            height: 100%;
+            min-height: 100%;
         }
 
+        /* Both pre and textarea are absolutely positioned inside the scrollable container */
         .code-container pre {
             margin: 0;
             padding: 12px 16px;
@@ -500,17 +503,14 @@
             line-height: 1.6;
             color: #e0e0ff;
             background: transparent;
-            min-height: 100%;
             pointer-events: none;
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100%;
             z-index: 1;
-            overflow: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .code-container pre::-webkit-scrollbar {
-            display: none;
+            overflow: visible;
         }
         .code-container pre .token {
             pointer-events: none;
@@ -557,8 +557,6 @@
         }
 
         .code-container textarea {
-            position: absolute;
-            inset: 0;
             margin: 0;
             padding: 12px 16px;
             font-family: inherit;
@@ -572,13 +570,18 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             caret-color: #e0e0ff;
-            overflow: auto;
+            overflow: visible;
             width: 100%;
+            min-height: 100%;
             height: 100%;
             tab-size: 2;
             z-index: 3;
             letter-spacing: 0;
             text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
         }
         .code-container textarea::selection {
             background: #00f0ff33;
@@ -805,6 +808,7 @@
         const edEditor = $('codeEditor');
         const edPre = $('codeHighlight');
         const edGutter = $('lineGutter');
+        const codeContainer = $('codeContainer');
 
         const contextMenu = $('contextMenu');
 
@@ -933,7 +937,6 @@
                     const card = makeCard(item.name, icon, isDir ? 'folder' : 'file', meta);
                     const ext = item.name.split('.').pop().toLowerCase();
 
-                    // Store item data on card
                     card.dataset.path = item.path;
                     card.dataset.sha = item.sha;
                     card.dataset.type = item.type;
@@ -975,7 +978,6 @@
                         }
                     };
 
-                    // Right-click context menu
                     card.addEventListener('contextmenu', e => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1106,7 +1108,6 @@
             contextMenu.style.left = x + 'px';
             contextMenu.style.top = y + 'px';
 
-            // Adjust if off screen
             const rect = contextMenu.getBoundingClientRect();
             if (rect.right > window.innerWidth) {
                 contextMenu.style.left = (x - rect.width) + 'px';
@@ -1142,7 +1143,7 @@
                     if (item.download_url) {
                         window.open(item.download_url, '_blank');
                     } else {
-                        alert('Download not available for this item.');
+                        alert('Download not available.');
                     }
                     break;
                 case 'rename':
@@ -1155,9 +1156,8 @@
                     const fullPath = item.path;
                     if (navigator.clipboard) {
                         await navigator.clipboard.writeText(fullPath);
-                        alert('Path copied to clipboard!');
+                        alert('Path copied!');
                     } else {
-                        // fallback
                         const input = document.createElement('input');
                         input.value = fullPath;
                         document.body.appendChild(input);
@@ -1189,24 +1189,19 @@
             const dir = oldPath.substring(0, oldPath.lastIndexOf('/') + 1);
             const newPath = dir + newName;
 
-            // For folders, we need to rename the .gitkeep or just move the folder? GitHub doesn't support folder rename directly.
-            // We'll only support file rename for simplicity.
             if (item.type === 'dir') {
-                alert('Renaming folders is not supported directly. Create a new folder and move files.');
+                alert('Renaming folders is not supported.');
                 return;
             }
 
             try {
-                // Get content of file
                 const data = await api('GET', `/contents/${oldPath}?ref=${state.branch}`);
                 const content = data.content;
-                // Create new file with same content
                 await api('PUT', `/contents/${newPath}`, {
                     message: `Rename ${item.name} to ${newName}`,
                     content: content,
                     branch: state.branch,
                 });
-                // Delete old file
                 await api('DELETE', `/contents/${oldPath}`, {
                     message: `Delete old file after rename`,
                     sha: item.sha,
@@ -1276,11 +1271,10 @@
             edFilePath.textContent = f.path;
             edOverlay.classList.add('open');
             editor.isOpen = true;
+            // Reset scroll
+            codeContainer.scrollTop = 0;
             setTimeout(() => {
                 edEditor.focus();
-                // Reset scroll
-                edEditor.scrollTop = 0;
-                edPre.scrollTop = 0;
             }, 50);
         }
 
@@ -1300,9 +1294,7 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
-            // Reset scroll
-            edEditor.scrollTop = 0;
-            edPre.scrollTop = 0;
+            codeContainer.scrollTop = 0;
         }
 
         function setEditorStatus(text, type) {
@@ -1592,8 +1584,9 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  EDITOR EVENTS – scroll sync & input
+        //  EDITOR EVENTS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // On input, update syntax highlighting and line numbers, but DO NOT change scroll
         edEditor.addEventListener('input', () => {
             const content = edEditor.value;
             const isDirty = content !== editor.savedContent;
@@ -1602,14 +1595,15 @@
             updateLineNumbers();
             updateEditorInfo();
             highlightSyntax();
-            // Sync scroll after content change (keep same position)
-            edPre.scrollTop = edEditor.scrollTop;
+            // Keep scroll position – the textarea's scroll is handled by the container
+            // We need to sync the pre's scroll with the textarea's scroll? Actually both are inside the same scrollable container, so they scroll together automatically.
         });
 
-        edEditor.addEventListener('scroll', () => {
-            edPre.scrollTop = edEditor.scrollTop;
-        });
+        // No need for scroll sync because the container scrolls both elements together.
+        // The container is code-container, which has overflow: auto.
+        // Both pre and textarea are positioned absolutely inside it, so they move together.
 
+        // Tab key support
         edEditor.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
