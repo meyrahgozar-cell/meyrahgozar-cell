@@ -38,14 +38,19 @@
       gap: 4px;
       padding: 8px 10px;
       border-radius: 22px;
-      background: rgba(14, 16, 26, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: linear-gradient(
+        165deg,
+        rgba(255, 255, 255, 0.14) 0%,
+        rgba(255, 255, 255, 0.05) 40%,
+        rgba(20, 22, 36, 0.25) 100%
+      );
+      border: 1px solid rgba(255, 255, 255, 0.28);
       box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(180, 76, 255, 0.08) inset,
-        0 0 24px rgba(180, 76, 255, 0.12);
-      -webkit-backdrop-filter: blur(8px) saturate(1.25);
-      backdrop-filter: blur(8px) saturate(1.25);
+        0 8px 28px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+      -webkit-backdrop-filter: blur(4px) saturate(1.4);
+      backdrop-filter: blur(4px) saturate(1.4);
       transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
       opacity: 1;
       pointer-events: auto;
