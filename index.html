@@ -862,6 +862,32 @@ button { cursor: pointer; border: none; background: none; }
   font: inherit;
 }
 
+
+.gender-opt {
+  display: flex;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border, rgba(180,100,255,.2));
+  background: rgba(180, 76, 255, 0.06);
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.gender-opt input {
+  width: 18px;
+  height: 18px;
+  accent-color: #b44cff;
+  flex-shrink: 0;
+}
+.gender-opt span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #f0f2ff);
+  line-height: 1.4;
+}
+
 </style>
 </head>
 <body>
@@ -879,6 +905,10 @@ button { cursor: pointer; border: none; background: none; }
       <div id="nameBox" class="hidden">
         <div class="label">نام نمایشی</div>
         <input class="input" id="displayName" placeholder="مثلاً میراح" autocomplete="name">
+        <label class="gender-opt" id="genderOpt" for="signupFemale">
+          <input type="checkbox" id="signupFemale">
+          <span>اما من که زن/دخترم</span>
+        </label>
       </div>
       <div class="label">ایمیل</div>
       <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
@@ -984,7 +1014,7 @@ button { cursor: pointer; border: none; background: none; }
 const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
@@ -1147,6 +1177,9 @@ function setMode(m){
   document.getElementById("nameBox").classList.toggle("hidden",m!=="signup");
   document.getElementById("authBtn").textContent=m==="signup"?"ساخت حساب":"ورود";
   document.getElementById("authError").textContent="";
+
+  const gf=document.getElementById("signupFemale");
+  if(gf&&m!=="signup") gf.checked=false;
 }
 document.getElementById("loginTab").onclick=()=>setMode("login");
 document.getElementById("signupTab").onclick=()=>setMode("signup");
@@ -1163,7 +1196,18 @@ document.getElementById("authForm").onsubmit=async e=>{
     let r;
     if(mode==="signup"){
       if(!name) throw new Error("نام نمایشی را وارد کن.");
-      r=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
+      const isFemale = !!(document.getElementById("signupFemale") && document.getElementById("signupFemale").checked);
+      const gender = isFemale ? "female" : "male";
+      r=await db.auth.signUp({email,password,options:{data:{display_name:name, gender}}});
+      // پروفایل را هم مستقیم ست کن (اگر تریگر handle_new_user gender را نخواند)
+      if(r.data && r.data.user){
+        try {
+          await db.from("profiles").update({ gender }).eq("id", r.data.user.id);
+        } catch(e) {}
+        userGender = gender;
+        const gSel = document.getElementById("genderSelect");
+        if(gSel) gSel.value = gender;
+      }
     }else{
       r=await db.auth.signInWithPassword({email,password});
     }
