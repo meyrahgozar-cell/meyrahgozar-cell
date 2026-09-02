@@ -271,6 +271,62 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 
 
 
+
+.settings-card { margin-top: 28px; }
+.settings-card .card-title { margin-bottom: 4px; }
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+@media (max-width: 520px) {
+  .settings-row { grid-template-columns: 1fr; }
+}
+.settings-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.settings-field input {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--text);
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  direction: ltr;
+  text-align: left;
+}
+.settings-field input:focus {
+  outline: none;
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(180, 76, 255, 0.15);
+}
+.settings-save {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(180, 76, 255, 0.4);
+  background: linear-gradient(135deg, rgba(180,76,255,0.25), rgba(0,240,255,0.12));
+  font-weight: 800;
+  color: var(--text);
+  cursor: pointer;
+}
+.settings-save:active { transform: scale(0.98); }
+.settings-msg {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  min-height: 18px;
+}
+.settings-msg.ok { color: var(--positive, #00ff9d); }
+.settings-msg.err { color: var(--negative, #ff4d6d); }
+
 </style>
 
 
@@ -306,6 +362,25 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
       <button class="back-user" id="backToList">← بازگشت به لیست</button>
       <div id="detailContent"></div>
     </div>
+
+
+    <div class="card settings-card" id="kmSettingsCard">
+      <div class="card-title">ضریب امتیاز کیلومتر (زن / مرد)</div>
+      <div class="card-sub">روی کالری مؤثر ورزش اعمال می‌شود: calories × ضریب — سپس همان پله‌های امتیاز</div>
+      <div class="settings-row">
+        <div class="settings-field">
+          <label for="factorMale">ضریب مرد (پیش‌فرض ۱)</label>
+          <input type="number" id="factorMale" step="0.01" min="0.1" max="5" value="1">
+        </div>
+        <div class="settings-field">
+          <label for="factorFemale">ضریب زن (پیش‌فرض ۱.۱۵)</label>
+          <input type="number" id="factorFemale" step="0.01" min="0.1" max="5" value="1.15">
+        </div>
+      </div>
+      <button type="button" class="settings-save" id="saveKmFactors">ذخیره ضرایب</button>
+      <div class="settings-msg" id="settingsMsg"></div>
+    </div>
+
   </div>
 </div>
 
@@ -383,6 +458,9 @@ async function init() {
   }
 
   document.getElementById("appBox").classList.remove("hidden");
+  loadKmFactors();
+  const saveBtn = document.getElementById("saveKmFactors");
+  if (saveBtn) saveBtn.onclick = saveKmFactors;
   initMonthPicker();
   await loadUsers();
   // deep link از صفحه گزارش: admin.html?u=USER_ID
@@ -736,6 +814,56 @@ function openDayModal(isoDateStr) {
 db.auth.onAuthStateChange((event, session) => {
   if (event === "SIGNED_OUT") location.href = "index.html";
 });
+
+
+async function loadKmFactors() {
+  const msg = document.getElementById("settingsMsg");
+  try {
+    const { data, error } = await db.from("app_settings")
+      .select("key, value")
+      .in("key", ["km_factor_male", "km_factor_female"]);
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(r => { map[r.key] = Number(r.value); });
+    const m = document.getElementById("factorMale");
+    const f = document.getElementById("factorFemale");
+    if (m && map.km_factor_male != null) m.value = map.km_factor_male;
+    if (f && map.km_factor_female != null) f.value = map.km_factor_female;
+  } catch (e) {
+    if (msg) {
+      msg.textContent = "خواندن تنظیمات: " + (e.message || e);
+      msg.className = "settings-msg err";
+    }
+  }
+}
+
+async function saveKmFactors() {
+  const msg = document.getElementById("settingsMsg");
+  const male = Number(document.getElementById("factorMale").value);
+  const female = Number(document.getElementById("factorFemale").value);
+  if (!(male > 0) || !(female > 0)) {
+    msg.textContent = "ضرایب باید عدد مثبت باشند";
+    msg.className = "settings-msg err";
+    return;
+  }
+  msg.textContent = "در حال ذخیره...";
+  msg.className = "settings-msg";
+  try {
+    const uid = currentUser?.id || null;
+    const rows = [
+      { key: "km_factor_male", value: male, updated_at: new Date().toISOString(), updated_by: uid },
+      { key: "km_factor_female", value: female, updated_at: new Date().toISOString(), updated_by: uid }
+    ];
+    const { error } = await db.from("app_settings").upsert(rows, { onConflict: "key" });
+    if (error) throw error;
+    msg.textContent = "ذخیره شد ✓";
+    msg.className = "settings-msg ok";
+  } catch (e) {
+    msg.textContent = "خطا: " + (e.message || e);
+    msg.className = "settings-msg err";
+  }
+}
+
 
 init();
 </script>
