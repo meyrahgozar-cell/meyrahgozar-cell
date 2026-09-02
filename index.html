@@ -1863,6 +1863,11 @@ document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html
 async function openApp(user){
   currentUser=user;
   await loadGenderAndKmFactors();
+  try {
+    const __pa = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(__pa.data && __pa.data.is_admin));
+  } catch(_){}
+
   const gSel = document.getElementById("genderSelect");
   if (gSel && !gSel.dataset.bound) {
     gSel.dataset.bound = "1";
@@ -1908,5 +1913,6 @@ db.auth.onAuthStateChange(async(event,session)=>{
   if(r.data.session) await openApp(r.data.session.user);
 })();
 </script>
+  <script src="nav.js"></script>
 </body>
 </html>
