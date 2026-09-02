@@ -1466,6 +1466,109 @@
   font-size: 13px;
 }
 
+
+.wchart-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.wchart-modal.hidden { display: none !important; }
+.wchart-sheet {
+  width: min(520px, 100%);
+  max-height: min(78vh, 560px);
+  overflow: auto;
+  background: var(--card, #0d1019);
+  border: 1px solid var(--border, rgba(180,100,255,0.2));
+  border-radius: 18px 18px 14px 14px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.45);
+}
+.wchart-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.wchart-sheet-head h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+.wchart-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.wchart-tab {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.wchart-tab.active {
+  color: var(--text);
+  border-color: rgba(0, 240, 255, 0.45);
+  background: rgba(0, 240, 255, 0.1);
+}
+.wchart-stage {
+  position: relative;
+  height: 220px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(0,240,255,0.04), transparent 60%);
+  border: 1px solid rgba(180,100,255,0.12);
+  overflow: hidden;
+}
+.wchart-stage canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.wchart-tip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -120%);
+  background: rgba(13,16,25,0.92);
+  border: 1px solid rgba(0,240,255,0.35);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  z-index: 5;
+}
+.wchart-tip.show { opacity: 1; }
+.wchart-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.wchart-legend b { color: var(--text); font-weight: 800; }
+.wchart-legend .down { color: var(--positive); }
+.wchart-legend .up { color: var(--negative); }
+.wchart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 </style>
 </head>
 <body>
@@ -2160,6 +2263,32 @@ function drawWeightChart() {
     canvas.addEventListener("pointerleave", () => tip && tip.classList.remove("show"));
   }
 }
+
+
+function openWeightChartModal() {
+  const modal = document.getElementById("wchartModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  setupWeightChartTabs();
+  requestAnimationFrame(() => drawWeightChart());
+}
+function closeWeightChartModal() {
+  const modal = document.getElementById("wchartModal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+}
+(function bindWeightChartModalOnce() {
+  if (window.__wchartModalBound) return;
+  window.__wchartModalBound = true;
+  document.addEventListener("click", (e) => {
+    const modal = document.getElementById("wchartModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    if (e.target === modal) closeWeightChartModal();
+    if (e.target && e.target.id === "wchartClose") closeWeightChartModal();
+  });
+})();
 
 function setupWeightChartTabs() {
   document.querySelectorAll(".wchart-tab").forEach(btn => {
@@ -2950,7 +3079,10 @@ function initWeightStrip(strip) {
             // weight strip – standard card, no metal bars
             const weightStripHtml = `
               <div class="card weight-strip-card">
-                <div class="card-title">وزن روزانه</div>
+                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span>وزن روزانه</span>
+                  <button type="button" class="icon-btn" id="weightChartBtn" title="نمودار وزن" style="width:36px;height:36px;flex-shrink:0">📈</button>
+                </div>
                 <div class="weight-glass" id="weightGlass">
                   <div class="weight-glass-etch">HQL</div>
                 </div>
@@ -3007,24 +3139,7 @@ function initWeightStrip(strip) {
               </div>
 
               ${weightStripHtml}
-
-              <div class="card wchart-card">
-                <div class="card-title">نمودار وزن</div>
-                <div class="card-sub">ماهانه: روزانه · سالانه: میانگین هر ماه</div>
-                <div class="wchart-tabs">
-                  <button type="button" class="wchart-tab active" data-wmode="month" id="wTabMonth">ماهانه</button>
-                  <button type="button" class="wchart-tab" data-wmode="year" id="wTabYear">سالانه</button>
-                </div>
-                <div class="wchart-stage" id="wchartStage">
-                  <canvas id="wchartCanvas"></canvas>
-                  <div class="wchart-tip" id="wchartTip"></div>
-                  <div class="wchart-empty hidden" id="wchartEmpty">وزنی ثبت نشده</div>
-                </div>
-                <div class="wchart-legend" id="wchartLegend"></div>
-              </div>
-
-
-              <div class="card">
+<div class="card">
                 <div class="card-title">جدول امتیازات</div>
                 <div class="card-sub">رتبه: میانگین تا دیروز + جایزه فعالیت امروز</div>
                 ${podiumHtml}
@@ -3056,24 +3171,26 @@ function initWeightStrip(strip) {
             const wStrip = content.querySelector(".weight-strip");
             if (wStrip) initWeightStrip(wStrip);
 
-            // نمودار وزن پیشرفته
+            // داده نمودار وزن — فقط برای پاپ‌آپ
             wchartMonthPoints = buildMonthWeightPoints(weightByDay, selectedYear, selectedMonth);
-            setupWeightChartTabs();
             (async () => {
               try {
                 const uid = currentUser && currentUser.id;
                 if (uid) {
                   const yearMap = await loadYearWeights(uid, selectedYear);
                   wchartYearPoints = buildYearWeightPoints(yearMap, selectedYear);
-                } else {
-                  wchartYearPoints = [];
-                }
-              } catch (e) {
-                console.warn(e);
-                wchartYearPoints = [];
-              }
-              drawWeightChart();
+                } else wchartYearPoints = [];
+              } catch (e) { wchartYearPoints = []; }
             })();
+            const wBtn = document.getElementById("weightChartBtn");
+            if (wBtn && !wBtn.dataset.bound) {
+              wBtn.dataset.bound = "1";
+              wBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openWeightChartModal();
+              };
+            }
 
             animateNumber(document.getElementById("statTotal"), total);
             animateNumber(document.getElementById("statAvg"), avg);
@@ -3177,5 +3294,25 @@ function initWeightStrip(strip) {
         initInteractions();
     </script>
   <script src="nav.js"></script>
+
+<div class="wchart-modal hidden" id="wchartModal" aria-hidden="true">
+  <div class="wchart-sheet" role="dialog" aria-label="نمودار وزن">
+    <div class="wchart-sheet-head">
+      <h3>نمودار وزن</h3>
+      <button type="button" class="icon-btn" id="wchartClose" aria-label="بستن">✕</button>
+    </div>
+    <div class="wchart-tabs">
+      <button type="button" class="wchart-tab active" data-wmode="month" id="wTabMonth">ماهانه</button>
+      <button type="button" class="wchart-tab" data-wmode="year" id="wTabYear">سالانه</button>
+    </div>
+    <div class="wchart-stage" id="wchartStage">
+      <canvas id="wchartCanvas"></canvas>
+      <div class="wchart-tip" id="wchartTip"></div>
+      <div class="wchart-empty hidden" id="wchartEmpty">وزنی ثبت نشده</div>
+    </div>
+    <div class="wchart-legend" id="wchartLegend"></div>
+  </div>
+</div>
+
 </body>
 </html>
