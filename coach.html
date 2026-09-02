@@ -217,7 +217,22 @@
       max-width: 90vw;
     }
     .toast.show { opacity: 1; }
-  </style>
+  
+    .ctx-bar {
+      display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+      overflow-x: auto; scrollbar-width: none;
+      padding: 5px 8px; margin-bottom: 8px;
+      border-radius: 8px;
+      background: rgba(180, 76, 255, 0.08);
+      border: 1px solid rgba(180, 76, 255, 0.2);
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      line-height: 1.2; white-space: nowrap;
+    }
+    .ctx-bar::-webkit-scrollbar { display: none; }
+    .ctx-bar b { color: var(--neon2); font-weight: 700; }
+    .ctx-sep { opacity: 0.35; margin: 0 1px; }
+
+</style>
 </head>
 <body>
   <div class="page">
@@ -276,11 +291,7 @@
         <!-- مرحله ۳: نوشتن -->
         <div id="step3" class="card hidden">
           <div class="card-title">۳ · یادداشت</div>
-          <div class="summary-row">
-            <span class="pill" id="pillUser2">—</span>
-            <span class="pill" id="pillTopic">—</span>
-            <span class="pill" id="pillDay">—</span>
-          </div>
+          <div class="ctx-bar" id="ctxBar">—</div>
           <textarea id="noteBody" placeholder="نکته کوتاه..."></textarea>
           <div class="btn-row">
             <button type="button" class="btn" id="backStep2">بازگشت</button>
@@ -368,10 +379,18 @@
     document.getElementById("step3").classList.toggle("hidden", n !== 3);
     if (n === 3) {
       const t = topicInfo(selectedTopic);
-      document.getElementById("pillUser2").textContent = selectedUserName;
-      document.getElementById("pillTopic").textContent = t.icon + " " + t.title;
-      document.getElementById("pillDay").textContent =
-        fa(selectedDay) + " " + J_MONTHS[selectedMonth-1];
+      const dayBit = selectedTopic === "general"
+        ? (J_MONTHS[selectedMonth-1] + " " + fa(selectedYear))
+        : (fa(selectedDay) + " " + J_MONTHS[selectedMonth-1] + " " + fa(selectedYear));
+      const bar = document.getElementById("ctxBar");
+      if (bar) {
+        bar.innerHTML =
+          "<b>" + escapeHtml(selectedUserName) + "</b>" +
+          "<span class=\"ctx-sep\">·</span>" +
+          t.icon + " " + t.title +
+          "<span class=\"ctx-sep\">·</span>" +
+          dayBit;
+      }
       document.getElementById("sendNote").disabled = !selectedTopic;
       loadAdminNotes();
     }
