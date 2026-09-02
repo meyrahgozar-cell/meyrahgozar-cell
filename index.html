@@ -841,7 +841,7 @@ button { cursor: pointer; border: none; background: none; }
 
 .gender-opt {
   display: flex;
-  margin: 10px 0 4px;
+  margin: 10px 0 12px;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--border, rgba(180,100,255,.2));
@@ -880,11 +880,11 @@ button { cursor: pointer; border: none; background: none; }
     <form class="form" id="authForm">
       <div id="nameBox" class="hidden">
         <div class="label">نام نمایشی</div>
-        <input class="input" id="displayName" placeholder="مثلاً میراح" autocomplete="name">
         <label class="gender-opt" id="genderOpt" for="signupFemale">
           <input type="checkbox" id="signupFemale">
           <span>اما من که زن/دخترم</span>
         </label>
+        <input class="input" id="displayName" placeholder="مثلاً میراح" autocomplete="name">
       </div>
       <div class="label">ایمیل</div>
       <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
@@ -901,7 +901,7 @@ button { cursor: pointer; border: none; background: none; }
   <header class="header">
     <div class="brand">HQL</div>
     <div class="header-actions">
-      <button class="icon-btn theme-btn" id="themeButton" title="تم" aria-label="تم">
+<button class="icon-btn theme-btn" id="themeButton" title="تم" aria-label="تم">
         <img src="images/favicon.png" alt="" class="theme-icon" width="22" height="22">
       </button>
       <button class="icon-btn" id="userButton" title="کاربر">👤</button>
@@ -972,6 +972,7 @@ button { cursor: pointer; border: none; background: none; }
     <span>🏆 بهترین: <b id="streakBest">۰</b> روز</span>
   </div>
   <div class="badges-row" id="badgesRow" aria-label="نشان‌ها"></div>
+
   <div class="items" id="items"></div>
 </div>
 
@@ -981,7 +982,7 @@ button { cursor: pointer; border: none; background: none; }
 const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
@@ -990,10 +991,10 @@ let selectedDate = null;
 let todayDate = null;
 let viewYear = null;
 let viewMonth = null;
-let currentUser = null;
 let userGender = null;
 let kmFactorMale = 1;
 let kmFactorFemale = 1.15;
+let currentUser = null;
 let todayLogs = new Map();
 let exerciseLog = null;
 let mountainTrips = [];
@@ -1099,9 +1100,17 @@ function calculateScore(type,value){
 function genderKmFactor(){
   if(userGender==="female") return Number(kmFactorFemale)||1.15;
   if(userGender==="male") return Number(kmFactorMale)||1;
-  return 1; // بدون جنسیت: بدون ضریب اضافه
+  return 1;
 }
-
+function exerciseCalc(w,a,r){
+  const aerobicKm=(w/60)*0.08*a;
+  const totalKm=aerobicKm+r;
+  const factor=genderKmFactor();
+  const caloriesRaw=totalKm*w;
+  const calories=caloriesRaw*factor;
+  const score=calories<100?0:calories<300?1:calories<=600?3:5;
+  return{aerobicKm,totalKm,calories,caloriesRaw,factor,score};
+}
 async function loadGenderAndKmFactors(){
   if(!currentUser) return;
   try{
@@ -1114,24 +1123,7 @@ async function loadGenderAndKmFactors(){
       if(r.key==="km_factor_male") kmFactorMale = Number(r.value)||1;
       if(r.key==="km_factor_female") kmFactorFemale = Number(r.value)||1.15;
     });
-}catch(e){ console.warn("loadGenderAndKmFactors", e); }
-}
-async function saveUserGender(g){
-  userGender = g || null;
-  if(!currentUser || !g) return;
-  try{
-    await db.from("profiles").update({ gender: g }).eq("id", currentUser.id);
-  }catch(e){ console.warn(e); }
-}
-
-function exerciseCalc(w,a,r){
-  const aerobicKm=(w/60)*0.08*a;
-  const totalKm=aerobicKm+r;
-  const factor=genderKmFactor();
-  const caloriesRaw=totalKm*w;
-  const calories=caloriesRaw*factor;
-  const score=calories<100?0:calories<300?1:calories<=600?3:5;
-  return{aerobicKm,totalKm,calories,caloriesRaw,factor,score};
+  }catch(e){ console.warn("loadGenderAndKmFactors", e); }
 }
 
 /* ===== AUTH ===== */
@@ -1142,9 +1134,7 @@ function setMode(m){
   document.getElementById("nameBox").classList.toggle("hidden",m!=="signup");
   document.getElementById("authBtn").textContent=m==="signup"?"ساخت حساب":"ورود";
   document.getElementById("authError").textContent="";
-
-  const gf=document.getElementById("signupFemale");
-  if(gf&&m!=="signup") gf.checked=false;
+  const gf=document.getElementById("signupFemale"); if(gf&&m!=="signup") gf.checked=false;
 }
 document.getElementById("loginTab").onclick=()=>setMode("login");
 document.getElementById("signupTab").onclick=()=>setMode("signup");
@@ -1163,43 +1153,707 @@ document.getElementById("authForm").onsubmit=async e=>{
       if(!name) throw new Error("نام نمایشی را وارد کن.");
       const isFemale = !!(document.getElementById("signupFemale") && document.getElementById("signupFemale").checked);
       const gender = isFemale ? "female" : "male";
-      r=await db.auth.signUp({email,password,options:{data:{display_name:name, gender}}});
-      // پروفایل را هم مستقیم ست کن (اگر تریگر handle_new_user gender را نخواند)
-      if(r.data && r.data.user){
-        try {
-          await db.from("profiles").update({ gender }).eq("id", r.data.user.id);
-        } catch(e) {}
+      r = await db.auth.signUp({ email, password, options: { data: { display_name: name, gender } } });
+      if (r.data && r.data.user) {
+        try { await db.from("profiles").update({ gender }).eq("id", r.data.user.id); } catch (e) {}
         userGender = gender;
       }
-    } else {
-      r = await db.auth.signInWithPassword({ email, password });
+    }else{
+      r=await db.auth.signInWithPassword({email,password});
     }
-    if (r.error) throw r.error;
-    if (r.data.session) await openApp(r.data.session.user);
+    if(r.error) throw r.error;
+    if(r.data.session) await openApp(r.data.session.user);
     else showToast("حساب ساخته شد.");
-  } catch (x) {
-    const map = {
-      "Invalid login credentials": "ایمیل یا رمز اشتباه است.",
-      "User already registered": "این ایمیل قبلاً ثبت شده.",
-      "Password should be at least 6 characters": "رمز باید حداقل ۶ کاراکتر باشد.",
-      "Unable to validate email address: invalid format": "فرمت ایمیل نامعتبر است."
+  }catch(x){
+    const map={"Invalid login credentials":"ایمیل یا رمز اشتباه است.","User already registered":"این ایمیل قبلاً ثبت شده.","Password should be at least 6 characters.":"رمز حداقل ۶ کاراکتر."};
+    err.textContent=map[x.message]||x.message;
+  }finally{ btn.disabled=false; }
+};
+
+/* ===== CALENDAR TOGGLE ===== */
+document.getElementById("calToggle").onclick=()=>{
+  calOpen=!calOpen;
+  document.getElementById("calWrap").classList.toggle("open",calOpen);
+};
+
+
+function prevDayISO(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  return isoDate(dt);
+}
+function updateDayContext() {
+  const el = document.getElementById("dayContext");
+  const tx = document.getElementById("dayContextText");
+  const btnY = document.getElementById("btnYesterday");
+  if (!el || !tx) return;
+
+  const lag = daysBetweenISO(selectedDate, todayDate);
+  // lag 0 = today, 1 = yesterday, >1 = older past, <0 = future
+
+  const btnT = document.getElementById("btnToday");
+  if (btnY) {
+    const yest = prevDayISO(todayDate);
+    btnY.classList.toggle("hidden", selectedDate === yest);
+  }
+  if (btnT) {
+    // وقتی روی امروز نیستی، دکمه برگشت به امروز
+    btnT.classList.toggle("hidden", selectedDate === todayDate);
+  }
+
+  el.classList.remove("show", "yesterday", "past");
+  if (lag === 1) {
+    el.classList.add("show", "yesterday");
+    tx.textContent = "در حال پر کردن روز قبل · ارفاق نظم هنوز فعاله";
+  } else if (lag > 1) {
+    el.classList.add("show", "past");
+    tx.textContent = "روز دیگری غیر از امروز · برای این روز امتیاز نظم تعلق نمی‌گیرد";
+  } else if (lag < 0) {
+    el.classList.add("show", "past");
+    tx.textContent = "روز آینده — هنوز قابل ثبت نیست";
+  }
+  // today: no banner
+}
+
+function updateCalLabel(){
+  const label=selectedDate===todayDate ? "امروز" : jalaliLabel(selectedDate);
+  document.getElementById("calDateLabel").textContent=label;
+  updateDayContext();
+}
+
+/* ===== SHAMSI CALENDAR ===== */
+function renderCalendar(){
+  document.getElementById("calTitle").textContent=J_MONTHS[viewMonth-1]+" "+fa(viewYear);
+
+  const g=jalaali.toGregorian(viewYear,viewMonth,1);
+  const first=new Date(Date.UTC(g.gy,g.gm-1,g.gd));
+  let startOffset=(first.getUTCDay()+1)%7;
+
+  const daysInMonth=jalaali.jalaaliMonthLength(viewYear,viewMonth);
+  const container=document.getElementById("calDays");
+  container.innerHTML="";
+
+  for(let i=0;i<startOffset;i++){
+    const e=document.createElement("div");
+    e.className="day empty";
+    container.appendChild(e);
+  }
+
+  for(let d=1;d<=daysInMonth;d++){
+    const btn=document.createElement("button");
+    btn.className="day";
+    btn.textContent=fa(d);
+
+    const gDay=jalaali.toGregorian(viewYear,viewMonth,d);
+    const iso=isoDate(new Date(Date.UTC(gDay.gy,gDay.gm-1,gDay.gd)));
+
+    if(iso===todayDate) btn.classList.add("today");
+    if(iso===selectedDate) btn.classList.add("selected");
+    if(iso>todayDate) btn.classList.add("future");
+
+    btn.onclick=()=>{
+      if(iso>todayDate) return;
+      selectedDate=iso;
+      updateCalLabel();
+      loadDayData();
+      renderCalendar();
+      // auto collapse after select
+      calOpen=false;
+      document.getElementById("calWrap").classList.remove("open");
     };
-    err.textContent = map[x.message] || x.message || "خطا";
-  } finally {
-    btn.disabled = false;
+    container.appendChild(btn);
+  }
+}
+
+document.getElementById("prevMonth").onclick=e=>{
+  e.stopPropagation();
+  viewMonth--;
+  if(viewMonth<1){ viewMonth=12; viewYear--; }
+  renderCalendar();
+};
+document.getElementById("nextMonth").onclick=e=>{
+  e.stopPropagation();
+  viewMonth++;
+  if(viewMonth>12){ viewMonth=1; viewYear++; }
+  renderCalendar();
+};
+
+/* ===== RENDER ITEMS ===== */
+function renderItems(){
+  const c=document.getElementById("items");
+  c.innerHTML="";
+
+  ITEMS.forEach(item=>{
+    const card=document.createElement("article");
+    card.className="item";
+    const log=todayLogs.get(item.type);
+    const sc=log?Number(log.score):0;
+
+    let body="";
+    if(item.options){
+      body=`<div class="options">${item.options.map(([label,val])=>{
+        const active=log&&Number(log.value)===val?"active":"";
+        return `<button class="opt ${active}" data-val="${val}">${label}</button>`;
+      }).join("")}</div>`;
+    }else if(item.time){
+      const t=log?minutesToTime(Number(log.value)):"";
+      body=`<input type="time" class="time-input" value="${t}">`;
+    }else if(item.input){
+      const v=log?log.value:"";
+      body=`<div class="input-row">
+        <input type="number" inputmode="numeric" placeholder="${item.placeholder||""}" value="${v||""}">
+        <button class="small-primary save-btn">ثبت</button>
+      </div>`;
+    }
+
+    card.innerHTML=`
+      <div class="item-top">
+        <div>
+          <div class="item-name"><span>${item.icon}</span>${item.title}</div>
+          <div class="item-desc">${item.desc}</div>
+        </div>
+        <div class="item-score ${sc>0?"positive":sc<0?"negative":""}">${sc?(sc>0?"+":"")+scoreText(sc):""}</div>
+      </div>${body}`;
+    c.appendChild(card);
+
+    if(item.options){
+      card.querySelectorAll(".opt").forEach(btn=>{
+        btn.onclick=e=>saveDailyLog(item.type,Number(btn.dataset.val),e);
+      });
+    }else if(item.time){
+      const inp=card.querySelector("input");
+      inp.onchange=e=>{
+        const mins=toMinutes(inp.value);
+        if(mins!=null) saveDailyLog(item.type,mins,e);
+      };
+    }else if(item.input){
+      const inp=card.querySelector("input");
+      card.querySelector(".save-btn").onclick=e=>{
+        const val=Number(inp.value);
+        if(isNaN(val)||val<0) return showToast("عدد معتبر وارد کن.");
+        saveDailyLog(item.type,val,e);
+      };
+    }
+  });
+
+  renderExercise(c);
+  renderMountain(c);
+}
+
+function renderExercise(c){
+  const card=document.createElement("article");
+  card.className="item";
+  card.dataset.full="1";
+  const w=exerciseLog?.weight_kg??"";
+  const a=exerciseLog?.aerobic_minutes??"";
+  const r=exerciseLog?.running_km??"";
+  const sc=exerciseLog?Number(exerciseLog.score):0;
+
+  card.innerHTML=`
+    <div class="item-top">
+      <div>
+        <div class="item-name"><span>🏃</span>ورزش</div>
+        <div class="item-desc">وزن + هوازی + دویدن</div>
+      </div>
+      <div class="item-score ${sc>0?"positive":""}" id="exScore">${sc?"+"+scoreText(sc):""}</div>
+    </div>
+    <div class="exercise-grid">
+      <div><label>وزن (کیلو)</label><input type="number" step="0.1" id="exW" class="time-input" value="${w}" placeholder="۷۲"></div>
+      <div><label>هوازی (دقیقه)</label><input type="number" id="exA" class="time-input" value="${a}" placeholder="۰"></div>
+      <div><label>دویدن (کیلومتر)</label><input type="number" step="0.1" id="exR" class="time-input" value="${r}" placeholder="۰"></div>
+    </div>
+    <div class="exercise-stats" id="exPreview"></div>
+    <button class="small-primary" style="width:100%" id="saveEx">ثبت ورزش</button>`;
+  c.appendChild(card);
+
+  const preview=()=>{
+    const ww=Number(document.getElementById("exW").value);
+    const aa=Number(document.getElementById("exA").value)||0;
+    const rr=Number(document.getElementById("exR").value)||0;
+    if(!ww||ww<=0){ document.getElementById("exPreview").innerHTML=""; return; }
+    const x=exerciseCalc(ww,aa,rr);
+    document.getElementById("exPreview").innerHTML=
+      `<span>معادل: <b>${fa(x.aerobicKm.toFixed(2))} km</b></span>
+       <span>کل: <b>${fa(x.totalKm.toFixed(2))} km</b></span>
+       <span>کالری: <b>${fa(Math.round(x.calories))}</b></span>`;
+  };
+  ["exW","exA","exR"].forEach(id=>document.getElementById(id).oninput=preview);
+  preview();
+  document.getElementById("saveEx").onclick=saveExercise;
+}
+
+function renderMountain(c){
+  const card=document.createElement("article");
+  card.className="item";
+  card.dataset.full="1";
+  const count=mountainTrips.length;
+  const hasToday=mountainTrips.some(t=>t.trip_date===selectedDate);
+
+  card.innerHTML=`
+    <div class="item-top">
+      <div>
+        <div class="item-name"><span>⛰️</span>کوهنوردی</div>
+        <div class="item-desc">حداکثر ۳ بار در ماه</div>
+      </div>
+      <div class="item-score positive">${count?"+"+scoreText(count>=3?1:0):""}</div>
+    </div>
+    <button class="small-primary" style="width:100%" id="saveMt" ${hasToday?"disabled":""}>
+      ${hasToday?"امروز ثبت شده":"امروز رفتم"}
+    </button>
+    <div class="mountain-status">این ماه ${fa(count)} از ۳ بار</div>`;
+  c.appendChild(card);
+  document.getElementById("saveMt").onclick=saveMountain;
+}
+
+/* ===== DATA ===== */
+
+
+/* ===== نشان‌ها (هفتگی / ماهانه) =====
+   روز خوب: امتیاز روز >= 7
+   هفته خوب: میانگین روزهای آن هفته >= 7 و حداقل 5 روز فعال
+   ماه خوب: میانگین روزهای فعال ماه >= 7 و حداقل 15 روز فعال
+   ماه درخشان: میانگین >= 10 و حداقل 20 روز فعال
+*/
+const BADGE_DEFS = {
+  w1: {
+    id: "w1", emoji: "🌿", title: "هفتهٔ اول", cls: "week1",
+    body: "یک هفته با میانگین روزانه حداقل ۷ امتیاز و دست‌کم ۵ روز فعال. شروع مسیر مداوم."
+  },
+  w2: {
+    id: "w2", emoji: "⚡", title: "دو هفته پشت‌سرهم", cls: "week2",
+    body: "دو هفتهٔ متوالی که هر کدام میانگین ≥ ۷ و حداقل ۵ روز فعال داشته‌اند. ثبات داری."
+  },
+  w3: {
+    id: "w3", emoji: "🔥", title: "سه هفته فولادی", cls: "week3",
+    body: "سه هفتهٔ متوالی با همان معیار. این یعنی نظم واقعی — کمیاب و ارزشمند."
+  },
+  m1: {
+    id: "m1", emoji: "🌙", title: "ماه خوب", cls: "month",
+    body: "در ماه جاری (یا آخرین ماه کامل): میانگین روزهای فعال ≥ ۷ و حداقل ۱۵ روز ثبت."
+  },
+  m2: {
+    id: "m2", emoji: "💎", title: "ماه درخشان", cls: "month",
+    body: "میانگین روزهای فعال ≥ ۱۰ و حداقل ۲۰ روز ثبت در ماه. سطح بالای کیفیت زندگی."
   }
 };
 
-async function openApp(user) {
+function shamsiWeekKey(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const j = jalaali.toJalaali(y, m, d);
+  // شنبه = شروع هفته شمسی تقریبی: day of week from gregorian
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  // JS: 0=Sun ... 6=Sat. ایرانی: شنبه شروع → shift
+  const dow = dt.getUTCDay(); // 0 Sun
+  // days since Saturday: Sat=6 → 0, Sun=0 → 1, ... Fri=5 → 6
+  const sinceSat = (dow + 1) % 7;
+  const start = new Date(dt);
+  start.setUTCDate(start.getUTCDate() - sinceSat);
+  return start.toISOString().slice(0, 10);
+}
+
+async function updateBadges() {
+  const row = document.getElementById("badgesRow");
+  if (!row || !currentUser) return;
+
+  try {
+    const [logs, ex] = await Promise.all([
+      db.from("daily_logs").select("log_date, score").eq("user_id", currentUser.id),
+      db.from("exercise_logs").select("log_date, score").eq("user_id", currentUser.id)
+    ]);
+
+    const dayScore = {};
+    (logs.data || []).forEach(r => {
+      if (!r.log_date) return;
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+    (ex.data || []).forEach(r => {
+      if (!r.log_date) return;
+      dayScore[r.log_date] = (dayScore[r.log_date] || 0) + (Number(r.score) || 0);
+    });
+
+    // weeks: map weekStart → { sum, days: Set }
+    const weeks = {};
+    Object.keys(dayScore).forEach(iso => {
+      const wk = shamsiWeekKey(iso);
+      if (!weeks[wk]) weeks[wk] = { sum: 0, n: 0 };
+      weeks[wk].sum += dayScore[iso];
+      weeks[wk].n += 1;
+    });
+
+    const isGoodWeek = (w) => w && w.n >= 5 && (w.sum / w.n) >= 7;
+
+    // consecutive good weeks ending at most recent week that has data or current week
+    const weekStarts = Object.keys(weeks).sort();
+    // build timeline of last ~12 week starts from today backwards
+    const timeline = [];
+    let cur = shamsiWeekKey(todayDate);
+    for (let i = 0; i < 16; i++) {
+      timeline.push(cur);
+      // prev week = cur - 7 days
+      const [y, m, d] = cur.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      dt.setUTCDate(dt.getUTCDate() - 7);
+      cur = dt.toISOString().slice(0, 10);
+    }
+
+    let streakWeeks = 0;
+    for (const wk of timeline) {
+      if (isGoodWeek(weeks[wk])) streakWeeks++;
+      else {
+        // allow current incomplete week to skip if not good yet
+        if (wk === shamsiWeekKey(todayDate) && !isGoodWeek(weeks[wk])) continue;
+        break;
+      }
+    }
+
+    const earned = {
+      w1: streakWeeks >= 1,
+      w2: streakWeeks >= 2,
+      w3: streakWeeks >= 3,
+      m1: false,
+      m2: false
+    };
+
+    // current shamsi month
+    const jNow = jalaali.toJalaali(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
+    const monthDays = jalaali.jalaaliMonthLength(jNow.jy, jNow.jm);
+    let mSum = 0, mN = 0;
+    for (let d = 1; d <= monthDays; d++) {
+      const g = jalaali.toGregorian(jNow.jy, jNow.jm, d);
+      const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
+      if (iso > todayDate) break;
+      if (dayScore[iso] !== undefined) {
+        mSum += dayScore[iso];
+        mN++;
+      }
+    }
+    const mAvg = mN ? mSum / mN : 0;
+    earned.m1 = mN >= 15 && mAvg >= 7;
+    earned.m2 = mN >= 20 && mAvg >= 10;
+
+    const order = ["w1", "w2", "w3", "m1", "m2"];
+    row.innerHTML = order.map(id => {
+      const b = BADGE_DEFS[id];
+      const on = earned[id];
+      return `<button type="button" class="badge-chip ${b.cls} ${on ? "" : "locked"}" data-badge="${id}">
+        <span>${b.emoji}</span><span>${b.title}</span>
+      </button>`;
+    }).join("");
+
+    row.querySelectorAll("[data-badge]").forEach(btn => {
+      btn.onclick = () => showBadgeModal(btn.dataset.badge, earned[btn.dataset.badge]);
+    });
+  } catch (e) {
+    console.warn("updateBadges", e);
+  }
+}
+
+function showBadgeModal(id, earned) {
+  const b = BADGE_DEFS[id];
+  if (!b) return;
+  const status = earned
+    ? "این نشان را داری ✓"
+    : "هنوز باز نشده — با ادامهٔ مسیر می‌گیری.";
+  const overlay = document.createElement("div");
+  overlay.className = "badge-modal-overlay";
+  overlay.innerHTML = `
+    <div class="badge-modal">
+      <div class="badge-modal-emoji">${b.emoji}</div>
+      <div class="badge-modal-title">${b.title}</div>
+      <div class="badge-modal-body">${b.body}<br><br><strong style="color:var(--neon2)">${status}</strong></div>
+      <button type="button" class="badge-modal-close">باشه</button>
+    </div>`;
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  overlay.querySelector(".badge-modal-close").onclick = close;
+  document.body.appendChild(overlay);
+}
+
+
+async function updateStreaks() {
+  if (!currentUser) return;
+  const elC = document.getElementById("streakCurrent");
+  const elB = document.getElementById("streakBest");
+  if (!elC || !elB) return;
+
+  try {
+    const [logs, ex, mt] = await Promise.all([
+      db.from("daily_logs").select("log_date").eq("user_id", currentUser.id),
+      db.from("exercise_logs").select("log_date").eq("user_id", currentUser.id),
+      db.from("mountain_trips").select("trip_date").eq("user_id", currentUser.id)
+    ]);
+
+    const days = new Set();
+    (logs.data || []).forEach(r => { if (r.log_date) days.add(r.log_date); });
+    (ex.data || []).forEach(r => { if (r.log_date) days.add(r.log_date); });
+    (mt.data || []).forEach(r => { if (r.trip_date) days.add(r.trip_date); });
+
+    // تداوم فعلی: از امروز (یا اگر امروز خالی است از دیروز) به عقب
+    let current = 0;
+    let cursor = todayDate;
+    if (!days.has(cursor)) cursor = prevDayISO(cursor);
+    while (days.has(cursor)) {
+      current++;
+      cursor = prevDayISO(cursor);
+    }
+
+    // بهترین تداوم: بلندترین زنجیره متوالی
+    const sorted = [...days].sort();
+    let best = 0, run = 0, prev = null;
+    for (const day of sorted) {
+      if (prev && daysBetweenISO(prev, day) === 1) run++;
+      else run = 1;
+      if (run > best) best = run;
+      prev = day;
+    }
+
+    elC.textContent = fa(current);
+    elB.textContent = fa(best);
+  } catch (e) {
+    console.warn("updateStreaks", e);
+  }
+}
+
+async function loadDayData(){
+  if(!currentUser||!selectedDate) return;
+
+  const [logs,ex,mt,pen]=await Promise.all([
+    db.from("daily_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate),
+    db.from("exercise_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle(),
+    db.from("mountain_trips").select("id,trip_date").eq("user_id",currentUser.id)
+      .gte("trip_date",monthRangeISO(selectedDate).start)
+      .lte("trip_date",monthRangeISO(selectedDate).end),
+    db.from("daily_penalties").select("score").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle()
+  ]);
+
+  todayLogs=new Map((logs.data||[]).map(r=>[r.item_type,r]));
+  exerciseLog=ex.data||null;
+  mountainTrips=mt.data||[];
+  latePenalty=pen.data?.score||0;
+
+  updateScoreUI();
+  renderItems();
+  updateStreaks();
+  updateBadges();
+}
+
+
+function animateScore(el, target){
+  const start = Number(el.dataset.val || 0);
+  const end = Number(target) || 0;
+  el.dataset.val = end;
+  const dur = 700;
+  const t0 = performance.now();
+  function frame(now){
+    const p = Math.min(1, (now - t0) / dur);
+    // easeOutCubic
+    const e = 1 - Math.pow(1 - p, 3);
+    const cur = start + (end - start) * e;
+    el.textContent = scoreText(Math.round(cur * 100) / 100);
+    if(p < 1) requestAnimationFrame(frame);
+    else el.textContent = scoreText(end);
+  }
+  requestAnimationFrame(frame);
+}
+
+function updateScoreUI(){
+  let total=0, count=0;
+  todayLogs.forEach((l, type)=>{
+    total+=Number(l.score)||0;
+    if(type!=="discipline") count++;
+  });
+  if(exerciseLog){ total+=Number(exerciseLog.score)||0; count++; }
+
+  const mBonus=mountainTrips.length>=3?1:0;
+  total+=mBonus;
+  total+=Number(latePenalty)||0;
+
+  const el=document.getElementById("score");
+  el.classList.toggle("positive",total>0);
+  el.classList.toggle("negative",total<0);
+  animateScore(el, total);
+  const bar=document.getElementById("scoreBar");
+  if(bar){
+    // max theoretical ~20; map to bar width
+    const pct=Math.min(100, Math.max(0, (Math.abs(total)/20)*100));
+    bar.classList.remove("positive","negative");
+    if(total>0) bar.classList.add("positive");
+    else if(total<0) bar.classList.add("negative");
+    // reset then fill for animation
+    bar.style.width="0%";
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{ bar.style.width=pct+"%"; });
+    });
+  }
+
+  document.getElementById("itemsCount").textContent=fa(count)+" از ۱۰ آیتم";
+
+  const discEl=document.getElementById("disciplineBadge");
+  if(discEl){
+    const has=todayLogs.has("discipline")&&Number(todayLogs.get("discipline")?.score)>0;
+    discEl.textContent=has?"نظم +۱":"";
+    discEl.style.color=has?"var(--positive)":"";
+    discEl.style.fontSize="12px";
+    discEl.style.fontWeight="700";
+  }
+  document.getElementById("latePenalty").textContent=latePenalty?`جریمه: ${scoreText(latePenalty)}`:"";
+  document.getElementById("mountainBonus").textContent=mBonus?`سهم کوه: +${scoreText(mBonus)}`:"";
+}
+
+/* ===== SAVE ===== */
+
+/* ===== نظم (مراجعه به‌موقع) — ارفاق یک‌روزه =====
+   امتیاز +۱ برای روز D اگر دادهٔ آن روز در خودِ روز D یا روز D+1 ثبت شود.
+   دیرتر از یک روز → بدون امتیاز نظم.
+*/
+function daysBetweenISO(a, b) {
+  // a, b: YYYY-MM-DD → تعداد روز تقویمی (b - a)
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  const ua = Date.UTC(ay, am - 1, ad);
+  const ub = Date.UTC(by, bm - 1, bd);
+  return Math.round((ub - ua) / 86400000);
+}
+function isTimelyLog(logDate) {
+  if (!logDate || !todayDate) return false;
+  if (logDate > todayDate) return false;
+  const lag = daysBetweenISO(logDate, todayDate); // 0 = همان روز، 1 = فردا برای دیروز
+  return lag === 0 || lag === 1;
+}
+async function ensureDisciplineBonus(logDate) {
+  if (!isTimelyLog(logDate)) return null;
+  // اگر از قبل ثبت شده، دست نزن
+  if (logDate === selectedDate && todayLogs.has("discipline")) {
+    const existing = todayLogs.get("discipline");
+    if (Number(existing?.score) > 0) return existing;
+  }
+  try {
+    const q = await db.rpc("save_daily_log", {
+      p_log_date: logDate,
+      p_item_type: "discipline",
+      p_value: 1,
+      p_score: 1
+    });
+    if (q.error) return null;
+    if (logDate === selectedDate && q.data) {
+      todayLogs.set("discipline", q.data);
+    }
+    return q.data;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function saveDailyLog(type,value,e){
+  if(type==="discipline") return; // فقط سیستمی
+  const score=calculateScore(type,value);
+  const old=Number(todayLogs.get(type)?.score||0);
+  const q=await db.rpc("save_daily_log",{
+    p_log_date:selectedDate, p_item_type:type, p_value:value, p_score:score
+  });
+  if(q.error) return showToast("خطا: "+q.error.message);
+  todayLogs.set(type,q.data);
+  const disc = await ensureDisciplineBonus(selectedDate);
+  const discNew = disc && !old && isTimelyLog(selectedDate);
+  updateScoreUI();
+  renderItems();
+  if(e) floatingScore(score-old,e.clientX,e.clientY);
+  if(isTimelyLog(selectedDate) && todayLogs.has("discipline")) {
+    showToast("ثبت شد ✓ · نظم +۱");
+  } else {
+    showToast("ثبت شد ✓");
+  }
+  updateStreaks();
+}
+
+async function saveExercise(e){
+  const w=Number(document.getElementById("exW").value);
+  const a=Number(document.getElementById("exA").value)||0;
+  const r=Number(document.getElementById("exR").value)||0;
+  if(!w||w<=0) return showToast("وزن معتبر وارد کن.");
+  const x=exerciseCalc(w,a,r);
+  const old=Number(exerciseLog?.score||0);
+  const q=await db.rpc("save_exercise_log",{
+    p_log_date:selectedDate, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
+  });
+  if(q.error) return showToast("خطا: "+q.error.message);
+  exerciseLog=q.data;
+  await ensureDisciplineBonus(selectedDate);
+  updateScoreUI();
+  renderItems();
+  floatingScore(x.score-old,e.clientX,e.clientY);
+  showToast(isTimelyLog(selectedDate) ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
+  updateStreaks();
+}
+
+async function saveMountain(){
+  if(selectedDate>todayDate) return showToast("آینده هنوز نرسیده.");
+  const range=monthRangeISO(selectedDate);
+  const q=await db.rpc("save_mountain_trip",{
+    p_trip_date:selectedDate, p_month_start:range.start, p_month_end:range.end
+  });
+  if(q.error) return showToast(q.error.message);
+  await ensureDisciplineBonus(selectedDate);
+  await loadDayData();
+  showToast(isTimelyLog(selectedDate) ? "کوهنوردی ثبت شد ✓ · نظم +۱" : "کوهنوردی ثبت شد ✓");
+}
+
+/* ===== HEADER ===== */
+document.getElementById("userButton").onclick=()=>document.getElementById("menu").classList.toggle("hidden");
+document.addEventListener("click",e=>{
+  const m=document.getElementById("menu"), b=document.getElementById("userButton");
+  if(!m.contains(e.target)&&e.target!==b) m.classList.add("hidden");
+});
+document.getElementById("logoutButton").onclick=()=>db.auth.signOut();
+document.getElementById("themeButton").onclick=()=>{
+  if (Math.random() < 0.2) {
+    showToast("خالی بندی پر نکنیداااا 😈");
+  } else {
+    showToast("تم نئون سایبرپانک 💜");
+  }
+};
+
+document.getElementById("btnYesterday")?.addEventListener("click", async () => {
+  const yest = prevDayISO(todayDate);
+  selectedDate = yest;
+  const parts = yest.split("-").map(Number);
+  const jj = jalaali.toJalaali(parts[0], parts[1], parts[2]);
+  viewYear = jj.jy;
+  viewMonth = jj.jm;
+  updateCalLabel();
+  renderCalendar();
+  await loadDayData();
+});
+document.getElementById("btnToday")?.addEventListener("click", async () => {
+  selectedDate = todayDate;
+  const parts = todayDate.split("-").map(Number);
+  const jj = jalaali.toJalaali(parts[0], parts[1], parts[2]);
+  viewYear = jj.jy;
+  viewMonth = jj.jm;
+  updateCalLabel();
+  renderCalendar();
+  await loadDayData();
+});
+
+document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
+document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
+
+/* ===== OPEN ===== */
+async function openApp(user){
   currentUser = user;
   await loadGenderAndKmFactors();
-  const now = new Date();
-  todayDate = isoDate(now);
-  selectedDate = todayDate;
+  try {
+    const __pa = await db.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(__pa.data && __pa.data.is_admin));
+  } catch(_){}
+  const now=new Date();
+  todayDate=isoDate(now);
+  selectedDate=todayDate;
 
-  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  viewYear = j.jy;
-  viewMonth = j.jm;
+  const j=jalaali.toJalaali(now.getFullYear(),now.getMonth()+1,now.getDate());
+  viewYear=j.jy;
+  viewMonth=j.jm;
 
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
@@ -1209,7 +1863,9 @@ async function openApp(user) {
   await loadDayData();
   try {
     const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
-    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(pr.data && pr.data.is_admin));
+    const adminBtn = document.getElementById("adminButton");
+    if (adminBtn && pr.data && pr.data.is_admin) adminBtn.classList.remove("hidden");
+    else if (adminBtn) adminBtn.classList.add("hidden");
   } catch (e) {}
 }
 
@@ -1217,7 +1873,6 @@ db.auth.onAuthStateChange(async(event,session)=>{
   if(session&&(event==="SIGNED_IN"||event==="INITIAL_SESSION")) await openApp(session.user);
   if(event==="SIGNED_OUT"){
     document.getElementById("app").classList.add("hidden");
-    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
     document.getElementById("authPage").classList.remove("hidden");
     setMode("login");
   }
