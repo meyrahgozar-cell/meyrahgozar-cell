@@ -190,8 +190,32 @@
     textarea:focus { outline: none; border-color: var(--neon); }
 
     .note {
-      padding: 10px; border-radius: 10px; background: var(--card2);
-      border: 1px solid var(--border); margin-bottom: 6px;
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      background: linear-gradient(155deg, rgba(24,28,42,0.98), rgba(13,16,25,0.95));
+      border: 1px solid rgba(180,100,255,0.16);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      margin-bottom: 10px;
+    }
+    .note-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .note-topic {
+      color: var(--neon2);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .note-body {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text);
+      white-space: pre-wrap;
     }
     .note-meta {
       display: flex; justify-content: space-between; gap: 6px;
@@ -374,6 +398,39 @@
   padding: 40px 12px;
 }
 
+
+.wheel-day-picker {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 2px 10px;
+  margin-bottom: 2px;
+}
+.wheel-day-picker::-webkit-scrollbar { display: none; }
+.wheel-day-chip {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s, box-shadow .15s;
+}
+.wheel-day-chip.active {
+  color: #05060a;
+  background: linear-gradient(135deg, #00f0ff, #7cf0ff);
+  border-color: transparent;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+}
+
 </style>
 </head>
 <body>
@@ -452,6 +509,9 @@
       <div class="card wheel-section hidden" id="wheelSection">
         <div class="card-title">گردونه نظرات</div>
         <div class="card-sub">اسکرول کن · هر کارت یک نظر · بزن برای ادامهٔ کامنت همان شاگرد</div>
+        <div class="wheel-day-picker" id="wheelDayPicker">
+          <button type="button" class="wheel-day-chip active" data-day="all">همه</button>
+        </div>
         <div class="wheel-shell" id="wheelShell">
           <div class="wheel-track" id="wheelTrack">
             <div class="wheel-list" id="wheelList"></div>
@@ -1048,6 +1108,9 @@
 
   /* ===== گردونه نظرات (AJAX-like، ۱۰تایی) ===== */
   let wheelOffset = 0;
+  let wheelDayFilter = "all"; // all | YYYY-MM-DD
+  let wheelAllRows = []; // کش برای فیلتر روز
+
   const WHEEL_PAGE = 10;
   let wheelLoading = false;
   let wheelDone = false;
@@ -1061,6 +1124,62 @@
     } catch (_) {
       return "";
     }
+  }
+
+  
+  function noteDayKey(iso) {
+    try {
+      const d = new Date(iso);
+      const y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+      return y + "-" + String(m).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    } catch (_) { return ""; }
+  }
+
+  function rebuildWheelDayPicker() {
+    const box = document.getElementById("wheelDayPicker");
+    if (!box) return;
+    const days = [];
+    const seen = new Set();
+    wheelAllRows.forEach(n => {
+      const k = noteDayKey(n.created_at);
+      if (k && !seen.has(k)) { seen.add(k); days.push(k); }
+    });
+    days.sort((a,b) => a < b ? 1 : -1);
+    const chips = [`<button type="button" class="wheel-day-chip ${wheelDayFilter==="all"?"active":""}" data-day="all">همه</button>`];
+    days.slice(0, 31).forEach(k => {
+      const [y,m,d] = k.split("-").map(Number);
+      let label = String(d);
+      try {
+        const j = jalaali.toJalaali(y,m,d);
+        label = faNumber(j.jd);
+      } catch(_) {}
+      chips.push(`<button type="button" class="wheel-day-chip ${wheelDayFilter===k?"active":""}" data-day="${k}">${label}</button>`);
+    });
+    box.innerHTML = chips.join("");
+    box.querySelectorAll(".wheel-day-chip").forEach(btn => {
+      btn.onclick = () => {
+        wheelDayFilter = btn.dataset.day || "all";
+        box.querySelectorAll(".wheel-day-chip").forEach(b => b.classList.toggle("active", b === btn));
+        applyWheelDayFilter();
+      };
+    });
+  }
+
+  function applyWheelDayFilter() {
+    const list = document.getElementById("wheelList");
+    if (!list) return;
+    const filtered = wheelDayFilter === "all"
+      ? wheelAllRows
+      : wheelAllRows.filter(n => noteDayKey(n.created_at) === wheelDayFilter);
+    list.innerHTML = "";
+    if (!filtered.length) {
+      list.innerHTML = `<div class="wheel-empty">نظری در این روز نیست</div>`;
+      return;
+    }
+    renderWheelCards(filtered, false);
+    const track = document.getElementById("wheelTrack");
+    if (track) track.scrollTop = 0;
+    clearWheelGlow();
   }
 
   function applyWheelTransforms() {
@@ -1085,19 +1204,34 @@
   function wheelGlowFromSpeed(speed) {
     const shell = document.getElementById("wheelShell");
     if (!shell) return;
-    const heat = Math.min(1, Math.abs(speed) / 40);
-    if (heat > 0.08) {
-      shell.classList.add("glow");
-      const a = (0.15 + heat * 0.55).toFixed(2);
-      const b = (0.08 + heat * 0.4).toFixed(2);
-      const blur = (12 + heat * 36).toFixed(0);
-      shell.style.boxShadow =
-        `0 0 ${blur}px rgba(0, 240, 255, ${a}), 0 0 ${blur * 2}px rgba(0, 200, 255, ${b}), inset 0 0 ${10 + heat * 20}px rgba(0, 240, 255, ${0.06 + heat * 0.2})`;
-    } else {
+    if (!window._wheelHeat) window._wheelHeat = 0;
+    const target = Math.min(1, Math.abs(speed) / 40);
+    // فقط با حرکت واقعی داغ می‌شود؛ در توقف سریع سرد می‌شود
+    if (target > window._wheelHeat) window._wheelHeat = target;
+    else window._wheelHeat *= 0.86;
+    if (window._wheelHeat < 0.05) {
+      window._wheelHeat = 0;
       shell.classList.remove("glow");
       shell.style.boxShadow = "";
+      return;
     }
+    shell.classList.add("glow");
+    const heat = window._wheelHeat;
+    const a = (0.12 + heat * 0.5).toFixed(2);
+    const b = (0.06 + heat * 0.35).toFixed(2);
+    const blur = (10 + heat * 32).toFixed(0);
+    shell.style.boxShadow =
+      `0 0 ${blur}px rgba(0, 240, 255, ${a}), 0 0 ${blur * 2}px rgba(0, 200, 255, ${b}), inset 0 0 ${8 + heat * 16}px rgba(0, 240, 255, ${0.05 + heat * 0.18})`;
   }
+
+  function clearWheelGlow() {
+    window._wheelHeat = 0;
+    const shell = document.getElementById("wheelShell");
+    if (!shell) return;
+    shell.classList.remove("glow");
+    shell.style.boxShadow = "";
+  }
+
 
   async function ensureWheelNames(userIds) {
     const missing = userIds.filter(id => id && !wheelNameMap[id]);
@@ -1119,14 +1253,16 @@
       const ti = topicInfo(n.topic);
       const parsed = parseNoteBody(n.body);
       const body = (parsed && parsed.text) ? parsed.text : (n.body || "");
-      const topicLabel = (ti && ti.label) ? ti.label : (n.topic || "عمومی");
-      return `<div class="wheel-card" data-uid="${n.user_id || ""}" data-name="${name.replace(/"/g, "&quot;")}">
-        <div class="wc-top">
-          <span class="wc-name">${name}</span>
-          <span class="wc-topic">${topicLabel}</span>
+      const topicLabel = (ti && (ti.title || ti.label)) ? (ti.title || ti.label) : (n.topic || "عمومی");
+      const icon = (ti && ti.icon) ? ti.icon : "💬";
+      const ctx = (typeof renderCtxBar === "function") ? renderCtxBar(parsed && parsed.ctx) : "";
+      return `<div class="wheel-card note" data-uid="${n.user_id || ""}" data-name="${String(name).replace(/"/g, "&quot;")}">
+        <div class="note-meta">
+          <span class="note-topic">${icon} ${topicLabel} · ${name}</span>
+          <span>${faDate(n.created_at)}</span>
         </div>
-        <div class="wc-body">${body.replace(/</g, "&lt;")}</div>
-        <div class="wc-date">${faDate(n.created_at)}</div>
+        ${ctx || ""}
+        <div class="note-body">${String(body).replace(/</g, "&lt;")}</div>
       </div>`;
     }).join("");
     list.insertAdjacentHTML("beforeend", html);
@@ -1152,7 +1288,10 @@
         if (wheelOffset === 0) renderWheelCards([], false);
       } else {
         await ensureWheelNames(rows.map(r => r.user_id));
-        renderWheelCards(rows, wheelOffset > 0);
+        wheelAllRows = wheelAllRows.concat(rows);
+        rebuildWheelDayPicker();
+        if (wheelDayFilter === "all") renderWheelCards(rows, wheelOffset > 0);
+        else applyWheelDayFilter();
         wheelOffset += rows.length;
         if (rows.length < WHEEL_PAGE) {
           wheelDone = true;
@@ -1194,6 +1333,8 @@
     wheelOffset = 0;
     wheelDone = false;
     wheelLoading = false;
+    wheelAllRows = [];
+    wheelDayFilter = "all";
     const list = document.getElementById("wheelList");
     if (list) list.innerHTML = "";
     const end = document.getElementById("wheelEnd");
@@ -1202,6 +1343,7 @@
 
     let lastY = track.scrollTop;
     let lastT = performance.now();
+    let glowIdleTimer = null;
     track.addEventListener("scroll", () => {
       applyWheelTransforms();
       const now = performance.now();
@@ -1210,7 +1352,19 @@
       const speed = dy / (dt / 16);
       lastY = track.scrollTop;
       lastT = now;
-      wheelGlowFromSpeed(speed);
+
+      const atTop = track.scrollTop <= 1;
+      const atBottom = track.scrollTop + track.clientHeight >= track.scrollHeight - 2;
+      if (atTop || atBottom) {
+        // برخورد به انتها: گلو قطع شود (نه دائم)
+        if (Math.abs(dy) < 0.5) clearWheelGlow();
+        else wheelGlowFromSpeed(speed * 0.35);
+      } else {
+        wheelGlowFromSpeed(speed);
+      }
+
+      clearTimeout(glowIdleTimer);
+      glowIdleTimer = setTimeout(() => clearWheelGlow(), 180);
 
       if (track.scrollTop + track.clientHeight > track.scrollHeight - 80) {
         loadWheelPage();
