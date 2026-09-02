@@ -192,7 +192,21 @@
   resolveAdminLink();
 
   // API برای صفحات: پس از دانستن is_admin
+  function setAdminNavVisible(show) {
+    const link = document.getElementById("hqlNavAdmin");
+    if (!link) return;
+    link.style.display = show ? "" : "none";
+  }
+  // پیش‌فرض: مخفی تا لاگین + ادمین بودن مشخص شود
+  setAdminNavVisible(false);
+
   window.hqlNavSetAdmin = function (isAdmin) {
     try { sessionStorage.setItem("hql_is_admin", isAdmin ? "1" : "0"); } catch (_) {}
+    setAdminNavVisible(!!isAdmin);
   };
+
+  // اگر قبلاً ادمین بوده‌ایم در این تب
+  try {
+    if (sessionStorage.getItem("hql_is_admin") === "1") setAdminNavVisible(true);
+  } catch (_) {}
 })();
