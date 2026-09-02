@@ -10,6 +10,7 @@
   const isIndex = !path || path === "index.html" || path === "" || path.endsWith("/");
   const isReport = path.includes("report");
   const isAdmin = path.includes("admin");
+  const isCoach = path.includes("coach");
 
   const style = document.createElement("style");
   style.textContent = `
@@ -118,6 +119,10 @@
     <a href="report.html" class="${isReport ? "active" : ""}" data-nav="report">
       <span class="ico">📊</span>
       <span>گزارش</span>
+    </a>
+    <a href="coach.html" class="${isCoach ? "active" : ""}" data-nav="coach">
+      <span class="ico">🪵</span>
+      <span>چوب استاد</span>
     </a>
     <a href="admin.html" class="${isAdmin ? "active" : ""}" data-nav="admin" id="hqlNavAdmin">
       <span class="ico">🛡️</span>
