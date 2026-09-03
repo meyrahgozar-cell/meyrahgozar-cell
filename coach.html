@@ -484,6 +484,12 @@
             <div class="stats-grid" id="monthStats"></div>
             <div class="day-strip" id="dayStrip"></div>
             <div class="day-detail" id="dayDetail">روز را انتخاب کن</div>
+
+          <div style="margin-top:12px" id="monthNotesBlock">
+            <div class="card-title">کامنت‌های این ماه</div>
+            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
+            <div id="adminNotes"><div class="empty">شاگرد را انتخاب کن</div></div>
+          </div>
             <button type="button" class="btn primary" id="toStep3" style="margin-top:10px">ادامه · نوشتن یادداشت</button>
           </div>
         </div>
@@ -497,11 +503,7 @@
             <button type="button" class="btn" id="backStep2">بازگشت</button>
             <button type="button" class="btn primary" id="sendNote" disabled>ثبت</button>
           </div>
-          <div style="margin-top:12px">
-            <div class="card-title">یادداشت‌های این ماه</div>
-            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
-            <div id="adminNotes"><div class="empty">هنوز لود نشده</div></div>
-          </div>
+
         </div>
       </div>
 
@@ -610,8 +612,6 @@
           dayBit;
       }
       document.getElementById("sendNote").disabled = !selectedTopic;
-      const notesBox = document.getElementById("adminNotes");
-      if (notesBox) notesBox.innerHTML = `<div class="empty">برای دیدن یادداشت‌های این ماه دکمه را بزن</div>`;
     }
   }
 
@@ -1085,6 +1085,16 @@
       document.getElementById("adminView").classList.remove("hidden");
       initMonthPicker();
       initWheel();
+      const __ys = document.getElementById("yearSelect");
+      const __ms = document.getElementById("monthSelect");
+      if (__ys && !__ys.dataset.notesBound) {
+        __ys.dataset.notesBound = "1";
+        __ys.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
+      }
+      if (__ms && !__ms.dataset.notesBound) {
+        __ms.dataset.notesBound = "1";
+        __ms.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
+      }
       document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("changeUserBtn").onclick = () => setStep(1);
       document.getElementById("toStep3").onclick = () => {
