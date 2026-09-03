@@ -59,10 +59,25 @@
 
     /* user list compact */
     .user-list {
-      display: flex; flex-direction: column; gap: 6px;
-      max-height: none;
-      overflow: visible;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0 4px;
     }
+    .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .user-chip.selected {
+      border-color: rgba(0, 240, 255, 0.55);
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
+    }
+    .month-notes-card { margin-top: 12px; }
     .search-box {
       width: 100%; height: 40px; margin-bottom: 8px;
       border-radius: 10px; border: 1px solid var(--border);
@@ -464,6 +479,14 @@
           <div class="user-list" id="userList"><div class="empty">...</div></div>
         </div>
 
+      <!-- کامنت‌های ماه — همیشه برای ادمین -->
+      <div class="card month-notes-card" id="monthNotesCard">
+        <div class="card-title">کامنت‌های این ماه</div>
+        <div class="card-sub" id="monthNotesSub">یک شاگرد را از لیست انتخاب کن</div>
+        <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
+        <div id="adminNotes"><div class="empty">هنوز شاگردی انتخاب نشده</div></div>
+      </div>
+
         <!-- مرحله ۲: موضوع + گزارش -->
         <div id="step2" class="card hidden">
           <div class="card-title">۲ · موضوع و گزارش</div>
@@ -484,12 +507,6 @@
             <div class="stats-grid" id="monthStats"></div>
             <div class="day-strip" id="dayStrip"></div>
             <div class="day-detail" id="dayDetail">روز را انتخاب کن</div>
-
-          <div style="margin-top:12px" id="monthNotesBlock">
-            <div class="card-title">کامنت‌های این ماه</div>
-            <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
-            <div id="adminNotes"><div class="empty">شاگرد را انتخاب کن</div></div>
-          </div>
             <button type="button" class="btn primary" id="toStep3" style="margin-top:10px">ادامه · نوشتن یادداشت</button>
           </div>
         </div>
@@ -958,9 +975,12 @@
       chip.onclick = () => {
         selectedUserId = chip.dataset.uid;
         selectedUserName = chip.dataset.name || "کاربر";
+        box.querySelectorAll(".user-chip").forEach(c => c.classList.toggle("selected", c === chip));
         const pill = document.getElementById("pillUser");
         if (pill) pill.textContent = selectedUserName;
-        setStep(2);
+        const sub = document.getElementById("monthNotesSub");
+        if (sub) sub.textContent = "شاگرد: " + selectedUserName;
+        // فقط انتخاب + لود کامنت — نیازی به رفتن به موضوع نیست
         loadAdminNotes();
       };
     });
@@ -983,7 +1003,9 @@
     const box = document.getElementById("adminNotes");
     if (!box) return;
     if (!selectedUserId) {
-      box.innerHTML = `<div class="empty">شاگردی انتخاب نشده</div>`;
+      box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+      const sub = document.getElementById("monthNotesSub");
+      if (sub) sub.textContent = "یک شاگرد را از لیست انتخاب کن";
       return;
     }
     box.innerHTML = `<div class="empty">در حال بارگذاری...</div>`;
@@ -1104,7 +1126,15 @@
       document.getElementById("backStep2").onclick = () => setStep(2);
       document.getElementById("sendNote").onclick = sendNote;
       const ln = document.getElementById("loadNotesBtn");
-      if (ln) ln.onclick = () => loadAdminNotes();
+      if (ln) ln.onclick = () => {
+        if (!selectedUserId) {
+          toast("یک کاربر انتخاب کن");
+          const box = document.getElementById("adminNotes");
+          if (box) box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+          return;
+        }
+        loadAdminNotes();
+      };
       await loadUsers();
       setStep(1);
     } else {
