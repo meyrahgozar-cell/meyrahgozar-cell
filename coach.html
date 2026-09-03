@@ -23,38 +23,6 @@
       font-family: "Vazirmatn", sans-serif;
       overflow-x: hidden;
     }
-    .bottom-scroller {
-      position: fixed; left: 0; right: 0; bottom: 0; height: 4px;
-      background: rgba(255,255,255,0.05);
-      z-index: 9000;
-      pointer-events: none;
-    }
-    .bottom-scroller-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, var(--neon), var(--neon2));
-    }
-    .bottom-scroller-ice {
-      position: absolute; left: 0; right: 0; bottom: 0;
-      height: 30px;
-      transform: scaleY(0.12);
-      transform-origin: bottom;
-      opacity: 0;
-      background: linear-gradient(to top, rgba(214,241,255,0.95), rgba(214,241,255,0.28) 55%, rgba(214,241,255,0) 100%);
-    }
-    .bottom-scroller-ice::after {
-      content: "";
-      position: absolute; inset: 0;
-      background-image:
-        radial-gradient(circle at 8% 75%, #fff 0 1px, transparent 1.4px),
-        radial-gradient(circle at 24% 40%, #fff 0 1px, transparent 1.4px),
-        radial-gradient(circle at 41% 82%, #fff 0 1px, transparent 1.4px),
-        radial-gradient(circle at 58% 38%, #fff 0 1px, transparent 1.4px),
-        radial-gradient(circle at 74% 70%, #fff 0 1px, transparent 1.4px),
-        radial-gradient(circle at 91% 32%, #fff 0 1px, transparent 1.4px);
-      background-size: 90px 30px;
-      opacity: 0.85;
-      mix-blend-mode: screen;
-    }
     .page {
       max-width: 480px;
       margin: 0 auto;
@@ -103,15 +71,13 @@
       padding: 2px 0 4px;
     }
     .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
     .user-chip.selected {
       border-color: rgba(0, 240, 255, 0.55);
       background: rgba(0, 240, 255, 0.1);
       box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
     }
-    .month-notes-block {
-      margin-top: 14px; padding-top: 12px;
-      border-top: 1px dashed var(--border);
-    }
+    .month-notes-card { margin-top: 12px; }
     .search-box {
       width: 100%; height: 40px; margin-bottom: 8px;
       border-radius: 10px; border: 1px solid var(--border);
@@ -135,10 +101,6 @@
       padding: 10px; border-radius: 12px;
       border: 1px solid var(--border); background: var(--card2);
       cursor: pointer; width: 100%;
-      transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
-    }
-    .user-chip:focus-visible {
-      outline: 2px solid var(--neon2); outline-offset: 2px;
     }
     .user-chip.active {
       border-color: rgba(0,240,255,0.45);
@@ -487,53 +449,6 @@
 </style>
 </head>
 <body>
-  <div class="bottom-scroller" id="bottomScroller">
-    <div class="bottom-scroller-fill" id="bottomScrollerFill"></div>
-    <div class="bottom-scroller-ice" id="bottomScrollerIce"></div>
-  </div>
-
-  <script>
-    // اسکرولر پایین صفحه — پرشدنش با موقعیت اسکرول، و یخ‌زدنش با سرعت اسکرول؛
-    // با کند شدن/توقف اسکرول، یخ به‌آرامی آب می‌شود (de-ice)
-    (function initBottomScroller() {
-      const fill = document.getElementById("bottomScrollerFill");
-      const ice = document.getElementById("bottomScrollerIce");
-      if (!fill || !ice) return;
-      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      function updateFill() {
-        const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-        const frac = Math.min(1, Math.max(0, scrollY / max));
-        fill.style.width = (frac * 100).toFixed(2) + "%";
-      }
-      window.addEventListener("scroll", updateFill, { passive: true });
-      window.addEventListener("resize", updateFill);
-      updateFill();
-
-      if (reduceMotion) return; // بدون افکت یخ برای کاربرانی که انیمیشن کمتر می‌خواهند
-
-      let heat = 0, lastY = scrollY, lastT = performance.now();
-      function frame() {
-        const now = performance.now();
-        const dt = Math.max(16, now - lastT);
-        const speed = (scrollY - lastY) / (dt / 16);
-        lastY = scrollY; lastT = now;
-        const target = Math.min(1, Math.abs(speed) / 35);
-        // با اسکرول سریع زود یخ می‌زند؛ با آرام‌شدن/توقف، به‌آرامی آب می‌شود
-        heat = target > heat ? target : heat * 0.95;
-        if (heat < 0.02) {
-          ice.style.opacity = "0";
-          ice.style.transform = "scaleY(0.12)";
-        } else {
-          ice.style.opacity = Math.min(1, heat * 1.1).toFixed(2);
-          ice.style.transform = `scaleY(${(0.12 + heat * 0.88).toFixed(2)})`;
-        }
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-  </script>
-
   <div class="page">
     <h1 class="page-title">چوب استاد</h1>
     <p class="page-sub" id="pageSub">یادداشت کوتاه روی یک عادت</p>
@@ -564,6 +479,22 @@
           <div class="user-list" id="userList"><div class="empty">...</div></div>
         </div>
 
+      <!-- دکمه نوشتن — بالاتر از لیست کامنت‌ها -->
+      <div class="card" id="writeContinueCard" style="margin-top:12px;padding:12px">
+        <button type="button" class="btn primary" id="addCommentBtn" style="width:100%">ادامه · نوشتن یادداشت</button>
+        <div class="card-sub" id="writeContinueHint" style="margin-top:8px;margin-bottom:0">اول شاگرد را انتخاب کن، بعد برای نوشتن یادداشت جدید بزن</div>
+      </div>
+
+      <!-- کامنت‌های ماه — با انتخاب کاربر بلافاصله پر می‌شود -->
+      <div class="card month-notes-card" id="monthNotesCard">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <span>کامنت‌های این ماه</span>
+          <button type="button" class="btn" id="loadNotesBtn" style="width:auto;height:34px;padding:0 12px;font-size:12px">بروزرسانی</button>
+        </div>
+        <div class="card-sub" id="monthNotesSub">یک شاگرد را از لیست انتخاب کن</div>
+        <div id="adminNotes"><div class="empty">هنوز شاگردی انتخاب نشده</div></div>
+      </div>
+
         <!-- مرحله ۲: موضوع + گزارش -->
         <div id="step2" class="card hidden">
           <div class="card-title">۲ · موضوع و گزارش</div>
@@ -584,14 +515,6 @@
             <div class="stats-grid" id="monthStats"></div>
             <div class="day-strip" id="dayStrip"></div>
             <div class="day-detail" id="dayDetail">روز را انتخاب کن</div>
-
-            <!-- کامنت‌های این ماه — بلافاصله بعد از انتخاب شاگرد -->
-            <div class="month-notes-block" id="monthNotesBlock">
-              <div class="card-title">کامنت‌های این ماه</div>
-              <button type="button" class="btn" id="loadNotesBtn" style="margin-bottom:8px">بروزرسانی کامنت‌های این ماه</button>
-              <div id="adminNotes"><div class="empty">شاگردی انتخاب نشده</div></div>
-            </div>
-
             <button type="button" class="btn primary" id="toStep3" style="margin-top:10px">ادامه · نوشتن یادداشت</button>
           </div>
         </div>
@@ -696,9 +619,12 @@
     document.querySelectorAll(".step-dot").forEach(d => {
       d.classList.toggle("on", +d.dataset.s <= n);
     });
-    document.getElementById("step1").classList.toggle("hidden", n !== 1);
-    document.getElementById("step2").classList.toggle("hidden", n !== 2);
-    document.getElementById("step3").classList.toggle("hidden", n !== 3);
+    const s1 = document.getElementById("step1");
+    const s2 = document.getElementById("step2");
+    const s3 = document.getElementById("step3");
+    if (s1) s1.classList.remove("hidden");
+    if (s2) s2.classList.toggle("hidden", n < 2);
+    if (s3) s3.classList.toggle("hidden", n < 3);
     if (n === 3) {
       const t = topicInfo(selectedTopic);
       const dayBit = selectedTopic === "general"
@@ -1053,24 +979,22 @@
     box.innerHTML = list.map(u => {
       const name = u.display_name || "کاربر";
       const me = u.id === currentUser.id ? ' <span style="color:var(--neon2);font-size:10px">(من)</span>' : "";
-      return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}" tabindex="0" role="button">
+      return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
         ${avatarHtml(name)}<span class="name">${escapeHtml(name)}${me}</span></div>`;
     }).join("");
     box.querySelectorAll(".user-chip").forEach(chip => {
-      const selectChip = () => {
+      chip.onclick = () => {
         selectedUserId = chip.dataset.uid;
         selectedUserName = chip.dataset.name || "کاربر";
         box.querySelectorAll(".user-chip").forEach(c => c.classList.toggle("selected", c === chip));
         const pill = document.getElementById("pillUser");
         if (pill) pill.textContent = selectedUserName;
-        // انتخاب شاگرد → مستقیم به مرحله‌ی موضوع/گزارش، همان‌جا کامنت‌های این ماه هم لود می‌شود
-        setStep(2);
+        const sub = document.getElementById("monthNotesSub");
+        if (sub) sub.textContent = "شاگرد: " + selectedUserName;
+        const hint = document.getElementById("writeContinueHint");
+        if (hint) hint.textContent = "در حال نمایش کامنت‌های «" + selectedUserName + "» — برای یادداشت جدید دکمه بالا را بزن";
         loadAdminNotes();
       };
-      chip.onclick = selectChip;
-      chip.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectChip(); }
-      });
     });
   }
 
@@ -1091,7 +1015,9 @@
     const box = document.getElementById("adminNotes");
     if (!box) return;
     if (!selectedUserId) {
-      box.innerHTML = `<div class="empty">شاگردی انتخاب نشده</div>`;
+      box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+      const sub = document.getElementById("monthNotesSub");
+      if (sub) sub.textContent = "یک شاگرد را از لیست انتخاب کن";
       return;
     }
     box.innerHTML = `<div class="empty">در حال بارگذاری...</div>`;
@@ -1203,6 +1129,21 @@
         __ms.dataset.notesBound = "1";
         __ms.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
       }
+      
+      const addBtn = document.getElementById("addCommentBtn");
+      if (addBtn) addBtn.onclick = function () {
+        if (!selectedUserId) {
+          toast("اول یک شاگرد انتخاب کن");
+          return;
+        }
+        const pill = document.getElementById("pillUser");
+        if (pill) pill.textContent = selectedUserName || "شاگرد";
+        setStep(2);
+        try {
+          document.getElementById("step2").scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (e) {}
+      };
+
       document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("changeUserBtn").onclick = () => setStep(1);
       document.getElementById("toStep3").onclick = () => {
@@ -1212,7 +1153,15 @@
       document.getElementById("backStep2").onclick = () => setStep(2);
       document.getElementById("sendNote").onclick = sendNote;
       const ln = document.getElementById("loadNotesBtn");
-      if (ln) ln.onclick = () => loadAdminNotes();
+      if (ln) ln.onclick = () => {
+        if (!selectedUserId) {
+          toast("یک کاربر انتخاب کن");
+          const box = document.getElementById("adminNotes");
+          if (box) box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+          return;
+        }
+        loadAdminNotes();
+      };
       await loadUsers();
       setStep(1);
     } else {
