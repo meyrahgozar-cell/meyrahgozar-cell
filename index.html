@@ -1837,8 +1837,10 @@ document.getElementById("btnToday")?.addEventListener("click", async () => {
   await loadDayData();
 });
 
-document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
-document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
+const __rb = document.getElementById("reportButton");
+if (__rb) __rb.onclick = () => { location.href = "report.html"; };
+const __ab = document.getElementById("adminButton");
+if (__ab) __ab.onclick = () => { location.href = "admin.html"; };
 
 
 /* ===== OPEN / AUTH ===== */
