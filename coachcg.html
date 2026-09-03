@@ -491,7 +491,8 @@
             <span id="topicLabel"> انتخاب موضوع</span>
           </button>
 
-          <div id="reportBlock" class="hidden">
+          <button id="addCommentBtn" class="btn primary" type="button">ادامه · نوشتن یادداشت</button>
+<div id="reportBlock" class="hidden">
             <button type="button" class="btn primary" id="toStep3" style="margin-bottom:10px">ادامه · نوشتن یادداشت</button>
             <div class="period-bar">
               <select id="yearSelect"></select>
@@ -639,6 +640,12 @@
   }
 
   function initMonthPicker() {
+  const addCommentBtn = document.getElementById('addCommentBtn');
+  if (addCommentBtn) addCommentBtn.addEventListener('click', () => {
+    if (!selectedUserId) return;
+    setStep(3);
+  });
+
     const now = new Date();
     const j = jalaali.toJalaali(now.getFullYear(), now.getMonth()+1, now.getDate());
     selectedYear = j.jy; selectedMonth = j.jm; selectedDay = j.jd;
