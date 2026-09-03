@@ -23,22 +23,37 @@
       font-family: "Vazirmatn", sans-serif;
       overflow-x: hidden;
     }
-    .snow-canvas {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 40;
-    }
-    .scroll-progress {
-      position: fixed; top: 0; left: 0; right: 0; height: 3px;
-      background: rgba(255,255,255,0.04);
+    .bottom-scroller {
+      position: fixed; left: 0; right: 0; bottom: 0; height: 4px;
+      background: rgba(255,255,255,0.05);
       z-index: 9000;
       pointer-events: none;
     }
-    .scroll-progress-fill {
+    .bottom-scroller-fill {
       height: 100%; width: 0%;
       background: linear-gradient(90deg, var(--neon), var(--neon2));
-      box-shadow: 0 0 8px rgba(0,240,255,0.25);
+    }
+    .bottom-scroller-ice {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 30px;
+      transform: scaleY(0.12);
+      transform-origin: bottom;
+      opacity: 0;
+      background: linear-gradient(to top, rgba(214,241,255,0.95), rgba(214,241,255,0.28) 55%, rgba(214,241,255,0) 100%);
+    }
+    .bottom-scroller-ice::after {
+      content: "";
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 8% 75%, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle at 24% 40%, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle at 41% 82%, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle at 58% 38%, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle at 74% 70%, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle at 91% 32%, #fff 0 1px, transparent 1.4px);
+      background-size: 90px 30px;
+      opacity: 0.85;
+      mix-blend-mode: screen;
     }
     .page {
       max-width: 480px;
@@ -472,109 +487,50 @@
 </style>
 </head>
 <body>
-  <canvas id="snowCanvas" class="snow-canvas" aria-hidden="true"></canvas>
-  <div class="scroll-progress" id="scrollProgress"><div class="scroll-progress-fill" id="scrollProgressFill"></div></div>
+  <div class="bottom-scroller" id="bottomScroller">
+    <div class="bottom-scroller-fill" id="bottomScrollerFill"></div>
+    <div class="bottom-scroller-ice" id="bottomScrollerIce"></div>
+  </div>
 
   <script>
-    // برف ملایم روی کل صفحه — چگالی و سرعتش با میزان اسکرول صفحه بیشتر می‌شود
-    (function initSnow() {
-      const canvas = document.getElementById("snowCanvas");
-      if (!canvas || !canvas.getContext) return;
-      const ctx = canvas.getContext("2d");
+    // اسکرولر پایین صفحه — پرشدنش با موقعیت اسکرول، و یخ‌زدنش با سرعت اسکرول؛
+    // با کند شدن/توقف اسکرول، یخ به‌آرامی آب می‌شود (de-ice)
+    (function initBottomScroller() {
+      const fill = document.getElementById("bottomScrollerFill");
+      const ice = document.getElementById("bottomScrollerIce");
+      if (!fill || !ice) return;
       const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      let vw = innerWidth, vh = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
-      function resize() {
-        vw = innerWidth; vh = innerHeight;
-        dpr = Math.min(2, window.devicePixelRatio || 1);
-        canvas.width = Math.floor(vw * dpr);
-        canvas.height = Math.floor(vh * dpr);
-        canvas.style.width = vw + "px";
-        canvas.style.height = vh + "px";
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // از این پس مختصات بر حسب پیکسل CSS است
+      function updateFill() {
+        const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+        const frac = Math.min(1, Math.max(0, scrollY / max));
+        fill.style.width = (frac * 100).toFixed(2) + "%";
       }
-      resize();
-      window.addEventListener("resize", resize);
+      window.addEventListener("scroll", updateFill, { passive: true });
+      window.addEventListener("resize", updateFill);
+      updateFill();
 
-      const MIN_FLAKES = 20, MAX_FLAKES = 100;
-      function makeFlake() {
-        return {
-          x: Math.random() * vw,
-          y: Math.random() * -vh,
-          r: 1 + Math.random() * 2.4,
-          speed: 0.35 + Math.random() * 1,
-          drift: (Math.random() - 0.5) * 0.7,
-          sway: Math.random() * Math.PI * 2,
-          o: 0.22 + Math.random() * 0.45
-        };
-      }
-      const flakes = Array.from({ length: MAX_FLAKES }, makeFlake);
+      if (reduceMotion) return; // بدون افکت یخ برای کاربرانی که انیمیشن کمتر می‌خواهند
 
-      function scrollFrac() {
-        const max = Math.max(1, document.documentElement.scrollHeight - vh);
-        return Math.min(1, Math.max(0, scrollY / max));
-      }
-
-      if (reduceMotion) {
-        // بدون انیمیشن: چند دانه‌ی ثابت و کم‌رنگ، به‌جای برف‌ در حال‌ حرکت
-        ctx.clearRect(0, 0, vw, vh);
-        ctx.fillStyle = "rgba(224,244,255,0.3)";
-        for (let i = 0; i < MIN_FLAKES; i++) {
-          const f = flakes[i];
-          ctx.beginPath();
-          ctx.arc(f.x, ((f.y % vh) + vh) % vh, f.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        return;
-      }
-
-      let tick = 0;
+      let heat = 0, lastY = scrollY, lastT = performance.now();
       function frame() {
-        tick++;
-        const frac = scrollFrac();
-        const active = Math.round(MIN_FLAKES + (MAX_FLAKES - MIN_FLAKES) * frac);
-        const speedMul = 1 + frac * 1.8;
-        ctx.clearRect(0, 0, vw, vh);
-        for (let i = 0; i < active; i++) {
-          const f = flakes[i];
-          f.y += f.speed * speedMul;
-          f.x += Math.sin(tick * 0.01 + f.sway) * f.drift;
-          if (f.y > vh + 6) { flakes[i] = makeFlake(); flakes[i].y = -6; }
-          ctx.beginPath();
-          ctx.fillStyle = `rgba(224,244,255,${f.o})`;
-          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-          ctx.fill();
+        const now = performance.now();
+        const dt = Math.max(16, now - lastT);
+        const speed = (scrollY - lastY) / (dt / 16);
+        lastY = scrollY; lastT = now;
+        const target = Math.min(1, Math.abs(speed) / 35);
+        // با اسکرول سریع زود یخ می‌زند؛ با آرام‌شدن/توقف، به‌آرامی آب می‌شود
+        heat = target > heat ? target : heat * 0.95;
+        if (heat < 0.02) {
+          ice.style.opacity = "0";
+          ice.style.transform = "scaleY(0.12)";
+        } else {
+          ice.style.opacity = Math.min(1, heat * 1.1).toFixed(2);
+          ice.style.transform = `scaleY(${(0.12 + heat * 0.88).toFixed(2)})`;
         }
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
-    })();
-
-    // نوار پیشرفت اسکرول — پرشدنش با موقعیت اسکرول و درخشش با سرعت اسکرول (مثل گلوی گردونه‌ی نظرات)
-    (function initScrollProgress() {
-      const fill = document.getElementById("scrollProgressFill");
-      if (!fill) return;
-      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      let heat = 0, lastY = scrollY, lastT = performance.now();
-      function update() {
-        const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-        const frac = Math.min(1, Math.max(0, scrollY / max));
-        fill.style.width = (frac * 100).toFixed(2) + "%";
-        if (reduceMotion) return;
-        const now = performance.now();
-        const dy = scrollY - lastY;
-        const dt = Math.max(16, now - lastT);
-        const speed = dy / (dt / 16);
-        lastY = scrollY; lastT = now;
-        const target = Math.min(1, Math.abs(speed) / 40);
-        heat = target > heat ? target : heat * 0.86;
-        const blur = 6 + heat * 22;
-        const alpha = (0.25 + heat * 0.55).toFixed(2);
-        fill.style.boxShadow = heat > 0.02 ? `0 0 ${blur.toFixed(0)}px rgba(0,240,255,${alpha})` : "0 0 8px rgba(0,240,255,0.25)";
-      }
-      window.addEventListener("scroll", update, { passive: true });
-      window.addEventListener("resize", update);
-      update();
     })();
   </script>
 
