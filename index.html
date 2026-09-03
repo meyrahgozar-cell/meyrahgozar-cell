@@ -983,8 +983,14 @@ const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage
+  }
 });
+window.db = db;
 
 let mode = "login";
 let selectedDate = null;
@@ -1840,13 +1846,37 @@ document.getElementById("reportButton").onclick=()=>{ location.href = "report.ht
 document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
 
 /* ===== OPEN ===== */
-async function openApp(user){
+let __appOpened = false;
+
+function showAppShell() {
+  const authPage = document.getElementById("authPage");
+  const app = document.getElementById("app");
+  if (authPage) {
+    authPage.classList.add("hidden");
+    authPage.style.display = "none";
+  }
+  if (app) {
+    app.classList.remove("hidden");
+    app.style.display = "";
+  }
+}
+
+function showAuthShell() {
+  const authPage = document.getElementById("authPage");
+  const app = document.getElementById("app");
+  if (app) {
+    app.classList.add("hidden");
+  }
+  if (authPage) {
+    authPage.classList.remove("hidden");
+    authPage.style.display = "";
+  }
+}
+
+async function openApp(user) {
   if (!user) return;
   currentUser = user;
-  try {
-    document.getElementById("authPage").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
-  } catch (_) {}
+  showAppShell();
 
   try {
     const now = new Date();
@@ -1871,35 +1901,49 @@ async function openApp(user){
   } catch (_) {}
 }
 
-let __appOpened = false;
+async function resolveSession() {
+  // مثل report: چند بار تلاش تا session از localStorage آماده شود
+  for (let i = 0; i < 12; i++) {
+    try {
+      const res = await db.auth.getSession();
+      if (res.data && res.data.session && res.data.session.user) {
+        return res.data.session;
+      }
+    } catch (e) {
+      console.warn("getSession", e);
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return null;
+}
+
 async function bootSession() {
   try {
-    let r = await db.auth.getSession();
-    if (!r.data.session) {
-      await new Promise(res => setTimeout(res, 250));
-      r = await db.auth.getSession();
-    }
-    if (r.data.session && r.data.session.user) {
+    const session = await resolveSession();
+    if (session && session.user) {
       __appOpened = true;
-      await openApp(r.data.session.user);
+      await openApp(session.user);
+      return;
     }
   } catch (e) {
     console.warn("bootSession", e);
   }
+  // بدون session → صفحه ورود
+  showAuthShell();
 }
 
 db.auth.onAuthStateChange(async (event, session) => {
-  if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+  if (session && session.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
     if (event === "TOKEN_REFRESHED" && __appOpened) return;
     __appOpened = true;
     try { await openApp(session.user); } catch (e) { console.warn(e); }
+    return;
   }
   if (event === "SIGNED_OUT") {
     __appOpened = false;
     currentUser = null;
+    showAuthShell();
     try {
-      document.getElementById("app").classList.add("hidden");
-      document.getElementById("authPage").classList.remove("hidden");
       if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
       setMode("login");
     } catch (_) {}
@@ -1907,6 +1951,7 @@ db.auth.onAuthStateChange(async (event, session) => {
 });
 
 bootSession();
+
 
 </script>
   <script src="nav.js"></script>
