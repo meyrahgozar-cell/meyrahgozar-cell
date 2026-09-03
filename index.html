@@ -982,13 +982,8 @@ button { cursor: pointer; border: none; background: none; }
 const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage
-  }
+const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 window.db = db;
 
@@ -1845,19 +1840,20 @@ document.getElementById("btnToday")?.addEventListener("click", async () => {
 document.getElementById("reportButton").onclick=()=>{ location.href = "report.html"; };
 document.getElementById("adminButton").onclick=()=>{ location.href = "admin.html"; };
 
-/* ===== OPEN ===== */
-let __appOpened = false;
 
+/* ===== OPEN / AUTH ===== */
 function showAppShell() {
   const authPage = document.getElementById("authPage");
   const app = document.getElementById("app");
   if (authPage) {
     authPage.classList.add("hidden");
-    authPage.style.display = "none";
+    authPage.setAttribute("hidden", "");
+    authPage.style.setProperty("display", "none", "important");
   }
   if (app) {
     app.classList.remove("hidden");
-    app.style.display = "";
+    app.removeAttribute("hidden");
+    app.style.removeProperty("display");
   }
 }
 
@@ -1866,16 +1862,22 @@ function showAuthShell() {
   const app = document.getElementById("app");
   if (app) {
     app.classList.add("hidden");
+    app.style.setProperty("display", "none", "important");
   }
   if (authPage) {
     authPage.classList.remove("hidden");
-    authPage.style.display = "";
+    authPage.removeAttribute("hidden");
+    authPage.style.removeProperty("display");
   }
 }
+
+let __appOpened = false;
+let __authInit = false;
 
 async function openApp(user) {
   if (!user) return;
   currentUser = user;
+  __appOpened = true;
   showAppShell();
 
   try {
@@ -1902,40 +1904,36 @@ async function openApp(user) {
 }
 
 async function resolveSession() {
-  // مثل report: چند بار تلاش تا session از localStorage آماده شود
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 15; i++) {
     try {
       const res = await db.auth.getSession();
-      if (res.data && res.data.session && res.data.session.user) {
-        return res.data.session;
-      }
-    } catch (e) {
-      console.warn("getSession", e);
-    }
-    await new Promise(r => setTimeout(r, 100));
+      if (res.data && res.data.session && res.data.session.user) return res.data.session;
+    } catch (e) { console.warn(e); }
+    await new Promise(r => setTimeout(r, 80));
   }
+  try {
+    const gu = await db.auth.getUser();
+    if (gu.data && gu.data.user) {
+      const res = await db.auth.getSession();
+      if (res.data && res.data.session) return res.data.session;
+      return { user: gu.data.user };
+    }
+  } catch (e) { console.warn("getUser", e); }
   return null;
 }
 
-async function bootSession() {
-  try {
-    const session = await resolveSession();
-    if (session && session.user) {
-      __appOpened = true;
-      await openApp(session.user);
-      return;
-    }
-  } catch (e) {
-    console.warn("bootSession", e);
-  }
-  // بدون session → صفحه ورود
-  showAuthShell();
-}
-
 db.auth.onAuthStateChange(async (event, session) => {
-  if (session && session.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+  if (event === "INITIAL_SESSION") {
+    __authInit = true;
+    if (session && session.user) {
+      try { await openApp(session.user); } catch (e) { console.warn(e); }
+    } else if (!__appOpened) {
+      showAuthShell();
+    }
+    return;
+  }
+  if (session && session.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
     if (event === "TOKEN_REFRESHED" && __appOpened) return;
-    __appOpened = true;
     try { await openApp(session.user); } catch (e) { console.warn(e); }
     return;
   }
@@ -1950,8 +1948,26 @@ db.auth.onAuthStateChange(async (event, session) => {
   }
 });
 
-bootSession();
-
+(async function bootSession() {
+  try {
+    const session = await resolveSession();
+    if (session && session.user && !__appOpened) {
+      await openApp(session.user);
+      return;
+    }
+  } catch (e) {
+    console.warn("bootSession", e);
+  }
+  if (!__appOpened && !__authInit) {
+    await new Promise(r => setTimeout(r, 500));
+  }
+  if (!__appOpened) {
+    const session = await resolveSession();
+    if (session && session.user) await openApp(session.user);
+    else if (__authInit) showAuthShell();
+    else showAuthShell();
+  }
+})();
 
 </script>
   <script src="nav.js"></script>
