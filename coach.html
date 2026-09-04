@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <title>HQL | چوب استاد</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
+  <style>
+    :root {
+      --bg: #05060a; --card: #0d1019; --card2: #131722;
+      --border: rgba(180, 100, 255, 0.18); --text: #f0f2ff; --muted: #8b92b0;
+      --neon: #b44cff; --neon2: #00f0ff; --positive: #00ff9d; --negative: #ff4d6d;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse 70% 40% at 10% 0%, rgba(180,76,255,0.1), transparent), var(--bg);
+      color: var(--text);
+      font-family: "Vazirmatn", sans-serif;
+      overflow-x: hidden;
+    }
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 14px 12px 110px;
+      width: 100%;
+    }
+    .page-title { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
+    .page-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .card-title {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      margin-bottom: 8px; text-transform: none;
+    }
+    .hidden { display: none !important; }
+    .deny { text-align: center; padding: 40px 12px; color: var(--muted); }
+
+    /* steps */
+    .steps {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .step-dot {
+      flex: 1; height: 4px; border-radius: 4px;
+      background: var(--card2); border: 1px solid var(--border);
+    }
+    .step-dot.on { background: linear-gradient(90deg, var(--neon), var(--neon2)); border-color: transparent; }
+
+    /* user list compact */
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0 4px;
+    }
+    .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .user-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .user-chip.selected {
+      border-color: rgba(0, 240, 255, 0.55);
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
+    }
+    .month-notes-card { margin-top: 12px; }
+    .search-box {
+      width: 100%; height: 40px; margin-bottom: 8px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text);
+      padding: 0 12px; font: inherit; font-size: 13px;
+    }
+    .search-box:focus { outline: none; border-color: var(--neon); }
+    .note-actions {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .note-actions button {
+      flex: 1; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font: inherit; font-size: 11px; font-weight: 700;
+      cursor: pointer;
+    }
+    .note-actions button.danger { color: var(--negative); }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card2);
+      cursor: pointer; width: 100%;
+    }
+    .user-chip.active {
+      border-color: rgba(0,240,255,0.45);
+      box-shadow: 0 0 12px rgba(0,240,255,0.12);
+    }
+    .user-chip .name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: #fff;
+      object-fit: cover; flex-shrink: 0;
+    }
+    .avatar-fb {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; font-weight: 800; font-size: 12px;
+      background: linear-gradient(145deg, rgba(180,76,255,0.4), rgba(0,240,255,0.25));
+    }
+
+    .summary-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      background: var(--card2); border: 1px solid var(--border);
+    }
+    .pill button {
+      border: none; background: transparent; color: var(--neon2);
+      font: inherit; font-size: 11px; cursor: pointer; padding: 0 2px;
+    }
+
+    .btn {
+      width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); font: inherit; font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, rgba(180,76,255,0.4), rgba(0,240,255,0.18));
+      border-color: rgba(180,76,255,0.45);
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row .btn { flex: 1; }
+
+    .period-bar {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+    }
+    .period-bar select {
+      width: 100%; height: 40px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card2);
+      color: var(--text); padding: 0 8px; font: inherit;
+    }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      margin-bottom: 10px;
+    }
+    .stat {
+      background: var(--card2); border-radius: 10px; padding: 8px 4px;
+      text-align: center; border: 1px solid var(--border);
+    }
+    .stat-l { font-size: 9px; color: var(--muted); }
+    .stat-v { font-size: 15px; font-weight: 800; margin-top: 2px; }
+    .stat-v.pos { color: var(--positive); }
+    .stat-v.neg { color: var(--negative); }
+
+    .day-strip {
+      display: flex; gap: 5px; overflow-x: auto;
+      padding-bottom: 6px; margin-bottom: 8px;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
+    .day-chip {
+      flex: 0 0 44px; padding: 6px 4px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card2);
+      text-align: center; cursor: pointer; font-size: 10px;
+    }
+    .day-chip.active {
+      border-color: var(--neon2);
+      box-shadow: 0 0 10px rgba(0,240,255,0.2);
+    }
+    .day-chip .d-n { font-weight: 800; font-size: 13px; }
+    .day-chip .d-v { color: var(--muted); margin-top: 1px; }
+    .day-chip.has .d-v { color: var(--neon2); }
+
+    .day-detail {
+      padding: 10px; border-radius: 10px;
+      background: rgba(0,240,255,0.05);
+      border: 1px solid rgba(0,240,255,0.15);
+      font-size: 12px; line-height: 1.55;
+    }
+
+    textarea {
+      width: 100%; min-height: 88px; max-width: 100%;
+      resize: vertical; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card2);
+      color: var(--text); padding: 10px; font: inherit; line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    textarea:focus { outline: none; border-color: var(--neon); }
+
+    .note {
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      background: linear-gradient(155deg, rgba(24,28,42,0.98), rgba(13,16,25,0.95));
+      border: 1px solid rgba(180,100,255,0.16);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      margin-bottom: 10px;
+    }
+    .note-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .note-topic {
+      color: var(--neon2);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .note-body {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    .note-meta {
+      display: flex; justify-content: space-between; gap: 6px;
+      font-size: 10px; color: var(--muted); margin-bottom: 4px;
+    }
+    .note-topic { color: var(--neon2); font-weight: 700; }
+    .note-body { font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+    .empty { text-align: center; color: var(--muted); padding: 14px; font-size: 12px; }
+
+    /* picker */
+    .picker-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: rgba(5,6,10,0.8);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 10px;
+    }
+    .picker-sheet {
+      width: min(400px, 100%); max-height: 75vh; overflow-y: auto;
+      background: #12151f; border: 1px solid rgba(180,100,255,0.35);
+      border-radius: 18px 18px 14px 14px; padding: 14px 12px 16px;
+    }
+    .picker-title { font-size: 15px; font-weight: 800; text-align: center; margin-bottom: 2px; }
+    .picker-sub { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+    .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .picker-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 12px 4px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card2);
+      cursor: pointer; font-size: 10px; font-weight: 700; color: var(--text);
+    }
+    .picker-item .p-ico { font-size: 22px; }
+    .picker-close {
+      width: 100%; margin-top: 10px; height: 40px; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--text); font-weight: 700; cursor: pointer;
+    }
+    .toast {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      background: var(--card2); border: 1px solid var(--border);
+      padding: 8px 14px; border-radius: 10px; font-size: 12px;
+      z-index: 11000; opacity: 0; transition: opacity .2s; pointer-events: none;
+      max-width: 90vw;
+    }
+    .toast.show { opacity: 1; }
+  
+    .ctx-bar {
+      display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+      overflow-x: auto; scrollbar-width: none;
+      padding: 5px 8px; margin-bottom: 8px;
+      border-radius: 8px;
+      background: rgba(180, 76, 255, 0.08);
+      border: 1px solid rgba(180, 76, 255, 0.2);
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      line-height: 1.2; white-space: nowrap;
+    }
+    .ctx-bar::-webkit-scrollbar { display: none; }
+    .ctx-bar b { color: var(--neon2); font-weight: 700; }
+    .ctx-sep { opacity: 0.35; margin: 0 1px; }
+
+
+    .note-ctx {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+      padding: 5px 7px; margin-bottom: 6px;
+      border-radius: 8px;
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      font-size: 9px; font-weight: 600; color: var(--muted);
+      line-height: 1.25;
+    }
+    .note-ctx .nc-topic { color: var(--neon2); font-weight: 800; font-size: 10px; }
+    .note-ctx .nc-chip {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 1px 5px; border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .note-ctx .nc-chip b { color: var(--text); font-weight: 800; }
+    .note-ctx .nc-chip b.pos { color: var(--positive); }
+    .note-ctx .nc-chip b.neg { color: var(--negative); }
+    .note-ctx .nc-day {
+      border-color: rgba(0,240,255,0.35);
+      color: var(--text);
+    }
+
+
+/* ===== گردونه نظرات ===== */
+.wheel-section {
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+.wheel-section .card-title { margin-bottom: 4px; }
+.wheel-section .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.wheel-shell {
+  position: relative;
+  height: 280px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(0, 240, 255, 0.03);
+  overflow: hidden;
+  transition: box-shadow 0.08s linear, border-color 0.12s;
+}
+.wheel-shell.glow {
+  border-color: rgba(0, 240, 255, 0.45);
+}
+.wheel-track {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 40px 16px;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+}
+.wheel-track::-webkit-scrollbar { display: none; }
+.wheel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform-style: preserve-3d;
+}
+.wheel-card {
+  scroll-snap-align: center;
+  flex: 0 0 auto;
+  min-height: 96px;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(20,24,38,0.95), rgba(12,14,22,0.9));
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease-out, opacity 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+}
+.wheel-card:active { border-color: rgba(0, 240, 255, 0.55); }
+.wheel-card .wc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.wheel-card .wc-name {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text);
+}
+.wheel-card .wc-topic {
+  font-size: 11px;
+  color: var(--neon2);
+  font-weight: 700;
+}
+.wheel-card .wc-body {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wheel-card .wc-date {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(139,146,176,0.8);
+}
+.wheel-loading, .wheel-end {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 12px;
+}
+.wheel-empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 40px 12px;
+}
+
+
+.wheel-day-picker {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 2px 10px;
+  margin-bottom: 2px;
+}
+.wheel-day-picker::-webkit-scrollbar { display: none; }
+.wheel-day-chip {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s, box-shadow .15s;
+}
+.wheel-day-chip.active {
+  color: #05060a;
+  background: linear-gradient(135deg, #00f0ff, #7cf0ff);
+  border-color: transparent;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+}
+
+
+.wheel-shell {
+  position: relative;
+}
+.wheel-shell::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.85s ease;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(180, 230, 255, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(200, 240, 255, 0.12), rgba(140, 200, 255, 0.05) 40%, transparent);
+  box-shadow: inset 0 0 30px rgba(180, 230, 255, 0.12);
+  mix-blend-mode: screen;
+}
+.wheel-shell.freeze::after {
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.wheel-shell.freeze {
+  border-color: rgba(160, 220, 255, 0.45);
+}
+.wheel-track.freeze-blur {
+  filter: saturate(0.85) brightness(1.05);
+}
+
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="page-title">چوب استاد</h1>
+    <p class="page-sub" id="pageSub">یادداشت کوتاه روی یک عادت</p>
+
+    <div id="denyBox" class="deny hidden">برای دیدن این صفحه وارد شو.</div>
+
+    <div id="appBox" class="hidden">
+      <!-- کاربر -->
+      <div id="userView" class="hidden">
+        <div class="card">
+          <div class="card-title">پیام‌های استاد</div>
+          <div id="myNotes"><div class="empty">...</div></div>
+        </div>
+      </div>
+
+      <!-- ادمین: جریان مرحله‌ای -->
+      <div id="adminView" class="hidden">
+        <div class="steps" id="steps">
+          <div class="step-dot on" data-s="1"></div>
+          <div class="step-dot" data-s="2"></div>
+          <div class="step-dot" data-s="3"></div>
+        </div>
+
+        <!-- مرحله ۱: شاگرد -->
+        <div id="step1" class="card">
+          <div class="card-title">۱ · انتخاب شاگرد</div>
+          <input type="search" class="search-box" id="userSearch" placeholder="جستجوی نام..." autocomplete="off">
+          <div class="user-list" id="userList"><div class="empty">...</div></div>
+        </div>
+
+      
+
+      
+      
+        <!-- مرحله ۲: موضوع و گزارش -->
+        <div id="step2" class="card hidden">
+          <div class="card-title">۲ · موضوع و گزارش</div>
+          <div class="summary-row">
+            <span class="pill" id="pillUser">—</span>
+            <button type="button" class="pill" id="changeUserBtn" style="cursor:pointer">عوض کردن شاگرد</button>
+          </div>
+          <button type="button" class="btn" id="openTopicPicker" style="margin-bottom:10px">
+            <span id="topicIco">🎯</span>
+            <span id="topicLabel"> انتخاب موضوع</span>
+          </button>
+
+          <div id="reportBlock" class="hidden">
+            <div class="period-bar">
+              <select id="yearSelect"></select>
+              <select id="monthSelect"></select>
+            </div>
+            <div class="stats-grid" id="monthStats"></div>
+            <div class="day-strip" id="dayStrip"></div>
+            <div class="day-detail" id="dayDetail">روز را انتخاب کن</div>
+            <button type="button" class="btn primary" id="toStep3" style="margin-top:10px">ادامه · نوشتن یادداشت</button>
+          </div>
+        </div>
+
+        <!-- مرحله ۳: نوشتن -->
+        <div id="step3" class="card hidden">
+          <div class="card-title">۳ · یادداشت</div>
+          <div class="ctx-bar" id="ctxBar">—</div>
+          <textarea id="noteBody" placeholder="نکته کوتاه..."></textarea>
+          <div class="btn-row">
+            <button type="button" class="btn" id="backStep2">بازگشت</button>
+            <button type="button" class="btn primary" id="sendNote" disabled>ثبت</button>
+          </div>
+        </div>
+
+      <!-- کامنت‌های این ماه (با درخواست) -->
+      <div class="card month-notes-card" id="monthNotesCard">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <span>کامنت‌های این ماه</span>
+          <button type="button" class="btn" id="loadNotesBtn" style="width:auto;height:34px;padding:0 12px;font-size:12px">بروزرسانی</button>
+        </div>
+        <div id="adminNotes"><div class="empty">بروزرسانی را بزن</div></div>
+      </div>
+
+      <!-- گردونه نظرات -->
+      <div class="card wheel-section hidden" id="wheelSection">
+        <div class="card-title">گردونه نظرات</div>
+        <div class="card-sub">اسکرول کن · هر کارت یک نظر · بزن برای ادامهٔ کامنت همان شاگرد</div>
+        <div class="wheel-day-picker" id="wheelDayPicker">
+          <button type="button" class="wheel-day-chip active" data-day="all">همه</button>
+        </div>
+        <div class="wheel-shell" id="wheelShell">
+          <div class="wheel-track" id="wheelTrack">
+            <div class="wheel-list" id="wheelList"></div>
+            <div class="wheel-loading hidden" id="wheelLoading">در حال بارگذاری...</div>
+            <div class="wheel-end hidden" id="wheelEnd">همهٔ نظرات لود شد</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+  const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+  const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
+  const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  const START_YEAR = 1405;
+  const FA = "۰۱۲۳۴۵۶۷۸۹";
+  const fa = (n) => String(n).replace(/\d/g, d => FA[+d]);
+
+  const TOPICS = [
+    { id: "sleep", icon: "😴", title: "خواب", source: "daily_logs", item: "sleep" },
+    { id: "water", icon: "💧", title: "آب", source: "daily_logs", item: "water" },
+    { id: "exercise", icon: "🏃", title: "ورزش", source: "exercise", item: "exercise" },
+    { id: "reading", icon: "📖", title: "کتاب", source: "daily_logs", item: "reading" },
+    { id: "sugar", icon: "🍬", title: "قند", source: "daily_logs", item: "sugar" },
+    { id: "instagram", icon: "📱", title: "اینستا", source: "daily_logs", item: "instagram" },
+    { id: "sun", icon: "☀️", title: "آفتاب", source: "daily_logs", item: "sun" },
+    { id: "solitude", icon: "🧘", title: "خلوت", source: "daily_logs", item: "solitude" },
+    { id: "dinner", icon: "🍽️", title: "شام", source: "daily_logs", item: "dinner" },
+    { id: "mountain", icon: "⛰️", title: "کوه", source: "mountain", item: "mountain" },
+    { id: "weight", icon: "⚖️", title: "وزن", source: "weight", item: "weight" },
+    { id: "discipline", icon: "🔥", title: "نظم", source: "daily_logs", item: "discipline" },
+    { id: "general", icon: "💬", title: "عمومی", source: "none", item: null }
+  ];
+
+  let currentUser = null, isAdmin = false;
+  let selectedUserId = null, selectedUserName = "";
+  let selectedTopic = null;
+  let selectedYear, selectedMonth, selectedDay;
+  let monthRows = [];
+  let step = 1;
+
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2000);
+  }
+  function topicInfo(id) {
+    return TOPICS.find(t => t.id === id) || { id, icon: "•", title: id, source: "none" };
+  }
+  function escapeHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function avatarHtml(name) {
+    const n = (name||"؟").trim();
+    return `<img class="avatar" src="images/${n}.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${n.slice(0,1)}</div>`;
+  }
+  function formatTime(iso) {
+    try { return new Date(iso).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"}); }
+    catch { return iso; }
+  }
+  function isoDate(d) {
+    return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+  }
+  function scoreText(n) {
+    return fa(Math.round(Number(n)*10)/10);
+  }
+
+  function setStep(n) {
+    step = n;
+    document.querySelectorAll(".step-dot").forEach(d => {
+      d.classList.toggle("on", +d.dataset.s <= n);
+    });
+    const s1 = document.getElementById("step1");
+    const s2 = document.getElementById("step2");
+    const s3 = document.getElementById("step3");
+    if (s1) s1.classList.remove("hidden");
+    if (s2) s2.classList.toggle("hidden", n < 2);
+    if (s3) s3.classList.toggle("hidden", n < 3);
+    if (n === 3) {
+      const t = topicInfo(selectedTopic);
+      const dayBit = selectedTopic === "general"
+        ? (J_MONTHS[selectedMonth-1] + " " + fa(selectedYear))
+        : (fa(selectedDay) + " " + J_MONTHS[selectedMonth-1] + " " + fa(selectedYear));
+      const bar = document.getElementById("ctxBar");
+      if (bar) {
+        bar.innerHTML =
+          "<b>" + escapeHtml(selectedUserName) + "</b>" +
+          "<span class=\"ctx-sep\">·</span>" +
+          t.icon + " " + t.title +
+          "<span class=\"ctx-sep\">·</span>" +
+          dayBit;
+      }
+      document.getElementById("sendNote").disabled = !selectedTopic;
+    }
+  }
+
+  function initMonthPicker() {
+    const now = new Date();
+    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth()+1, now.getDate());
+    selectedYear = j.jy; selectedMonth = j.jm; selectedDay = j.jd;
+    const ySel = document.getElementById("yearSelect");
+    const mSel = document.getElementById("monthSelect");
+    ySel.innerHTML = "";
+    for (let y = START_YEAR; y <= j.jy; y++) {
+      const o = document.createElement("option");
+      o.value = y; o.textContent = fa(y);
+      if (y === selectedYear) o.selected = true;
+      ySel.appendChild(o);
+    }
+    mSel.innerHTML = J_MONTHS.map((name,i) =>
+      `<option value="${i+1}" ${i+1===selectedMonth?"selected":""}>${name}</option>`
+    ).join("");
+    ySel.onchange = () => { selectedYear = +ySel.value; refreshReport(); };
+    mSel.onchange = () => { selectedMonth = +mSel.value; refreshReport(); };
+  }
+
+  function monthRange() {
+    const days = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+    const g0 = jalaali.toGregorian(selectedYear, selectedMonth, 1);
+    const g1 = jalaali.toGregorian(selectedYear, selectedMonth, days);
+    return {
+      start: isoDate(new Date(Date.UTC(g0.gy,g0.gm-1,g0.gd))),
+      end: isoDate(new Date(Date.UTC(g1.gy,g1.gm-1,g1.gd))),
+      days
+    };
+  }
+
+  async function fetchTopicMonth() {
+    monthRows = [];
+    if (!selectedUserId || !selectedTopic) return;
+    const t = topicInfo(selectedTopic);
+    if (t.source === "none") return;
+    const { start, end, days } = monthRange();
+    const byDay = {};
+
+    if (t.source === "daily_logs") {
+      const { data, error } = await db.from("daily_logs")
+        .select("log_date, value, score")
+        .eq("user_id", selectedUserId).eq("item_type", t.item)
+        .gte("log_date", start).lte("log_date", end);
+      if (error) throw error;
+      (data||[]).forEach(r => { byDay[r.log_date] = { value: r.value, score: Number(r.score)||0, extra: "" }; });
+    } else if (t.source === "exercise") {
+      const { data, error } = await db.from("exercise_logs")
+        .select("log_date, score, total_km, aerobic_minutes, running_km")
+        .eq("user_id", selectedUserId).gte("log_date", start).lte("log_date", end);
+      if (error) throw error;
+      (data||[]).forEach(r => {
+        byDay[r.log_date] = {
+          value: r.total_km, score: Number(r.score)||0,
+          extra: `هوازی ${fa(r.aerobic_minutes||0)}د · دو ${scoreText(r.running_km||0)}km`
+        };
+      });
+    } else if (t.source === "mountain") {
+      const { data, error } = await db.from("mountain_trips")
+        .select("trip_date").eq("user_id", selectedUserId)
+        .gte("trip_date", start).lte("trip_date", end);
+      if (error) throw error;
+      (data||[]).forEach(r => { byDay[r.trip_date] = { value: 1, score: 0, extra: "صعود" }; });
+    } else if (t.source === "weight") {
+      const { data, error } = await db.from("exercise_logs")
+        .select("log_date, weight_kg").eq("user_id", selectedUserId)
+        .gte("log_date", start).lte("log_date", end).not("weight_kg", "is", null);
+      if (error) throw error;
+      (data||[]).forEach(r => {
+        if (r.weight_kg != null) byDay[r.log_date] = { value: r.weight_kg, score: 0, extra: "kg" };
+      });
+    }
+
+    for (let d = 1; d <= days; d++) {
+      const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+      const iso = isoDate(new Date(Date.UTC(g.gy, g.gm-1, g.gd)));
+      const row = byDay[iso];
+      monthRows.push({
+        day: d, iso,
+        value: row ? row.value : null,
+        score: row ? row.score : null,
+        extra: row ? row.extra : "",
+        has: !!row
+      });
+    }
+  }
+
+  function renderMonthStats() {
+    const filled = monthRows.filter(r => r.has);
+    const scores = filled.map(r => r.score).filter(s => s != null);
+    const sum = scores.reduce((a,b)=>a+b, 0);
+    const avg = scores.length ? sum/scores.length : 0;
+    document.getElementById("monthStats").innerHTML = `
+      <div class="stat"><div class="stat-l">روزها</div><div class="stat-v">${fa(filled.length)}</div></div>
+      <div class="stat"><div class="stat-l">جمع</div><div class="stat-v ${sum>0?"pos":sum<0?"neg":""}">${scoreText(sum)}</div></div>
+      <div class="stat"><div class="stat-l">میانگین</div><div class="stat-v ${avg>0?"pos":avg<0?"neg":""}">${scoreText(avg)}</div></div>`;
+  }
+
+  function renderDayStrip() {
+    const strip = document.getElementById("dayStrip");
+    strip.innerHTML = monthRows.map(r => {
+      let v = "—";
+      if (r.has) {
+        if (selectedTopic === "weight") v = scoreText(r.value);
+        else if (selectedTopic === "exercise") v = scoreText(r.value);
+        else if (selectedTopic === "mountain") v = "✓";
+        else if (r.score != null) v = scoreText(r.score);
+        else v = scoreText(r.value);
+      }
+      return `<div class="day-chip ${r.has?"has":""} ${r.day===selectedDay?"active":""}" data-day="${r.day}">
+        <div class="d-n">${fa(r.day)}</div><div class="d-v">${v}</div></div>`;
+    }).join("");
+    strip.querySelectorAll(".day-chip").forEach(ch => {
+      ch.onclick = () => {
+        selectedDay = +ch.dataset.day;
+        renderDayStrip();
+        renderDayDetail();
+      };
+    });
+    // scroll active into view
+    const act = strip.querySelector(".day-chip.active");
+    if (act) act.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }
+
+  function renderDayDetail() {
+    const t = topicInfo(selectedTopic);
+    const r = monthRows.find(x => x.day === selectedDay);
+    const box = document.getElementById("dayDetail");
+    if (!r || !r.has) {
+      box.innerHTML = `<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong> — ثبتی نیست`;
+      return;
+    }
+    let lines = [`<strong>${fa(selectedDay)} ${J_MONTHS[selectedMonth-1]}</strong>`];
+    if (t.source === "daily_logs") {
+      lines.push(`مقدار ${scoreText(r.value)} · امتیاز ${scoreText(r.score)}`);
+    } else if (t.source === "exercise") {
+      lines.push(`km ${scoreText(r.value)} · امتیاز ${scoreText(r.score)}`);
+      if (r.extra) lines.push(r.extra);
+    } else if (t.source === "weight") {
+      lines.push(`${scoreText(r.value)} kg`);
+    } else if (t.source === "mountain") {
+      lines.push(r.extra || "صعود");
+    }
+    box.innerHTML = lines.join("<br>");
+  }
+
+  async function refreshReport() {
+    const block = document.getElementById("reportBlock");
+    if (!selectedUserId || !selectedTopic) {
+      block.classList.add("hidden");
+      return;
+    }
+    if (selectedTopic === "general") {
+      block.classList.remove("hidden");
+      document.getElementById("monthStats").innerHTML = "";
+      document.getElementById("dayStrip").innerHTML = "";
+      document.getElementById("dayDetail").textContent = "موضوع عمومی — بدون نمودار عادت";
+      return;
+    }
+    block.classList.remove("hidden");
+    try {
+      await fetchTopicMonth();
+      if (selectedDay > monthRows.length) selectedDay = monthRows.length;
+      renderMonthStats();
+      renderDayStrip();
+      renderDayDetail();
+    } catch (e) {
+      document.getElementById("dayDetail").textContent = "خطا: " + (e.message || e);
+    }
+  }
+
+  function openTopicPicker() {
+    const overlay = document.createElement("div");
+    overlay.className = "picker-overlay";
+    overlay.innerHTML = `
+      <div class="picker-sheet">
+        <div class="picker-title">موضوع</div>
+        <div class="picker-sub">عادت مورد نظر را انتخاب کن</div>
+        <div class="picker-grid">
+          ${TOPICS.map(t => `<button type="button" class="picker-item" data-topic="${t.id}">
+            <span class="p-ico">${t.icon}</span><span>${t.title}</span></button>`).join("")}
+        </div>
+        <button type="button" class="picker-close">بستن</button>
+      </div>`;
+    const close = () => overlay.remove();
+    overlay.onclick = e => { if (e.target === overlay) close(); };
+    overlay.querySelector(".picker-close").onclick = close;
+    overlay.querySelectorAll("[data-topic]").forEach(btn => {
+      btn.onclick = () => {
+        selectedTopic = btn.dataset.topic;
+        const t = topicInfo(selectedTopic);
+        document.getElementById("topicIco").textContent = t.icon;
+        document.getElementById("topicLabel").textContent = " " + t.title;
+        close();
+        refreshReport();
+      };
+    });
+    document.body.appendChild(overlay);
+  }
+
+
+  const CTX_OPEN = "«hql-ctx»";
+  const CTX_CLOSE = "«/hql-ctx»";
+
+  function buildCtxPayload() {
+    const filled = monthRows.filter(r => r.has);
+    const scores = filled.map(r => r.score).filter(s => s != null && !Number.isNaN(s));
+    const sum = scores.reduce((a, b) => a + b, 0);
+    const avg = scores.length ? Math.round((sum / scores.length) * 100) / 100 : 0;
+    const dayRow = monthRows.find(r => r.day === selectedDay);
+    return {
+      v: 1,
+      topic: selectedTopic,
+      jy: selectedYear,
+      jm: selectedMonth,
+      jd: selectedDay,
+      n: filled.length,
+      sum: Math.round(sum * 100) / 100,
+      avg,
+      ds: dayRow && dayRow.has ? dayRow.score : null,
+      dv: dayRow && dayRow.has ? dayRow.value : null
+    };
+  }
+
+  function packNoteBody(userText, ctx) {
+    const text = (userText || "").trim();
+    if (!ctx) return text;
+    return text + "\n" + CTX_OPEN + JSON.stringify(ctx) + CTX_CLOSE;
+  }
+
+  function parseNoteBody(raw) {
+    const s = String(raw || "");
+    const i = s.lastIndexOf(CTX_OPEN);
+    const j = s.lastIndexOf(CTX_CLOSE);
+    if (i >= 0 && j > i) {
+      let ctx = null;
+      try { ctx = JSON.parse(s.slice(i + CTX_OPEN.length, j)); } catch (_) { ctx = null; }
+      return { text: s.slice(0, i).trimEnd(), ctx };
+    }
+    return { text: s, ctx: null };
+  }
+
+  function renderCtxBar(ctx) {
+    if (!ctx || !ctx.topic) return "";
+    const ti = topicInfo(ctx.topic);
+    const monthName = J_MONTHS[(ctx.jm || 1) - 1] || "";
+    const sumCls = ctx.sum > 0 ? "pos" : ctx.sum < 0 ? "neg" : "";
+    const avgCls = ctx.avg > 0 ? "pos" : ctx.avg < 0 ? "neg" : "";
+    const dsCls = ctx.ds > 0 ? "pos" : ctx.ds < 0 ? "neg" : "";
+    const dayPart = ctx.jd != null
+      ? `<span class="nc-chip nc-day">روز <b class="${dsCls}">${fa(ctx.jd)}</b>${ctx.ds != null ? ` · <b class="${dsCls}">${scoreText(ctx.ds)}</b>` : ""}</span>`
+      : "";
+    return `<div class="note-ctx">
+      <span class="nc-chip">${monthName} ${fa(ctx.jy || "")}</span>
+      <span class="nc-chip">روزها <b>${fa(ctx.n || 0)}</b></span>
+      <span class="nc-chip">جمع <b class="${sumCls}">${scoreText(ctx.sum || 0)}</b></span>
+      <span class="nc-chip">میانگین <b class="${avgCls}">${scoreText(ctx.avg || 0)}</b></span>
+      ${dayPart}
+    </div>`;
+  }
+
+  function renderNotes(list, container, opts) {
+    const editable = opts && opts.editable;
+    if (!list || !list.length) {
+      container.innerHTML = `<div class="empty">یادداشتی نیست</div>`;
+      return;
+    }
+    container.innerHTML = list.map(n => {
+      const ti = topicInfo(n.topic);
+      const parsed = parseNoteBody(n.body);
+      const actions = editable ? `
+        <div class="note-actions">
+          <button type="button" data-edit="${n.id}">ویرایش</button>
+          <button type="button" class="danger" data-del="${n.id}">حذف</button>
+        </div>` : "";
+      return `<div class="note" data-id="${n.id}">
+        <div class="note-meta"><span class="note-topic">${ti.icon} ${ti.title}</span>
+        <span>${formatTime(n.created_at)}</span></div>
+        ${renderCtxBar(parsed.ctx)}
+        <div class="note-body" data-body="${n.id}">${escapeHtml(parsed.text)}</div>
+        ${actions}</div>`;
+    }).join("");
+    if (editable) {
+      container.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.onclick = () => editNote(btn.dataset.edit);
+      });
+      container.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = () => deleteNote(btn.dataset.del);
+      });
+    }
+  }
+
+  async function editNote(id) {
+    const bodyEl = document.querySelector(`[data-body="${id}"]`);
+    const current = bodyEl ? bodyEl.textContent : "";
+    const next = prompt("ویرایش متن یادداشت:", current);
+    if (next == null) return;
+    const text = next.trim();
+    if (!text) { toast("متن خالی نباشد"); return; }
+    const { data: row } = await db.from("coach_notes").select("body").eq("id", id).maybeSingle();
+    const prev = parseNoteBody(row && row.body);
+    const packed = packNoteBody(text, prev.ctx);
+    const { error } = await db.from("coach_notes")
+      .update({ body: packed, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) { toast(error.message); return; }
+    toast("ویرایش شد");
+    loadAdminNotes();
+  }
+
+  async function deleteNote(id) {
+    if (!confirm("حذف این یادداشت؟")) return;
+    const { error } = await db.from("coach_notes").delete().eq("id", id);
+    if (error) { toast(error.message); return; }
+    toast("حذف شد");
+    loadAdminNotes();
+  }
+
+
+  let allUsersCache = [];
+
+  function renderUserList(filter) {
+    const box = document.getElementById("userList");
+    if (!box) return;
+    const q = (filter || "").trim().toLowerCase();
+    const list = !q ? allUsersCache : allUsersCache.filter(u => {
+      const n = (u.display_name || "کاربر").toLowerCase();
+      return n.includes(q);
+    });
+    if (!list.length) {
+      box.innerHTML = `<div class="empty">${q ? "نتیجه‌ای نیست" : "کاربری نیست"}</div>`;
+      return;
+    }
+    box.innerHTML = list.map(u => {
+      const name = u.display_name || "کاربر";
+      const me = u.id === currentUser.id ? ' <span style="color:var(--neon2);font-size:10px">(من)</span>' : "";
+      return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
+        ${avatarHtml(name)}<span class="name">${escapeHtml(name)}${me}</span></div>`;
+    }).join("");
+    box.querySelectorAll(".user-chip").forEach(chip => {
+      chip.onclick = () => {
+        selectedUserId = chip.dataset.uid;
+        selectedUserName = chip.dataset.name || "کاربر";
+        box.querySelectorAll(".user-chip").forEach(c => c.classList.toggle("selected", c === chip));
+        const pill = document.getElementById("pillUser");
+        if (pill) pill.textContent = selectedUserName;
+        // موضوع اگر از قبل انتخاب شده برای شاگرد جدید رفرش شود
+        if (selectedTopic) {
+          if (typeof refreshReport === "function") refreshReport();
+        }
+        const notes = document.getElementById("adminNotes");
+        if (notes) notes.innerHTML = `<div class="empty">بروزرسانی را بزن</div>`;
+        setStep(2);
+      };
+    });
+  }
+
+  async function loadUsers() {
+    const box = document.getElementById("userList");
+    const { data, error } = await db.from("profiles").select("id, display_name").order("display_name");
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    allUsersCache = data || [];
+    renderUserList(document.getElementById("userSearch")?.value || "");
+    const search = document.getElementById("userSearch");
+    if (search && !search.dataset.bound) {
+      search.dataset.bound = "1";
+      search.addEventListener("input", () => renderUserList(search.value));
+    }
+  }
+
+  async function loadAdminNotes() {
+    const box = document.getElementById("adminNotes");
+    if (!box) return;
+    if (!selectedUserId) {
+      box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+      const sub = document.getElementById("monthNotesSub");
+      if (sub) sub.textContent = "";
+      return;
+    }
+    box.innerHTML = `<div class="empty">در حال بارگذاری...</div>`;
+    const { start, end } = monthRange();
+    const { data, error } = await db.from("coach_notes")
+      .select("id, topic, body, created_at")
+      .eq("user_id", selectedUserId)
+      .gte("created_at", start + "T00:00:00.000Z")
+      .lte("created_at", end + "T23:59:59.999Z")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    if (!data || !data.length) {
+      box.innerHTML = `<div class="empty">در ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)} یادداشتی نیست</div>`;
+      return;
+    }
+    renderNotes(data, box, { editable: true });
+  }
+
+  async function loadMyNotes() {
+    const box = document.getElementById("myNotes");
+    const { data, error } = await db.from("coach_notes")
+      .select("id, topic, body, created_at")
+      .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(50);
+    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    renderNotes(data, box, { editable: false });
+    markCoachNotesSeen(data);
+  }
+
+  async function sendNote() {
+    const body = (document.getElementById("noteBody").value||"").trim();
+    if (!selectedUserId || !selectedTopic || !body) { toast("متن لازم است"); return; }
+    const btn = document.getElementById("sendNote");
+    btn.disabled = true;
+    const ctx = (selectedTopic && selectedTopic !== "general") ? buildCtxPayload() : null;
+    const packed = packNoteBody(body, ctx);
+    const { error } = await db.from("coach_notes").insert({
+      admin_id: currentUser.id,
+      user_id: selectedUserId,
+      topic: selectedTopic,
+      body: packed
+    });
+    btn.disabled = false;
+    if (error) { toast(error.message); return; }
+    document.getElementById("noteBody").value = "";
+    toast("ثبت شد ✓");
+    loadAdminNotes();
+  }
+
+
+  const COACH_SEEN_KEY = "hql_coach_seen_at";
+
+  function markCoachNotesSeen(notes) {
+    try {
+      let maxT = 0;
+      (notes || []).forEach(n => {
+        const ts = new Date(n.created_at).getTime();
+        if (ts > maxT) maxT = ts;
+      });
+      if (maxT > 0) localStorage.setItem(COACH_SEEN_KEY, String(maxT));
+      if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(false);
+    } catch (_) {}
+  }
+
+  async function checkCoachBadge() {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await db.from("coach_notes")
+        .select("created_at")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error || !data || !data.length) {
+        if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(false);
+        return;
+      }
+      const latest = new Date(data[0].created_at).getTime();
+      const seen = Number(localStorage.getItem(COACH_SEEN_KEY) || 0);
+      if (typeof hqlNavSetCoachBadge === "function") hqlNavSetCoachBadge(latest > seen);
+    } catch (_) {}
+  }
+
+  async function init() {
+    const r = await db.auth.getSession();
+    if (!r.data.session) {
+      document.getElementById("denyBox").classList.remove("hidden");
+      if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
+      return;
+    }
+    currentUser = r.data.session.user;
+    const prof = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+    isAdmin = !!(prof.data && prof.data.is_admin);
+    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
+
+    document.getElementById("appBox").classList.remove("hidden");
+    await checkCoachBadge();
+    if (isAdmin) {
+      document.getElementById("pageSub").textContent = "سه مرحله: شاگرد ← موضوع و گزارش ← یادداشت";
+      document.getElementById("adminView").classList.remove("hidden");
+      initMonthPicker();
+      initWheel();
+      const __ys = document.getElementById("yearSelect");
+      const __ms = document.getElementById("monthSelect");
+      if (__ys && !__ys.dataset.notesBound) {
+        __ys.dataset.notesBound = "1";
+        __ys.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
+      }
+      if (__ms && !__ms.dataset.notesBound) {
+        __ms.dataset.notesBound = "1";
+        __ms.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
+      }
+document.getElementById("openTopicPicker").onclick = openTopicPicker;
+      document.getElementById("changeUserBtn").onclick = () => setStep(1);
+      document.getElementById("toStep3").onclick = () => {
+        if (!selectedTopic) { toast("موضوع را انتخاب کن"); return; }
+        setStep(3);
+      };
+      document.getElementById("backStep2").onclick = () => setStep(2);
+      document.getElementById("sendNote").onclick = sendNote;
+      const ln = document.getElementById("loadNotesBtn");
+      if (ln) ln.onclick = () => {
+        if (!selectedUserId) {
+          toast("یک کاربر انتخاب کن");
+          const box = document.getElementById("adminNotes");
+          if (box) box.innerHTML = `<div class="empty">یک کاربر انتخاب کن</div>`;
+          return;
+        }
+        loadAdminNotes();
+      };
+      await loadUsers();
+      setStep(1);
+    } else {
+      document.getElementById("pageSub").textContent = "پیام‌های استاد برای شما";
+      document.getElementById("userView").classList.remove("hidden");
+      selectedUserId = currentUser.id;
+      try {
+        const pr = await db.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
+        selectedUserName = (pr.data && pr.data.display_name) || "من";
+      } catch (_) { selectedUserName = "من"; }
+      await loadMyNotes();
+      initWheel();
+    }
+  }
+
+  db.auth.onAuthStateChange((e) => { if (e === "SIGNED_OUT") location.href = "index.html"; });
+  function faNumber(v){ return String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+
+  /* ===== گردونه نظرات (AJAX-like، ۱۰تایی) ===== */
+  let wheelOffset = 0;
+  let wheelDayFilter = "all"; // all | YYYY-MM-DD
+  let wheelAllRows = []; // کش برای فیلتر روز
+
+  const WHEEL_PAGE = 10;
+  let wheelLoading = false;
+  let wheelDone = false;
+  let wheelNameMap = {};
+
+  function faDate(iso) {
+    try {
+      const d = new Date(iso);
+      const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+      return fa(j.jy) + "/" + fa(String(j.jm).padStart(2,"0")) + "/" + fa(String(j.jd).padStart(2,"0"));
+    } catch (_) {
+      return "";
+    }
+  }
+
+  
+  function noteDayKey(iso) {
+    try {
+      const d = new Date(iso);
+      const y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+      return y + "-" + String(m).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    } catch (_) { return ""; }
+  }
+
+  function rebuildWheelDayPicker() {
+    const box = document.getElementById("wheelDayPicker");
+    if (!box) return;
+    const days = [];
+    const seen = new Set();
+    wheelAllRows.forEach(n => {
+      const k = noteDayKey(n.created_at);
+      if (k && !seen.has(k)) { seen.add(k); days.push(k); }
+    });
+    days.sort((a,b) => a < b ? 1 : -1);
+    const chips = [`<button type="button" class="wheel-day-chip ${wheelDayFilter==="all"?"active":""}" data-day="all">همه</button>`];
+    days.slice(0, 31).forEach(k => {
+      const [y,m,d] = k.split("-").map(Number);
+      let label = String(d);
+      try {
+        const j = jalaali.toJalaali(y,m,d);
+        label = faNumber(j.jd);
+      } catch(_) {}
+      chips.push(`<button type="button" class="wheel-day-chip ${wheelDayFilter===k?"active":""}" data-day="${k}">${label}</button>`);
+    });
+    box.innerHTML = chips.join("");
+    box.querySelectorAll(".wheel-day-chip").forEach(btn => {
+      btn.onclick = () => {
+        wheelDayFilter = btn.dataset.day || "all";
+        box.querySelectorAll(".wheel-day-chip").forEach(b => b.classList.toggle("active", b === btn));
+        applyWheelDayFilter();
+      };
+    });
+  }
+
+  function applyWheelDayFilter() {
+    const list = document.getElementById("wheelList");
+    if (!list) return;
+    const filtered = wheelDayFilter === "all"
+      ? wheelAllRows
+      : wheelAllRows.filter(n => noteDayKey(n.created_at) === wheelDayFilter);
+    list.innerHTML = "";
+    if (!filtered.length) {
+      list.innerHTML = `<div class="wheel-empty">نظری در این روز نیست</div>`;
+      return;
+    }
+    renderWheelCards(filtered, false);
+    const track = document.getElementById("wheelTrack");
+    if (track) track.scrollTop = 0;
+    clearWheelGlow();
+  }
+
+  function applyWheelTransforms() {
+    const track = document.getElementById("wheelTrack");
+    const list = document.getElementById("wheelList");
+    if (!track || !list) return;
+    const cards = list.querySelectorAll(".wheel-card");
+    const mid = track.scrollTop + track.clientHeight / 2;
+    cards.forEach(card => {
+      const cMid = card.offsetTop + card.offsetHeight / 2;
+      const dist = (cMid - mid) / track.clientHeight; // ~-1..1
+      const rot = Math.max(-55, Math.min(55, dist * 70));
+      const scale = 1 - Math.min(0.28, Math.abs(dist) * 0.35);
+      const opacity = 1 - Math.min(0.65, Math.abs(dist) * 0.75);
+      const z = 100 - Math.abs(dist) * 80;
+      card.style.transform = `rotateX(${(-rot).toFixed(2)}deg) scale(${scale.toFixed(3)}) translateZ(${(z * 0.2).toFixed(1)}px)`;
+      card.style.opacity = String(Math.max(0.25, opacity));
+      card.style.zIndex = String(Math.round(200 - Math.abs(dist) * 100));
+    });
+  }
+
+  function wheelGlowFromSpeed(speed) {
+    const shell = document.getElementById("wheelShell");
+    const track = document.getElementById("wheelTrack");
+    if (!shell) return;
+    if (!window._wheelHeat) window._wheelHeat = 0;
+    const target = Math.min(1, Math.abs(speed) / 28);
+    if (target > window._wheelHeat) window._wheelHeat = target;
+    else window._wheelHeat *= 0.92;
+    const heat = window._wheelHeat;
+    if (heat < 0.04) {
+      window._wheelHeat = 0;
+      shell.classList.remove("freeze", "glow");
+      if (track) track.classList.remove("freeze-blur");
+      shell.style.boxShadow = "";
+      shell.style.filter = "";
+      return;
+    }
+    shell.classList.add("freeze");
+    if (track) track.classList.add("freeze-blur");
+    const a = (0.08 + heat * 0.35).toFixed(2);
+    const blur = (8 + heat * 28).toFixed(0);
+    shell.style.boxShadow =
+      `0 0 ${blur}px rgba(160, 220, 255, ${a}), inset 0 0 ${12 + heat * 24}px rgba(200, 240, 255, ${0.06 + heat * 0.2})`;
+    // یخ‌زدگی تدریجی روی محتوا
+    if (track) {
+      const f = (heat * 0.55).toFixed(3);
+      track.style.filter = `saturate(${1 - heat * 0.35}) brightness(${1 + heat * 0.08})`;
+    }
+  }
+
+  function clearWheelGlow() {
+    window._wheelHeat = 0;
+    const shell = document.getElementById("wheelShell");
+    const track = document.getElementById("wheelTrack");
+    if (shell) {
+      shell.classList.remove("freeze", "glow");
+      shell.style.boxShadow = "";
+    }
+    if (track) {
+      track.classList.remove("freeze-blur");
+      track.style.filter = "";
+      track.style.transition = "filter 0.9s ease";
+      requestAnimationFrame(() => { if (track) track.style.filter = ""; });
+    }
+  }
+
+
+  
+
+  async function ensureWheelNames(userIds) {
+    const missing = userIds.filter(id => id && !wheelNameMap[id]);
+    if (!missing.length) return;
+    const { data } = await db.from("profiles").select("id, display_name").in("id", missing);
+    (data || []).forEach(p => { wheelNameMap[p.id] = p.display_name || "کاربر"; });
+  }
+
+  function renderWheelCards(rows, append) {
+    const list = document.getElementById("wheelList");
+    if (!list) return;
+    if (!append) list.innerHTML = "";
+    if (!rows.length && !append) {
+      list.innerHTML = `<div class="wheel-empty">هنوز نظری ثبت نشده</div>`;
+      return;
+    }
+    const html = rows.map(n => {
+      const name = wheelNameMap[n.user_id] || "کاربر";
+      const ti = topicInfo(n.topic);
+      const parsed = parseNoteBody(n.body);
+      const body = (parsed && parsed.text) ? parsed.text : (n.body || "");
+      const topicLabel = (ti && (ti.title || ti.label)) ? (ti.title || ti.label) : (n.topic || "عمومی");
+      const icon = (ti && ti.icon) ? ti.icon : "💬";
+      const ctx = (typeof renderCtxBar === "function") ? renderCtxBar(parsed && parsed.ctx) : "";
+      return `<div class="wheel-card note" data-uid="${n.user_id || ""}" data-name="${String(name).replace(/"/g, "&quot;")}">
+        <div class="note-meta">
+          <span class="note-topic">${icon} ${topicLabel} · ${name}</span>
+          <span>${faDate(n.created_at)}</span>
+        </div>
+        ${ctx || ""}
+        <div class="note-body">${String(body).replace(/</g, "&lt;")}</div>
+      </div>`;
+    }).join("");
+    list.insertAdjacentHTML("beforeend", html);
+    requestAnimationFrame(applyWheelTransforms);
+  }
+
+  async function loadWheelPage() {
+    if (wheelLoading || wheelDone) return;
+    wheelLoading = true;
+    const loading = document.getElementById("wheelLoading");
+    if (loading) loading.classList.remove("hidden");
+    try {
+      let q = db.from("coach_notes")
+        .select("id, user_id, topic, body, created_at")
+        .order("created_at", { ascending: false });
+      if (!isAdmin && currentUser) q = q.eq("user_id", currentUser.id);
+      const { data, error } = await q.range(wheelOffset, wheelOffset + WHEEL_PAGE - 1);
+      if (error) throw error;
+      const rows = data || [];
+      if (!rows.length) {
+        wheelDone = true;
+        const end = document.getElementById("wheelEnd");
+        if (end && wheelOffset > 0) end.classList.remove("hidden");
+        if (wheelOffset === 0) renderWheelCards([], false);
+      } else {
+        await ensureWheelNames(rows.map(r => r.user_id));
+        wheelAllRows = wheelAllRows.concat(rows);
+        rebuildWheelDayPicker();
+        if (wheelDayFilter === "all") renderWheelCards(rows, wheelOffset > 0);
+        else applyWheelDayFilter();
+        wheelOffset += rows.length;
+        if (rows.length < WHEEL_PAGE) {
+          wheelDone = true;
+          const end = document.getElementById("wheelEnd");
+          if (end) end.classList.remove("hidden");
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+      const list = document.getElementById("wheelList");
+      if (list && wheelOffset === 0) list.innerHTML = `<div class="wheel-empty">${e.message || "خطا"}</div>`;
+    } finally {
+      wheelLoading = false;
+      if (loading) loading.classList.add("hidden");
+    }
+  }
+
+  function openCommentForUser(uid, name) {
+    if (!uid) return;
+    selectedUserId = uid;
+    selectedUserName = name || "کاربر";
+    // پیدا کردن در کش
+    const u = (allUsersCache || []).find(x => x.id === uid);
+    if (u) {
+      selectedUserId = u.id;
+      selectedUserName = u.display_name || name;
+    }
+    const pill = document.getElementById("pillUser");
+    if (pill) pill.textContent = selectedUserName;
+    if (typeof setStep === "function") setStep(2);
+    loadAdminNotes();
+    toast("ادامهٔ کامنت برای " + selectedUserName);
+  }
+
+  function initWheel() {
+    const section = document.getElementById("wheelSection");
+    const track = document.getElementById("wheelTrack");
+    if (!section || !track) return;
+    section.classList.remove("hidden");
+    wheelOffset = 0;
+    wheelDone = false;
+    wheelLoading = false;
+    wheelAllRows = [];
+    wheelDayFilter = "all";
+    const list = document.getElementById("wheelList");
+    if (list) list.innerHTML = "";
+    const end = document.getElementById("wheelEnd");
+    if (end) end.classList.add("hidden");
+    loadWheelPage();
+
+    let lastY = track.scrollTop;
+    let lastT = performance.now();
+    let glowIdleTimer = null;
+    track.addEventListener("scroll", () => {
+      applyWheelTransforms();
+      const now = performance.now();
+      const dy = track.scrollTop - lastY;
+      const dt = Math.max(16, now - lastT);
+      const speed = dy / (dt / 16);
+      lastY = track.scrollTop;
+      lastT = now;
+
+      const atTop = track.scrollTop <= 1;
+      const atBottom = track.scrollTop + track.clientHeight >= track.scrollHeight - 2;
+      if (atTop || atBottom) {
+        // برخورد به انتها: گلو قطع شود (نه دائم)
+        if (Math.abs(dy) < 0.5) clearWheelGlow();
+        else wheelGlowFromSpeed(speed * 0.35);
+      } else {
+        wheelGlowFromSpeed(speed);
+      }
+
+      clearTimeout(glowIdleTimer);
+      glowIdleTimer = setTimeout(() => clearWheelGlow(), 420);
+
+      if (track.scrollTop + track.clientHeight > track.scrollHeight - 80) {
+        loadWheelPage();
+      }
+    }, { passive: true });
+
+    track.addEventListener("click", (e) => {
+      const card = e.target.closest(".wheel-card");
+      if (!card) return;
+      openCommentForUser(card.dataset.uid, card.dataset.name);
+    });
+  }
+
+  init();
+  </script>
+  <script src="nav.js"></script>
+</body>
+</html>
