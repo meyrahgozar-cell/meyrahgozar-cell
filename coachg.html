@@ -446,6 +446,35 @@
   box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
 }
 
+
+.wheel-shell {
+  position: relative;
+}
+.wheel-shell::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.85s ease;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(180, 230, 255, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(200, 240, 255, 0.12), rgba(140, 200, 255, 0.05) 40%, transparent);
+  box-shadow: inset 0 0 30px rgba(180, 230, 255, 0.12);
+  mix-blend-mode: screen;
+}
+.wheel-shell.freeze::after {
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.wheel-shell.freeze {
+  border-color: rgba(160, 220, 255, 0.45);
+}
+.wheel-track.freeze-blur {
+  filter: saturate(0.85) brightness(1.05);
+}
+
 </style>
 </head>
 <body>
@@ -479,18 +508,11 @@
           <div class="user-list" id="userList"><div class="empty">...</div></div>
         </div>
 
-      <!-- کامنت‌های ماه + دکمه نوشتن بالاتر از لیست -->
-      <div class="card month-notes-card" id="monthNotesCard">
-        <button type="button" class="btn primary" id="addCommentBtn" style="width:100%;margin-bottom:12px">ادامه · نوشتن یادداشت</button>
-        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <span>کامنت‌های این ماه</span>
-          <button type="button" class="btn" id="loadNotesBtn" style="width:auto;height:34px;padding:0 12px;font-size:12px">بروزرسانی</button>
-        </div>
-        <div class="card-sub" id="monthNotesSub"></div>
-        <div id="adminNotes"><div class="empty">شاگرد را انتخاب کن</div></div>
-      </div>
+      
 
-        <!-- مرحله ۲: موضوع + گزارش -->
+      
+      
+        <!-- مرحله ۲: موضوع و گزارش -->
         <div id="step2" class="card hidden">
           <div class="card-title">۲ · موضوع و گزارش</div>
           <div class="summary-row">
@@ -523,8 +545,15 @@
             <button type="button" class="btn" id="backStep2">بازگشت</button>
             <button type="button" class="btn primary" id="sendNote" disabled>ثبت</button>
           </div>
-
         </div>
+
+      <!-- کامنت‌های این ماه (با درخواست) -->
+      <div class="card month-notes-card" id="monthNotesCard">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <span>کامنت‌های این ماه</span>
+          <button type="button" class="btn" id="loadNotesBtn" style="width:auto;height:34px;padding:0 12px;font-size:12px">بروزرسانی</button>
+        </div>
+        <div id="adminNotes"><div class="empty">بروزرسانی را بزن</div></div>
       </div>
 
       <!-- گردونه نظرات -->
@@ -984,9 +1013,13 @@
         box.querySelectorAll(".user-chip").forEach(c => c.classList.toggle("selected", c === chip));
         const pill = document.getElementById("pillUser");
         if (pill) pill.textContent = selectedUserName;
-        const sub = document.getElementById("monthNotesSub");
-        if (sub) sub.textContent = selectedUserName || "";
-        loadAdminNotes();
+        // موضوع اگر از قبل انتخاب شده برای شاگرد جدید رفرش شود
+        if (selectedTopic) {
+          if (typeof refreshReport === "function") refreshReport();
+        }
+        const notes = document.getElementById("adminNotes");
+        if (notes) notes.innerHTML = `<div class="empty">بروزرسانی را بزن</div>`;
+        setStep(2);
       };
     });
   }
@@ -1122,22 +1155,7 @@
         __ms.dataset.notesBound = "1";
         __ms.addEventListener("change", () => { if (selectedUserId) loadAdminNotes(); });
       }
-      
-      const addBtn = document.getElementById("addCommentBtn");
-      if (addBtn) addBtn.onclick = function () {
-        if (!selectedUserId) {
-          toast("اول یک شاگرد انتخاب کن");
-          return;
-        }
-        const pill = document.getElementById("pillUser");
-        if (pill) pill.textContent = selectedUserName || "شاگرد";
-        setStep(2);
-        try {
-          document.getElementById("step2").scrollIntoView({ behavior: "smooth", block: "start" });
-        } catch (e) {}
-      };
-
-      document.getElementById("openTopicPicker").onclick = openTopicPicker;
+document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("changeUserBtn").onclick = () => setStep(1);
       document.getElementById("toStep3").onclick = () => {
         if (!selectedTopic) { toast("موضوع را انتخاب کن"); return; }
@@ -1270,35 +1288,52 @@
 
   function wheelGlowFromSpeed(speed) {
     const shell = document.getElementById("wheelShell");
+    const track = document.getElementById("wheelTrack");
     if (!shell) return;
     if (!window._wheelHeat) window._wheelHeat = 0;
-    const target = Math.min(1, Math.abs(speed) / 40);
-    // فقط با حرکت واقعی داغ می‌شود؛ در توقف سریع سرد می‌شود
+    const target = Math.min(1, Math.abs(speed) / 28);
     if (target > window._wheelHeat) window._wheelHeat = target;
-    else window._wheelHeat *= 0.86;
-    if (window._wheelHeat < 0.05) {
+    else window._wheelHeat *= 0.92;
+    const heat = window._wheelHeat;
+    if (heat < 0.04) {
       window._wheelHeat = 0;
-      shell.classList.remove("glow");
+      shell.classList.remove("freeze", "glow");
+      if (track) track.classList.remove("freeze-blur");
       shell.style.boxShadow = "";
+      shell.style.filter = "";
       return;
     }
-    shell.classList.add("glow");
-    const heat = window._wheelHeat;
-    const a = (0.12 + heat * 0.5).toFixed(2);
-    const b = (0.06 + heat * 0.35).toFixed(2);
-    const blur = (10 + heat * 32).toFixed(0);
+    shell.classList.add("freeze");
+    if (track) track.classList.add("freeze-blur");
+    const a = (0.08 + heat * 0.35).toFixed(2);
+    const blur = (8 + heat * 28).toFixed(0);
     shell.style.boxShadow =
-      `0 0 ${blur}px rgba(0, 240, 255, ${a}), 0 0 ${blur * 2}px rgba(0, 200, 255, ${b}), inset 0 0 ${8 + heat * 16}px rgba(0, 240, 255, ${0.05 + heat * 0.18})`;
+      `0 0 ${blur}px rgba(160, 220, 255, ${a}), inset 0 0 ${12 + heat * 24}px rgba(200, 240, 255, ${0.06 + heat * 0.2})`;
+    // یخ‌زدگی تدریجی روی محتوا
+    if (track) {
+      const f = (heat * 0.55).toFixed(3);
+      track.style.filter = `saturate(${1 - heat * 0.35}) brightness(${1 + heat * 0.08})`;
+    }
   }
 
   function clearWheelGlow() {
     window._wheelHeat = 0;
     const shell = document.getElementById("wheelShell");
-    if (!shell) return;
-    shell.classList.remove("glow");
-    shell.style.boxShadow = "";
+    const track = document.getElementById("wheelTrack");
+    if (shell) {
+      shell.classList.remove("freeze", "glow");
+      shell.style.boxShadow = "";
+    }
+    if (track) {
+      track.classList.remove("freeze-blur");
+      track.style.filter = "";
+      track.style.transition = "filter 0.9s ease";
+      requestAnimationFrame(() => { if (track) track.style.filter = ""; });
+    }
   }
 
+
+  
 
   async function ensureWheelNames(userIds) {
     const missing = userIds.filter(id => id && !wheelNameMap[id]);
@@ -1433,7 +1468,7 @@
       }
 
       clearTimeout(glowIdleTimer);
-      glowIdleTimer = setTimeout(() => clearWheelGlow(), 180);
+      glowIdleTimer = setTimeout(() => clearWheelGlow(), 420);
 
       if (track.scrollTop + track.clientHeight > track.scrollHeight - 80) {
         loadWheelPage();
