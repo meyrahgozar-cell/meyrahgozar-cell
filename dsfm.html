@@ -156,6 +156,7 @@
             gap: 8px;
             font-weight: 700;
             font-size: 1.1rem;
+            flex-shrink: 0;
         }
         .topbar .brand i {
             color: var(--accent);
@@ -166,6 +167,37 @@
             background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+        .topbar .repo-config {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+        }
+        .topbar .repo-config input {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 30px;
+            padding: 4px 12px;
+            color: var(--text-primary);
+            font-size: 0.7rem;
+            outline: none;
+            transition: var(--transition);
+            font-family: inherit;
+            width: 120px;
+        }
+        .topbar .repo-config input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+        .topbar .repo-config input::placeholder {
+            color: var(--text-muted);
+        }
+        .topbar .repo-config .repo-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-right: 2px;
         }
         .topbar .nav-controls {
             display: flex;
@@ -952,6 +984,9 @@
                 width: 190px;
                 min-width: 140px;
             }
+            .topbar .repo-config input {
+                width: 90px;
+            }
             .topbar .actions .token-input {
                 width: 110px;
             }
@@ -973,6 +1008,20 @@
             }
             .topbar .brand i {
                 font-size: 1rem;
+            }
+            .topbar .repo-config {
+                order: 4;
+                flex-basis: 100%;
+                justify-content: flex-start;
+                gap: 4px;
+            }
+            .topbar .repo-config input {
+                width: 80px;
+                font-size: 0.6rem;
+                padding: 2px 8px;
+            }
+            .topbar .repo-config .repo-label {
+                font-size: 0.55rem;
             }
             .topbar .nav-controls {
                 order: 2;
@@ -1197,6 +1246,17 @@
                 <i class="fas fa-code-branch"></i>
                 <span>FileForge</span>
             </div>
+
+            <!-- Repo Configuration -->
+            <div class="repo-config">
+                <span class="repo-label">Owner</span>
+                <input type="text" id="ownerInput" placeholder="username" value="" />
+                <span class="repo-label">Repo</span>
+                <input type="text" id="repoInput" placeholder="repo-name" value="" />
+                <span class="repo-label">Branch</span>
+                <input type="text" id="branchInput" placeholder="main" value="master" />
+            </div>
+
             <div class="nav-controls">
                 <button class="btn btn-sm" id="homeBtn" title="Home"><i class="fas fa-home"></i></button>
                 <button class="btn btn-sm" id="upBtn" title="Up"><i class="fas fa-arrow-up"></i></button>
@@ -1239,7 +1299,7 @@
                 <div class="file-list" id="fileList">
                     <div class="empty-state">
                         <i class="fas fa-folder-open"></i>
-                        <p>Connect to GitHub to browse files</p>
+                        <p>Set Owner & Repo, enter token, and click Connect</p>
                     </div>
                 </div>
 
@@ -1296,24 +1356,13 @@
             'use strict';
 
             // ============================================================
-            // CONFIG
-            // ============================================================
-            const CONFIG = {
-                owner: 'vahidarmy',
-                repo: 'vahidarmy.github.io',
-                token: '',
-                branch: 'master',
-                currentPath: '',
-                currentSha: null,
-                editingFile: null,
-                ctxTarget: null,
-            };
-
-            // ============================================================
             // DOM REFS
             // ============================================================
             const $ = id => document.getElementById(id);
             const tokenInput = $('tokenInput');
+            const ownerInput = $('ownerInput');
+            const repoInput = $('repoInput');
+            const branchInput = $('branchInput');
             const connectBtn = $('connectBtn');
             const refreshBtn = $('refreshBtn');
             const fileTree = $('fileTree');
@@ -1340,19 +1389,31 @@
             const downloadSelectedBtn = $('downloadSelectedBtn');
             const selectedCountSpan = $('selectedCount');
 
+            // ============================================================
+            // STATE
+            // ============================================================
+            let CONFIG = {
+                owner: '',
+                repo: '',
+                token: '',
+                branch: 'master',
+                currentPath: '',
+                currentSha: null,
+                editingFile: null,
+                ctxTarget: null,
+            };
+
             let pyodideReady = false;
             let pyodideInstance = null;
             let updateTimeout = null;
 
-            // ============================================================
-            // SELECTION STATE
-            // ============================================================
+            // Selection
             const selectedPaths = new Set();
             let lastClickedIndex = -1;
-            let currentFileItems = []; // array of item objects for current folder
+            let currentFileItems = [];
 
             // ============================================================
-            // TOAST SYSTEM
+            // TOAST
             // ============================================================
             function toast(message, type = 'info', duration = 3500) {
                 const container = $('toastContainer');
@@ -1395,7 +1456,7 @@
             }
 
             // ============================================================
-            // GITHUB API
+            // GITHUB API (uses dynamic CONFIG)
             // ============================================================
             function getHeaders() {
                 const token = CONFIG.token || tokenInput.value.trim();
@@ -1419,7 +1480,10 @@
             }
 
             async function getContents(path, ref) {
-                let endpoint = `/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
+                const owner = CONFIG.owner || ownerInput.value.trim();
+                const repo = CONFIG.repo || repoInput.value.trim();
+                if (!owner || !repo) throw new Error('Owner and Repository are required');
+                let endpoint = `/repos/${owner}/${repo}/contents`;
                 const cleanPath = normalizePath(path);
                 if (cleanPath) endpoint += `/${cleanPath}`;
                 if (ref) endpoint += `?ref=${ref}`;
@@ -1427,26 +1491,32 @@
             }
 
             async function createOrUpdateFile(path, content, message, sha) {
+                const owner = CONFIG.owner || ownerInput.value.trim();
+                const repo = CONFIG.repo || repoInput.value.trim();
+                if (!owner || !repo) throw new Error('Owner and Repository are required');
                 const cleanPath = normalizePath(path);
                 if (!cleanPath) throw new Error('Invalid file path');
-                const endpoint = `/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${cleanPath}`;
+                const endpoint = `/repos/${owner}/${repo}/contents/${cleanPath}`;
                 const body = {
                     message: message || `Update ${cleanPath}`,
                     content: btoa(unescape(encodeURIComponent(content))),
-                    branch: CONFIG.branch,
+                    branch: CONFIG.branch || branchInput.value.trim() || 'master',
                 };
                 if (sha) body.sha = sha;
                 return ghFetch(endpoint, { method: 'PUT', body: JSON.stringify(body) });
             }
 
             async function deleteFile(path, sha, message) {
+                const owner = CONFIG.owner || ownerInput.value.trim();
+                const repo = CONFIG.repo || repoInput.value.trim();
+                if (!owner || !repo) throw new Error('Owner and Repository are required');
                 const cleanPath = normalizePath(path);
                 if (!cleanPath) throw new Error('Invalid file path');
-                const endpoint = `/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${cleanPath}`;
+                const endpoint = `/repos/${owner}/${repo}/contents/${cleanPath}`;
                 const body = {
                     message: message || `Delete ${cleanPath}`,
                     sha: sha,
-                    branch: CONFIG.branch,
+                    branch: CONFIG.branch || branchInput.value.trim() || 'master',
                 };
                 return ghFetch(endpoint, { method: 'DELETE', body: JSON.stringify(body) });
             }
@@ -1455,6 +1525,28 @@
                 const cleanPath = normalizePath(path);
                 const filePath = cleanPath ? `${cleanPath}/.gitkeep` : '.gitkeep';
                 return createOrUpdateFile(filePath, '', `Create folder ${cleanPath || '/'}`, null);
+            }
+
+            // ============================================================
+            // BUILD GITHUB PAGES URL
+            // ============================================================
+            function getGitHubPagesBase() {
+                const owner = CONFIG.owner || ownerInput.value.trim();
+                const repo = CONFIG.repo || repoInput.value.trim();
+                if (!owner || !repo) return '';
+                // if repo ends with '.github.io' it's a user site
+                if (repo.endsWith('.github.io')) {
+                    return `https://${owner}.github.io`;
+                } else {
+                    return `https://${owner}.github.io/${repo}`;
+                }
+            }
+
+            function getFileUrl(path) {
+                const base = getGitHubPagesBase();
+                if (!base) return '';
+                const clean = normalizePath(path);
+                return `${base}/${clean}`;
             }
 
             // ============================================================
@@ -1641,16 +1733,12 @@
                     empty.style.gridColumn = '1 / -1';
                     empty.innerHTML = `<i class="fas fa-folder-open"></i><p>Empty folder</p>`;
                     fileList.appendChild(empty);
-                    // Clear selection
                     clearSelection();
                     return;
                 }
 
                 const tree = buildTree(items);
-                currentFileItems = tree; // store for selection
-                // Reset selection if folder changed (we clear on navigate anyway)
-                // We'll clear selection on each navigate in navigateTo
-
+                currentFileItems = tree;
                 for (let i = 0; i < tree.length; i++) {
                     const item = tree[i];
                     const card = document.createElement('div');
@@ -1677,7 +1765,6 @@
                             <button class="action-btn delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
-                    // Re-append indicator so it's on top (it was prepended)
                     card.appendChild(indicator);
 
                     card.dataset.path = item.path;
@@ -1687,26 +1774,20 @@
                     card.dataset.isFolder = item.isFolder;
                     card.dataset.index = i;
 
-                    // Selection state
                     const isSelected = selectedPaths.has(item.path);
                     if (isSelected) card.classList.add('selected');
 
-                    // Click handling with modifier keys
                     card.addEventListener('click', (e) => {
-                        // Ignore if click on action button
                         if (e.target.closest('.action-btn')) return;
-
                         const ctrl = e.ctrlKey || e.metaKey;
                         const shift = e.shiftKey;
 
                         if (ctrl) {
-                            // Toggle selection
                             toggleSelection(item.path);
                             e.preventDefault();
                             return;
                         }
                         if (shift) {
-                            // Range selection
                             if (lastClickedIndex >= 0) {
                                 const start = Math.min(lastClickedIndex, i);
                                 const end = Math.max(lastClickedIndex, i);
@@ -1720,12 +1801,8 @@
                                 updateDownloadButton();
                                 e.preventDefault();
                                 return;
-                            } else {
-                                // no last clicked, treat as normal click
                             }
                         }
-
-                        // Normal click: open file or folder
                         if (item.isFolder) {
                             navigateTo(item.path);
                         } else {
@@ -1733,24 +1810,23 @@
                         }
                     });
 
-                    // Store last clicked index on click (even if modifier)
                     card.addEventListener('mousedown', (e) => {
                         if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
                             lastClickedIndex = i;
                         }
                     });
 
-                    // Action buttons: open in browser
                     const openBtn = card.querySelector('.open-btn');
                     if (openBtn) {
                         openBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            window.open(`https://${CONFIG.owner}.github.io/${item.path}`, '_blank');
+                            const url = getFileUrl(item.path);
+                            if (url) window.open(url, '_blank');
+                            else toast('GitHub Pages URL not configured', 'warning');
                             toast(`Opening ${item.path}`, 'info', 2000);
                         });
                     }
 
-                    // Action buttons: delete
                     const deleteBtn = card.querySelector('.delete-btn');
                     deleteBtn.addEventListener('click', async (e) => {
                         e.stopPropagation();
@@ -1764,7 +1840,6 @@
                         });
                     });
 
-                    // Context menu
                     card.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1781,12 +1856,9 @@
                     fileList.appendChild(card);
                 }
 
-                // On mobile always show actions
                 if (window.innerWidth <= 640) {
                     document.querySelectorAll('.card-actions').forEach(el => el.classList.add('always-visible'));
                 }
-
-                // Update download button after render
                 updateDownloadButton();
             }
 
@@ -1794,11 +1866,8 @@
             // SELECTION HELPERS
             // ============================================================
             function toggleSelection(path) {
-                if (selectedPaths.has(path)) {
-                    selectedPaths.delete(path);
-                } else {
-                    selectedPaths.add(path);
-                }
+                if (selectedPaths.has(path)) selectedPaths.delete(path);
+                else selectedPaths.add(path);
                 updateSelectionUI();
                 updateDownloadButton();
             }
@@ -1814,11 +1883,8 @@
                 const cards = fileList.querySelectorAll('.file-card');
                 cards.forEach(card => {
                     const path = card.dataset.path;
-                    if (selectedPaths.has(path)) {
-                        card.classList.add('selected');
-                    } else {
-                        card.classList.remove('selected');
-                    }
+                    if (selectedPaths.has(path)) card.classList.add('selected');
+                    else card.classList.remove('selected');
                 });
             }
 
@@ -1870,7 +1936,6 @@
                     const cleanPath = normalizePath(path);
                     CONFIG.currentPath = cleanPath;
                     pathDisplay.textContent = cleanPath || '/';
-                    // Clear selection on navigation
                     clearSelection();
                     const items = await getContents(cleanPath, CONFIG.branch);
                     currentItems = Array.isArray(items) ? items : [];
@@ -1897,30 +1962,23 @@
             downloadSelectedBtn.addEventListener('click', async () => {
                 const selected = Array.from(selectedPaths);
                 if (selected.length === 0) return;
-
                 toast(`Preparing ${selected.length} item(s) for download...`, 'info', 3000);
                 try {
                     const zip = new JSZip();
-                    // We'll need to fetch each selected item
                     for (const itemPath of selected) {
-                        // find item in currentFileItems to know if folder
                         const item = currentFileItems.find(f => f.path === itemPath);
                         if (item && item.isFolder) {
-                            // Recursively add folder contents
                             await addFolderToZip(itemPath, zip, '');
                         } else {
-                            // Single file
                             const data = await getContents(itemPath, CONFIG.branch);
                             let content = '';
                             if (data.content) {
                                 content = decodeURIComponent(escape(atob(data.content)));
                             }
-                            // Determine file name (last part of path)
                             const fileName = itemPath.split('/').pop();
                             zip.file(fileName, content);
                         }
                     }
-
                     toast('Building ZIP archive...', 'info', 2000);
                     const blob = await zip.generateAsync({ type: 'blob' });
                     const url = URL.createObjectURL(blob);
@@ -1943,7 +2001,6 @@
                 for (const item of items) {
                     const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
                     if (item.type === 'dir') {
-                        // Recurse
                         await addFolderToZip(item.path, zip, relativePath);
                     } else {
                         const data = await getContents(item.path, CONFIG.branch);
@@ -2133,8 +2190,13 @@
 
             openBrowserBtn.addEventListener('click', () => {
                 if (!currentFile) return;
-                window.open(`https://${CONFIG.owner}.github.io/${currentFile.path}`, '_blank');
-                toast(`Opening ${currentFile.path}`, 'info', 1500);
+                const url = getFileUrl(currentFile.path);
+                if (url) {
+                    window.open(url, '_blank');
+                    toast(`Opening ${currentFile.path}`, 'info', 1500);
+                } else {
+                    toast('GitHub Pages URL not configured', 'warning');
+                }
             });
 
             // ============================================================
@@ -2352,7 +2414,6 @@
                         toast(`Deleted ${target.name}`, 'success');
                         if (currentFile && currentFile.path === target.path) closeEditor();
                     }
-                    // Remove from selection if selected
                     if (selectedPaths.has(target.path)) {
                         selectedPaths.delete(target.path);
                         updateDownloadButton();
@@ -2447,18 +2508,35 @@
             upBtn.addEventListener('click', () => navigateTo(getParentPath(CONFIG.currentPath)));
 
             // ============================================================
-            // CONNECT & INIT
+            // CONNECT
             // ============================================================
             async function connect() {
                 const token = tokenInput.value.trim();
+                const owner = ownerInput.value.trim();
+                const repo = repoInput.value.trim();
+                const branch = branchInput.value.trim() || 'master';
                 if (!token) { toast('Please enter your GitHub token', 'warning'); return; }
+                if (!owner || !repo) { toast('Please enter Owner and Repository', 'warning'); return; }
+
                 CONFIG.token = token;
+                CONFIG.owner = owner;
+                CONFIG.repo = repo;
+                CONFIG.branch = branch;
+
+                // Save to localStorage
+                localStorage.setItem('gh_token', token);
+                localStorage.setItem('gh_owner', owner);
+                localStorage.setItem('gh_repo', repo);
+                localStorage.setItem('gh_branch', branch);
+
                 try {
                     await getContents('', CONFIG.branch);
                     toast('Connected to GitHub!', 'success');
                     await navigateTo('');
                     await rebuildTree();
-                } catch (e) { toast(`Connection error: ${e.message}`, 'error'); }
+                } catch (e) {
+                    toast(`Connection error: ${e.message}`, 'error');
+                }
             }
 
             connectBtn.addEventListener('click', connect);
@@ -2496,26 +2574,28 @@
                     if (ctxMenu.classList.contains('open')) closeCtxMenu();
                     if (editorWrap.classList.contains('visible')) closeEditor();
                 }
-                // Clear selection with Escape? Already used.
             });
 
             // ============================================================
-            // AUTO-CONNECT
+            // AUTO-LOAD SAVED CONFIG
             // ============================================================
             const savedToken = localStorage.getItem('gh_token');
-            if (savedToken) {
-                tokenInput.value = savedToken;
+            const savedOwner = localStorage.getItem('gh_owner');
+            const savedRepo = localStorage.getItem('gh_repo');
+            const savedBranch = localStorage.getItem('gh_branch');
+            if (savedToken) tokenInput.value = savedToken;
+            if (savedOwner) ownerInput.value = savedOwner;
+            if (savedRepo) repoInput.value = savedRepo;
+            if (savedBranch) branchInput.value = savedBranch;
+
+            // Auto-connect if all fields present
+            if (savedToken && savedOwner && savedRepo) {
                 setTimeout(() => connect(), 400);
             }
 
-            const origConnect = connect;
-            connect = async function() {
-                const token = tokenInput.value.trim();
-                if (token) localStorage.setItem('gh_token', token);
-                await origConnect.call(this);
-            };
-            connectBtn.addEventListener('click', connect);
-
+            // ============================================================
+            // RESIZE & MOBILE
+            // ============================================================
             window.addEventListener('resize', () => {
                 if (window.innerWidth > 640) sidebar.classList.remove('open');
                 const isMobile = window.innerWidth <= 640;
@@ -2536,8 +2616,8 @@
             // ============================================================
             // INIT
             // ============================================================
-            toast('Welcome to FileForge! Enter your token and connect.', 'info', 3500);
-            console.log('🚀 FileForge loaded (multi-select & ZIP download)');
+            toast('Welcome to FileForge! Set Owner, Repo, and Token, then Connect.', 'info', 4000);
+            console.log('🚀 FileForge loaded (generic repo support)');
 
             window.__fileforge = {
                 CONFIG,
@@ -2555,6 +2635,7 @@
                 runPythonCode,
                 loadPyodide,
                 normalizePath,
+                getFileUrl,
             };
 
         })();
