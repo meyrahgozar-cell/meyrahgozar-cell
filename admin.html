@@ -875,9 +875,9 @@ init();
   <script src="nav.js">
   async function loadCoachWord() {
     try {
-      const { data } = await db.from("site_messages").select("key, body").eq("key", "coach_weekly_word").maybeSingle();
+      const { data } = await db.from("app_settings").select("key, value").eq("key", "coach_weekly_word").maybeSingle();
       const ta = document.getElementById("coachWeeklyWord");
-      if (ta && data && data.body != null) ta.value = data.body;
+      if (ta && data && data.value != null) ta.value = data.value;
     } catch (e) {}
   }
   async function saveCoachWord() {
@@ -886,8 +886,8 @@ init();
     if (!ta) return;
     const val = ta.value.trim();
     try {
-      const { error } = await db.from("site_messages").upsert(
-        { key: "coach_weekly_word", body: val, updated_at: new Date().toISOString() },
+      const { error } = await db.from("app_settings").upsert(
+        { key: "coach_weekly_word", value: val },
         { onConflict: "key" }
       );
       if (error) throw error;
