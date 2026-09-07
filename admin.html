@@ -327,6 +327,14 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 .settings-msg.ok { color: var(--positive, #00ff9d); }
 .settings-msg.err { color: var(--negative, #ff4d6d); }
 
+
+.hql-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.hql-top-row .page-title { flex: 0 0 auto; margin-bottom: 0; }
 </style>
 
 
@@ -337,7 +345,9 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 
   <div id="appBox" class="hidden">
     <div class="badge">ADMIN</div>
-    <h1 class="page-title">پنل ادمین</h1>
+    <div class="hql-top-row">
+      <h1 class="page-title">پنل ادمین</h1>
+    </div>
     <p class="page-sub">آمار کاربران در ماه انتخاب‌شده</p>
 
     <div class="month-bar">
