@@ -1569,6 +1569,35 @@
   font-size: 13px;
 }
 
+
+        .rank-tabs {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0 12px;
+            padding: 4px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+        }
+        .rank-tab {
+            flex: 1;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .rank-tab.on {
+            background: linear-gradient(135deg, rgba(180,76,255,0.35), rgba(0,240,255,0.2));
+            color: var(--text);
+            box-shadow: 0 0 16px rgba(180,76,255,0.25);
+        }
+
 </style>
 </head>
 <body>
@@ -1629,6 +1658,7 @@
         let reportLoadSeq = 0;
         let reportBooted = false;
         let isAdmin = false;
+        let rankMode = "month";
         let selectedYear = null;
         let selectedMonth = null;
         let lastRenderData = null;
@@ -2626,6 +2656,27 @@ function initWeightStrip(strip) {
         // loadReport and renderReport functions unchanged (they use the same weight strip HTML without bars)
         // I'll keep them as they were but remove the bars from the HTML template.
 
+        
+        function currentWeekRange() {
+            const now = new Date();
+            const day = now.getDay();
+            const sinceSat = (day + 1) % 7;
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - sinceSat);
+            const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return {
+                start: isoDate(start),
+                end: isoDate(end),
+                sinceSat,
+                startDate: start,
+                endDate: end
+            };
+        }
+        function weekCompletedDays() {
+            const now = new Date();
+            const day = now.getDay();
+            return (day + 1) % 7;
+        }
+
         async function loadReport() {
             const seq = ++reportLoadSeq;
 
@@ -2683,7 +2734,24 @@ function initWeightStrip(strip) {
                 }
 
                 let boardData = boardRes.data || [];
-                if (isCurrentMonth && completedDays > 0) {
+                let rankCompletedDays = completedDays;
+
+                if (rankMode === "week") {
+                    const wr = currentWeekRange();
+                    rankCompletedDays = weekCompletedDays();
+                    if (rankCompletedDays <= 0) {
+                        boardData = [];
+                    } else {
+                        const yest = new Date();
+                        yest.setDate(yest.getDate() - 1);
+                        const boardWeek = await db.rpc("get_monthly_leaderboard", {
+                            p_start: wr.start,
+                            p_end: isoDate(yest)
+                        });
+                        if (!boardWeek.error) boardData = boardWeek.data || [];
+                        else boardData = [];
+                    }
+                } else if (isCurrentMonth && completedDays > 0) {
                     const endCompleted = (() => {
                         const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
                         return isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
@@ -2699,7 +2767,7 @@ function initWeightStrip(strip) {
 
                 const todayISO = isoDate(now);
                 let todayActive = new Set();
-                if (isCurrentMonth) {
+                if (isCurrentMonth || rankMode === "week") {
                     try {
                         const act = await db.rpc("get_today_active_users", { p_today: todayISO });
                         if (!act.error && Array.isArray(act.data)) {
@@ -2714,9 +2782,10 @@ function initWeightStrip(strip) {
                 let leaderboard = boardData.map(u => {
                     const totalScore = Number(u.total_score) || 0;
                     const bonus = (todayActive.has(u.user_id) || todayActive.has(String(u.user_id))) ? 1 : 0;
-                    const baseAvg = completedDays > 0 ? totalScore / completedDays : 0;
+                    const daysDiv = (typeof rankCompletedDays === "number" ? rankCompletedDays : completedDays);
+                    const baseAvg = daysDiv > 0 ? totalScore / daysDiv : 0;
                     const avg = Math.round((baseAvg + bonus) * 100) / 100;
-                    return { ...u, avg, bonus, completedDays, totalScore };
+                    return { ...u, avg, bonus, completedDays: daysDiv, totalScore };
                 });
 
                 if (isCurrentMonth && todayActive.size) {
@@ -3139,9 +3208,13 @@ function initWeightStrip(strip) {
               </div>
 
               ${weightStripHtml}
-<div class="card">
+<div class="card" id="rankCard">
                 <div class="card-title">جدول امتیازات</div>
-                <div class="card-sub">رتبه: میانگین تا دیروز + جایزه فعالیت امروز</div>
+                <div class="rank-tabs">
+                  <button type="button" class="rank-tab ${rankMode === "month" ? "on" : ""}" data-rank="month">ماهانه</button>
+                  <button type="button" class="rank-tab ${rankMode === "week" ? "on" : ""}" data-rank="week">از اول هفته</button>
+                </div>
+                <div class="card-sub">${rankMode === "week" ? "رتبه هفته: از شنبه تا دیروز + جایزه امروز" : "رتبه ماه: میانگین تا دیروز + جایزه فعالیت امروز"}</div>
                 ${podiumHtml}
               </div>
 
@@ -3206,6 +3279,15 @@ function initWeightStrip(strip) {
                     el.style.transitionDelay = (i * 40) + "ms";
                     el.style.width = el.dataset.w + "%";
                 });
+            });
+
+            document.querySelectorAll(".rank-tab").forEach(btn => {
+                btn.onclick = () => {
+                    const m = btn.getAttribute("data-rank");
+                    if (!m || m === rankMode) return;
+                    rankMode = m;
+                    loadReport();
+                };
             });
         }
 
