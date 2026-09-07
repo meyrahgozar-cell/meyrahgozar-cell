@@ -417,17 +417,28 @@
       btn.disabled = false;
     }
 
+    function normFa(s) {
+      return String(s || "")
+        .replace(/\u0643/g, "\u06a9") // ك -> ک
+        .replace(/\u0649/g, "\u06cc") // ى -> ی
+        .replace(/\u064a/g, "\u06cc") // ي -> ی
+        .replace(/\u0629/g, "\u0647") // ة -> ه
+        .replace(/\u200c/g, "") // ZWNJ
+        .trim()
+        .toLowerCase();
+    }
     function renderFoodList(q) {
       const box = document.getElementById("foodList");
-      const query = (q || "").trim();
+      const query = normFa(q);
       let list = foods;
       if (query) {
-        list = foods.filter(f =>
-          (f.Persian_Name || "").includes(query) ||
-          (f.Name_En || "").toLowerCase().includes(query.toLowerCase())
-        );
+        list = foods.filter(f => {
+          const p = normFa(f.Persian_Name);
+          const e = normFa(f.Name_En);
+          return p.includes(query) || e.includes(query);
+        });
       }
-      list = list.slice(0, 80);
+      list = list.slice(0, 100);
       if (!list.length) {
         box.innerHTML = `<div class="empty">موردی پیدا نشد</div>`;
         return;
@@ -453,14 +464,18 @@
 
     async function loadFoods() {
       try {
-        const res = await fetch("food.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("food.json");
-        foods = await res.json();
-        if (!Array.isArray(foods)) foods = [];
-        renderFoodList("");
+        const res = await fetch("foods.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("foods.json");
+        const raw = await res.json();
+        foods = Array.isArray(raw) ? raw : [];
+        if (!foods.length) {
+          document.getElementById("foodList").innerHTML = `<div class="empty">فهرست foods.json خالی است</div>`;
+          return;
+        }
+        renderFoodList(document.getElementById("foodSearch").value || "");
       } catch (e) {
         document.getElementById("foodList").innerHTML =
-          `<div class="empty">بارگذاری food.json ناموفق بود</div>`;
+          `<div class="empty">بارگذاری foods.json ناموفق بود — فایل را کنار food.html بگذار</div>`;
       }
     }
 
