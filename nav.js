@@ -347,7 +347,7 @@
 
 
 
-  // ---- سخن استاد (هفتگی، همه صفحات) ----
+  // ---- سخن هفته (هفتگی، همه صفحات) ----
   async function hqlLoadCoachWord() {
     try {
       const client = window.__hqlDb || window.db;
@@ -373,10 +373,10 @@
       wrap.className = "hql-coach-word";
       wrap.setAttribute("role", "button");
       wrap.setAttribute("tabindex", "0");
-      wrap.title = "سخن استاد — برای خواندن کامل بزن";
+      wrap.title = "سخن هفته — برای خواندن کامل بزن";
       wrap.innerHTML =
         '<div class="hql-coach-word-inner">' +
-        '<div class="hql-coach-word-label">سخن استاد</div>' +
+        '<div class="hql-coach-word-label">سخن هفته</div>' +
         '<div class="hql-coach-word-text"></div>' +
         "</div>";
       wrap.querySelector(".hql-coach-word-text").textContent = text;
