@@ -163,6 +163,11 @@
       border-color: rgba(180, 76, 255, 0.55); box-shadow: 0 0 14px rgba(180, 76, 255, 0.2);
     }
     .food-item .meta { font-size: 11px; color: var(--muted); direction: ltr; text-align: left; }
+    .food-item .freq {
+      display: inline-block; margin-right: 6px; font-size: 10px; font-weight: 800;
+      color: var(--neon2); text-shadow: 0 0 8px rgba(0,240,255,0.35);
+      vertical-align: middle;
+    }
     .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
     .row input[type="number"] {
       width: 100px; height: 42px; border-radius: 12px; border: 1px solid var(--border);
@@ -277,6 +282,7 @@
     const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
     let currentUser = null;
     let foods = [];
+    let foodFreq = {}; // نام خوراک → تعداد ثبت کاربر
     let selected = null;
     let todayDate = null;
     let selectedDate = null;
@@ -427,29 +433,72 @@
         .trim()
         .toLowerCase();
     }
+    function foodKey(f) {
+      return String((f && (f.Persian_Name || f.Name_En)) || "").trim();
+    }
+    function freqOf(f) {
+      return foodFreq[foodKey(f)] || foodFreq[normFa(foodKey(f))] || 0;
+    }
+    function sortByFreqThenName(list) {
+      return list.slice().sort((a, b) => {
+        const fb = freqOf(b) - freqOf(a);
+        if (fb !== 0) return fb;
+        return foodKey(a).localeCompare(foodKey(b), "fa");
+      });
+    }
+    async function loadFoodFreq() {
+      foodFreq = {};
+      if (!currentUser) return;
+      try {
+        const { data, error } = await db.from("food_logs")
+          .select("food_name")
+          .eq("user_id", currentUser.id)
+          .limit(2000);
+        if (error || !data) return;
+        data.forEach(r => {
+          const n = String(r.food_name || "").trim();
+          if (!n) return;
+          foodFreq[n] = (foodFreq[n] || 0) + 1;
+          foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
+        });
+      } catch (e) {}
+    }
+    function bumpFreq(name) {
+      const n = String(name || "").trim();
+      if (!n) return;
+      foodFreq[n] = (foodFreq[n] || 0) + 1;
+      foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
+    }
     function renderFoodList(q) {
       const box = document.getElementById("foodList");
       const query = normFa(q);
-      let list = foods;
+      let list;
       if (query) {
         list = foods.filter(f => {
           const p = normFa(f.Persian_Name);
           const e = normFa(f.Name_En);
           return p.includes(query) || e.includes(query);
         });
+        list = sortByFreqThenName(list).slice(0, 40);
+      } else {
+        // بدون جستجو: پرتکرارهای کاربر، وگرنه نمونهٔ اول فهرست
+        const used = foods.filter(f => freqOf(f) > 0);
+        if (used.length) list = sortByFreqThenName(used).slice(0, 25);
+        else list = foods.slice(0, 30);
       }
-      list = list.slice(0, 100);
       if (!list.length) {
-        box.innerHTML = `<div class="empty">موردی پیدا نشد</div>`;
+        box.innerHTML = `<div class="empty">${query ? "موردی پیدا نشد" : "جستجو کن یا ثبت کن"}</div>`;
         return;
       }
       box.innerHTML = list.map(f => {
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
+        const fr = freqOf(f);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
         const idx = foods.indexOf(f);
+        const badge = fr > 0 ? `<span class="freq">×${fa(fr)}</span>` : "";
         return `<button type="button" class="food-item${sel}" data-i="${idx}">
-          <span>${name}</span>
+          <span>${name}${badge}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
@@ -544,6 +593,7 @@
         return;
       }
       showToast("ثبت شد");
+      bumpFreq(selected.Persian_Name || selected.Name_En);
       selected = null;
       document.getElementById("grams").value = 100;
       renderFoodList(document.getElementById("foodSearch").value);
@@ -612,6 +662,7 @@
 
       updateCalLabel();
       renderCalendar();
+      await loadFoodFreq();
       await loadFoods();
       await loadLogs();
     }
