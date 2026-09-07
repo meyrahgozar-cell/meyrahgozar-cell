@@ -247,13 +247,15 @@
   
 
 
+
     .food-scroll-shell {
       position: relative;
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.18);
       min-height: 160px;
-      background: rgba(6, 8, 16, 0.4);
+      background: rgba(5, 7, 14, 0.55);
+      --hql-heat: 0;
     }
     .food-neon-bg {
       position: absolute;
@@ -264,40 +266,53 @@
       place-items: center;
       overflow: hidden;
     }
-    /* تکسچر پشت لیست */
     .food-neon-tex {
       position: absolute;
       inset: 0;
-      opacity: 0.2;
+      opacity: calc(0.12 + var(--hql-heat) * 0.5);
       background-image:
-        repeating-linear-gradient(90deg,
-          rgba(0, 240, 255, 0.04) 0 1px,
-          transparent 1px 7px),
-        repeating-linear-gradient(0deg,
-          rgba(180, 76, 255, 0.05) 0 1px,
-          transparent 1px 9px),
-        radial-gradient(ellipse 80% 60% at 50% 50%,
-          rgba(0, 240, 255, 0.08), transparent 70%);
-      background-size: 8px 100%, 100% 10px, 100% 100%;
-      transition: opacity 0.08s linear;
-      will-change: opacity;
+        repeating-linear-gradient(90deg, rgba(0, 240, 255, 0.06) 0 1px, transparent 1px 8px),
+        repeating-linear-gradient(0deg, rgba(180, 76, 255, 0.06) 0 1px, transparent 1px 10px);
+      background-size: 8px 100%, 100% 10px;
+    }
+    /* هالهٔ واقعی glow */
+    .food-neon-bloom {
+      position: absolute;
+      width: min(280px, 75%);
+      height: min(280px, 75%);
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      translate: -50% -50%;
+      background: radial-gradient(
+        circle,
+        rgba(0, 240, 255, 0.55) 0%,
+        rgba(180, 76, 255, 0.4) 35%,
+        rgba(180, 76, 255, 0.08) 60%,
+        transparent 72%
+      );
+      filter: blur(20px);
+      opacity: calc(0.15 + var(--hql-heat) * 0.85);
+      transform: scale(calc(0.75 + var(--hql-heat) * 0.45));
+      will-change: opacity, transform;
     }
     .food-neon-hql {
       position: relative;
       z-index: 1;
-      font-size: clamp(56px, 22vw, 96px);
+      font-size: clamp(56px, 22vw, 100px);
       font-weight: 900;
       letter-spacing: 0.14em;
-      color: rgba(210, 235, 255, 0.2);
+      color: rgb(230, 245, 255);
+      opacity: calc(0.25 + var(--hql-heat) * 0.75);
+      mix-blend-mode: screen;
       text-shadow:
-        0 0 10px rgba(0, 240, 255, 0.25),
-        0 0 28px rgba(0, 240, 255, 0.15),
-        0 0 48px rgba(180, 76, 255, 0.2);
-      transform: translateZ(0) scale(1);
-      opacity: 0.55;
+        0 0 calc(6px + var(--hql-heat) * 16px) rgba(0, 240, 255, calc(0.35 + var(--hql-heat) * 0.65)),
+        0 0 calc(18px + var(--hql-heat) * 36px) rgba(0, 240, 255, calc(0.25 + var(--hql-heat) * 0.55)),
+        0 0 calc(32px + var(--hql-heat) * 55px) rgba(180, 76, 255, calc(0.2 + var(--hql-heat) * 0.6)),
+        0 0 calc(52px + var(--hql-heat) * 80px) rgba(180, 76, 255, calc(0.1 + var(--hql-heat) * 0.45));
+      transform: scale(calc(1 + var(--hql-heat) * 0.08));
+      will-change: opacity, transform, text-shadow;
       user-select: none;
-      will-change: opacity, text-shadow, transform, color;
-      /* بدون transition تا با اسکرول فوری جواب بدهد */
     }
     .food-list {
       position: relative;
@@ -330,16 +345,16 @@
       color: var(--text);
       background: linear-gradient(
         160deg,
-        rgba(255, 255, 255, 0.22) 0%,
-        rgba(255, 255, 255, 0.06) 45%,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.05) 45%,
         rgba(255, 255, 255, 0.02) 100%
       ) !important;
-      border: 1px solid rgba(255, 255, 255, 0.4) !important;
-      backdrop-filter: blur(26px) saturate(1.65) !important;
-      -webkit-backdrop-filter: blur(26px) saturate(1.65) !important;
+      border: 1px solid rgba(255, 255, 255, 0.36) !important;
+      backdrop-filter: blur(22px) saturate(1.5) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
       box-shadow:
-        0 4px 18px rgba(0, 0, 0, 0.14),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        0 4px 16px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
     .food-item .food-name { font-size: 12px; }
     .food-item .meta {
@@ -353,13 +368,10 @@
       border-color: rgba(200, 170, 255, 0.7) !important;
       background: linear-gradient(
         160deg,
-        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.26) 0%,
         rgba(180, 100, 255, 0.12) 50%,
         rgba(255, 255, 255, 0.04) 100%
       ) !important;
-      box-shadow:
-        0 0 18px rgba(180, 76, 255, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.55);
     }
 
   </style>
@@ -425,6 +437,7 @@
       <div class="food-scroll-shell" id="foodScrollShell">
         <div class="food-neon-bg" aria-hidden="true">
           <div class="food-neon-tex" id="foodNeonTex"></div>
+          <div class="food-neon-bloom" id="foodNeonBloom"></div>
           <div class="food-neon-hql" id="foodNeonHql">HQL</div>
         </div>
         <div class="food-list" id="foodList"><div class="empty">در حال بارگذاری فهرست...</div></div>
@@ -664,83 +677,60 @@
     // آتش فقط پشت اسکرولر غذا
     function bindFoodListFire() {
       const list = document.getElementById("foodList");
-      const neon = document.getElementById("foodNeonHql");
-      const tex = document.getElementById("foodNeonTex");
       const shell = document.getElementById("foodScrollShell");
-      if (!list || !neon) return;
+      if (!list || !shell) return;
 
       let heat = 0;
+      let target = 0;
       let lastY = list.scrollTop;
       let lastT = performance.now();
-      let raf = 0;
 
-      function paint() {
-        const h = heat < 0.001 ? 0 : Math.min(1, heat);
-        neon.style.opacity = String(0.4 + h * 0.6);
-        neon.style.color = "rgba(220, 240, 255, " + (0.18 + h * 0.55) + ")";
-        neon.style.transform = "translateZ(0) scale(" + (1 + h * 0.06) + ")";
-        const glowC = 0.2 + h * 0.8;
-        const glowP = 0.15 + h * 0.7;
-        neon.style.textShadow =
-          "0 0 " + (8 + h * 20) + "px rgba(0,240,255," + glowC + ")," +
-          "0 0 " + (20 + h * 40) + "px rgba(0,240,255," + (glowC * 0.75) + ")," +
-          "0 0 " + (36 + h * 60) + "px rgba(180,76,255," + glowP + ")," +
-          "0 0 " + (56 + h * 90) + "px rgba(180,76,255," + (glowP * 0.5) + ")";
-        if (tex) {
-          tex.style.opacity = String(0.15 + h * 0.55);
-          tex.style.backgroundPosition = (h * 12) + "px 0, 0 " + (-h * 10) + "px, center";
-        }
+      function setHeat(v) {
+        heat = v;
+        shell.style.setProperty("--hql-heat", heat.toFixed(3));
       }
 
-      function bump(amount) {
-        heat = Math.min(1, Math.max(heat, amount));
-        if (!raf) {
-          const tick = () => {
-            paint();
-            heat *= 0.92;
-            if (heat < 0.02) {
-              heat = 0;
-              paint();
-              raf = 0;
-              return;
-            }
-            raf = requestAnimationFrame(tick);
-          };
-          raf = requestAnimationFrame(tick);
-        }
+      // حلقه دائمی: نرم به سمت target، target خودش آرام صفر می‌شود
+      function loop() {
+        target *= 0.965;
+        if (target < 0.002) target = 0;
+        heat += (target - heat) * 0.14;
+        if (heat < 0.001) heat = 0;
+        setHeat(heat);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      function addEnergy(e) {
+        target = Math.min(1, target + e);
       }
 
-      list.addEventListener("scroll", () => {
+      list.addEventListener("scroll", function () {
         const now = performance.now();
         const y = list.scrollTop;
-        const dt = Math.max(8, now - lastT);
-        const speed = Math.abs(y - lastY) / dt * 20;
+        const dt = Math.max(10, now - lastT);
+        const speed = Math.abs(y - lastY) / dt * 18;
         lastY = y;
         lastT = now;
-        // حساسیت بالاتر
-        bump(Math.min(1, 0.25 + speed / 1.2));
+        addEnergy(Math.min(0.55, 0.12 + speed * 0.35));
       }, { passive: true });
 
-      // چرخ ماوس حتی وقتی اسکرول به انتها رسیده
-      const onWheel = (e) => {
-        bump(Math.min(1, 0.35 + Math.abs(e.deltaY) / 80));
-      };
-      list.addEventListener("wheel", onWheel, { passive: true });
-      if (shell) shell.addEventListener("wheel", onWheel, { passive: true });
-
-      // لمس
-      let ty = null;
-      list.addEventListener("touchstart", (e) => {
-        if (e.touches[0]) ty = e.touches[0].clientY;
-      }, { passive: true });
-      list.addEventListener("touchmove", (e) => {
-        if (!e.touches[0] || ty == null) return;
-        const dy = Math.abs(e.touches[0].clientY - ty);
-        ty = e.touches[0].clientY;
-        if (dy > 2) bump(Math.min(1, 0.3 + dy / 40));
+      list.addEventListener("wheel", function (e) {
+        addEnergy(Math.min(0.5, 0.15 + Math.abs(e.deltaY) / 100));
       }, { passive: true });
 
-      paint();
+      let touchY = null;
+      list.addEventListener("touchstart", function (e) {
+        if (e.touches && e.touches[0]) touchY = e.touches[0].clientY;
+      }, { passive: true });
+      list.addEventListener("touchmove", function (e) {
+        if (!e.touches || !e.touches[0] || touchY == null) return;
+        const dy = Math.abs(e.touches[0].clientY - touchY);
+        touchY = e.touches[0].clientY;
+        if (dy > 1) addEnergy(Math.min(0.45, dy / 50));
+      }, { passive: true });
+
+      setHeat(0);
     }
 
     function scale(food, grams) {
