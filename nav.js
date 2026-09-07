@@ -119,68 +119,89 @@
       }
     }
   
+    
     .hql-coach-word {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      margin: 0 auto;
-      width: 100%;
-      max-width: 720px;
-      padding: 10px 14px 8px;
-      box-sizing: border-box;
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 100%;
+      margin: 0 8px;
       direction: rtl;
-      pointer-events: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .header .hql-coach-word,
+    .hql-top-row .hql-coach-word {
+      flex: 1 1 0;
+      min-width: 0;
     }
     .hql-coach-word-inner {
-      pointer-events: auto;
-      border-radius: 14px;
-      padding: 10px 14px 12px;
+      border-radius: 12px;
+      padding: 6px 10px;
       background: linear-gradient(
         160deg,
         rgba(255, 255, 255, 0.12) 0%,
-        rgba(255, 255, 255, 0.04) 45%,
-        rgba(20, 16, 40, 0.45) 100%
+        rgba(255, 255, 255, 0.04) 50%,
+        rgba(20, 16, 40, 0.4) 100%
       );
-      border: 1px solid rgba(180, 120, 255, 0.35);
-      -webkit-backdrop-filter: blur(12px) saturate(1.35);
-      backdrop-filter: blur(12px) saturate(1.35);
-      box-shadow:
-        0 0 0 0 rgba(180, 76, 255, 0.35),
-        0 8px 24px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(180, 120, 255, 0.32);
+      -webkit-backdrop-filter: blur(10px) saturate(1.3);
+      backdrop-filter: blur(10px) saturate(1.3);
+      box-shadow: 0 0 12px rgba(180, 76, 255, 0.18);
       animation: hqlCoachGlow 3.6s ease-in-out infinite;
+      transition: padding 0.25s ease;
     }
     .hql-coach-word-label {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 800;
-      letter-spacing: 0.04em;
-      color: rgba(200, 180, 255, 0.95);
-      margin-bottom: 4px;
-      text-shadow: 0 0 12px rgba(180, 76, 255, 0.55);
+      color: rgba(200, 180, 255, 0.9);
+      text-shadow: 0 0 10px rgba(180, 76, 255, 0.45);
+      line-height: 1.2;
+      margin-bottom: 1px;
     }
     .hql-coach-word-text {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
-      line-height: 1.55;
+      line-height: 1.35;
       color: var(--text, #f2f4ff);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .hql-coach-word.is-open .hql-coach-word-text {
       white-space: pre-wrap;
-      word-break: break-word;
+      overflow: visible;
+      text-overflow: unset;
+    }
+    .hql-coach-word.is-open .hql-coach-word-inner {
+      padding: 8px 12px;
+    }
+    /* وقتی جا نیست — فقط برچسب کوچک */
+    .hql-coach-word.is-tight .hql-coach-word-text {
+      display: none;
+    }
+    .hql-coach-word.is-tight .hql-coach-word-label {
+      font-size: 10px;
+      margin: 0;
+      text-align: center;
+    }
+    .hql-coach-word.is-tight.is-open .hql-coach-word-text {
+      display: block;
+      white-space: pre-wrap;
+      margin-top: 4px;
+    }
+    .hql-coach-word.hql-coach-word-page {
+      display: block;
+      margin: 0 0 10px;
+      max-width: 100%;
     }
     @keyframes hqlCoachGlow {
       0%, 100% {
-        box-shadow:
-          0 0 10px rgba(180, 76, 255, 0.15),
-          0 0 22px rgba(0, 240, 255, 0.06),
-          0 8px 24px rgba(0, 0, 0, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.22);
-        border-color: rgba(180, 120, 255, 0.28);
+        box-shadow: 0 0 8px rgba(180, 76, 255, 0.12), 0 0 16px rgba(0, 240, 255, 0.05);
+        border-color: rgba(180, 120, 255, 0.25);
       }
       50% {
-        box-shadow:
-          0 0 22px rgba(180, 76, 255, 0.55),
-          0 0 40px rgba(0, 240, 255, 0.22),
-          0 8px 28px rgba(0, 0, 0, 0.28),
-          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 18px rgba(180, 76, 255, 0.5), 0 0 32px rgba(0, 240, 255, 0.18);
         border-color: rgba(200, 160, 255, 0.55);
       }
     }
@@ -339,26 +360,62 @@
       if (error || !data || !data.body) return;
       const text = String(data.body || "").trim();
       if (!text) return;
-      if (document.getElementById("hqlCoachWord")) return;
-      const wrap = document.createElement("div");
+
+      let wrap = document.getElementById("hqlCoachWord");
+      if (wrap) {
+        const tx = wrap.querySelector(".hql-coach-word-text");
+        if (tx) tx.textContent = text;
+        return;
+      }
+
+      wrap = document.createElement("div");
       wrap.id = "hqlCoachWord";
       wrap.className = "hql-coach-word";
-      wrap.setAttribute("role", "status");
+      wrap.setAttribute("role", "button");
+      wrap.setAttribute("tabindex", "0");
+      wrap.title = "سخن استاد — برای خواندن کامل بزن";
       wrap.innerHTML =
         '<div class="hql-coach-word-inner">' +
         '<div class="hql-coach-word-label">سخن استاد</div>' +
         '<div class="hql-coach-word-text"></div>' +
         "</div>";
       wrap.querySelector(".hql-coach-word-text").textContent = text;
-      // بالای صفحه، اول body
-      const app = document.getElementById("app") || document.querySelector(".page") || document.body;
-      if (app === document.body) {
-        document.body.insertBefore(wrap, document.body.firstChild);
+
+      wrap.addEventListener("click", function (e) {
+        e.stopPropagation();
+        wrap.classList.toggle("is-open");
+      });
+
+      // اولویت: بین HQL و دکمه‌ها در header
+      const header = document.querySelector("header.header, .header");
+      const brand = header && header.querySelector(".brand");
+      const actions = header && header.querySelector(".header-actions");
+      if (header && brand && actions) {
+        header.insertBefore(wrap, actions);
+        // اگر عرض کم بود فقط برچسب
+        requestAnimationFrame(function () {
+          try {
+            if (wrap.offsetWidth > 0 && wrap.offsetWidth < 72) {
+              wrap.classList.add("is-tight");
+            }
+          } catch (_) {}
+        });
       } else {
-        app.insertBefore(wrap, app.firstChild);
+        // صفحات دیگر: زیر عنوان صفحه یا اول .page
+        wrap.classList.add("hql-coach-word-page");
+        const title = document.querySelector(".page-title, h1.page-title");
+        const page = document.querySelector(".page, #app");
+        if (title && title.parentNode) {
+          title.parentNode.insertBefore(wrap, title.nextSibling);
+        } else if (page) {
+          page.insertBefore(wrap, page.firstChild);
+        } else {
+          document.body.insertBefore(wrap, document.body.firstChild);
+        }
       }
     } catch (e) {}
   }
+
   setTimeout(hqlLoadCoachWord, 600);
   window.hqlReloadCoachWord = hqlLoadCoachWord;
 
