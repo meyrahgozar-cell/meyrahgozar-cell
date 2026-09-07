@@ -219,11 +219,11 @@
         radial-gradient(ellipse 90% 60% at 20% 100%, rgba(255, 140, 0, 0.4), transparent 50%),
         radial-gradient(ellipse 90% 60% at 80% 100%, rgba(255, 60, 0, 0.35), transparent 50%),
         linear-gradient(180deg, rgba(5,6,10,0) 0%, rgba(20,8,0,0.5) 55%, rgba(0,0,0,0.85) 100%);
-      transition: opacity 0.45s ease;
+      transition: opacity 0.7s ease;
     }
     .hql-burn-overlay.on {
       opacity: 1;
-      animation: hqlBurnRise 0.55s ease-out forwards;
+      animation: hqlBurnRise 0.85s ease-out forwards;
     }
     .hql-burn-overlay .hql-burn-mark {
       position: absolute;
@@ -236,35 +236,45 @@
       color: rgba(255, 120, 40, 0.35);
       text-shadow: 0 0 40px rgba(255, 60, 0, 0.6);
       opacity: 0;
-      animation: hqlBurnMark 0.55s ease-out 0.08s forwards;
+      animation: hqlBurnMark 0.85s ease-out 0.1s forwards;
     }
     body.hql-burning {
-      transition: filter 0.4s ease, opacity 0.4s ease;
+      transition: filter 0.7s ease, opacity 0.7s ease;
       filter: brightness(1.15) sepia(0.35) saturate(1.4);
       opacity: 0.92;
+      overflow: hidden !important;
+      overscroll-behavior: none;
     }
     body.hql-burning .page,
     body.hql-burning #app {
-      transition: transform 0.5s ease, filter 0.5s ease, opacity 0.5s ease;
-      filter: blur(1.5px) brightness(0.85);
-      transform: scale(1.02);
-      opacity: 0.75;
+      transition: transform 0.75s ease, filter 0.75s ease, opacity 0.75s ease;
+      filter: blur(2px) brightness(0.8);
+      transform: scale(1.03);
+      opacity: 0.7;
     }
     @keyframes hqlBurnRise {
-      0% { opacity: 0; transform: translateY(12%); }
-      40% { opacity: 1; }
+      0% { opacity: 0; transform: translateY(18%); }
+      35% { opacity: 1; }
       100% { opacity: 1; transform: translateY(0); }
     }
     @keyframes hqlBurnMark {
-      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.92); }
-      100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+      0% { opacity: 0; transform: translate(-50%, -42%) scale(0.9); }
+      100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
     }
     body.hql-food-enter {
-      animation: hqlFoodEnter 0.55s ease-out;
+      animation: hqlFoodEnter 0.7s ease-out;
     }
     @keyframes hqlFoodEnter {
-      0% { filter: brightness(0.3) sepia(0.4); opacity: 0.6; }
+      0% { filter: brightness(0.25) sepia(0.45); opacity: 0.5; }
       100% { filter: none; opacity: 1; }
+    }
+    .hql-glass-nav.nav-gesture-lock {
+      touch-action: none;
+    }
+    body.hql-nav-touch-lock {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+      touch-action: none;
     }
 
   `;
@@ -278,7 +288,6 @@
     <a href="index.html" class="${isIndex || isFood ? "active" : ""}" data-nav="home" id="hqlNavHome">
       <span class="ico">${isFood ? "🥗" : "🏠"}</span>
       <span>${isFood ? "تغذیه" : "خانه"}</span>
-      <span class="nav-swipe-hint" aria-hidden="true">${isFood ? "↓" : "↑"}</span>
     </a>
     <a href="report.html" class="${isReport ? "active" : ""}" data-nav="report">
       <span class="ico">📊</span>
@@ -300,6 +309,7 @@
     window.__hqlBurning = true;
     try {
       document.body.classList.add("hql-burning");
+      document.body.style.overflow = "hidden";
       let ov = document.getElementById("hqlBurnOverlay");
       if (!ov) {
         ov = document.createElement("div");
@@ -308,14 +318,16 @@
         ov.innerHTML = '<div class="hql-burn-mark">HQL</div>';
         document.body.appendChild(ov);
       }
-      // force reflow
+      ov.style.pointerEvents = "auto";
       void ov.offsetWidth;
       ov.classList.add("on");
     } catch (_) {}
+    // مهلت کافی برای دیدن انیمیشن
     setTimeout(function () {
       location.href = url;
-    }, 480);
+    }, 900);
   }
+
 
   // ورود به تغذیه: کمی از خاکستر
   if (isFood) {
@@ -328,49 +340,100 @@
   (function bindHomeFoodSwipe() {
     const home = document.getElementById("hqlNavHome");
     if (!home) return;
+
     let startY = null;
+    let startX = null;
     let tracking = false;
+    let locked = false;
+    let moved = false;
+
+    function lockPage() {
+      locked = true;
+      try {
+        document.body.classList.add("hql-nav-touch-lock");
+        nav.classList.add("nav-gesture-lock");
+      } catch (_) {}
+    }
+    function unlockPage() {
+      locked = false;
+      try {
+        document.body.classList.remove("hql-nav-touch-lock");
+        nav.classList.remove("nav-gesture-lock");
+      } catch (_) {}
+    }
+
     home.addEventListener("touchstart", function (e) {
       if (!e.touches || !e.touches[0]) return;
       startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
       tracking = true;
+      moved = false;
     }, { passive: true });
+
     home.addEventListener("touchmove", function (e) {
       if (!tracking || startY == null || !e.touches || !e.touches[0]) return;
-      const dy = e.touches[0].clientY - startY;
-      // جلوگیری از اسکرول تصادفی فقط وقتی حرکت واضح است
-      if (Math.abs(dy) > 12) {
-        // allow default; navigation on end
+      const y = e.touches[0].clientY;
+      const x = e.touches[0].clientX;
+      const dy = y - startY;
+      const dx = x - startX;
+      // حرکت عمدتاً عمودی روی خود ناو
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx) * 0.85) {
+        moved = true;
+        lockPage();
+        e.preventDefault();
       }
-    }, { passive: true });
+    }, { passive: false });
+
     home.addEventListener("touchend", function (e) {
       if (!tracking || startY == null) return;
       tracking = false;
       const t = e.changedTouches && e.changedTouches[0];
-      if (!t) return;
-      const dy = t.clientY - startY;
+      const dy = t ? (t.clientY - startY) : 0;
+      const dx = t && startX != null ? (t.clientX - startX) : 0;
       startY = null;
-      // بالا کشیدن (انگشت به بالا = dy منفی) از خانه → تغذیه
-      if (!isFood && dy < -40) {
+      startX = null;
+      unlockPage();
+
+      // افقی زیاد = سوایپ تصادفی، نادیده
+      if (Math.abs(dx) > Math.abs(dy) * 1.1) return;
+      // آستانه نرم‌تر ولی نه بیش‌حساس: ~28px
+      if (!moved && Math.abs(dy) < 28) return;
+
+      // خانه → تغذیه (بالا)
+      if (!isFood && dy < -28) {
         e.preventDefault();
         hqlBurnNavigate("food.html");
         return;
       }
-      // پایین کشیدن روی تغذیه → خانه
-      if (isFood && dy > 40) {
+      // تغذیه → خانه (پایین) — فقط روی خود دکمه ناو، نه pull-to-refresh صفحه
+      // و فقط وقتی واقعاً روی ناو شروع شده (همین handler)
+      if (isFood && dy > 32) {
         e.preventDefault();
         location.href = "index.html";
         return;
       }
     }, { passive: false });
 
-    // دسکتاپ: کلیک+درگ یا دابل‌معنا با Alt — نگه داشتن روی خانه و چرخ
+    home.addEventListener("touchcancel", function () {
+      tracking = false;
+      startY = null;
+      startX = null;
+      unlockPage();
+    }, { passive: true });
+
+    // دسکتاپ: چرخ روی ناو، آستانه بالاتر
+    let wheelAcc = 0;
+    let wheelTimer = null;
     home.addEventListener("wheel", function (e) {
-      if (e.deltaY < -20 && !isFood) {
-        e.preventDefault();
+      e.preventDefault();
+      wheelAcc += e.deltaY;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(function () { wheelAcc = 0; }, 280);
+      if (!isFood && wheelAcc < -50) {
+        wheelAcc = 0;
         hqlBurnNavigate("food.html");
-      } else if (e.deltaY > 20 && isFood) {
-        e.preventDefault();
+      } else if (isFood && wheelAcc > 55) {
+        wheelAcc = 0;
         location.href = "index.html";
       }
     }, { passive: false });
