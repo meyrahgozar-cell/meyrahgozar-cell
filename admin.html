@@ -463,7 +463,10 @@ async function init() {
 
   document.getElementById("appBox").classList.remove("hidden");
   if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(true);
-  loadKmFactors(); loadCoachWord();
+  loadKmFactors();
+  loadCoachWord();
+  const __scw = document.getElementById("saveCoachWord");
+  if (__scw) __scw.onclick = () => saveCoachWord();
   const saveBtn = document.getElementById("saveKmFactors");
   if (saveBtn) saveBtn.onclick = saveKmFactors;
   initMonthPicker();
@@ -870,14 +873,12 @@ async function saveKmFactors() {
 }
 
 
-init();
-</script>
-  <script src="nav.js">
+
   async function loadCoachWord() {
     try {
-      const { data } = await db.from("app_settings").select("key, value").eq("key", "coach_weekly_word").maybeSingle();
+      const { data } = await db.from("site_messages").select("key, body").eq("key", "coach_weekly_word").maybeSingle();
       const ta = document.getElementById("coachWeeklyWord");
-      if (ta && data && data.value != null) ta.value = data.value;
+      if (ta && data && data.body != null) ta.value = data.body;
     } catch (e) {}
   }
   async function saveCoachWord() {
@@ -886,26 +887,28 @@ init();
     if (!ta) return;
     const val = ta.value.trim();
     try {
-      const { error } = await db.from("app_settings").upsert(
-        { key: "coach_weekly_word", value: val },
+      const { error } = await db.from("site_messages").upsert(
+        { key: "coach_weekly_word", body: val, updated_at: new Date().toISOString() },
         { onConflict: "key" }
       );
       if (error) throw error;
-      if (msg) msg.textContent = "ذخیره شد";
-      if (typeof window.hqlReloadCoachWord === "function") window.hqlReloadCoachWord();
-      // update banner on this page
+      if (msg) {
+        msg.textContent = "ذخیره شد ✓";
+        msg.className = "settings-msg ok";
+      }
       const existing = document.getElementById("hqlCoachWord");
       if (existing) existing.remove();
       if (typeof window.hqlReloadCoachWord === "function") setTimeout(window.hqlReloadCoachWord, 200);
     } catch (e) {
-      if (msg) msg.textContent = "خطا: " + (e.message || e);
+      if (msg) {
+        msg.textContent = "خطا: " + (e.message || e);
+        msg.className = "settings-msg err";
+      }
     }
   }
 
-
-  const __scw = document.getElementById("saveCoachWord");
-  if (__scw) __scw.onclick = () => saveCoachWord();
-
+init();
 </script>
+  <script src="nav.js"></script>
 </body>
 </html>
