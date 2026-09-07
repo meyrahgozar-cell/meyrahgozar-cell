@@ -2657,24 +2657,45 @@ function initWeightStrip(strip) {
         // I'll keep them as they were but remove the bars from the HTML template.
 
         
+        /** YYYY-MM-DD از اجزای تقویم محلی — هم‌سبک با رنک ماهانه (Date.UTC) */
+        function isoFromLocalYMD(y, m0, d) {
+            return new Date(Date.UTC(y, m0, d)).toISOString().slice(0, 10);
+        }
+
+        /**
+         * هفته از شنبه تا امروز (محلی).
+         * completed: تعداد روز از شنبه تا دیروز (مثل ماه: فقط روزهای تمام‌شده).
+         */
         function currentWeekRange() {
             const now = new Date();
-            const day = now.getDay();
-            const sinceSat = (day + 1) % 7;
-            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - sinceSat);
-            const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const y = now.getFullYear();
+            const m0 = now.getMonth();
+            const d = now.getDate();
+            const dow = now.getDay(); // 0 یکشنبه … 6 شنبه
+            const sinceSat = (dow + 1) % 7;
+
+            const startLocal = new Date(y, m0, d - sinceSat);
+            const yestLocal = new Date(y, m0, d - 1);
+
+            const start = isoFromLocalYMD(startLocal.getFullYear(), startLocal.getMonth(), startLocal.getDate());
+            const endYesterday = isoFromLocalYMD(yestLocal.getFullYear(), yestLocal.getMonth(), yestLocal.getDate());
+            const endToday = isoFromLocalYMD(y, m0, d);
+
+            // تعداد روزهای تقویمی از start تا yesterday (شامل هر دو)
+            let completed = 0;
+            if (sinceSat > 0) {
+                const a = Date.UTC(startLocal.getFullYear(), startLocal.getMonth(), startLocal.getDate());
+                const b = Date.UTC(yestLocal.getFullYear(), yestLocal.getMonth(), yestLocal.getDate());
+                completed = Math.floor((b - a) / 86400000) + 1;
+            }
+
             return {
-                start: isoDate(start),
-                end: isoDate(end),
-                sinceSat,
-                startDate: start,
-                endDate: end
+                start,
+                end: endToday,
+                endCompleted: endYesterday,
+                completedDays: completed,
+                sinceSat
             };
-        }
-        function weekCompletedDays() {
-            const now = new Date();
-            const day = now.getDay();
-            return (day + 1) % 7;
         }
 
         async function loadReport() {
@@ -2737,16 +2758,15 @@ function initWeightStrip(strip) {
                 let rankCompletedDays = completedDays;
 
                 if (rankMode === "week") {
+                    // همان منطق ماه: مجموع امتیاز بازه ÷ تعداد روزهای تکمیل‌شده (+ جایزه امروز)
                     const wr = currentWeekRange();
-                    rankCompletedDays = weekCompletedDays();
+                    rankCompletedDays = wr.completedDays;
                     if (rankCompletedDays <= 0) {
                         boardData = [];
                     } else {
-                        const yest = new Date();
-                        yest.setDate(yest.getDate() - 1);
                         const boardWeek = await db.rpc("get_monthly_leaderboard", {
                             p_start: wr.start,
-                            p_end: isoDate(yest)
+                            p_end: wr.endCompleted
                         });
                         if (!boardWeek.error) boardData = boardWeek.data || [];
                         else boardData = [];
@@ -2779,11 +2799,12 @@ function initWeightStrip(strip) {
                     } catch (e) {}
                 }
 
+                // فرمول یکسان ماه و هفته: avg = (sum scores in range / completedDays) + todayBonus
                 let leaderboard = boardData.map(u => {
                     const totalScore = Number(u.total_score) || 0;
                     const bonus = (todayActive.has(u.user_id) || todayActive.has(String(u.user_id))) ? 1 : 0;
                     const daysDiv = (typeof rankCompletedDays === "number" ? rankCompletedDays : completedDays);
-                    const baseAvg = daysDiv > 0 ? totalScore / daysDiv : 0;
+                    const baseAvg = daysDiv > 0 ? (totalScore / daysDiv) : 0;
                     const avg = Math.round((baseAvg + bonus) * 100) / 100;
                     return { ...u, avg, bonus, completedDays: daysDiv, totalScore };
                 });
