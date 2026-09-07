@@ -149,25 +149,6 @@
       outline: none; border-color: rgba(0, 240, 255, 0.45);
       box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
     }
-    .food-list {
-      max-height: 240px; overflow-y: auto; scrollbar-width: none;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .food-list::-webkit-scrollbar { display: none; }
-    .food-item {
-      display: flex; justify-content: space-between; align-items: center; gap: 8px;
-      padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
-      background: var(--card2); cursor: pointer; text-align: right; font: inherit; color: var(--text);
-    }
-    .food-item.selected, .food-item:active {
-      border-color: rgba(180, 76, 255, 0.55); box-shadow: 0 0 14px rgba(180, 76, 255, 0.2);
-    }
-    .food-item .meta { font-size: 11px; color: var(--muted); direction: ltr; text-align: left; }
-    .food-item .freq {
-      display: inline-block; margin-right: 6px; font-size: 10px; font-weight: 800;
-      color: var(--neon2); text-shadow: 0 0 8px rgba(0,240,255,0.35);
-      vertical-align: middle;
-    }
     .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
     .row input[type="number"] {
       width: 100px; height: 42px; border-radius: 12px; border: 1px solid var(--border);
@@ -205,52 +186,6 @@
     }
     .toast.show { opacity: 1; }
   
-    .fire-stage {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .fire-stage .hql-burn {
-      position: absolute;
-      left: 50%;
-      top: 42%;
-      transform: translate(-50%, -50%);
-      font-size: clamp(64px, 22vw, 120px);
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      color: rgba(255, 120, 40, 0.14);
-      text-shadow:
-        0 0 20px rgba(255, 80, 0, 0.25),
-        0 0 60px rgba(255, 40, 0, 0.15);
-      animation: hqlBurn 3.2s ease-in-out infinite;
-      user-select: none;
-    }
-    @keyframes hqlBurn {
-      0%, 100% { opacity: 0.35; filter: blur(1px); }
-      50% { opacity: 0.7; filter: blur(0.5px); }
-    }
-    .fire-layer {
-      position: absolute;
-      left: -10%;
-      right: -10%;
-      bottom: -5%;
-      height: 55%;
-      background:
-        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255, 60, 0, 0.22), transparent 70%),
-        radial-gradient(ellipse 40% 50% at 30% 90%, rgba(255, 140, 0, 0.18), transparent 65%),
-        radial-gradient(ellipse 40% 50% at 70% 95%, rgba(255, 40, 0, 0.16), transparent 65%);
-      opacity: 0.35;
-      transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease;
-      filter: blur(8px);
-    }
-    .fire-layer.hot {
-      opacity: 0.75;
-      filter: blur(4px);
-      transform: translateY(-8px) scaleY(1.08);
-    }
-    .page { position: relative; z-index: 1; }
 
     .balance-card {
       background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(20,16,30,0.5));
@@ -292,30 +227,125 @@
     }
     .balance-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
 
-    .food-item {
-      background: linear-gradient(155deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 45%, rgba(18,14,28,0.45) 100%) !important;
-      border: 1px solid rgba(255,255,255,0.22) !important;
-      backdrop-filter: blur(14px) saturate(1.35);
-      -webkit-backdrop-filter: blur(14px) saturate(1.35);
-      box-shadow: 0 4px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
-    }
-    .food-item.selected, .food-item:active {
-      border-color: rgba(180, 76, 255, 0.55) !important;
-      box-shadow: 0 0 18px rgba(180, 76, 255, 0.28), inset 0 1px 0 rgba(255,255,255,0.25);
-    }
     .card {
       background: linear-gradient(165deg, rgba(255,255,255,0.07), rgba(13,16,25,0.85));
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
 
+  
+    .food-scroll-shell {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      min-height: 120px;
+    }
+    .food-fire {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0.2;
+      transition: opacity 0.35s ease;
+    }
+    .food-fire.is-hot {
+      opacity: 1;
+    }
+    .food-fire-glow {
+      position: absolute;
+      left: -20%;
+      right: -20%;
+      bottom: -30%;
+      height: 85%;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(255, 70, 0, 0.55), transparent 70%),
+        radial-gradient(ellipse 45% 50% at 25% 90%, rgba(255, 160, 0, 0.4), transparent 65%),
+        radial-gradient(ellipse 45% 50% at 75% 95%, rgba(255, 40, 0, 0.35), transparent 65%);
+      filter: blur(12px);
+      transform: translateY(12px) scaleY(0.92);
+      transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+      opacity: 0.45;
+    }
+    .food-fire.is-hot .food-fire-glow {
+      transform: translateY(0) scaleY(1.1);
+      filter: blur(6px);
+      opacity: 1;
+    }
+    .food-fire-hql {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: rgba(255, 100, 30, 0.22);
+      text-shadow: 0 0 24px rgba(255, 60, 0, 0.35);
+      user-select: none;
+      transition: opacity 0.35s ease, color 0.35s ease;
+      opacity: 0.35;
+    }
+    .food-fire.is-hot .food-fire-hql {
+      opacity: 0.75;
+      color: rgba(255, 130, 40, 0.4);
+      text-shadow: 0 0 28px rgba(255, 80, 0, 0.5);
+    }
+    .food-list {
+      position: relative;
+      z-index: 1;
+      max-height: 260px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .food-list::-webkit-scrollbar { display: none; }
+    .food-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      text-align: right;
+      font: inherit;
+      color: var(--text);
+      background: linear-gradient(
+        155deg,
+        rgba(255, 255, 255, 0.22) 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        rgba(255, 255, 255, 0.03) 100%
+      ) !important;
+      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      backdrop-filter: blur(22px) saturate(1.55) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(1.55) !important;
+      box-shadow:
+        0 6px 24px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .food-item.selected, .food-item:active {
+      border-color: rgba(200, 160, 255, 0.65) !important;
+      background: linear-gradient(
+        155deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(180, 100, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.05) 100%
+      ) !important;
+      box-shadow:
+        0 0 22px rgba(180, 76, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
   </style>
 </head>
 <body>
-  <div class="fire-stage" aria-hidden="true">
-    <div class="fire-layer" id="fireLayer"></div>
-    <div class="hql-burn">HQL</div>
-  </div>
   <div class="page" id="app">
     <header class="header">
       <div class="brand">HQL</div>
@@ -373,7 +403,13 @@
     <div class="card">
       <div class="card-title">افزودن خوراک</div>
       <input type="search" class="search-box" id="foodSearch" placeholder="جستجوی نام خوراک..." autocomplete="off" />
-      <div class="food-list" id="foodList"><div class="empty">در حال بارگذاری فهرست...</div></div>
+      <div class="food-scroll-shell" id="foodScrollShell">
+        <div class="food-fire" id="foodFire" aria-hidden="true">
+          <div class="food-fire-glow"></div>
+          <div class="food-fire-hql">HQL</div>
+        </div>
+        <div class="food-list" id="foodList"><div class="empty">در حال بارگذاری فهرست...</div></div>
+      </div>
       <div class="row">
         <input type="number" id="grams" min="1" step="1" value="100" title="گرم" />
         <span style="font-size:12px;color:var(--muted)">گرم</span>
@@ -400,7 +436,8 @@
     const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
     let currentUser = null;
     let foods = [];
-    let foodFreq = {}; // نام خوراک → تعداد ثبت کاربر
+    let foodFreq = {}; // شخصی
+    let foodGlobal = {}; // سراسری از همه کاربران
     let selected = null;
     let todayDate = null;
     let selectedDate = null;
@@ -584,31 +621,39 @@
       }
     }
 
-    // آتش پس‌زمینه با سرعت اسکرول
-    (function bindFireScroll() {
-      let lastY = window.scrollY || 0;
+    // آتش فقط پشت اسکرولر غذا
+    function bindFoodListFire() {
+      const list = document.getElementById("foodList");
+      const fire = document.getElementById("foodFire");
+      if (!list || !fire) return;
+      let lastY = list.scrollTop;
       let lastT = performance.now();
       let heat = 0;
-      const layer = () => document.getElementById("fireLayer");
-      function tick(speed) {
-        const target = Math.min(1, Math.abs(speed) / 2.2);
-        heat = heat * 0.85 + target * 0.15;
-        const el = layer();
-        if (!el) return;
-        if (heat > 0.12) el.classList.add("hot");
-        else el.classList.remove("hot");
-        el.style.opacity = String(0.3 + heat * 0.55);
+      let idleTimer = null;
+      function apply() {
+        fire.classList.toggle("is-hot", heat > 0.14);
+        fire.style.opacity = String(0.18 + heat * 0.82);
       }
-      window.addEventListener("scroll", () => {
+      function cool() {
+        heat *= 0.88;
+        if (heat < 0.05) heat = 0;
+        apply();
+        if (heat > 0) idleTimer = setTimeout(cool, 80);
+      }
+      list.addEventListener("scroll", () => {
         const now = performance.now();
-        const y = window.scrollY || 0;
-        const dt = Math.max(16, now - lastT);
-        const speed = (y - lastY) / dt * 16;
-        lastY = y; lastT = now;
-        tick(speed);
+        const y = list.scrollTop;
+        const dt = Math.max(12, now - lastT);
+        const speed = Math.abs(y - lastY) / dt * 16;
+        lastY = y;
+        lastT = now;
+        const target = Math.min(1, speed / 1.8);
+        heat = Math.max(heat * 0.7, target);
+        apply();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(cool, 100);
       }, { passive: true });
-      setInterval(() => { heat *= 0.9; tick(0); }, 120);
-    })();
+    }
 
     function scale(food, grams) {
       const k = num(grams) / 100;
@@ -646,34 +691,55 @@
         .trim()
         .toLowerCase();
     }
+    
     function foodKey(f) {
       return String((f && (f.Persian_Name || f.Name_En)) || "").trim();
     }
-    function freqOf(f) {
-      return foodFreq[foodKey(f)] || foodFreq[normFa(foodKey(f))] || 0;
+    function personalFreq(f) {
+      const k = foodKey(f);
+      return foodFreq[k] || foodFreq[normFa(k)] || 0;
     }
-    function sortByFreqThenName(list) {
+    function globalFreq(f) {
+      const k = foodKey(f);
+      return foodGlobal[k] || foodGlobal[normFa(k)] || 0;
+    }
+    /** شخصی اول، بعد محبوب همه، بعد نام */
+    function sortFoodsSmart(list) {
       return list.slice().sort((a, b) => {
-        const fb = freqOf(b) - freqOf(a);
-        if (fb !== 0) return fb;
+        const pa = personalFreq(a), pb = personalFreq(b);
+        if (pb !== pa) return pb - pa;
+        const ga = globalFreq(a), gb = globalFreq(b);
+        if (gb !== ga) return gb - ga;
         return foodKey(a).localeCompare(foodKey(b), "fa");
       });
     }
     async function loadFoodFreq() {
       foodFreq = {};
+      foodGlobal = {};
       if (!currentUser) return;
       try {
-        const { data, error } = await db.from("food_logs")
+        const { data } = await db.from("food_logs")
           .select("food_name")
           .eq("user_id", currentUser.id)
           .limit(2000);
-        if (error || !data) return;
-        data.forEach(r => {
+        (data || []).forEach(r => {
           const n = String(r.food_name || "").trim();
           if (!n) return;
           foodFreq[n] = (foodFreq[n] || 0) + 1;
           foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
         });
+      } catch (e) {}
+      try {
+        const { data: pop, error } = await db.rpc("get_popular_foods", { p_limit: 80 });
+        if (!error && Array.isArray(pop)) {
+          pop.forEach(r => {
+            const n = String(r.food_name || "").trim();
+            if (!n) return;
+            const c = Number(r.use_count) || 0;
+            foodGlobal[n] = c;
+            foodGlobal[normFa(n)] = c;
+          });
+        }
       } catch (e) {}
     }
     function bumpFreq(name) {
@@ -681,6 +747,8 @@
       if (!n) return;
       foodFreq[n] = (foodFreq[n] || 0) + 1;
       foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
+      foodGlobal[n] = (foodGlobal[n] || 0) + 1;
+      foodGlobal[normFa(n)] = (foodGlobal[normFa(n)] || 0) + 1;
     }
     function renderFoodList(q) {
       const box = document.getElementById("foodList");
@@ -692,26 +760,36 @@
           const e = normFa(f.Name_En);
           return p.includes(query) || e.includes(query);
         });
-        list = sortByFreqThenName(list).slice(0, 40);
+        list = sortFoodsSmart(list).slice(0, 35);
       } else {
-        // بدون جستجو: پرتکرارهای کاربر، وگرنه نمونهٔ اول فهرست
-        const used = foods.filter(f => freqOf(f) > 0);
-        if (used.length) list = sortByFreqThenName(used).slice(0, 25);
-        else list = foods.slice(0, 30);
+        // فقط خوراک‌های آشنا: اول شخصی، بعد محبوب همه — نه اول فایل JSON
+        const personal = foods.filter(f => personalFreq(f) > 0);
+        const globalOnly = foods.filter(f => personalFreq(f) === 0 && globalFreq(f) > 0);
+        if (personal.length || globalOnly.length) {
+          list = sortFoodsSmart(personal.concat(globalOnly)).slice(0, 28);
+        } else {
+          // کاربر جدید و هنوز محبوبیت سراسری نیست: چند نمونهٔ کوتاه نده — راهنما
+          list = [];
+        }
       }
       if (!list.length) {
-        box.innerHTML = `<div class="empty">${query ? "موردی پیدا نشد" : "جستجو کن یا ثبت کن"}</div>`;
+        box.innerHTML = query
+          ? `<div class="empty">موردی پیدا نشد</div>`
+          : `<div class="empty">نام خوراک را بنویس تا پیدا شود<br/><span style="opacity:.75;font-size:11px">با استفادهٔ جمعی، پرتکرارها اینجا می‌آیند</span></div>`;
         return;
       }
       box.innerHTML = list.map(f => {
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
-        const fr = freqOf(f);
+        const pf = personalFreq(f);
+        const gf = globalFreq(f);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
         const idx = foods.indexOf(f);
-        const badge = fr > 0 ? `<span class="freq">×${fa(fr)}</span>` : "";
+        let badge = "";
+        if (pf > 0) badge = `<span class="freq">تو ×${fa(pf)}</span>`;
+        else if (gf > 0) badge = `<span class="freq global">محبوب</span>`;
         return `<button type="button" class="food-item${sel}" data-i="${idx}">
-          <span>${name}${badge}</span>
+          <span class="food-name">${name}${badge}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
