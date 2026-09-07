@@ -386,33 +386,42 @@
         wrap.classList.toggle("is-open");
       });
 
-      // اولویت: بین HQL و دکمه‌ها در header
+      function markTight(el) {
+        requestAnimationFrame(function () {
+          try {
+            if (el.offsetWidth > 0 && el.offsetWidth < 72) el.classList.add("is-tight");
+          } catch (_) {}
+        });
+      }
+
+      // ۱) خانه: بین HQL و دکمه‌ها
       const header = document.querySelector("header.header, .header");
       const brand = header && header.querySelector(".brand");
       const actions = header && header.querySelector(".header-actions");
       if (header && brand && actions) {
         header.insertBefore(wrap, actions);
-        // اگر عرض کم بود فقط برچسب
-        requestAnimationFrame(function () {
-          try {
-            if (wrap.offsetWidth > 0 && wrap.offsetWidth < 72) {
-              wrap.classList.add("is-tight");
-            }
-          } catch (_) {}
-        });
-      } else {
-        // صفحات دیگر: زیر عنوان صفحه یا اول .page
-        wrap.classList.add("hql-coach-word-page");
-        const title = document.querySelector(".page-title, h1.page-title");
-        const page = document.querySelector(".page, #app");
-        if (title && title.parentNode) {
-          title.parentNode.insertBefore(wrap, title.nextSibling);
-        } else if (page) {
-          page.insertBefore(wrap, page.firstChild);
-        } else {
-          document.body.insertBefore(wrap, document.body.firstChild);
-        }
+        markTight(wrap);
+        return;
       }
+
+      // ۲) ردیف عنوان مشترک (.hql-top-row): بین عنوان و دکمه‌ها / انتهای ردیف
+      const topRow = document.querySelector(".hql-top-row");
+      if (topRow) {
+        const utils = topRow.querySelector(".top-utils");
+        if (utils) topRow.insertBefore(wrap, utils);
+        else topRow.appendChild(wrap);
+        markTight(wrap);
+        return;
+      }
+
+      // ۳) fallback
+      wrap.classList.add("hql-coach-word-page");
+      const title = document.querySelector(".page-title, h1.page-title");
+      const page = document.querySelector(".page, #app");
+      if (title && title.parentNode) title.parentNode.insertBefore(wrap, title.nextSibling);
+      else if (page) page.insertBefore(wrap, page.firstChild);
+      else document.body.insertBefore(wrap, document.body.firstChild);
+
     } catch (e) {}
   }
 
