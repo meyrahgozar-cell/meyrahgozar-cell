@@ -406,97 +406,171 @@
 
       const old = document.getElementById("hqlBurnOverlay");
       if (old) old.remove();
+      const oldCss = document.getElementById("hqlBurnCss");
+      if (oldCss) oldCss.remove();
 
       const ov = document.createElement("div");
       ov.id = "hqlBurnOverlay";
       ov.setAttribute("style",
         "position:fixed;inset:0;z-index:2147483646;pointer-events:auto;overflow:hidden;" +
-        "opacity:0;background:#0a0400;will-change:opacity;transition:opacity .2s linear"
+        "opacity:0;background:#05060a;will-change:opacity;transition:opacity .18s linear"
       );
 
-      // یک style سبک — بدون blur سنگین روی کل صفحه
       const css = document.createElement("style");
       css.id = "hqlBurnCss";
       css.textContent = `
-        #hqlBurnOverlay .bb{
-          position:absolute;inset:0;
-          background:
-            radial-gradient(ellipse 110% 70% at 50% 100%,#ff3c00 0%,transparent 55%),
-            radial-gradient(ellipse 50% 40% at 25% 100%,#ff9600 0%,transparent 55%),
-            radial-gradient(ellipse 50% 40% at 75% 100%,#ff1e00 0%,transparent 55%),
-            linear-gradient(#1a0800,#000);
+        #hqlBurnOverlay .col{
+          position:absolute;left:0;right:0;bottom:0;top:0;
+          display:flex;flex-direction:column;justify-content:flex-end;
           transform:translateZ(0);
         }
-        #hqlBurnOverlay .fl{
-          position:absolute;bottom:0;width:34%;height:50%;
-          background:linear-gradient(to top,#ff2a00,#ffb000 45%,#ffe8a0 70%,transparent);
-          opacity:.9;transform-origin:50% 100%;transform:translateZ(0) scaleY(.3);
+        /* ستون آتش تمام‌عرض */
+        #hqlBurnOverlay .flame-col{
+          position:absolute;left:0;right:0;bottom:0;height:70%;
+          background:
+            linear-gradient(to top,
+              #ff1a00 0%,
+              #ff4a00 18%,
+              #ff8c00 38%,
+              #ffc14d 58%,
+              rgba(255,200,80,.35) 72%,
+              transparent 100%);
+          transform-origin:50% 100%;
+          transform:translateZ(0) scaleY(.25);
           will-change:transform,opacity;
-          animation:hqlFl .55s ease-out forwards;
+          animation:hqlColUp .55s cubic-bezier(.2,.8,.2,1) forwards;
         }
-        #hqlBurnOverlay .fl.a{left:5%;animation-delay:0s}
-        #hqlBurnOverlay .fl.b{left:33%;height:58%;animation-delay:.04s}
-        #hqlBurnOverlay .fl.c{left:62%;animation-delay:.08s}
+        /* تکسچر آتش — نویز نقطه‌ای + رگه‌های عمودی */
+        #hqlBurnOverlay .flame-tex{
+          position:absolute;left:0;right:0;bottom:0;height:70%;
+          opacity:0;mix-blend-mode:overlay;pointer-events:none;
+          background-image:
+            repeating-linear-gradient(90deg,
+              rgba(0,0,0,.14) 0 2px,
+              rgba(255,220,120,.12) 2px 3px,
+              rgba(0,0,0,.08) 3px 5px,
+              transparent 5px 9px),
+            repeating-linear-gradient(0deg,
+              rgba(255,80,0,.15) 0 3px,
+              transparent 3px 7px),
+            radial-gradient(circle at 20% 80%,rgba(255,255,200,.25) 0,transparent 12%),
+            radial-gradient(circle at 50% 70%,rgba(255,200,50,.2) 0,transparent 18%),
+            radial-gradient(circle at 78% 85%,rgba(255,100,0,.22) 0,transparent 14%);
+          background-size:12px 100%, 100% 10px, 100% 100%, 100% 100%, 100% 100%;
+          animation:hqlTex .55s ease-out .05s forwards, hqlTexShift .7s linear .4s infinite;
+          will-change:opacity,background-position;
+          transform:translateZ(0);
+        }
+        #hqlBurnOverlay .flame-tex2{
+          position:absolute;left:0;right:0;bottom:0;height:65%;
+          opacity:0;mix-blend-mode:soft-light;pointer-events:none;
+          background:
+            repeating-linear-gradient(85deg,
+              transparent 0 6px,
+              rgba(255,40,0,.18) 6px 7px,
+              transparent 7px 14px);
+          animation:hqlTex .5s ease-out .1s forwards, hqlTexShift2 .85s linear .35s infinite;
+          transform:translateZ(0);
+        }
         #hqlBurnOverlay .sm{
-          position:absolute;bottom:30%;width:45%;height:40%;border-radius:50%;
-          background:rgba(60,50,45,.4);transform:translateZ(0) translateY(20px) scale(.8);
-          will-change:transform,opacity;opacity:0;
-          animation:hqlSm .85s ease-out forwards;
+          position:absolute;left:0;right:0;bottom:28%;height:45%;
+          background:radial-gradient(ellipse 100% 80% at 50% 100%,
+            rgba(70,55,50,.5) 0%, transparent 70%);
+          opacity:0;transform:translateZ(0) translateY(16px);
+          will-change:transform,opacity;
+          animation:hqlSm .8s ease-out .06s forwards;
         }
-        #hqlBurnOverlay .sm.a{left:0;animation-delay:.05s}
-        #hqlBurnOverlay .sm.b{left:28%;width:50%;animation-delay:.1s}
-        #hqlBurnOverlay .sm.c{left:55%;animation-delay:.08s}
         #hqlBurnOverlay .em{
-          position:absolute;bottom:18%;width:5px;height:5px;border-radius:50%;
-          background:#ffc85a;box-shadow:0 0 8px #ff6400;
+          position:absolute;bottom:20%;width:4px;height:4px;border-radius:50%;
+          background:#ffe0a0;box-shadow:0 0 6px #ff6400;
           opacity:0;will-change:transform,opacity;
-          animation:hqlEm .8s ease-out forwards;
+          animation:hqlEm .75s ease-out forwards;
         }
+        /* HQL نئون */
         #hqlBurnOverlay .mk{
-          position:absolute;left:50%;top:36%;transform:translate(-50%,-50%) translateZ(0);
-          font:900 clamp(52px,20vw,100px)/1 system-ui,sans-serif;letter-spacing:.1em;
-          color:#ffc070;text-shadow:0 0 20px #ff4000,0 0 40px #ff2000;
-          opacity:0;will-change:opacity,transform;
-          animation:hqlMk .7s ease-out .08s forwards;
+          position:absolute;left:50%;top:34%;z-index:5;
+          transform:translate(-50%,-50%) translateZ(0);
+          font:900 clamp(56px,22vw,112px)/1 system-ui,sans-serif;
+          letter-spacing:.14em;
+          color:#e8f0ff;
+          text-shadow:
+            0 0 6px #fff,
+            0 0 14px #00f0ff,
+            0 0 28px #00f0ff,
+            0 0 48px #b44cff,
+            0 0 72px #b44cff,
+            0 0 2px #00f0ff;
+          opacity:0;will-change:opacity,transform,text-shadow;
+          animation:hqlMk .65s ease-out .1s forwards, hqlNeonPulse .45s ease-in-out .55s infinite alternate;
         }
-        @keyframes hqlFl{
-          to{transform:translateZ(0) scaleY(1);opacity:1}
+        @keyframes hqlColUp{
+          to{transform:translateZ(0) scaleY(1)}
+        }
+        @keyframes hqlTex{
+          from{opacity:0} to{opacity:.85}
+        }
+        @keyframes hqlTexShift{
+          from{background-position:0 0,0 0,0 0,0 0,0 0}
+          to{background-position:12px 0,0 -10px,0 0,0 0,0 0}
+        }
+        @keyframes hqlTexShift2{
+          from{background-position:0 0}
+          to{background-position:20px -12px}
         }
         @keyframes hqlSm{
-          0%{opacity:0;transform:translateZ(0) translateY(20px) scale(.8)}
+          0%{opacity:0;transform:translateZ(0) translateY(16px)}
           40%{opacity:.55}
-          100%{opacity:.25;transform:translateZ(0) translateY(-50px) scale(1.2)}
+          100%{opacity:.22;transform:translateZ(0) translateY(-40px)}
         }
         @keyframes hqlEm{
           0%{opacity:0;transform:translate3d(0,0,0)}
-          15%{opacity:1}
-          100%{opacity:0;transform:translate3d(var(--x,0),-100px,0)}
+          12%{opacity:1}
+          100%{opacity:0;transform:translate3d(var(--x,0),-90px,0)}
         }
         @keyframes hqlMk{
-          0%{opacity:0;transform:translate(-50%,-40%) scale(.9)}
+          0%{opacity:0;transform:translate(-50%,-42%) scale(.88)}
           100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
         }
+        @keyframes hqlNeonPulse{
+          from{
+            text-shadow:
+              0 0 6px #fff,
+              0 0 12px #00f0ff,
+              0 0 24px #00f0ff,
+              0 0 40px #b44cff;
+          }
+          to{
+            text-shadow:
+              0 0 10px #fff,
+              0 0 22px #00f0ff,
+              0 0 44px #00f0ff,
+              0 0 70px #b44cff,
+              0 0 96px rgba(180,76,255,.8);
+          }
+        }
         body.hql-burning .page,body.hql-burning #app{
-          opacity:.4!important;transition:opacity .35s linear!important;
+          opacity:.38!important;transition:opacity .3s linear!important;
         }
       `;
       document.head.appendChild(css);
 
       let embers = "";
       for (let i = 0; i < 8; i++) {
-        const left = 10 + Math.random() * 80;
-        const delay = (0.05 + Math.random() * 0.25).toFixed(2);
-        const x = ((Math.random() - 0.5) * 70).toFixed(0);
+        const left = 8 + Math.random() * 84;
+        const delay = (0.05 + Math.random() * 0.28).toFixed(2);
+        const x = ((Math.random() - 0.5) * 60).toFixed(0);
         embers += '<i class="em" style="left:' + left + "%;animation-delay:" + delay + "s;--x:" + x + 'px"></i>';
       }
       ov.innerHTML =
-        '<div class="bb"></div>' +
-        '<div class="fl a"></div><div class="fl b"></div><div class="fl c"></div>' +
-        '<div class="sm a"></div><div class="sm b"></div><div class="sm c"></div>' +
-        embers +
+        '<div class="col">' +
+          '<div class="flame-col"></div>' +
+          '<div class="flame-tex"></div>' +
+          '<div class="flame-tex2"></div>' +
+          '<div class="sm"></div>' +
+          embers +
+        '</div>' +
         '<div class="mk">HQL</div>';
       document.body.appendChild(ov);
-      // fade-in next frame
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           ov.style.opacity = "1";
@@ -509,6 +583,7 @@
       location.href = url;
     }, 850);
   }
+
 
 
 
