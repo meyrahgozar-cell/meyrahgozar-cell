@@ -572,20 +572,38 @@
       dailyBaseCal = null;
       if (!currentUser) return;
       try {
-        const [pr, wt] = await Promise.all([
-          db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle(),
-          db.from("user_weights").select("weight, log_date").eq("user_id", currentUser.id)
-            .order("log_date", { ascending: false }).limit(1)
-        ]);
-        if (pr.data && pr.data.gender) userGender = pr.data.gender;
-        if (wt.data && wt.data.length) userWeight = Number(wt.data[0].weight) || null;
-        // بعضی جداول weight_kg
-        if (userWeight == null) {
-          const wt2 = await db.from("user_weights").select("weight_kg, log_date").eq("user_id", currentUser.id)
-            .order("log_date", { ascending: false }).limit(1);
-          if (wt2.data && wt2.data.length) userWeight = Number(wt2.data[0].weight_kg) || null;
+        const pr = await db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle();
+        if (pr.data && pr.data.gender) userGender = String(pr.data.gender).toLowerCase();
+      } catch (e) {}
+
+      // آخرین وزن ثبت‌شده — چند نام ستون رایج
+      try {
+        const wt = await db.from("user_weights")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("log_date", { ascending: false })
+          .limit(1);
+        if (!wt.error && wt.data && wt.data.length) {
+          const row = wt.data[0];
+          userWeight = Number(row.weight ?? row.weight_kg ?? row.value ?? row.kg) || null;
         }
       } catch (e) {}
+
+      // اگر جدول وزن خالی بود، از آخرین exercise_logs
+      if (userWeight == null) {
+        try {
+          const ex = await db.from("exercise_logs")
+            .select("weight_kg, log_date")
+            .eq("user_id", currentUser.id)
+            .not("weight_kg", "is", null)
+            .order("log_date", { ascending: false })
+            .limit(1);
+          if (!ex.error && ex.data && ex.data.length) {
+            userWeight = Number(ex.data[0].weight_kg) || null;
+          }
+        } catch (e) {}
+      }
+
       dailyBaseCal = estimateDailyNeed(userWeight, userGender);
       updateBalanceUI();
     }
@@ -600,10 +618,13 @@
         baseEl.textContent = "—";
         valEl.textContent = "—";
         valEl.className = "balance-val neutral";
-        if (hintEl) hintEl.textContent = "برای برآورد، وزن را در عادت‌ها ثبت کن";
+        if (hintEl) hintEl.textContent = "وزنی ثبت نشده — در خانه وزن را وارد کن";
         return;
       }
       baseEl.textContent = dailyBaseCal + " kcal";
+      if (baseEl && userWeight) {
+        baseEl.title = "بر اساس وزن " + userWeight + " kg";
+      }
       // تراز = دریافتی − برآورد ؛ منفی = کمتر خورده (سبز) ، مثبت = بیشتر (قرمز/کهربایی)
       const delta = Math.round((dayIntakeCal - dailyBaseCal) * 10) / 10;
       const sign = delta > 0 ? "+" : "";
@@ -781,15 +802,10 @@
       box.innerHTML = list.map(f => {
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
-        const pf = personalFreq(f);
-        const gf = globalFreq(f);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
         const idx = foods.indexOf(f);
-        let badge = "";
-        if (pf > 0) badge = `<span class="freq">تو ×${fa(pf)}</span>`;
-        else if (gf > 0) badge = `<span class="freq global">محبوب</span>`;
         return `<button type="button" class="food-item${sel}" data-i="${idx}">
-          <span class="food-name">${name}${badge}</span>
+          <span class="food-name">${name}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
