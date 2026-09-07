@@ -118,6 +118,73 @@
         width: min(420px, 100%);
       }
     }
+  
+    .hql-coach-word {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 720px;
+      padding: 10px 14px 8px;
+      box-sizing: border-box;
+      direction: rtl;
+      pointer-events: none;
+    }
+    .hql-coach-word-inner {
+      pointer-events: auto;
+      border-radius: 14px;
+      padding: 10px 14px 12px;
+      background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.04) 45%,
+        rgba(20, 16, 40, 0.45) 100%
+      );
+      border: 1px solid rgba(180, 120, 255, 0.35);
+      -webkit-backdrop-filter: blur(12px) saturate(1.35);
+      backdrop-filter: blur(12px) saturate(1.35);
+      box-shadow:
+        0 0 0 0 rgba(180, 76, 255, 0.35),
+        0 8px 24px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      animation: hqlCoachGlow 3.6s ease-in-out infinite;
+    }
+    .hql-coach-word-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: rgba(200, 180, 255, 0.95);
+      margin-bottom: 4px;
+      text-shadow: 0 0 12px rgba(180, 76, 255, 0.55);
+    }
+    .hql-coach-word-text {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.55;
+      color: var(--text, #f2f4ff);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @keyframes hqlCoachGlow {
+      0%, 100% {
+        box-shadow:
+          0 0 10px rgba(180, 76, 255, 0.15),
+          0 0 22px rgba(0, 240, 255, 0.06),
+          0 8px 24px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22);
+        border-color: rgba(180, 120, 255, 0.28);
+      }
+      50% {
+        box-shadow:
+          0 0 22px rgba(180, 76, 255, 0.55),
+          0 0 40px rgba(0, 240, 255, 0.22),
+          0 8px 28px rgba(0, 0, 0, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        border-color: rgba(200, 160, 255, 0.55);
+      }
+    }
+
   `;
   document.head.appendChild(style);
   document.body.classList.add("hql-has-nav");
@@ -256,5 +323,43 @@
       }
     } catch (e) {}
   }, 900);
+
+
+
+  // ---- سخن استاد (هفتگی، همه صفحات) ----
+  async function hqlLoadCoachWord() {
+    try {
+      const client = window.__hqlDb || window.db;
+      if (!client || !client.from) return;
+      const { data, error } = await client
+        .from("app_settings")
+        .select("key, value")
+        .eq("key", "coach_weekly_word")
+        .maybeSingle();
+      if (error || !data || !data.value) return;
+      const text = String(data.value || "").trim();
+      if (!text) return;
+      if (document.getElementById("hqlCoachWord")) return;
+      const wrap = document.createElement("div");
+      wrap.id = "hqlCoachWord";
+      wrap.className = "hql-coach-word";
+      wrap.setAttribute("role", "status");
+      wrap.innerHTML =
+        '<div class="hql-coach-word-inner">' +
+        '<div class="hql-coach-word-label">سخن استاد</div>' +
+        '<div class="hql-coach-word-text"></div>' +
+        "</div>";
+      wrap.querySelector(".hql-coach-word-text").textContent = text;
+      // بالای صفحه، اول body
+      const app = document.getElementById("app") || document.querySelector(".page") || document.body;
+      if (app === document.body) {
+        document.body.insertBefore(wrap, document.body.firstChild);
+      } else {
+        app.insertBefore(wrap, app.firstChild);
+      }
+    } catch (e) {}
+  }
+  setTimeout(hqlLoadCoachWord, 600);
+  window.hqlReloadCoachWord = hqlLoadCoachWord;
 
 })();
