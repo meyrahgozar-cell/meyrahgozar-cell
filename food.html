@@ -17,27 +17,17 @@
       --muted: #8b92b0;
       --neon: #b44cff;
       --neon2: #00f0ff;
-      --positive: #00ff9d;
       --glow: 0 0 18px rgba(180, 76, 255, 0.3);
       --radius: 16px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: "Vazirmatn", "Tahoma", system-ui, sans-serif;
-    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "Vazirmatn", "Tahoma", system-ui, sans-serif; }
     body {
       background-image:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(180, 76, 255, 0.18), transparent),
         radial-gradient(ellipse 60% 40% at 100% 50%, rgba(0, 240, 255, 0.06), transparent);
     }
-    .page {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 12px 12px 100px;
-    }
+    .page { max-width: 680px; margin: 0 auto; padding: 12px 12px 100px; }
     .header {
       display: flex;
       align-items: center;
@@ -45,206 +35,211 @@
       gap: 6px;
       margin-bottom: 12px;
     }
+    .header .brand { flex: 0 0 auto; }
+    .header .header-actions { flex: 0 0 auto; }
     .brand {
-      font-size: 20px;
-      font-weight: 800;
+      font-size: 20px; font-weight: 800;
       background: linear-gradient(90deg, #b44cff, #00f0ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .page-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--muted);
-    }
+    .page-label { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
     .hidden { display: none !important; }
     .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 12px;
-      box-shadow: var(--glow);
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; margin-bottom: 12px; box-shadow: var(--glow);
     }
-    .card-title {
-      font-size: 14px;
-      font-weight: 800;
-      margin-bottom: 10px;
+    .card-title { font-size: 14px; font-weight: 800; margin-bottom: 10px; }
+
+    /* calendar — same spirit as index */
+    .cal-wrap {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      margin-bottom: 12px; overflow: hidden;
     }
+    .day-context {
+      display: none; align-items: center; gap: 8px; margin-bottom: 0;
+      padding: 8px 12px; font-size: 11px; font-weight: 600; line-height: 1.35;
+      border-bottom: 1px solid var(--border);
+    }
+    .day-context.show { display: flex; }
+    .day-context.yesterday {
+      color: #ffe0a0; background: linear-gradient(90deg, rgba(255,193,77,0.12), transparent);
+    }
+    .day-context.past {
+      color: #ffb4c0; background: linear-gradient(90deg, rgba(255,77,109,0.1), transparent);
+    }
+    .dc-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: currentColor; box-shadow: 0 0 8px currentColor;
+    }
+    .day-nav-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px 0;
+    }
+    .btn-yesterday, .btn-today {
+      flex-shrink: 0; height: 42px; padding: 0 12px; border-radius: 12px;
+      font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; font: inherit;
+    }
+    .btn-yesterday {
+      border: 1px solid rgba(255, 193, 77, 0.45);
+      background: linear-gradient(145deg, rgba(255, 193, 77, 0.2), rgba(255, 140, 50, 0.08));
+      color: #ffe0a0;
+    }
+    .btn-today {
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      background: linear-gradient(145deg, rgba(0, 240, 255, 0.15), rgba(180, 76, 255, 0.1));
+      color: var(--neon2);
+    }
+    .cal-toggle {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; font-size: 14px; font-weight: 600; color: var(--text);
+      gap: 10px; background: transparent; border: none; cursor: pointer; font: inherit;
+    }
+    .cal-toggle-left { display: flex; align-items: center; gap: 8px; }
+    .cal-date-label { color: var(--neon2); font-weight: 700; }
+    .cal-chevron { font-size: 12px; color: var(--muted); transition: transform 0.2s; }
+    .cal-wrap.open .cal-chevron { transform: rotate(180deg); }
+    .cal-body { display: none; padding: 0 10px 12px; border-top: 1px solid var(--border); }
+    .cal-wrap.open .cal-body { display: block; }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 8px;
+    }
+    .cal-title { font-weight: 700; font-size: 13px; }
+    .cal-nav button {
+      width: 30px; height: 30px; border-radius: 8px; background: var(--card2);
+      border: 1px solid var(--border); font-size: 14px; color: var(--text); cursor: pointer;
+    }
+    .weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px;
+      text-align: center; font-size: 10px; color: var(--muted);
+    }
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .day {
+      aspect-ratio: 1; border-radius: 8px; display: grid; place-items: center;
+      font-size: 12px; font-weight: 600; background: transparent;
+      border: 1px solid transparent; color: var(--text); cursor: pointer; font: inherit;
+    }
+    .day:hover:not(.empty):not(.future) { border-color: var(--border); background: var(--card2); }
+    .day.today { border-color: var(--neon2); color: var(--neon2); }
+    .day.selected {
+      background: linear-gradient(135deg, rgba(180,76,255,0.4), rgba(0,240,255,0.18));
+      border-color: var(--neon); box-shadow: 0 0 10px rgba(180,76,255,0.25); color: #fff;
+    }
+    .day.empty { visibility: hidden; }
+    .day.future { opacity: 0.28; pointer-events: none; }
+
     .totals {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      padding: 10px 0 12px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      position: sticky; top: 0; z-index: 20; padding: 4px 0 12px;
       background: linear-gradient(180deg, var(--bg) 70%, transparent);
     }
     .tot {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 8px;
-      text-align: center;
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 10px 8px; text-align: center;
     }
     .tot-val {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--neon2);
-      text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
-      direction: ltr;
+      font-size: 18px; font-weight: 800; color: var(--neon2);
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.35); direction: ltr;
     }
     .tot-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .search-box {
-      width: 100%;
-      height: 44px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--card2);
-      color: var(--text);
-      padding: 0 12px;
-      font: inherit;
-      font-size: 14px;
+      width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); padding: 0 12px; font: inherit; font-size: 14px;
       margin-bottom: 10px;
     }
     .search-box:focus {
-      outline: none;
-      border-color: rgba(0, 240, 255, 0.45);
+      outline: none; border-color: rgba(0, 240, 255, 0.45);
       box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
     }
     .food-list {
-      max-height: 240px;
-      overflow-y: auto;
-      scrollbar-width: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      max-height: 240px; overflow-y: auto; scrollbar-width: none;
+      display: flex; flex-direction: column; gap: 6px;
     }
     .food-list::-webkit-scrollbar { display: none; }
     .food-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--card2);
-      cursor: pointer;
-      text-align: right;
-      font: inherit;
-      color: var(--text);
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); cursor: pointer; text-align: right; font: inherit; color: var(--text);
     }
-    .food-item:active, .food-item.selected {
-      border-color: rgba(180, 76, 255, 0.55);
-      box-shadow: 0 0 14px rgba(180, 76, 255, 0.2);
+    .food-item.selected, .food-item:active {
+      border-color: rgba(180, 76, 255, 0.55); box-shadow: 0 0 14px rgba(180, 76, 255, 0.2);
     }
-    .food-item .meta {
-      font-size: 11px;
-      color: var(--muted);
-      direction: ltr;
-      text-align: left;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
+    .food-item .meta { font-size: 11px; color: var(--muted); direction: ltr; text-align: left; }
+    .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
     .row input[type="number"] {
-      width: 100px;
-      height: 42px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--card2);
-      color: var(--text);
-      padding: 0 10px;
-      font: inherit;
-      direction: ltr;
+      width: 100px; height: 42px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); padding: 0 10px; font: inherit; direction: ltr;
     }
     .btn {
-      height: 42px;
-      padding: 0 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--card2);
-      color: var(--text);
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
+      height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); font: inherit; font-weight: 700; cursor: pointer;
     }
     .btn.primary {
       background: linear-gradient(135deg, rgba(180, 76, 255, 0.45), rgba(0, 240, 255, 0.25));
-      border-color: rgba(180, 76, 255, 0.45);
-      box-shadow: 0 0 16px rgba(180, 76, 255, 0.25);
+      border-color: rgba(180, 76, 255, 0.45); box-shadow: 0 0 16px rgba(180, 76, 255, 0.25);
     }
     .btn:disabled { opacity: 0.4; cursor: default; }
-    .preview {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-      line-height: 1.5;
-    }
+    .preview { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
     .preview strong { color: var(--text); }
     .log-list { display: flex; flex-direction: column; gap: 8px; }
     .log-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: var(--card2);
-      border: 1px solid var(--border);
-      font-size: 13px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 12px; background: var(--card2);
+      border: 1px solid var(--border); font-size: 13px;
     }
     .log-row .n { font-weight: 700; }
     .log-row .s { font-size: 11px; color: var(--muted); direction: ltr; }
     .log-row button {
-      border: none;
-      background: transparent;
-      color: #ff4d6d;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 4px;
+      border: none; background: transparent; color: #ff4d6d; font-size: 16px; cursor: pointer; padding: 4px;
     }
     .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 16px; }
-    .date-line {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      text-align: center;
-    }
     .toast {
-      position: fixed;
-      top: 58px;
-      left: 50%;
-      transform: translateX(-50%);
-      max-width: min(340px, calc(100% - 24px));
-      padding: 10px 16px;
-      border-radius: 14px;
-      background: rgba(20, 22, 36, 0.85);
-      border: 1px solid rgba(255,255,255,0.25);
-      backdrop-filter: blur(12px);
-      z-index: 10050;
-      opacity: 0;
-      transition: 0.25s;
-      pointer-events: none;
-      font-size: 13px;
-      font-weight: 600;
+      position: fixed; top: 58px; left: 50%; transform: translateX(-50%);
+      max-width: min(340px, calc(100% - 24px)); padding: 10px 16px; border-radius: 14px;
+      background: rgba(20, 22, 36, 0.85); border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(12px); z-index: 10050; opacity: 0; transition: 0.25s;
+      pointer-events: none; font-size: 13px; font-weight: 600;
     }
     .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
   <div class="page" id="app">
-    <div class="header">
+    <header class="header">
       <div class="brand">HQL</div>
-      <div class="page-label">تغذیه · امروز</div>
+      <div class="header-actions">
+        <span class="page-label">تغذیه</span>
+      </div>
+    </header>
+
+    <div class="cal-wrap" id="calWrap">
+      <div id="dayContext" class="day-context" aria-live="polite">
+        <span class="dc-dot"></span>
+        <span id="dayContextText"></span>
+      </div>
+      <div class="day-nav-row">
+        <button type="button" class="btn-yesterday" id="btnYesterday" title="رفتن به دیروز">دیروز ←</button>
+        <button type="button" class="btn-today hidden" id="btnToday" title="برگشت به امروز">امروز →</button>
+        <div style="flex:1;min-width:0">
+          <button type="button" class="cal-toggle" id="calToggle">
+            <div class="cal-toggle-left">
+              <span>📅</span>
+              <span class="cal-date-label" id="calDateLabel">امروز</span>
+            </div>
+            <span class="cal-chevron">▼</span>
+          </button>
+        </div>
+      </div>
+      <div class="cal-body">
+        <div class="cal-header">
+          <div class="cal-nav"><button type="button" id="prevMonth">‹</button></div>
+          <div class="cal-title" id="calTitle">—</div>
+          <div class="cal-nav"><button type="button" id="nextMonth">›</button></div>
+        </div>
+        <div class="weekdays">
+          <div>ش</div><div>ی</div><div>د</div><div>س</div><div>چ</div><div>پ</div><div>ج</div>
+        </div>
+        <div class="days" id="calDays"></div>
+      </div>
     </div>
-    <div class="date-line" id="dateLine">—</div>
 
     <div class="totals" id="totals">
       <div class="tot"><div class="tot-val" id="tCal">0</div><div class="tot-lbl">کالری</div></div>
@@ -265,7 +260,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">ثبت‌های امروز</div>
+      <div class="card-title">ثبت‌های این روز</div>
       <div class="log-list" id="logList"><div class="empty">هنوز چیزی ثبت نشده</div></div>
     </div>
   </div>
@@ -283,14 +278,17 @@
     let currentUser = null;
     let foods = [];
     let selected = null;
-    let todayISO = "";
+    let todayDate = null;
+    let selectedDate = null;
+    let viewYear = null;
+    let viewMonth = null;
+    let calOpen = false;
 
     function fa(n) {
       return String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
     }
     function isoDate(d) {
-      const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
-      return new Date(Date.UTC(y, m - 1, day)).toISOString().slice(0, 10);
+      return d.toISOString().slice(0, 10);
     }
     function showToast(t) {
       const el = document.getElementById("toast");
@@ -303,6 +301,96 @@
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     }
+    function jalaliLabel(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      const j = jalaali.toJalaali(y, m, d);
+      return fa(j.jd) + " " + J_MONTHS[j.jm - 1];
+    }
+    function prevDayISO(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      dt.setUTCDate(dt.getUTCDate() - 1);
+      return isoDate(dt);
+    }
+    function daysBetweenISO(a, b) {
+      const [ay, am, ad] = a.split("-").map(Number);
+      const [by, bm, bd] = b.split("-").map(Number);
+      const da = Date.UTC(ay, am - 1, ad);
+      const db_ = Date.UTC(by, bm - 1, bd);
+      return Math.round((db_ - da) / 86400000);
+    }
+
+    function updateDayContext() {
+      const el = document.getElementById("dayContext");
+      const tx = document.getElementById("dayContextText");
+      const btnY = document.getElementById("btnYesterday");
+      const btnT = document.getElementById("btnToday");
+      if (!el || !tx) return;
+      const lag = daysBetweenISO(selectedDate, todayDate);
+      if (btnY) {
+        const yest = prevDayISO(todayDate);
+        btnY.classList.toggle("hidden", selectedDate === yest);
+      }
+      if (btnT) btnT.classList.toggle("hidden", selectedDate === todayDate);
+
+      el.classList.remove("show", "yesterday", "past");
+      if (lag === 0) {
+        tx.textContent = "";
+        return;
+      }
+      if (lag === 1) {
+        el.classList.add("show", "yesterday");
+        tx.textContent = "در حال پر کردن روز قبل هستید";
+        return;
+      }
+      if (lag > 1) {
+        el.classList.add("show", "past");
+        tx.textContent = "روز دیگری غیر از امروز · " + jalaliLabel(selectedDate);
+      }
+    }
+
+    function updateCalLabel() {
+      const label = selectedDate === todayDate ? "امروز" : jalaliLabel(selectedDate);
+      document.getElementById("calDateLabel").textContent = label;
+      updateDayContext();
+    }
+
+    function renderCalendar() {
+      document.getElementById("calTitle").textContent = J_MONTHS[viewMonth - 1] + " " + fa(viewYear);
+      const g = jalaali.toGregorian(viewYear, viewMonth, 1);
+      const first = new Date(Date.UTC(g.gy, g.gm - 1, g.gd));
+      const startOffset = (first.getUTCDay() + 1) % 7;
+      const daysInMonth = jalaali.jalaaliMonthLength(viewYear, viewMonth);
+      const container = document.getElementById("calDays");
+      container.innerHTML = "";
+      for (let i = 0; i < startOffset; i++) {
+        const e = document.createElement("div");
+        e.className = "day empty";
+        container.appendChild(e);
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "day";
+        btn.textContent = fa(d);
+        const gDay = jalaali.toGregorian(viewYear, viewMonth, d);
+        const iso = isoDate(new Date(Date.UTC(gDay.gy, gDay.gm - 1, gDay.gd)));
+        if (iso === todayDate) btn.classList.add("today");
+        if (iso === selectedDate) btn.classList.add("selected");
+        if (iso > todayDate) btn.classList.add("future");
+        btn.onclick = () => {
+          if (iso > todayDate) return;
+          selectedDate = iso;
+          updateCalLabel();
+          renderCalendar();
+          loadLogs();
+          calOpen = false;
+          document.getElementById("calWrap").classList.remove("open");
+        };
+        container.appendChild(btn);
+      }
+    }
+
     function scale(food, grams) {
       const k = num(grams) / 100;
       return {
@@ -344,19 +432,19 @@
         box.innerHTML = `<div class="empty">موردی پیدا نشد</div>`;
         return;
       }
-      box.innerHTML = list.map((f, i) => {
+      box.innerHTML = list.map(f => {
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
-        return `<button type="button" class="food-item${sel}" data-i="${foods.indexOf(f)}">
+        const idx = foods.indexOf(f);
+        return `<button type="button" class="food-item${sel}" data-i="${idx}">
           <span>${name}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
       box.querySelectorAll(".food-item").forEach(btn => {
         btn.onclick = () => {
-          const idx = +btn.dataset.i;
-          selected = foods[idx];
+          selected = foods[+btn.dataset.i];
           renderFoodList(document.getElementById("foodSearch").value);
           updatePreview();
         };
@@ -377,11 +465,11 @@
     }
 
     async function loadLogs() {
-      if (!currentUser || !todayISO) return;
+      if (!currentUser || !selectedDate) return;
       const { data, error } = await db.from("food_logs")
         .select("*")
         .eq("user_id", currentUser.id)
-        .eq("log_date", todayISO)
+        .eq("log_date", selectedDate)
         .order("created_at", { ascending: false });
       const box = document.getElementById("logList");
       if (error) {
@@ -414,20 +502,19 @@
       `).join("");
       box.querySelectorAll("[data-del]").forEach(btn => {
         btn.onclick = async () => {
-          const id = btn.getAttribute("data-del");
-          await db.from("food_logs").delete().eq("id", id).eq("user_id", currentUser.id);
+          await db.from("food_logs").delete().eq("id", btn.getAttribute("data-del")).eq("user_id", currentUser.id);
           loadLogs();
         };
       });
     }
 
     async function addLog() {
-      if (!currentUser || !selected) return;
+      if (!currentUser || !selected || !selectedDate) return;
       const g = num(document.getElementById("grams").value) || 100;
       const s = scale(selected, g);
       const { error } = await db.from("food_logs").insert({
         user_id: currentUser.id,
-        log_date: todayISO,
+        log_date: selectedDate,
         food_name: selected.Persian_Name || selected.Name_En,
         grams: g,
         calories: s.calories,
@@ -451,12 +538,11 @@
 
     async function boot() {
       const now = new Date();
-      todayISO = isoDate(now);
-      try {
-        const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-        document.getElementById("dateLine").textContent =
-          fa(j.jd) + " " + J_MONTHS[j.jm - 1] + " " + fa(j.jy);
-      } catch (_) {}
+      todayDate = isoDate(now);
+      selectedDate = todayDate;
+      const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      viewYear = j.jy;
+      viewMonth = j.jm;
 
       let session = null;
       for (let i = 0; i < 12; i++) {
@@ -470,9 +556,47 @@
         return;
       }
       currentUser = session.user;
+
+      document.getElementById("calToggle").onclick = () => {
+        calOpen = !calOpen;
+        document.getElementById("calWrap").classList.toggle("open", calOpen);
+      };
+      document.getElementById("prevMonth").onclick = e => {
+        e.stopPropagation();
+        viewMonth--;
+        if (viewMonth < 1) { viewMonth = 12; viewYear--; }
+        renderCalendar();
+      };
+      document.getElementById("nextMonth").onclick = e => {
+        e.stopPropagation();
+        viewMonth++;
+        if (viewMonth > 12) { viewMonth = 1; viewYear++; }
+        renderCalendar();
+      };
+      document.getElementById("btnYesterday").onclick = () => {
+        selectedDate = prevDayISO(todayDate);
+        const [y, m, d] = selectedDate.split("-").map(Number);
+        const jj = jalaali.toJalaali(y, m, d);
+        viewYear = jj.jy; viewMonth = jj.jm;
+        updateCalLabel();
+        renderCalendar();
+        loadLogs();
+      };
+      document.getElementById("btnToday").onclick = () => {
+        selectedDate = todayDate;
+        const jj = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        viewYear = jj.jy; viewMonth = jj.jm;
+        updateCalLabel();
+        renderCalendar();
+        loadLogs();
+      };
+
       document.getElementById("foodSearch").oninput = e => renderFoodList(e.target.value);
       document.getElementById("grams").oninput = updatePreview;
       document.getElementById("addBtn").onclick = addLog;
+
+      updateCalLabel();
+      renderCalendar();
       await loadFoods();
       await loadLogs();
     }
