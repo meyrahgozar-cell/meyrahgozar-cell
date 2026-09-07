@@ -1598,17 +1598,36 @@
             box-shadow: 0 0 16px rgba(180,76,255,0.25);
         }
 
+
+        .hql-top-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .hql-top-row .page-title {
+            flex: 0 0 auto;
+            margin-bottom: 0;
+        }
+        .hql-top-row .top-utils {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex: 0 0 auto;
+            margin: 0;
+        }
 </style>
 </head>
 <body>
 
     <div class="page">
-        <div class="top-utils" style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">
-            <button class="icon-btn" id="shareBtn" title="کپی خلاصه گزارش">⤴</button>
-            <button class="icon-btn" id="refreshBtn" title="بروزرسانی">⟳</button>
+        <div class="hql-top-row">
+            <h1 class="page-title">گزارش ماهانه</h1>
+            <div class="top-utils">
+                <button class="icon-btn" id="shareBtn" title="کپی خلاصه گزارش">⤴</button>
+                <button class="icon-btn" id="refreshBtn" title="بروزرسانی">⟳</button>
+            </div>
         </div>
-
-        <h1 class="page-title">گزارش ماهانه</h1>
         <p class="page-sub">نمای کلی عملکرد و عادت‌ها</p>
 
         <div class="month-bar">
