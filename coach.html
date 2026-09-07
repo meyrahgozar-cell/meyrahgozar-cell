@@ -475,11 +475,21 @@
   filter: saturate(0.85) brightness(1.05);
 }
 
+
+    .hql-top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .hql-top-row .page-title { flex: 0 0 auto; margin-bottom: 0; }
 </style>
 </head>
 <body>
   <div class="page">
-    <h1 class="page-title">چوب استاد</h1>
+    <div class="hql-top-row">
+      <h1 class="page-title">چوب استاد</h1>
+    </div>
     <p class="page-sub" id="pageSub">یادداشت کوتاه روی یک عادت</p>
 
     <div id="denyBox" class="deny hidden">برای دیدن این صفحه وارد شو.</div>
