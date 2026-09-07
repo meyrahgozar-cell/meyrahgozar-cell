@@ -332,12 +332,12 @@
       const client = window.__hqlDb || window.db;
       if (!client || !client.from) return;
       const { data, error } = await client
-        .from("app_settings")
-        .select("key, value")
+        .from("site_messages")
+        .select("key, body")
         .eq("key", "coach_weekly_word")
         .maybeSingle();
-      if (error || !data || !data.value) return;
-      const text = String(data.value || "").trim();
+      if (error || !data || !data.body) return;
+      const text = String(data.body || "").trim();
       if (!text) return;
       if (document.getElementById("hqlCoachWord")) return;
       const wrap = document.createElement("div");
