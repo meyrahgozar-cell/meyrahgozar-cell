@@ -409,60 +409,84 @@
 
       const ov = document.createElement("div");
       ov.id = "hqlBurnOverlay";
-      ov.className = "hql-burn-overlay on";
-      // استایل پایه inline تا حتی اگر CSS لود نشود دیده شود
-      ov.setAttribute("style", [
-        "position:fixed", "inset:0", "z-index:2147483646",
-        "pointer-events:auto", "overflow:hidden", "opacity:1",
-        "background:#0a0400"
-      ].join(";"));
+      ov.setAttribute("style",
+        "position:fixed;inset:0;z-index:2147483646;pointer-events:auto;overflow:hidden;" +
+        "opacity:0;background:#0a0400;will-change:opacity;transition:opacity .2s linear"
+      );
 
+      // یک style سبک — بدون blur سنگین روی کل صفحه
       const css = document.createElement("style");
+      css.id = "hqlBurnCss";
       css.textContent = `
-        #hqlBurnOverlay .bb{position:absolute;inset:0;background:
-          radial-gradient(ellipse 100% 80% at 50% 100%,rgba(255,60,0,.85),transparent 55%),
-          radial-gradient(ellipse 60% 50% at 20% 100%,rgba(255,150,0,.55),transparent 50%),
-          radial-gradient(ellipse 60% 50% at 80% 100%,rgba(255,30,0,.5),transparent 50%),
-          linear-gradient(180deg,#1a0800 0%,#000 100%);
-          animation:hqlBB 1s ease-in-out infinite alternate}
-        #hqlBurnOverlay .fl{position:absolute;bottom:-5%;border-radius:50% 50% 45% 45%;
-          background:radial-gradient(ellipse at 50% 75%,#fff5c8 0%,#ff9a00 30%,#ff2a00 60%,transparent 78%);
-          filter:blur(6px);opacity:0;animation:hqlFL .6s ease-out forwards,hqlFW .65s ease-in-out .35s infinite alternate}
-        #hqlBurnOverlay .fl.a{left:6%;width:30%;height:58%}
-        #hqlBurnOverlay .fl.b{left:35%;width:34%;height:68%;animation-delay:.05s,.3s}
-        #hqlBurnOverlay .fl.c{left:64%;width:30%;height:55%;animation-delay:.12s,.45s}
-        #hqlBurnOverlay .sm{position:absolute;bottom:22%;width:42%;height:48%;border-radius:50%;
-          background:radial-gradient(circle,rgba(90,80,75,.55),transparent 70%);filter:blur(26px);
-          opacity:0;animation:hqlSM 1.15s ease-out forwards}
-        #hqlBurnOverlay .sm.a{left:0;animation-delay:.1s}
-        #hqlBurnOverlay .sm.b{left:30%;width:55%;animation-delay:.2s}
-        #hqlBurnOverlay .sm.c{left:58%;animation-delay:.15s}
-        #hqlBurnOverlay .em{position:absolute;bottom:15%;width:6px;height:6px;border-radius:50%;
-          background:#ffd27a;box-shadow:0 0 12px 4px rgba(255,90,0,.95);opacity:0;
-          animation:hqlEM 1s ease-out forwards}
-        #hqlBurnOverlay .mk{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);
-          font:900 clamp(56px,22vw,110px)/1 system-ui,sans-serif;letter-spacing:.12em;
-          color:rgba(255,190,90,.7);text-shadow:0 0 24px #ff4a00,0 0 60px #ff2000;
-          opacity:0;animation:hqlMK .9s ease-out .12s forwards,hqlFK .3s ease-in-out .5s infinite alternate;z-index:3}
-        @keyframes hqlBB{from{filter:brightness(1)}to{filter:brightness(1.25)}}
-        @keyframes hqlFL{0%{opacity:0;transform:translateY(45%) scaleY(.4)}45%{opacity:1}100%{opacity:.95;transform:translateY(0) scaleY(1)}}
-        @keyframes hqlFW{from{transform:scaleX(1) scaleY(1)}to{transform:scaleX(1.08) scaleY(1.1) translateY(-3%)}}
-        @keyframes hqlSM{0%{opacity:0;transform:translateY(25%) scale(.75)}35%{opacity:.75}100%{opacity:.3;transform:translateY(-40%) scale(1.3)}}
-        @keyframes hqlEM{0%{opacity:0;transform:translate(0,0) scale(.4)}12%{opacity:1}100%{opacity:0;transform:translate(var(--x,0),-130px) scale(.15)}}
-        @keyframes hqlMK{0%{opacity:0;transform:translate(-50%,-25%) scale(.8);filter:blur(6px)}55%{opacity:1;filter:blur(0)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-        @keyframes hqlFK{from{filter:brightness(1)}to{filter:brightness(1.35)}}
-        body.hql-burning .page,body.hql-burning #app,body.hql-burning .hql-glass-nav{
-          transition:filter .8s ease,opacity .8s ease,transform .8s ease!important;
-          filter:blur(3px) brightness(.4) sepia(.6) saturate(1.8)!important;
-          opacity:.35!important;transform:scale(1.05)!important}
+        #hqlBurnOverlay .bb{
+          position:absolute;inset:0;
+          background:
+            radial-gradient(ellipse 110% 70% at 50% 100%,#ff3c00 0%,transparent 55%),
+            radial-gradient(ellipse 50% 40% at 25% 100%,#ff9600 0%,transparent 55%),
+            radial-gradient(ellipse 50% 40% at 75% 100%,#ff1e00 0%,transparent 55%),
+            linear-gradient(#1a0800,#000);
+          transform:translateZ(0);
+        }
+        #hqlBurnOverlay .fl{
+          position:absolute;bottom:0;width:34%;height:50%;
+          background:linear-gradient(to top,#ff2a00,#ffb000 45%,#ffe8a0 70%,transparent);
+          opacity:.9;transform-origin:50% 100%;transform:translateZ(0) scaleY(.3);
+          will-change:transform,opacity;
+          animation:hqlFl .55s ease-out forwards;
+        }
+        #hqlBurnOverlay .fl.a{left:5%;animation-delay:0s}
+        #hqlBurnOverlay .fl.b{left:33%;height:58%;animation-delay:.04s}
+        #hqlBurnOverlay .fl.c{left:62%;animation-delay:.08s}
+        #hqlBurnOverlay .sm{
+          position:absolute;bottom:30%;width:45%;height:40%;border-radius:50%;
+          background:rgba(60,50,45,.4);transform:translateZ(0) translateY(20px) scale(.8);
+          will-change:transform,opacity;opacity:0;
+          animation:hqlSm .85s ease-out forwards;
+        }
+        #hqlBurnOverlay .sm.a{left:0;animation-delay:.05s}
+        #hqlBurnOverlay .sm.b{left:28%;width:50%;animation-delay:.1s}
+        #hqlBurnOverlay .sm.c{left:55%;animation-delay:.08s}
+        #hqlBurnOverlay .em{
+          position:absolute;bottom:18%;width:5px;height:5px;border-radius:50%;
+          background:#ffc85a;box-shadow:0 0 8px #ff6400;
+          opacity:0;will-change:transform,opacity;
+          animation:hqlEm .8s ease-out forwards;
+        }
+        #hqlBurnOverlay .mk{
+          position:absolute;left:50%;top:36%;transform:translate(-50%,-50%) translateZ(0);
+          font:900 clamp(52px,20vw,100px)/1 system-ui,sans-serif;letter-spacing:.1em;
+          color:#ffc070;text-shadow:0 0 20px #ff4000,0 0 40px #ff2000;
+          opacity:0;will-change:opacity,transform;
+          animation:hqlMk .7s ease-out .08s forwards;
+        }
+        @keyframes hqlFl{
+          to{transform:translateZ(0) scaleY(1);opacity:1}
+        }
+        @keyframes hqlSm{
+          0%{opacity:0;transform:translateZ(0) translateY(20px) scale(.8)}
+          40%{opacity:.55}
+          100%{opacity:.25;transform:translateZ(0) translateY(-50px) scale(1.2)}
+        }
+        @keyframes hqlEm{
+          0%{opacity:0;transform:translate3d(0,0,0)}
+          15%{opacity:1}
+          100%{opacity:0;transform:translate3d(var(--x,0),-100px,0)}
+        }
+        @keyframes hqlMk{
+          0%{opacity:0;transform:translate(-50%,-40%) scale(.9)}
+          100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+        }
+        body.hql-burning .page,body.hql-burning #app{
+          opacity:.4!important;transition:opacity .35s linear!important;
+        }
       `;
       document.head.appendChild(css);
 
       let embers = "";
-      for (let i = 0; i < 18; i++) {
-        const left = 5 + Math.random() * 90;
-        const delay = (Math.random() * 0.5).toFixed(2);
-        const x = ((Math.random() - 0.5) * 100).toFixed(0);
+      for (let i = 0; i < 8; i++) {
+        const left = 10 + Math.random() * 80;
+        const delay = (0.05 + Math.random() * 0.25).toFixed(2);
+        const x = ((Math.random() - 0.5) * 70).toFixed(0);
         embers += '<i class="em" style="left:' + left + "%;animation-delay:" + delay + "s;--x:" + x + 'px"></i>';
       }
       ov.innerHTML =
@@ -472,13 +496,20 @@
         embers +
         '<div class="mk">HQL</div>';
       document.body.appendChild(ov);
+      // fade-in next frame
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          ov.style.opacity = "1";
+        });
+      });
     } catch (err) {
-      console && console.warn && console.warn("burn", err);
+      try { console.warn("burn", err); } catch (_) {}
     }
     setTimeout(function () {
       location.href = url;
-    }, 1100);
+    }, 850);
   }
+
 
 
 
