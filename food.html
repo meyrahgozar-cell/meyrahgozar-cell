@@ -214,12 +214,23 @@
       transition: color 0.35s ease, text-shadow 0.35s ease;
     }
     .balance-val.deficit {
-      color: #00ff9d;
-      text-shadow: 0 0 16px rgba(0, 255, 157, 0.45);
+      /* عدد منفی */
+      color: #ff4d4d;
+      background: linear-gradient(180deg, rgba(255, 80, 40, 0.2), rgba(120, 10, 0, 0.15));
+      border-radius: 12px;
+      text-shadow:
+        0 0 12px rgba(255, 40, 0, 0.85),
+        0 0 28px rgba(255, 80, 0, 0.55),
+        0 0 48px rgba(255, 0, 0, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 200, 150, 0.25),
+        0 0 20px rgba(255, 40, 0, 0.25);
+      -webkit-background-clip: padding-box;
+      filter: contrast(1.05);
     }
     .balance-val.surplus {
-      color: #ff6b4a;
-      text-shadow: 0 0 18px rgba(255, 80, 40, 0.55), 0 0 32px rgba(255, 160, 0, 0.25);
+      color: #00ff9d;
+      text-shadow: 0 0 16px rgba(0, 255, 157, 0.45);
     }
     .balance-val.neutral {
       color: #ffc14d;
@@ -234,75 +245,89 @@
     }
 
   
+
+
+
     .food-scroll-shell {
       position: relative;
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      min-height: 120px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      min-height: 160px;
+      background: rgba(5, 7, 14, 0.55);
+      --hql-heat: 0;
     }
-    .food-fire {
+    .food-neon-bg {
       position: absolute;
       inset: 0;
       z-index: 0;
       pointer-events: none;
+      display: grid;
+      place-items: center;
       overflow: hidden;
-      opacity: 0.2;
-      transition: opacity 0.35s ease;
     }
-    .food-fire.is-hot {
-      opacity: 1;
-    }
-    .food-fire-glow {
+    .food-neon-tex {
       position: absolute;
-      left: -20%;
-      right: -20%;
-      bottom: -30%;
-      height: 85%;
-      background:
-        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(255, 70, 0, 0.55), transparent 70%),
-        radial-gradient(ellipse 45% 50% at 25% 90%, rgba(255, 160, 0, 0.4), transparent 65%),
-        radial-gradient(ellipse 45% 50% at 75% 95%, rgba(255, 40, 0, 0.35), transparent 65%);
-      filter: blur(12px);
-      transform: translateY(12px) scaleY(0.92);
-      transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
-      opacity: 0.45;
+      inset: 0;
+      opacity: calc(0.12 + var(--hql-heat) * 0.5);
+      background-image:
+        repeating-linear-gradient(90deg, rgba(0, 240, 255, 0.06) 0 1px, transparent 1px 8px),
+        repeating-linear-gradient(0deg, rgba(180, 76, 255, 0.06) 0 1px, transparent 1px 10px);
+      background-size: 8px 100%, 100% 10px;
     }
-    .food-fire.is-hot .food-fire-glow {
-      transform: translateY(0) scaleY(1.1);
-      filter: blur(6px);
-      opacity: 1;
-    }
-    .food-fire-hql {
+    /* هالهٔ واقعی glow */
+    .food-neon-bloom {
       position: absolute;
+      width: min(280px, 75%);
+      height: min(280px, 75%);
+      border-radius: 50%;
       left: 50%;
-      top: 48%;
-      transform: translate(-50%, -50%);
-      font-size: 52px;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      color: rgba(255, 100, 30, 0.22);
-      text-shadow: 0 0 24px rgba(255, 60, 0, 0.35);
-      user-select: none;
-      transition: opacity 0.35s ease, color 0.35s ease;
-      opacity: 0.35;
+      top: 50%;
+      translate: -50% -50%;
+      background: radial-gradient(
+        circle,
+        rgba(0, 240, 255, 0.55) 0%,
+        rgba(180, 76, 255, 0.4) 35%,
+        rgba(180, 76, 255, 0.08) 60%,
+        transparent 72%
+      );
+      filter: blur(20px);
+      opacity: calc(0.15 + var(--hql-heat) * 0.85);
+      transform: scale(calc(0.75 + var(--hql-heat) * 0.45));
+      will-change: opacity, transform;
     }
-    .food-fire.is-hot .food-fire-hql {
-      opacity: 0.75;
-      color: rgba(255, 130, 40, 0.4);
-      text-shadow: 0 0 28px rgba(255, 80, 0, 0.5);
+    .food-neon-hql {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(56px, 22vw, 100px);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      color: rgb(230, 245, 255);
+      opacity: calc(0.25 + var(--hql-heat) * 0.75);
+      mix-blend-mode: screen;
+      text-shadow:
+        0 0 calc(6px + var(--hql-heat) * 16px) rgba(0, 240, 255, calc(0.35 + var(--hql-heat) * 0.65)),
+        0 0 calc(18px + var(--hql-heat) * 36px) rgba(0, 240, 255, calc(0.25 + var(--hql-heat) * 0.55)),
+        0 0 calc(32px + var(--hql-heat) * 55px) rgba(180, 76, 255, calc(0.2 + var(--hql-heat) * 0.6)),
+        0 0 calc(52px + var(--hql-heat) * 80px) rgba(180, 76, 255, calc(0.1 + var(--hql-heat) * 0.45));
+      transform: scale(calc(1 + var(--hql-heat) * 0.08));
+      will-change: opacity, transform, text-shadow;
+      user-select: none;
     }
     .food-list {
       position: relative;
-      z-index: 1;
-      max-height: 260px;
+      z-index: 2;
+      max-height: 280px;
+      min-height: 160px;
       overflow-y: auto;
+      overflow-x: hidden;
       scrollbar-width: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
       padding: 10px;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .food-list::-webkit-scrollbar { display: none; }
     .food-item {
@@ -310,37 +335,43 @@
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      padding: 12px 14px;
+      padding: 9px 12px;
       border-radius: 14px;
       cursor: pointer;
       text-align: right;
       font: inherit;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--text);
       background: linear-gradient(
-        155deg,
-        rgba(255, 255, 255, 0.22) 0%,
-        rgba(255, 255, 255, 0.08) 40%,
-        rgba(255, 255, 255, 0.03) 100%
+        160deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.05) 45%,
+        rgba(255, 255, 255, 0.02) 100%
       ) !important;
-      border: 1px solid rgba(255, 255, 255, 0.38) !important;
-      backdrop-filter: blur(22px) saturate(1.55) !important;
-      -webkit-backdrop-filter: blur(22px) saturate(1.55) !important;
+      border: 1px solid rgba(255, 255, 255, 0.36) !important;
+      backdrop-filter: blur(22px) saturate(1.5) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
       box-shadow:
-        0 6px 24px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+        0 4px 16px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+    .food-item .food-name { font-size: 12px; }
+    .food-item .meta {
+      font-size: 10px;
+      color: var(--muted);
+      direction: ltr;
+      text-align: left;
+      opacity: 0.9;
     }
     .food-item.selected, .food-item:active {
-      border-color: rgba(200, 160, 255, 0.65) !important;
+      border-color: rgba(200, 170, 255, 0.7) !important;
       background: linear-gradient(
-        155deg,
-        rgba(255, 255, 255, 0.28) 0%,
+        160deg,
+        rgba(255, 255, 255, 0.26) 0%,
         rgba(180, 100, 255, 0.12) 50%,
-        rgba(255, 255, 255, 0.05) 100%
+        rgba(255, 255, 255, 0.04) 100%
       ) !important;
-      box-shadow:
-        0 0 22px rgba(180, 76, 255, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
   </style>
@@ -404,9 +435,10 @@
       <div class="card-title">افزودن خوراک</div>
       <input type="search" class="search-box" id="foodSearch" placeholder="جستجوی نام خوراک..." autocomplete="off" />
       <div class="food-scroll-shell" id="foodScrollShell">
-        <div class="food-fire" id="foodFire" aria-hidden="true">
-          <div class="food-fire-glow"></div>
-          <div class="food-fire-hql">HQL</div>
+        <div class="food-neon-bg" aria-hidden="true">
+          <div class="food-neon-tex" id="foodNeonTex"></div>
+          <div class="food-neon-bloom" id="foodNeonBloom"></div>
+          <div class="food-neon-hql" id="foodNeonHql">HQL</div>
         </div>
         <div class="food-list" id="foodList"><div class="empty">در حال بارگذاری فهرست...</div></div>
       </div>
@@ -572,20 +604,38 @@
       dailyBaseCal = null;
       if (!currentUser) return;
       try {
-        const [pr, wt] = await Promise.all([
-          db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle(),
-          db.from("user_weights").select("weight, log_date").eq("user_id", currentUser.id)
-            .order("log_date", { ascending: false }).limit(1)
-        ]);
-        if (pr.data && pr.data.gender) userGender = pr.data.gender;
-        if (wt.data && wt.data.length) userWeight = Number(wt.data[0].weight) || null;
-        // بعضی جداول weight_kg
-        if (userWeight == null) {
-          const wt2 = await db.from("user_weights").select("weight_kg, log_date").eq("user_id", currentUser.id)
-            .order("log_date", { ascending: false }).limit(1);
-          if (wt2.data && wt2.data.length) userWeight = Number(wt2.data[0].weight_kg) || null;
+        const pr = await db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle();
+        if (pr.data && pr.data.gender) userGender = String(pr.data.gender).toLowerCase();
+      } catch (e) {}
+
+      // آخرین وزن ثبت‌شده — چند نام ستون رایج
+      try {
+        const wt = await db.from("user_weights")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("log_date", { ascending: false })
+          .limit(1);
+        if (!wt.error && wt.data && wt.data.length) {
+          const row = wt.data[0];
+          userWeight = Number(row.weight ?? row.weight_kg ?? row.value ?? row.kg) || null;
         }
       } catch (e) {}
+
+      // اگر جدول وزن خالی بود، از آخرین exercise_logs
+      if (userWeight == null) {
+        try {
+          const ex = await db.from("exercise_logs")
+            .select("weight_kg, log_date")
+            .eq("user_id", currentUser.id)
+            .not("weight_kg", "is", null)
+            .order("log_date", { ascending: false })
+            .limit(1);
+          if (!ex.error && ex.data && ex.data.length) {
+            userWeight = Number(ex.data[0].weight_kg) || null;
+          }
+        } catch (e) {}
+      }
+
       dailyBaseCal = estimateDailyNeed(userWeight, userGender);
       updateBalanceUI();
     }
@@ -600,19 +650,22 @@
         baseEl.textContent = "—";
         valEl.textContent = "—";
         valEl.className = "balance-val neutral";
-        if (hintEl) hintEl.textContent = "برای برآورد، وزن را در عادت‌ها ثبت کن";
+        if (hintEl) hintEl.textContent = "وزنی ثبت نشده — در خانه وزن را وارد کن";
         return;
       }
       baseEl.textContent = dailyBaseCal + " kcal";
+      if (baseEl && userWeight) {
+        baseEl.title = "بر اساس وزن " + userWeight + " kg";
+      }
       // تراز = دریافتی − برآورد ؛ منفی = کمتر خورده (سبز) ، مثبت = بیشتر (قرمز/کهربایی)
       const delta = Math.round((dayIntakeCal - dailyBaseCal) * 10) / 10;
       const sign = delta > 0 ? "+" : "";
       valEl.textContent = sign + delta;
       valEl.classList.remove("deficit", "surplus", "neutral");
-      if (delta < -15) {
+      if (delta < 0) {
         valEl.classList.add("deficit");
         if (hintEl) hintEl.textContent = "کمتر از برآورد روز";
-      } else if (delta > 15) {
+      } else if (delta > 0) {
         valEl.classList.add("surplus");
         if (hintEl) hintEl.textContent = "بیشتر از برآورد روز";
       } else {
@@ -624,35 +677,60 @@
     // آتش فقط پشت اسکرولر غذا
     function bindFoodListFire() {
       const list = document.getElementById("foodList");
-      const fire = document.getElementById("foodFire");
-      if (!list || !fire) return;
+      const shell = document.getElementById("foodScrollShell");
+      if (!list || !shell) return;
+
+      let heat = 0;
+      let target = 0;
       let lastY = list.scrollTop;
       let lastT = performance.now();
-      let heat = 0;
-      let idleTimer = null;
-      function apply() {
-        fire.classList.toggle("is-hot", heat > 0.14);
-        fire.style.opacity = String(0.18 + heat * 0.82);
+
+      function setHeat(v) {
+        heat = v;
+        shell.style.setProperty("--hql-heat", heat.toFixed(3));
       }
-      function cool() {
-        heat *= 0.88;
-        if (heat < 0.05) heat = 0;
-        apply();
-        if (heat > 0) idleTimer = setTimeout(cool, 80);
+
+      // حلقه دائمی: نرم به سمت target، target خودش آرام صفر می‌شود
+      function loop() {
+        target *= 0.965;
+        if (target < 0.002) target = 0;
+        heat += (target - heat) * 0.14;
+        if (heat < 0.001) heat = 0;
+        setHeat(heat);
+        requestAnimationFrame(loop);
       }
-      list.addEventListener("scroll", () => {
+      requestAnimationFrame(loop);
+
+      function addEnergy(e) {
+        target = Math.min(1, target + e);
+      }
+
+      list.addEventListener("scroll", function () {
         const now = performance.now();
         const y = list.scrollTop;
-        const dt = Math.max(12, now - lastT);
-        const speed = Math.abs(y - lastY) / dt * 16;
+        const dt = Math.max(10, now - lastT);
+        const speed = Math.abs(y - lastY) / dt * 18;
         lastY = y;
         lastT = now;
-        const target = Math.min(1, speed / 1.8);
-        heat = Math.max(heat * 0.7, target);
-        apply();
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(cool, 100);
+        addEnergy(Math.min(0.55, 0.12 + speed * 0.35));
       }, { passive: true });
+
+      list.addEventListener("wheel", function (e) {
+        addEnergy(Math.min(0.5, 0.15 + Math.abs(e.deltaY) / 100));
+      }, { passive: true });
+
+      let touchY = null;
+      list.addEventListener("touchstart", function (e) {
+        if (e.touches && e.touches[0]) touchY = e.touches[0].clientY;
+      }, { passive: true });
+      list.addEventListener("touchmove", function (e) {
+        if (!e.touches || !e.touches[0] || touchY == null) return;
+        const dy = Math.abs(e.touches[0].clientY - touchY);
+        touchY = e.touches[0].clientY;
+        if (dy > 1) addEnergy(Math.min(0.45, dy / 50));
+      }, { passive: true });
+
+      setHeat(0);
     }
 
     function scale(food, grams) {
@@ -781,15 +859,10 @@
       box.innerHTML = list.map(f => {
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
-        const pf = personalFreq(f);
-        const gf = globalFreq(f);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
         const idx = foods.indexOf(f);
-        let badge = "";
-        if (pf > 0) badge = `<span class="freq">تو ×${fa(pf)}</span>`;
-        else if (gf > 0) badge = `<span class="freq global">محبوب</span>`;
         return `<button type="button" class="food-item${sel}" data-i="${idx}">
-          <span class="food-name">${name}${badge}</span>
+          <span class="food-name">${name}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
