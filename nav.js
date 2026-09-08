@@ -11,6 +11,7 @@
   const isReport = path.includes("report");
   const isAdmin = path.includes("admin");
   const isCoach = path.includes("coach");
+  const isFood = path.includes("food");
 
   const style = document.createElement("style");
   style.textContent = `
@@ -206,6 +207,169 @@
       }
     }
 
+  
+    
+    .hql-burn-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0;
+      background: #05060a;
+    }
+    .hql-burn-overlay.on {
+      opacity: 1;
+    }
+    .hql-burn-overlay .burn-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 100% 70% at 50% 110%, rgba(255, 50, 0, 0.7), transparent 55%),
+        radial-gradient(ellipse 50% 40% at 15% 100%, rgba(255, 140, 0, 0.5), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 85% 100%, rgba(255, 40, 0, 0.45), transparent 50%),
+        linear-gradient(180deg, #05060a 0%, #1a0800 50%, #000 100%);
+      animation: burnBgPulse 0.9s ease-in-out infinite alternate;
+    }
+    .hql-burn-overlay .burn-flame {
+      position: absolute;
+      bottom: -8%;
+      width: 28%;
+      height: 55%;
+      border-radius: 50% 50% 40% 40%;
+      background: radial-gradient(ellipse at 50% 80%,
+        rgba(255, 250, 200, 0.95) 0%,
+        rgba(255, 160, 0, 0.75) 35%,
+        rgba(255, 40, 0, 0.45) 65%,
+        transparent 78%);
+      filter: blur(8px);
+      opacity: 0;
+      animation: flameLick 0.55s ease-out forwards, flameWaver 0.7s ease-in-out 0.4s infinite alternate;
+    }
+    .hql-burn-overlay .burn-flame.f1 { left: 8%; animation-delay: 0s, 0.4s; }
+    .hql-burn-overlay .burn-flame.f2 { left: 36%; width: 32%; height: 62%; animation-delay: 0.08s, 0.35s; }
+    .hql-burn-overlay .burn-flame.f3 { left: 62%; animation-delay: 0.15s, 0.5s; }
+    .hql-burn-overlay .burn-smoke {
+      position: absolute;
+      bottom: 25%;
+      width: 40%;
+      height: 50%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(80, 70, 65, 0.45), transparent 70%);
+      filter: blur(28px);
+      opacity: 0;
+      animation: smokeRise 1.1s ease-out forwards;
+    }
+    .hql-burn-overlay .burn-smoke.s1 { left: 5%; animation-delay: 0.12s; }
+    .hql-burn-overlay .burn-smoke.s2 { left: 35%; width: 50%; animation-delay: 0.22s; }
+    .hql-burn-overlay .burn-smoke.s3 { left: 55%; animation-delay: 0.18s; }
+    .hql-burn-overlay .burn-ember {
+      position: absolute;
+      bottom: 12%;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ffc14d;
+      box-shadow: 0 0 10px 3px rgba(255, 100, 0, 0.9);
+      opacity: 0;
+      animation: emberFly 0.95s ease-out forwards;
+    }
+    .hql-burn-overlay .hql-burn-mark {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(52px, 20vw, 104px);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: rgba(255, 180, 80, 0.55);
+      text-shadow:
+        0 0 20px rgba(255, 80, 0, 0.9),
+        0 0 50px rgba(255, 40, 0, 0.7),
+        0 0 80px rgba(255, 100, 0, 0.4);
+      opacity: 0;
+      animation: hqlBurnMark 0.9s ease-out 0.15s forwards, markFlicker 0.35s ease-in-out 0.5s infinite alternate;
+      z-index: 2;
+    }
+    .hql-burn-overlay .burn-ash {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,200,150,0.5) 50%, transparent 50%),
+        radial-gradient(1px 1px at 70% 40%, rgba(255,180,100,0.4) 50%, transparent 50%),
+        radial-gradient(1.5px 1.5px at 40% 60%, rgba(255,220,180,0.35) 50%, transparent 50%),
+        radial-gradient(1px 1px at 85% 25%, rgba(255,160,80,0.45) 50%, transparent 50%),
+        radial-gradient(1px 1px at 15% 70%, rgba(255,200,120,0.3) 50%, transparent 50%);
+      background-size: 100% 100%;
+      opacity: 0;
+      animation: ashDrift 1s ease-out forwards;
+      z-index: 1;
+    }
+    body.hql-burning {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+    }
+    body.hql-burning .page,
+    body.hql-burning #app,
+    body.hql-burning .hql-glass-nav {
+      transition: transform 0.85s ease, filter 0.85s ease, opacity 0.85s ease;
+      filter: blur(2.5px) brightness(0.55) sepia(0.5) saturate(1.6);
+      transform: scale(1.04) translateY(2%);
+      opacity: 0.45;
+    }
+    @keyframes burnBgPulse {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.15); }
+    }
+    @keyframes flameLick {
+      0% { opacity: 0; transform: translateY(40%) scaleY(0.5); }
+      40% { opacity: 1; }
+      100% { opacity: 0.9; transform: translateY(0) scaleY(1); }
+    }
+    @keyframes flameWaver {
+      from { transform: translateY(0) scaleX(1) scaleY(1); }
+      to { transform: translateY(-4%) scaleX(1.06) scaleY(1.08); }
+    }
+    @keyframes smokeRise {
+      0% { opacity: 0; transform: translateY(30%) scale(0.8); }
+      40% { opacity: 0.7; }
+      100% { opacity: 0.35; transform: translateY(-35%) scale(1.25); }
+    }
+    @keyframes emberFly {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+      15% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--ex, 0), -120px) scale(0.2); }
+    }
+    @keyframes hqlBurnMark {
+      0% { opacity: 0; transform: translate(-50%, -30%) scale(0.85); filter: blur(4px); }
+      60% { opacity: 1; filter: blur(0); }
+      100% { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes markFlicker {
+      from { opacity: 0.75; filter: brightness(1); }
+      to { opacity: 1; filter: brightness(1.25); }
+    }
+    @keyframes ashDrift {
+      0% { opacity: 0; transform: translateY(10%); }
+      30% { opacity: 0.8; }
+      100% { opacity: 0.4; transform: translateY(-8%); }
+    }
+    body.hql-food-enter {
+      animation: hqlFoodEnter 0.75s ease-out;
+    }
+    @keyframes hqlFoodEnter {
+      0% { filter: brightness(0.2) sepia(0.5) contrast(1.1); opacity: 0.45; }
+      100% { filter: none; opacity: 1; }
+    }
+    .hql-glass-nav.nav-gesture-lock {
+      touch-action: none;
+    }
+    body.hql-nav-touch-lock {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+
+
   `;
   document.head.appendChild(style);
   document.body.classList.add("hql-has-nav");
@@ -214,9 +378,9 @@
   nav.className = "hql-glass-nav";
   nav.setAttribute("aria-label", "ناوبری اصلی");
   nav.innerHTML = `
-    <a href="index.html" class="${isIndex ? "active" : ""}" data-nav="home">
-      <span class="ico">🏠</span>
-      <span>خانه</span>
+    <a href="index.html" class="${isIndex || isFood ? "active" : ""}" data-nav="home" id="hqlNavHome">
+      <span class="ico">${isFood ? "🥗" : "🏠"}</span>
+      <span>${isFood ? "تغذیه" : "خانه"}</span>
     </a>
     <a href="report.html" class="${isReport ? "active" : ""}" data-nav="report">
       <span class="ico">📊</span>
@@ -232,7 +396,180 @@
       <span>ادمین</span>
     </a>
   `;
+  
+  function hqlBurnNavigate(url) {
+    if (window.__hqlBurning) return;
+    window.__hqlBurning = true;
+    try {
+      document.body.classList.add("hql-burning");
+      document.body.style.overflow = "hidden";
+      const prev = document.getElementById("hqlBurnOverlay");
+      if (prev) prev.remove();
+      const prevCss = document.getElementById("hqlBurnCss");
+      if (prevCss) prevCss.remove();
+
+      const ov = document.createElement("div");
+      ov.id = "hqlBurnOverlay";
+      ov.style.cssText = "position:fixed;inset:0;z-index:2147483646;overflow:hidden;opacity:0;background:#05060a;transition:opacity .15s linear";
+
+      const css = document.createElement("style");
+      css.id = "hqlBurnCss";
+      css.textContent = `
+        #hqlBurnOverlay .fire{
+          position:absolute;left:0;right:0;bottom:0;height:75%;
+          transform-origin:50% 100%;
+          transform:scaleY(0);
+          animation:hqlFireUp .5s cubic-bezier(.22,.9,.3,1) forwards;
+          background:linear-gradient(to top,#c41a00 0%,#ff3d00 22%,#ff8a00 48%,#ffd36a 70%,transparent 100%);
+        }
+        #hqlBurnOverlay .tex{
+          position:absolute;left:0;right:0;bottom:0;height:75%;
+          opacity:0;mix-blend-mode:overlay;
+          animation:hqlTexIn .45s ease-out .05s forwards;
+          background:
+            repeating-linear-gradient(90deg,rgba(0,0,0,.2) 0 1px,rgba(255,200,100,.15) 1px 2px,transparent 2px 8px),
+            repeating-linear-gradient(0deg,rgba(255,60,0,.2) 0 2px,transparent 2px 6px);
+          background-size:8px 100%,100% 8px;
+          animation:hqlTexIn .45s ease-out .05s forwards,hqlTexMove .6s linear .4s infinite;
+        }
+        #hqlBurnOverlay .mk{
+          position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);
+          font:900 clamp(56px,22vw,108px)/1 system-ui,sans-serif;letter-spacing:.14em;
+          color:#f2f7ff;
+          text-shadow:0 0 8px #fff,0 0 18px #00f0ff,0 0 36px #00f0ff,0 0 56px #b44cff,0 0 80px #b44cff;
+          opacity:0;animation:hqlMkIn .55s ease-out .12s forwards,hqlMkPulse .5s ease-in-out .6s infinite alternate;
+        }
+        @keyframes hqlFireUp{to{transform:scaleY(1)}}
+        @keyframes hqlTexIn{to{opacity:.9}}
+        @keyframes hqlTexMove{to{background-position:8px 0,0 -8px}}
+        @keyframes hqlMkIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+        @keyframes hqlMkPulse{from{filter:brightness(1)}to{filter:brightness(1.25)}}
+        body.hql-burning .page,body.hql-burning #app{opacity:.4!important;transition:opacity .25s linear!important}
+      `;
+      document.head.appendChild(css);
+      ov.innerHTML = '<div class="fire"></div><div class="tex"></div><div class="mk">HQL</div>';
+      document.body.appendChild(ov);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity = "1"; }); });
+    } catch (e) {}
+    setTimeout(function () { location.href = url; }, 800);
+  }
+
+
+
+
+
+
+
+  // ورود به تغذیه: کمی از خاکستر
+  if (isFood) {
+    try { document.body.classList.add("hql-food-enter"); } catch (_) {}
+  }
+
   document.body.appendChild(nav);
+
+  // خانه ↔ تغذیه با سوایپ عمودی روی آیتم خانه
+  (function bindHomeFoodSwipe() {
+    const home = document.getElementById("hqlNavHome");
+    if (!home) return;
+
+    let startY = null;
+    let startX = null;
+    let tracking = false;
+    let locked = false;
+    let moved = false;
+
+    function lockPage() {
+      locked = true;
+      try {
+        document.body.classList.add("hql-nav-touch-lock");
+        nav.classList.add("nav-gesture-lock");
+      } catch (_) {}
+    }
+    function unlockPage() {
+      locked = false;
+      try {
+        document.body.classList.remove("hql-nav-touch-lock");
+        nav.classList.remove("nav-gesture-lock");
+      } catch (_) {}
+    }
+
+    home.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches[0]) return;
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      tracking = true;
+      moved = false;
+    }, { passive: true });
+
+    home.addEventListener("touchmove", function (e) {
+      if (!tracking || startY == null || !e.touches || !e.touches[0]) return;
+      const y = e.touches[0].clientY;
+      const x = e.touches[0].clientX;
+      const dy = y - startY;
+      const dx = x - startX;
+      // حرکت عمدتاً عمودی روی خود ناو
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx) * 0.85) {
+        moved = true;
+        lockPage();
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    home.addEventListener("touchend", function (e) {
+      if (!tracking || startY == null) return;
+      tracking = false;
+      const t = e.changedTouches && e.changedTouches[0];
+      const dy = t ? (t.clientY - startY) : 0;
+      const dx = t && startX != null ? (t.clientX - startX) : 0;
+      startY = null;
+      startX = null;
+      unlockPage();
+
+      // افقی زیاد = سوایپ تصادفی، نادیده
+      if (Math.abs(dx) > Math.abs(dy) * 1.1) return;
+      // آستانه نرم‌تر ولی نه بیش‌حساس: ~28px
+      if (!moved && Math.abs(dy) < 28) return;
+
+      // خانه → تغذیه (بالا)
+      if (!isFood && dy < -28) {
+        e.preventDefault();
+        hqlBurnNavigate("food.html");
+        return;
+      }
+      // تغذیه → خانه (پایین) — فقط روی خود دکمه ناو، نه pull-to-refresh صفحه
+      // و فقط وقتی واقعاً روی ناو شروع شده (همین handler)
+      if (isFood && dy > 32) {
+        e.preventDefault();
+        location.href = "index.html";
+        return;
+      }
+    }, { passive: false });
+
+    home.addEventListener("touchcancel", function () {
+      tracking = false;
+      startY = null;
+      startX = null;
+      unlockPage();
+    }, { passive: true });
+
+    // دسکتاپ: چرخ روی ناو، آستانه بالاتر
+    let wheelAcc = 0;
+    let wheelTimer = null;
+    home.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      wheelAcc += e.deltaY;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(function () { wheelAcc = 0; }, 280);
+      if (!isFood && wheelAcc < -50) {
+        wheelAcc = 0;
+        hqlBurnNavigate("food.html");
+      } else if (isFood && wheelAcc > 55) {
+        wheelAcc = 0;
+        location.href = "index.html";
+      }
+    }, { passive: false });
+  })();
+
 
   let hideTimer = null;
   let lastY = window.scrollY || 0;
