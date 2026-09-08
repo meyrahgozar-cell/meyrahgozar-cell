@@ -2874,14 +2874,23 @@ function initWeightStrip(strip) {
                 }
                 leaderboard.sort((a, b) => b.avg - a.avg);
 
+                // بازه کیلومتر: در حالت هفته فقط از شنبه تا امروز (نه کل ماه)
+                let kmStart = range.start;
+                let kmEnd = range.end;
+                if (rankMode === "week") {
+                    const wrKm = currentWeekRange();
+                    kmStart = wrKm.start;
+                    kmEnd = wrKm.end;
+                }
+
                 try {
-                    const kmRes = await db.rpc("get_month_user_km", {
-                        p_start: range.start,
-                        p_end: range.end
+                    const kmUsersRes = await db.rpc("get_month_user_km", {
+                        p_start: kmStart,
+                        p_end: kmEnd
                     });
-                    if (!kmRes.error && kmRes.data) {
+                    if (!kmUsersRes.error && kmUsersRes.data) {
                         const kmMap = {};
-                        (Array.isArray(kmRes.data) ? kmRes.data : []).forEach(row => {
+                        (Array.isArray(kmUsersRes.data) ? kmUsersRes.data : []).forEach(row => {
                             const id = row.user_id;
                             kmMap[id] = Number(row.total_km) || 0;
                             kmMap[String(id)] = Number(row.total_km) || 0;
@@ -2906,10 +2915,27 @@ function initWeightStrip(strip) {
                     };
                 }
 
-                const myKm = (exRes.data || []).reduce((s, r) => s + (Number(r.total_km) || 0), 0);
-                const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
-                const communityKm = Number(kmStats.total_km) || 0;
-                const activePeople = Number(kmStats.active_users) || 0;
+                // کیلومتر من و جامعه: فیلتر به همان بازه (هفته یا ماه)
+                const exInRange = (exRes.data || []).filter(r => {
+                    const d = r.log_date;
+                    return d >= kmStart && d <= kmEnd;
+                });
+                const myKm = exInRange.reduce((s, r) => s + (Number(r.total_km) || 0), 0);
+
+                let communityKm = 0;
+                let activePeople = 0;
+                try {
+                    const kmStatsRes = (rankMode === "week")
+                        ? await db.rpc("get_month_km_stats", { p_start: kmStart, p_end: kmEnd })
+                        : kmRes;
+                    const kmStats = kmStatsRes && !kmStatsRes.error ? (kmStatsRes.data || {}) : {};
+                    communityKm = Number(kmStats.total_km) || 0;
+                    activePeople = Number(kmStats.active_users) || 0;
+                } catch (e) {
+                    const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
+                    communityKm = Number(kmStats.total_km) || 0;
+                    activePeople = Number(kmStats.active_users) || 0;
+                }
 
                 const kmByUser = {};
                 if (userKmRes && !userKmRes.error && Array.isArray(userKmRes.data)) {
