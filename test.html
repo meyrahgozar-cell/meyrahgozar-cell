@@ -3,178 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔍 دیباگ‌کنندهٔ پروکسی‌ها</title>
+    <title>🔍 دیباگ نهایی - تصحیح آدرس</title>
     <style>
         * { box-sizing: border-box; }
-        body {
-            font-family: 'Tahoma', 'Vazir', sans-serif;
-            background: #f0f4f8;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 15px;
-            margin-top: 0;
-        }
-        .input-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: end;
-            margin: 20px 0;
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 12px;
-        }
-        .input-group label {
-            font-weight: bold;
-            color: #34495e;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            flex: 1;
-        }
-        .input-group input {
-            padding: 10px 12px;
-            border: 2px solid #dce1e8;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-        }
-        .input-group input:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-        .btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            flex: 0 0 auto;
-        }
-        .btn:hover { background: #2980b9; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .summary {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin: 15px 0;
-            padding: 15px;
-            background: #eaf2f8;
-            border-radius: 10px;
-        }
-        .summary-item {
-            font-size: 14px;
-            color: #2c3e50;
-        }
-        .summary-item strong { font-size: 18px; }
-
-        .results-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .result-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 12px 18px;
-            border-radius: 10px;
-            border-right: 6px solid #bdc3c7;
-            background: #f8f9fa;
-            transition: 0.2s;
-            gap: 10px;
-        }
+        body { font-family: 'Tahoma', 'Vazir', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-top: 0; }
+        .input-group { display: flex; gap: 15px; flex-wrap: wrap; align-items: end; margin: 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; }
+        .input-group label { font-weight: bold; color: #34495e; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .input-group input { padding: 10px 12px; border: 2px solid #dce1e8; border-radius: 8px; font-size: 16px; width: 100%; }
+        .btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; flex: 0 0 auto; }
+        .btn:hover { background: #219a52; }
+        .summary { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; padding: 15px; background: #eaf2f8; border-radius: 10px; }
+        .results-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .result-row { display: flex; flex-wrap: wrap; align-items: center; padding: 12px 18px; border-radius: 10px; border-right: 6px solid #bdc3c7; background: #f8f9fa; gap: 10px; }
         .result-row.success { border-right-color: #27ae60; background: #eafaf1; }
         .result-row.fail { border-right-color: #e74c3c; background: #fdedec; }
-        .result-row.pending { border-right-color: #f39c12; background: #fef9e7; }
-        .result-row .method {
-            font-weight: bold;
-            min-width: 180px;
-            font-size: 14px;
-            color: #2c3e50;
-        }
-        .result-row .status {
-            font-size: 13px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            background: #ecf0f1;
-            color: #2c3e50;
-        }
+        .result-row .method { font-weight: bold; min-width: 180px; font-size: 14px; color: #2c3e50; }
+        .result-row .status { font-size: 13px; padding: 4px 12px; border-radius: 20px; background: #ecf0f1; color: #2c3e50; }
         .result-row .status.green { background: #27ae60; color: white; }
         .result-row .status.red { background: #e74c3c; color: white; }
-        .result-row .status.yellow { background: #f39c12; color: white; }
-        .result-row .time {
-            font-size: 12px;
-            color: #7f8c8d;
-            min-width: 60px;
-        }
-        .result-row .detail {
-            font-size: 13px;
-            color: #555;
-            flex: 1;
-            min-width: 200px;
-            word-break: break-word;
-        }
-        .result-row .preview {
-            width: 100%;
-            margin-top: 8px;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            font-size: 14px;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            border: 1px solid #eee;
-            display: none;
-        }
+        .result-row .time { font-size: 12px; color: #7f8c8d; min-width: 60px; }
+        .result-row .detail { font-size: 13px; color: #555; flex: 1; min-width: 200px; word-break: break-word; }
+        .result-row .preview { width: 100%; margin-top: 8px; padding: 10px; background: white; border-radius: 6px; font-size: 14px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #eee; display: none; }
         .result-row .preview.show { display: block; }
-        .result-row .toggle-preview {
-            background: none;
-            border: 1px solid #3498db;
-            color: #3498db;
-            padding: 3px 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .footer {
-            margin-top: 25px;
-            text-align: center;
-            font-size: 13px;
-            color: #7f8c8d;
-        }
-        @media (max-width: 600px) {
-            .result-row .method { min-width: 120px; font-size: 12px; }
-            .input-group { flex-direction: column; }
-            .btn { width: 100%; }
-        }
+        .result-row .toggle-preview { background: none; border: 1px solid #3498db; color: #3498db; padding: 3px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
+        .footer { margin-top: 25px; text-align: center; font-size: 13px; color: #7f8c8d; }
+        .warning-box { background: #fef9e7; border-right: 6px solid #f1c40f; padding: 15px; border-radius: 8px; margin: 15px 0; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>🔍 دیباگ‌کنندهٔ پروکسی‌ها</h1>
-    <p style="text-align:center;color:#7f8c8d;">همهٔ روش‌ها را همزمان تست می‌کند تا ببینیم مشکل از کجاست</p>
+    <h1>🔍 دیباگ نهایی (تصحیح آدرس)</h1>
+    <div class="warning-box">
+        ⚠️ <strong>مشکل پیدا شد:</strong> سایت از <strong>نام فارسی سوره</strong> در آدرس استفاده میکند (مثلاً <code>سوره_بقره</code>)، نه شماره. 
+        این بار نقشهی کامل سورهها اضافه شده است.
+    </div>
 
     <div class="input-group">
         <label>شماره سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
@@ -182,29 +46,31 @@
         <button class="btn" id="runBtn">🚀 شروع دیباگ</button>
     </div>
 
-    <div class="summary" id="summary">
-        <span class="summary-item">✅ موفق: <strong id="successCount">0</strong></span>
-        <span class="summary-item">❌ شکست: <strong id="failCount">0</strong></span>
-        <span class="summary-item">⏳ در حال اجرا: <strong id="pendingCount">0</strong></span>
-    </div>
-
-    <div id="resultsContainer" class="results-grid">
-        <!-- ردیف‌های نتیجه به صورت خودکار ساخته می‌شوند -->
-    </div>
-
-    <div class="footer">
-        💡 اگر هیچکدام کار نکرد، مشکل از محدودیت شبکه (فیلترینگ) یا قطعی سرویس‌های پروکسی است.
-    </div>
+    <div id="resultsContainer" class="results-grid"></div>
+    <div class="footer">💡 اگر این بار هم خطا داد، یعنی پروکسیها توسط فیلتر شبکه مسدود شدهاند.</div>
 </div>
 
 <script>
     (function() {
-        // -------------------- تنظیمات --------------------
-        const TARGET_BASE = 'https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_{ayah}_%D8%B3%D9%88%D8%B1%D9%87_{surah}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF';
-        
-        // لیست روش‌ها (پروکسی‌ها)
+        // ---------- نقشه کامل نام سوره ها (شماره -> نام فارسی) ----------
+        const SURAH_NAMES = {
+            1: 'حمد', 2: 'بقره', 3: 'آل_عمران', 4: 'نساء', 5: 'مائده', 6: 'انعام', 7: 'اعراف', 8: 'انفال', 9: 'توبه', 10: 'یونس',
+            11: 'هود', 12: 'یوسف', 13: 'رعد', 14: 'ابراهیم', 15: 'حجر', 16: 'نحل', 17: 'اسراء', 18: 'کهف', 19: 'مریم', 20: 'طه',
+            21: 'انبیاء', 22: 'حج', 23: 'مؤمنون', 24: 'نور', 25: 'فرقان', 26: 'شعراء', 27: 'نمل', 28: 'قصص', 29: 'عنکبوت', 30: 'روم',
+            31: 'لقمان', 32: 'سجده', 33: 'احزاب', 34: 'سبأ', 35: 'فاطر', 36: 'یس', 37: 'صافات', 38: 'ص', 39: 'زمر', 40: 'غافر',
+            41: 'فصلت', 42: 'شوری', 43: 'زخرف', 44: 'دخان', 45: 'جاثیه', 46: 'احقاف', 47: 'محمد', 48: 'فتح', 49: 'حجرات', 50: 'ق',
+            51: 'ذاریات', 52: 'طور', 53: 'نجم', 54: 'قمر', 55: 'الرحمن', 56: 'واقعه', 57: 'حدید', 58: 'مجادله', 59: 'حشر', 60: 'ممتحنه',
+            61: 'صف', 62: 'جمعه', 63: 'منافقون', 64: 'تغابن', 65: 'طلاق', 66: 'تحریم', 67: 'ملک', 68: 'قلم', 69: 'حاقه', 70: 'معارج',
+            71: 'نوح', 72: 'جن', 73: 'مزمل', 74: 'مدثر', 75: 'قیامه', 76: 'انسان', 77: 'مرسلات', 78: 'نبأ', 79: 'نازعات', 80: 'عبس',
+            81: 'تکویر', 82: 'انفطار', 83: 'مطففین', 84: 'انشقاق', 85: 'بروج', 86: 'طارق', 87: 'اعلی', 88: 'غاشیه', 89: 'فجر', 90: 'بلد',
+            91: 'شمس', 92: 'لیل', 93: 'ضحی', 94: 'شرح', 95: 'تین', 96: 'علق', 97: 'قدر', 98: 'بینه', 99: 'زلزله', 100: 'عادیات',
+            101: 'قارعه', 102: 'تکاثر', 103: 'عصر', 104: 'همزه', 105: 'فیل', 106: 'قریش', 107: 'ماعون', 108: 'کوثر', 109: 'کافرون', 110: 'نصر',
+            111: 'تبت', 112: 'اخلاص', 113: 'فلق', 114: 'ناس'
+        };
+
+        // لیست پروکسیها (با ترتیب اولویت)
         const METHODS = [
-            { id: 'direct', name: '🔴 مستقیم (بدون پروکسی)', type: 'direct', url: null },
+            { id: 'direct', name: '🔴 مستقیم (بدون پروکسی)', type: 'direct' },
             { id: 'proxy1', name: '🌐 allorigins.win', type: 'proxy', url: 'https://api.allorigins.win/raw?url=' },
             { id: 'proxy2', name: '🌐 corsproxy.io', type: 'proxy', url: 'https://corsproxy.io/?url=' },
             { id: 'proxy3', name: '🌐 api.cors.lol', type: 'proxy', url: 'https://api.cors.lol/?url=' },
@@ -214,21 +80,21 @@
             { id: 'proxy7', name: '🌐 proxy.cors.sh', type: 'proxy', url: 'https://proxy.cors.sh/' }
         ];
 
-        // عناصر DOM
         const surahInput = document.getElementById('surahInput');
         const ayahInput = document.getElementById('ayahInput');
         const runBtn = document.getElementById('runBtn');
         const resultsContainer = document.getElementById('resultsContainer');
-        const successCountSpan = document.getElementById('successCount');
-        const failCountSpan = document.getElementById('failCount');
-        const pendingCountSpan = document.getElementById('pendingCount');
 
-        // تابع ساخت URL هدف
-        function buildTargetUrl(surah, ayah) {
-            return TARGET_BASE.replace('{surah}', surah).replace('{ayah}', ayah);
+        function getSurahName(num) {
+            return SURAH_NAMES[num] || null;
         }
 
-        // تابع استخراج تفسیر از HTML
+        function buildTargetUrl(surahNum, ayah) {
+            const name = getSurahName(surahNum);
+            if (!name) return null;
+            return `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${name}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
+        }
+
         function extractTafsir(html) {
             const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
             const match = html.match(pattern);
@@ -238,37 +104,21 @@
             return null;
         }
 
-        // تابع برای ایجاد یک ردیف نتیجه در UI
         function createResultRow(method) {
             const row = document.createElement('div');
-            row.className = 'result-row pending';
+            row.className = 'result-row';
             row.id = `row-${method.id}`;
             row.innerHTML = `
                 <span class="method">${method.name}</span>
-                <span class="status yellow" id="status-${method.id}">⏳ در حال تست...</span>
+                <span class="status" id="status-${method.id}">⏳ در انتظار...</span>
                 <span class="time" id="time-${method.id}">--</span>
-                <span class="detail" id="detail-${method.id}">در حال اتصال...</span>
+                <span class="detail" id="detail-${method.id}">آماده</span>
                 <button class="toggle-preview" id="toggle-${method.id}" style="display:none;">📄 نمایش متن</button>
                 <div class="preview" id="preview-${method.id}"></div>
             `;
             return row;
         }
 
-        // به‌روزرسانی آمار
-        function updateStats() {
-            const rows = resultsContainer.querySelectorAll('.result-row');
-            let success = 0, fail = 0, pending = 0;
-            rows.forEach(row => {
-                if (row.classList.contains('success')) success++;
-                else if (row.classList.contains('fail')) fail++;
-                else if (row.classList.contains('pending')) pending++;
-            });
-            successCountSpan.textContent = success;
-            failCountSpan.textContent = fail;
-            pendingCountSpan.textContent = pending;
-        }
-
-        // تست یک روش
         async function testMethod(method, surah, ayah) {
             const row = document.getElementById(`row-${method.id}`);
             const statusSpan = document.getElementById(`status-${method.id}`);
@@ -278,6 +128,8 @@
             const toggleBtn = document.getElementById(`toggle-${method.id}`);
 
             const startTime = performance.now();
+            row.className = 'result-row';
+            statusSpan.textContent = '⏳ در حال تست...';
 
             try {
                 let fullUrl;
@@ -288,8 +140,15 @@
                     fullUrl = method.url + encodeURIComponent(target);
                 }
 
+                if (!fullUrl) {
+                    throw new Error('نام سوره پیدا نشد (شماره نامعتبر)');
+                }
+
                 const response = await fetch(fullUrl, {
-                    signal: AbortSignal.timeout(15000) // ۱۵ ثانیه تایم‌اوت
+                    signal: AbortSignal.timeout(15000),
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
                 });
 
                 const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
@@ -297,10 +156,9 @@
 
                 if (!response.ok) {
                     row.className = 'result-row fail';
-                    statusSpan.className = 'status red';
                     statusSpan.textContent = `❌ HTTP ${response.status}`;
+                    statusSpan.className = 'status red';
                     detailSpan.textContent = `خطای سرور (کد ${response.status})`;
-                    updateStats();
                     return;
                 }
 
@@ -309,8 +167,8 @@
 
                 if (tafsir) {
                     row.className = 'result-row success';
-                    statusSpan.className = 'status green';
                     statusSpan.textContent = '✅ موفق';
+                    statusSpan.className = 'status green';
                     detailSpan.textContent = `تفسیر دریافت شد (طول: ${tafsir.length} کاراکتر)`;
                     previewDiv.textContent = tafsir;
                     toggleBtn.style.display = 'inline-block';
@@ -320,50 +178,47 @@
                     };
                 } else {
                     row.className = 'result-row fail';
-                    statusSpan.className = 'status red';
                     statusSpan.textContent = '⚠️ ساختار';
-                    detailSpan.textContent = 'صفحه دریافت شد، اما متن تفسیر پیدا نشد (ساختار سایت تغییر کرده؟)';
+                    statusSpan.className = 'status red';
+                    detailSpan.textContent = 'صفحه دریافت شد، اما متن تفسیر پیدا نشد.';
                 }
 
             } catch (error) {
                 const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
                 timeSpan.textContent = `${elapsed}s`;
-
                 row.className = 'result-row fail';
-                statusSpan.className = 'status red';
                 statusSpan.textContent = '❌ خطا';
+                statusSpan.className = 'status red';
 
                 let errorMsg = error.message;
                 if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-                    errorMsg = '⏱️ زمان پاسخ‌گویی تمام شد (تایم‌اوت ۱۵ ثانیه)';
-                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    errorMsg = '🚫 خطای شبکه (احتمالاً CORS یا فیلترینگ یا قطعی پروکسی)';
+                    errorMsg = '⏱️ تایم‌اوت ۱۵ ثانیه';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMsg = '🚫 خطای شبکه (CORS یا قطعی اینترنت/پروکسی)';
                 }
                 detailSpan.textContent = errorMsg;
             }
-
-            updateStats();
         }
 
-        // اجرای همه تست‌ها
         async function runAllTests() {
-            const surah = surahInput.value.trim();
-            const ayah = ayahInput.value.trim();
-            if (!surah || !ayah || isNaN(surah) || isNaN(ayah) || surah < 1 || surah > 114 || ayah < 1) {
-                alert('لطفاً شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.');
+            const surah = parseInt(surahInput.value.trim());
+            const ayah = parseInt(ayahInput.value.trim());
+            if (isNaN(surah) || isNaN(ayah) || surah < 1 || surah > 114 || ayah < 1) {
+                alert('شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.');
                 return;
             }
 
-            // پاک کردن نتایج قبلی
+            // بررسی وجود نام سوره
+            if (!getSurahName(surah)) {
+                alert(`نامی برای سوره ${surah} پیدا نشد!`);
+                return;
+            }
+
             resultsContainer.innerHTML = '';
-            METHODS.forEach(m => {
-                resultsContainer.appendChild(createResultRow(m));
-            });
-            updateStats();
+            METHODS.forEach(m => resultsContainer.appendChild(createResultRow(m)));
             runBtn.disabled = true;
             runBtn.textContent = '⏳ در حال تست...';
 
-            // اجرای همه روش‌ها به صورت همزمان
             const promises = METHODS.map(m => testMethod(m, surah, ayah));
             await Promise.allSettled(promises);
 
@@ -371,22 +226,12 @@
             runBtn.textContent = '🚀 شروع دیباگ';
         }
 
-        // رویداد دکمه
         runBtn.addEventListener('click', runAllTests);
-
-        // اجرا با کلید Enter
         document.querySelectorAll('input').forEach(inp => {
             inp.addEventListener('keypress', e => { if (e.key === 'Enter') runBtn.click(); });
         });
 
-        // پیام اولیه
-        resultsContainer.innerHTML = `
-            <div style="text-align:center;padding:40px;color:#7f8c8d;background:#f8f9fa;border-radius:12px;">
-                ⬅️ شماره سوره و آیه را وارد کنید و دکمهٔ «شروع دیباگ» را بزنید.<br>
-                همهٔ ۸ روش همزمان تست می‌شوند.
-            </div>
-        `;
-        updateStats();
+        resultsContainer.innerHTML = `<div style="text-align:center;padding:40px;color:#7f8c8d;">⬅️ دکمه را بزنید تا همه روشها تست شوند.</div>`;
     })();
 </script>
 </body>
