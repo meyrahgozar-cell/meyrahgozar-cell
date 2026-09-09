@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تفسیر روان جاوید - با corsproxy.io</title>
+    <title>روان جاوید – Tafsir Reader</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -15,7 +15,7 @@
             justify-content: center;
         }
         .container {
-            max-width: 700px;
+            max-width: 750px;
             width: 100%;
             background: white;
             padding: 25px 30px;
@@ -33,7 +33,7 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            align-items: center;
+            align-items: end;
             margin: 20px 0;
             background: #f8fafc;
             padding: 15px;
@@ -58,7 +58,7 @@
             background: #27ae60;
             color: white;
             border: none;
-            padding: 10px 25px;
+            padding: 10px 30px;
             border-radius: 10px;
             font-size: 16px;
             font-weight: bold;
@@ -75,6 +75,7 @@
             background: #ecf0f1;
             color: #2c3e50;
             font-size: 14px;
+            min-height: 40px;
         }
         .tafsir-box {
             background: #fef9e7;
@@ -85,7 +86,7 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             line-height: 1.8;
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
             font-size: 15px;
         }
@@ -111,13 +112,17 @@
             font-size: 12px;
         }
         .clear-btn:hover { background: #c0392b; }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #95a5a6;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>📖 تفسیر روان جاوید</h1>
-    <p style="text-align:center;color:#7f8c8d;font-size:14px;">از طریق <strong>corsproxy.io</strong> (بدون واسطه)</p>
-
     <div class="input-group">
         <label>سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
         <label>آیه <input type="number" id="ayahInput" value="63" min="1"></label>
@@ -131,11 +136,12 @@
     </div>
 
     <div id="tafsirDisplay" class="tafsir-box empty">تفسیر در اینجا نمایش داده می‌شود...</div>
+    <div class="footer">🌐 از پروکسی‌های رایگان استفاده می‌کند – در صورت خطا، چند ثانیه صبر کنید و دوباره تلاش کنید.</div>
 </div>
 
 <script>
     (function() {
-        // ---------- نقشه نام سوره‌ها (شماره -> نام فارسی) ----------
+        // ---------- FULL SURAH NAME MAPPING (Number -> Persian) ----------
         const SURAH_NAMES = {
             1:'حمد',2:'بقره',3:'آل_عمران',4:'نساء',5:'مائده',6:'انعام',7:'اعراف',8:'انفال',9:'توبه',10:'یونس',
             11:'هود',12:'یوسف',13:'رعد',14:'ابراهیم',15:'حجر',16:'نحل',17:'اسراء',18:'کهف',19:'مریم',20:'طه',
@@ -151,7 +157,20 @@
             111:'تبت',112:'اخلاص',113:'فلق',114:'ناس'
         };
 
-        // ---------- عناصر DOM ----------
+        // ---------- PROXY LIST (ordered by preference) ----------
+        // These are free public CORS proxies; if one fails, the next is tried.
+        const PROXIES = [
+            // allorigins – usually stable, no key required
+            (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+            // corsproxy.io – sometimes blocks without key; we keep as fallback
+            (target) => `https://corsproxy.io/?${target}`,
+            // corsfix – simple mirror
+            (target) => `https://corsfix.com/${encodeURIComponent(target)}`,
+            // cors.lol – another free proxy
+            (target) => `https://api.cors.lol/?url=${encodeURIComponent(target)}`,
+        ];
+
+        // ---------- DOM Elements ----------
         const surahInput = document.getElementById('surahInput');
         const ayahInput = document.getElementById('ayahInput');
         const fetchBtn = document.getElementById('fetchBtn');
@@ -162,21 +181,21 @@
 
         const STORAGE_PREFIX = 'tafsir_';
 
-        // ---------- توابع کمکی ----------
-        function getSurahName(num) { return SURAH_NAMES[num] || null; }
+        // ---------- Helpers ----------
+        function getSurahName(num) {
+            return SURAH_NAMES[num] || null;
+        }
 
         function buildTargetUrl(surah, ayah) {
             const name = getSurahName(surah);
             if (!name) return null;
-            return `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${name}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
-        }
-
-        // استفاده از corsproxy.io - بدون encodeURIComponent
-        function buildProxyUrl(target) {
-            return `https://corsproxy.io/?${target}`;
+            // The site uses Persian names in the URL, with underscores.
+            // Example: /آیه_63_سوره_بقره
+            return `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${name}`;
         }
 
         function extractTafsir(html) {
+            // Look for the heading and capture everything after it until the next "تفسیر" or end.
             const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
             const match = html.match(pattern);
             if (match && match[1]) {
@@ -215,7 +234,36 @@
             }
         }
 
-        // ---------- تابع اصلی دریافت ----------
+        // ---------- Core Fetch Function (tries proxies in order) ----------
+        async function fetchWithFallback(targetUrl) {
+            for (let i = 0; i < PROXIES.length; i++) {
+                const buildProxy = PROXIES[i];
+                const proxyUrl = buildProxy(targetUrl);
+                try {
+                    const response = await fetch(proxyUrl, {
+                        signal: AbortSignal.timeout(10000) // 10 second timeout per proxy
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const html = await response.text();
+                    const tafsir = extractTafsir(html);
+                    if (tafsir) {
+                        return { success: true, tafsir, proxyIndex: i };
+                    }
+                    // If we got HTML but no tafsir, it might be a 404 or structure mismatch.
+                    // We'll continue to next proxy only if we think it's worth it.
+                    // For simplicity, we treat "no tafsir" as failure and try next.
+                } catch (err) {
+                    // Proxy failed, try next
+                    console.warn(`Proxy ${i} failed:`, err.message);
+                    continue;
+                }
+            }
+            return { success: false, error: 'All proxies failed or no Tafsir found.' };
+        }
+
+        // ---------- Main Action ----------
         async function getTafsir(surah, ayah) {
             const s = parseInt(surah);
             const a = parseInt(ayah);
@@ -226,7 +274,7 @@
 
             const key = getStorageKey(s, a);
 
-            // ۱) بررسی کش
+            // Check cache
             const cached = localStorage.getItem(key);
             if (cached) {
                 setStatus(`✅ از حافظه محلی (کش) خوانده شد.`);
@@ -234,56 +282,36 @@
                 return;
             }
 
-            // ۲) واکشی از وب
-            fetchBtn.disabled = true;
-            setStatus('⏳ در حال دریافت از طریق corsproxy.io ...');
-
-            try {
-                const target = buildTargetUrl(s, a);
-                if (!target) {
-                    setStatus(`❌ نام سوره ${s} پیدا نشد.`, true);
-                    fetchBtn.disabled = false;
-                    return;
-                }
-
-                const proxyUrl = buildProxyUrl(target);
-                const response = await fetch(proxyUrl, {
-                    signal: AbortSignal.timeout(20000),
-                    headers: { 'User-Agent': 'Mozilla/5.0' }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const html = await response.text();
-                const tafsir = extractTafsir(html);
-
-                if (tafsir) {
-                    localStorage.setItem(key, tafsir);
-                    updateCacheCount();
-                    setStatus(`💾 دریافت و در کش ذخیره شد.`);
-                    displayTafsir(tafsir, false);
-                } else {
-                    setStatus(`⚠️ متن تفسیر در صفحه پیدا نشد.`, true);
-                    displayTafsir(null);
-                }
-
-            } catch (error) {
-                let msg = error.message;
-                if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-                    msg = '⏱️ زمان پاسخ‌گویی تمام شد (تایم‌اوت)';
-                } else if (error.message.includes('Failed to fetch')) {
-                    msg = '🚫 خطای شبکه (مشکل در corsproxy.io یا اینترنت)';
-                }
-                setStatus(`❌ ${msg}`, true);
-                displayTafsir(null);
+            // Build target URL
+            const target = buildTargetUrl(s, a);
+            if (!target) {
+                setStatus(`❌ نام سوره ${s} پیدا نشد.`, true);
+                return;
             }
 
-            fetchBtn.disabled = false;
+            fetchBtn.disabled = true;
+            setStatus('⏳ در حال دریافت از طریق پروکسی... (تلاش با چندین سرور)');
+
+            try {
+                const result = await fetchWithFallback(target);
+                if (result.success) {
+                    localStorage.setItem(key, result.tafsir);
+                    updateCacheCount();
+                    setStatus(`💾 دریافت و ذخیره شد (پروکسی #${result.proxyIndex+1})`);
+                    displayTafsir(result.tafsir, false);
+                } else {
+                    setStatus(`❌ ${result.error}`, true);
+                    displayTafsir(null);
+                }
+            } catch (error) {
+                setStatus(`❌ خطای غیرمنتظره: ${error.message}`, true);
+                displayTafsir(null);
+            } finally {
+                fetchBtn.disabled = false;
+            }
         }
 
-        // ---------- رویدادها ----------
+        // ---------- Event Listeners ----------
         fetchBtn.addEventListener('click', () => {
             getTafsir(surahInput.value.trim(), ayahInput.value.trim());
         });
@@ -311,9 +339,9 @@
             }
         });
 
-        // شروع
+        // Initialize
         updateCacheCount();
-        setStatus('وضعیت: آماده (با corsproxy.io)');
+        setStatus('وضعیت: آماده (از چندین پروکسی استفاده می‌شود)');
     })();
 </script>
 </body>
