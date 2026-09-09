@@ -1,348 +1,160 @@
 <!DOCTYPE html>
-<html lang="en" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>روان جاوید – Tafsir Reader</title>
+    <title>Corsfix Debug</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Tahoma', 'Vazir', sans-serif;
-            background: #f0f4f8;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 750px;
-            width: 100%;
-            background: white;
-            padding: 25px 30px;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            border-bottom: 2px solid #27ae60;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-        .input-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: end;
-            margin: 20px 0;
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-        }
-        .input-group label {
-            font-weight: bold;
-            color: #34495e;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-        }
-        .input-group input {
-            padding: 8px 12px;
-            border: 2px solid #dce1e8;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-        }
-        .btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            flex: 0 0 auto;
-        }
-        .btn:hover { background: #219a52; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .status {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 8px;
-            background: #ecf0f1;
-            color: #2c3e50;
-            font-size: 14px;
-            min-height: 40px;
-        }
-        .tafsir-box {
-            background: #fef9e7;
-            border-right: 6px solid #f1c40f;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-top: 15px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.8;
-            max-height: 500px;
-            overflow-y: auto;
-            font-size: 15px;
-        }
-        .tafsir-box.empty {
-            background: #f8f9fa;
-            border-right-color: #bdc3c7;
-            color: #7f8c8d;
-            font-style: italic;
-        }
-        .cache-info {
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-top: 10px;
-            text-align: center;
-        }
-        .clear-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 4px 15px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .clear-btn:hover { background: #c0392b; }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #95a5a6;
-            text-align: center;
-        }
+        body { font-family: monospace; padding: 20px; max-width: 800px; margin: auto; background: #f4f4f9; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 6px; }
+        button:hover { background: #0056b3; }
+        .result { background: #222; color: #0f0; padding: 15px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto; margin-top: 15px; font-size: 13px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f2f2f2; }
+        hr { margin: 20px 0; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📖 تفسیر روان جاوید</h1>
-    <div class="input-group">
-        <label>سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
-        <label>آیه <input type="number" id="ayahInput" value="63" min="1"></label>
-        <button class="btn" id="fetchBtn">دریافت تفسیر</button>
+
+    <h1>🔍 Corsfix Proxy Debug</h1>
+    <p><strong>Target:</strong> Verse 63 of Surah 2 (Al-Baqarah) from wiki.ahlolbait.com</p>
+    <p>This page tests two common Corsfix URL patterns.</p>
+
+    <div class="box">
+        <h3>Test 1: Path-based (concatenate)</h3>
+        <p><code>https://corsfix.com/ + [Target URL]</code></p>
+        <button id="test1Btn">▶️ Run Test 1</button>
+        <div id="result1" class="result">Waiting for test...</div>
     </div>
 
-    <div class="status" id="status">وضعیت: آماده</div>
-    <div class="cache-info">
-        <span>📦 تعداد آیات ذخیره‌شده: <strong id="cacheCount">0</strong></span>
-        <button class="clear-btn" id="clearCacheBtn">🗑️ پاک کردن کش</button>
+    <div class="box">
+        <h3>Test 2: Query-based (encoded)</h3>
+        <p><code>https://corsfix.com/?url= + encodeURIComponent([Target URL])</code></p>
+        <button id="test2Btn">▶️ Run Test 2</button>
+        <div id="result2" class="result">Waiting for test...</div>
     </div>
 
-    <div id="tafsirDisplay" class="tafsir-box empty">تفسیر در اینجا نمایش داده می‌شود...</div>
-    <div class="footer">🌐 از پروکسی‌های رایگان استفاده می‌کند – در صورت خطا، چند ثانیه صبر کنید و دوباره تلاش کنید.</div>
-</div>
+    <div class="box">
+        <h3>🔧 Manual Check</h3>
+        <p>Copy this URL and paste it directly into your browser's address bar to see if it loads the page:</p>
+        <input type="text" id="manualUrl" style="width:100%; padding:10px; font-size:14px; border:1px solid #ccc; border-radius:4px;" readonly>
+        <button id="copyBtn" style="margin-top:10px;">📋 Copy to Clipboard</button>
+    </div>
 
-<script>
-    (function() {
-        // ---------- FULL SURAH NAME MAPPING (Number -> Persian) ----------
-        const SURAH_NAMES = {
-            1:'حمد',2:'بقره',3:'آل_عمران',4:'نساء',5:'مائده',6:'انعام',7:'اعراف',8:'انفال',9:'توبه',10:'یونس',
-            11:'هود',12:'یوسف',13:'رعد',14:'ابراهیم',15:'حجر',16:'نحل',17:'اسراء',18:'کهف',19:'مریم',20:'طه',
-            21:'انبیاء',22:'حج',23:'مؤمنون',24:'نور',25:'فرقان',26:'شعراء',27:'نمل',28:'قصص',29:'عنکبوت',30:'روم',
-            31:'لقمان',32:'سجده',33:'احزاب',34:'سبأ',35:'فاطر',36:'یس',37:'صافات',38:'ص',39:'زمر',40:'غافر',
-            41:'فصلت',42:'شوری',43:'زخرف',44:'دخان',45:'جاثیه',46:'احقاف',47:'محمد',48:'فتح',49:'حجرات',50:'ق',
-            51:'ذاریات',52:'طور',53:'نجم',54:'قمر',55:'الرحمن',56:'واقعه',57:'حدید',58:'مجادله',59:'حشر',60:'ممتحنه',
-            61:'صف',62:'جمعه',63:'منافقون',64:'تغابن',65:'طلاق',66:'تحریم',67:'ملک',68:'قلم',69:'حاقه',70:'معارج',
-            71:'نوح',72:'جن',73:'مزمل',74:'مدثر',75:'قیامه',76:'انسان',77:'مرسلات',78:'نبأ',79:'نازعات',80:'عبس',
-            81:'تکویر',82:'انفطار',83:'مطففین',84:'انشقاق',85:'بروج',86:'طارق',87:'اعلی',88:'غاشیه',89:'فجر',90:'بلد',
-            91:'شمس',92:'لیل',93:'ضحی',94:'شرح',95:'تین',96:'علق',97:'قدر',98:'بینه',99:'زلزله',100:'عادیات',
-            101:'قارعه',102:'تکاثر',103:'عصر',104:'همزه',105:'فیل',106:'قریش',107:'ماعون',108:'کوثر',109:'کافرون',110:'نصر',
-            111:'تبت',112:'اخلاص',113:'فلق',114:'ناس'
-        };
+    <div class="box">
+        <h3>📊 What to look for</h3>
+        <ul>
+            <li><strong>Status 200 + HTML content</strong> → Corsfix is working perfectly.</li>
+            <li><strong>Status 403 / 429</strong> → Corsfix is blocking the request (rate limit or access denied).</li>
+            <li><strong>Status 404</strong> → The proxy URL format is wrong.</li>
+            <li><strong>Status 500 / Timeout</strong> → Corsfix server is down or slow.</li>
+            <li><strong>CORS/Network error</strong> → The proxy itself is not reachable from your network (maybe blocked).</li>
+        </ul>
+    </div>
 
-        // ---------- PROXY LIST (ordered by preference) ----------
-        // These are free public CORS proxies; if one fails, the next is tried.
-        const PROXIES = [
-            // allorigins – usually stable, no key required
-            (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-            // corsproxy.io – sometimes blocks without key; we keep as fallback
-            (target) => `https://corsproxy.io/?${target}`,
-            // corsfix – simple mirror
-            (target) => `https://corsfix.com/${encodeURIComponent(target)}`,
-            // cors.lol – another free proxy
-            (target) => `https://api.cors.lol/?url=${encodeURIComponent(target)}`,
-        ];
-
-        // ---------- DOM Elements ----------
-        const surahInput = document.getElementById('surahInput');
-        const ayahInput = document.getElementById('ayahInput');
-        const fetchBtn = document.getElementById('fetchBtn');
-        const statusDiv = document.getElementById('status');
-        const tafsirDisplay = document.getElementById('tafsirDisplay');
-        const cacheCountSpan = document.getElementById('cacheCount');
-        const clearCacheBtn = document.getElementById('clearCacheBtn');
-
-        const STORAGE_PREFIX = 'tafsir_';
-
-        // ---------- Helpers ----------
-        function getSurahName(num) {
-            return SURAH_NAMES[num] || null;
+    <script>
+        // ---------- Build the target URL (same one you tested manually) ----------
+        function buildTargetUrl() {
+            // This is exactly: https://wiki.ahlolbait.com/آیه_63_سوره_بقره
+            return 'https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_63_%D8%B3%D9%88%D8%B1%D9%87_%D8%A8%D9%82%D8%B1%D9%87';
         }
 
-        function buildTargetUrl(surah, ayah) {
-            const name = getSurahName(surah);
-            if (!name) return null;
-            // The site uses Persian names in the URL, with underscores.
-            // Example: /آیه_63_سوره_بقره
-            return `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${name}`;
-        }
+        const TARGET = buildTargetUrl();
 
-        function extractTafsir(html) {
-            // Look for the heading and capture everything after it until the next "تفسیر" or end.
-            const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
-            const match = html.match(pattern);
-            if (match && match[1]) {
-                return match[1].trim().replace(/\s+/g, ' ').substring(0, 5000);
-            }
-            return null;
-        }
+        // Display the manual URL
+        document.getElementById('manualUrl').value = TARGET;
 
-        function getStorageKey(surah, ayah) {
-            return `${STORAGE_PREFIX}${surah}_${ayah}`;
-        }
-
-        function updateCacheCount() {
-            let count = 0;
-            for (let i = 0; i < localStorage.length; i++) {
-                if (localStorage.key(i).startsWith(STORAGE_PREFIX)) count++;
-            }
-            cacheCountSpan.textContent = count;
-        }
-
-        function setStatus(msg, isError = false) {
-            statusDiv.textContent = msg;
-            statusDiv.style.background = isError ? '#fdedec' : '#ecf0f1';
-            statusDiv.style.color = isError ? '#c0392b' : '#2c3e50';
-        }
-
-        function displayTafsir(text, fromCache = false) {
-            if (text) {
-                tafsirDisplay.textContent = text;
-                tafsirDisplay.className = 'tafsir-box';
-                tafsirDisplay.style.borderRightColor = fromCache ? '#2ecc71' : '#f1c40f';
-            } else {
-                tafsirDisplay.textContent = '❌ تفسیر یافت نشد.';
-                tafsirDisplay.className = 'tafsir-box empty';
-                tafsirDisplay.style.borderRightColor = '#e74c3c';
-            }
-        }
-
-        // ---------- Core Fetch Function (tries proxies in order) ----------
-        async function fetchWithFallback(targetUrl) {
-            for (let i = 0; i < PROXIES.length; i++) {
-                const buildProxy = PROXIES[i];
-                const proxyUrl = buildProxy(targetUrl);
-                try {
-                    const response = await fetch(proxyUrl, {
-                        signal: AbortSignal.timeout(10000) // 10 second timeout per proxy
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    const html = await response.text();
-                    const tafsir = extractTafsir(html);
-                    if (tafsir) {
-                        return { success: true, tafsir, proxyIndex: i };
-                    }
-                    // If we got HTML but no tafsir, it might be a 404 or structure mismatch.
-                    // We'll continue to next proxy only if we think it's worth it.
-                    // For simplicity, we treat "no tafsir" as failure and try next.
-                } catch (err) {
-                    // Proxy failed, try next
-                    console.warn(`Proxy ${i} failed:`, err.message);
-                    continue;
-                }
-            }
-            return { success: false, error: 'All proxies failed or no Tafsir found.' };
-        }
-
-        // ---------- Main Action ----------
-        async function getTafsir(surah, ayah) {
-            const s = parseInt(surah);
-            const a = parseInt(ayah);
-            if (isNaN(s) || isNaN(a) || s < 1 || s > 114 || a < 1) {
-                setStatus('❌ شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.', true);
-                return;
-            }
-
-            const key = getStorageKey(s, a);
-
-            // Check cache
-            const cached = localStorage.getItem(key);
-            if (cached) {
-                setStatus(`✅ از حافظه محلی (کش) خوانده شد.`);
-                displayTafsir(cached, true);
-                return;
-            }
-
-            // Build target URL
-            const target = buildTargetUrl(s, a);
-            if (!target) {
-                setStatus(`❌ نام سوره ${s} پیدا نشد.`, true);
-                return;
-            }
-
-            fetchBtn.disabled = true;
-            setStatus('⏳ در حال دریافت از طریق پروکسی... (تلاش با چندین سرور)');
-
-            try {
-                const result = await fetchWithFallback(target);
-                if (result.success) {
-                    localStorage.setItem(key, result.tafsir);
-                    updateCacheCount();
-                    setStatus(`💾 دریافت و ذخیره شد (پروکسی #${result.proxyIndex+1})`);
-                    displayTafsir(result.tafsir, false);
-                } else {
-                    setStatus(`❌ ${result.error}`, true);
-                    displayTafsir(null);
-                }
-            } catch (error) {
-                setStatus(`❌ خطای غیرمنتظره: ${error.message}`, true);
-                displayTafsir(null);
-            } finally {
-                fetchBtn.disabled = false;
-            }
-        }
-
-        // ---------- Event Listeners ----------
-        fetchBtn.addEventListener('click', () => {
-            getTafsir(surahInput.value.trim(), ayahInput.value.trim());
-        });
-
-        document.querySelectorAll('input').forEach(inp => {
-            inp.addEventListener('keypress', e => {
-                if (e.key === 'Enter') fetchBtn.click();
+        // Copy button
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(TARGET).then(() => {
+                alert('URL copied to clipboard!');
             });
         });
 
-        clearCacheBtn.addEventListener('click', () => {
-            if (confirm('همه تفاسیر ذخیره‌شده پاک شوند؟')) {
-                const keys = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith(STORAGE_PREFIX)) keys.push(key);
+        // ---------- Helper to fetch and show results ----------
+        async function runTest(buttonId, resultId, proxyUrl) {
+            const btn = document.getElementById(buttonId);
+            const resultDiv = document.getElementById(resultId);
+            btn.disabled = true;
+            resultDiv.textContent = '⏳ Fetching...';
+            resultDiv.className = 'result';
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(proxyUrl, {
+                    signal: AbortSignal.timeout(15000) // 15 second timeout
+                });
+
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                const status = response.status;
+                const statusText = response.statusText;
+                const headers = [...response.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n');
+                const text = await response.text();
+
+                let output = `✅ Status: ${status} ${statusText}\n`;
+                output += `⏱️ Time: ${elapsed}s\n`;
+                output += `📦 Content-Length: ${text.length} characters\n\n`;
+                output += `📋 Headers:\n${headers}\n\n`;
+                output += `📄 Preview (first 2000 chars):\n${text.substring(0, 2000)}...\n\n`;
+                output += `🔍 Searching for "تفسیر روان جاوید"... `;
+
+                if (text.includes('تفسیر روان جاوید')) {
+                    output += `✅ FOUND! The proxy is working.\n`;
+                    // Try to extract it
+                    const match = text.match(/تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s);
+                    if (match) {
+                        output += `\n📖 Extracted Tafsir (first 500 chars):\n${match[1].trim().substring(0, 500)}...`;
+                    } else {
+                        output += `\n⚠️ Found the title, but couldn't extract the text using regex.`;
+                    }
+                } else {
+                    output += `❌ NOT FOUND. The proxy might be returning an error page or the structure changed.`;
                 }
-                keys.forEach(k => localStorage.removeItem(k));
-                updateCacheCount();
-                setStatus('🗑️ کش پاک شد.');
-                displayTafsir(null);
-                tafsirDisplay.className = 'tafsir-box empty';
-                tafsirDisplay.style.borderRightColor = '#bdc3c7';
-                tafsirDisplay.textContent = 'تفسیر در اینجا نمایش داده می‌شود...';
+
+                resultDiv.textContent = output;
+                resultDiv.className = 'result success';
+
+            } catch (error) {
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                let errorMsg = `❌ Error: ${error.message}\n`;
+                errorMsg += `⏱️ Time: ${elapsed}s\n\n`;
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMsg += `🔍 This usually means:\n`;
+                    errorMsg += `- The proxy URL is completely blocked by your network (firewall/filtering).\n`;
+                    errorMsg += `- The proxy server (corsfix.com) is down or unreachable from your location.\n`;
+                    errorMsg += `- There is a CORS issue connecting to the proxy itself (unlikely).\n`;
+                } else if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                    errorMsg += `🔍 The request took more than 15 seconds. The proxy server is too slow or overloaded.`;
+                }
+                resultDiv.textContent = errorMsg;
+                resultDiv.className = 'result error';
             }
+
+            btn.disabled = false;
+        }
+
+        // ---------- Test 1: Path-based (no encoding) ----------
+        document.getElementById('test1Btn').addEventListener('click', () => {
+            const proxyUrl = `https://corsfix.com/${TARGET}`;
+            runTest('test1Btn', 'result1', proxyUrl);
         });
 
-        // Initialize
-        updateCacheCount();
-        setStatus('وضعیت: آماده (از چندین پروکسی استفاده می‌شود)');
-    })();
-</script>
+        // ---------- Test 2: Query-based (encoded) ----------
+        document.getElementById('test2Btn').addEventListener('click', () => {
+            const proxyUrl = `https://corsfix.com/?url=${encodeURIComponent(TARGET)}`;
+            runTest('test2Btn', 'result2', proxyUrl);
+        });
+
+        // Auto-run Test 1 on page load so you get instant feedback
+        window.onload = () => {
+            document.getElementById('test1Btn').click();
+        };
+    </script>
+
 </body>
 </html>
