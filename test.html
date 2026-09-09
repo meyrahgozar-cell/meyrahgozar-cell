@@ -3,235 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔍 دیباگ نهایی - تصحیح آدرس</title>
+    <title>تفسیر روان جاوید - با corsproxy.io</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Tahoma', 'Vazir', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-top: 0; }
-        .input-group { display: flex; gap: 15px; flex-wrap: wrap; align-items: end; margin: 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; }
-        .input-group label { font-weight: bold; color: #34495e; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-        .input-group input { padding: 10px 12px; border: 2px solid #dce1e8; border-radius: 8px; font-size: 16px; width: 100%; }
-        .btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; flex: 0 0 auto; }
+        body {
+            font-family: 'Tahoma', 'Vazir', sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 20px 0;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #34495e;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #dce1e8;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            flex: 0 0 auto;
+        }
         .btn:hover { background: #219a52; }
-        .summary { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; padding: 15px; background: #eaf2f8; border-radius: 10px; }
-        .results-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .result-row { display: flex; flex-wrap: wrap; align-items: center; padding: 12px 18px; border-radius: 10px; border-right: 6px solid #bdc3c7; background: #f8f9fa; gap: 10px; }
-        .result-row.success { border-right-color: #27ae60; background: #eafaf1; }
-        .result-row.fail { border-right-color: #e74c3c; background: #fdedec; }
-        .result-row .method { font-weight: bold; min-width: 180px; font-size: 14px; color: #2c3e50; }
-        .result-row .status { font-size: 13px; padding: 4px 12px; border-radius: 20px; background: #ecf0f1; color: #2c3e50; }
-        .result-row .status.green { background: #27ae60; color: white; }
-        .result-row .status.red { background: #e74c3c; color: white; }
-        .result-row .time { font-size: 12px; color: #7f8c8d; min-width: 60px; }
-        .result-row .detail { font-size: 13px; color: #555; flex: 1; min-width: 200px; word-break: break-word; }
-        .result-row .preview { width: 100%; margin-top: 8px; padding: 10px; background: white; border-radius: 6px; font-size: 14px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #eee; display: none; }
-        .result-row .preview.show { display: block; }
-        .result-row .toggle-preview { background: none; border: 1px solid #3498db; color: #3498db; padding: 3px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
-        .footer { margin-top: 25px; text-align: center; font-size: 13px; color: #7f8c8d; }
-        .warning-box { background: #fef9e7; border-right: 6px solid #f1c40f; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: #ecf0f1;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .tafsir-box {
+            background: #fef9e7;
+            border-right: 6px solid #f1c40f;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.8;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 15px;
+        }
+        .tafsir-box.empty {
+            background: #f8f9fa;
+            border-right-color: #bdc3c7;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .cache-info {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .clear-btn:hover { background: #c0392b; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔍 دیباگ نهایی (تصحیح آدرس)</h1>
-    <div class="warning-box">
-        ⚠️ <strong>مشکل پیدا شد:</strong> سایت از <strong>نام فارسی سوره</strong> در آدرس استفاده میکند (مثلاً <code>سوره_بقره</code>)، نه شماره. 
-        این بار نقشهی کامل سورهها اضافه شده است.
-    </div>
+    <h1>📖 تفسیر روان جاوید</h1>
+    <p style="text-align:center;color:#7f8c8d;font-size:14px;">از طریق <strong>corsproxy.io</strong> (بدون واسطه)</p>
 
     <div class="input-group">
-        <label>شماره سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
-        <label>شماره آیه <input type="number" id="ayahInput" value="63" min="1"></label>
-        <button class="btn" id="runBtn">🚀 شروع دیباگ</button>
+        <label>سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
+        <label>آیه <input type="number" id="ayahInput" value="63" min="1"></label>
+        <button class="btn" id="fetchBtn">دریافت تفسیر</button>
     </div>
 
-    <div id="resultsContainer" class="results-grid"></div>
-    <div class="footer">💡 اگر این بار هم خطا داد، یعنی پروکسیها توسط فیلتر شبکه مسدود شدهاند.</div>
+    <div class="status" id="status">وضعیت: آماده</div>
+    <div class="cache-info">
+        <span>📦 تعداد آیات ذخیره‌شده: <strong id="cacheCount">0</strong></span>
+        <button class="clear-btn" id="clearCacheBtn">🗑️ پاک کردن کش</button>
+    </div>
+
+    <div id="tafsirDisplay" class="tafsir-box empty">تفسیر در اینجا نمایش داده می‌شود...</div>
 </div>
 
 <script>
     (function() {
-        // ---------- نقشه کامل نام سوره ها (شماره -> نام فارسی) ----------
+        // ---------- نقشه نام سوره‌ها (شماره -> نام فارسی) ----------
         const SURAH_NAMES = {
-            1: 'حمد', 2: 'بقره', 3: 'آل_عمران', 4: 'نساء', 5: 'مائده', 6: 'انعام', 7: 'اعراف', 8: 'انفال', 9: 'توبه', 10: 'یونس',
-            11: 'هود', 12: 'یوسف', 13: 'رعد', 14: 'ابراهیم', 15: 'حجر', 16: 'نحل', 17: 'اسراء', 18: 'کهف', 19: 'مریم', 20: 'طه',
-            21: 'انبیاء', 22: 'حج', 23: 'مؤمنون', 24: 'نور', 25: 'فرقان', 26: 'شعراء', 27: 'نمل', 28: 'قصص', 29: 'عنکبوت', 30: 'روم',
-            31: 'لقمان', 32: 'سجده', 33: 'احزاب', 34: 'سبأ', 35: 'فاطر', 36: 'یس', 37: 'صافات', 38: 'ص', 39: 'زمر', 40: 'غافر',
-            41: 'فصلت', 42: 'شوری', 43: 'زخرف', 44: 'دخان', 45: 'جاثیه', 46: 'احقاف', 47: 'محمد', 48: 'فتح', 49: 'حجرات', 50: 'ق',
-            51: 'ذاریات', 52: 'طور', 53: 'نجم', 54: 'قمر', 55: 'الرحمن', 56: 'واقعه', 57: 'حدید', 58: 'مجادله', 59: 'حشر', 60: 'ممتحنه',
-            61: 'صف', 62: 'جمعه', 63: 'منافقون', 64: 'تغابن', 65: 'طلاق', 66: 'تحریم', 67: 'ملک', 68: 'قلم', 69: 'حاقه', 70: 'معارج',
-            71: 'نوح', 72: 'جن', 73: 'مزمل', 74: 'مدثر', 75: 'قیامه', 76: 'انسان', 77: 'مرسلات', 78: 'نبأ', 79: 'نازعات', 80: 'عبس',
-            81: 'تکویر', 82: 'انفطار', 83: 'مطففین', 84: 'انشقاق', 85: 'بروج', 86: 'طارق', 87: 'اعلی', 88: 'غاشیه', 89: 'فجر', 90: 'بلد',
-            91: 'شمس', 92: 'لیل', 93: 'ضحی', 94: 'شرح', 95: 'تین', 96: 'علق', 97: 'قدر', 98: 'بینه', 99: 'زلزله', 100: 'عادیات',
-            101: 'قارعه', 102: 'تکاثر', 103: 'عصر', 104: 'همزه', 105: 'فیل', 106: 'قریش', 107: 'ماعون', 108: 'کوثر', 109: 'کافرون', 110: 'نصر',
-            111: 'تبت', 112: 'اخلاص', 113: 'فلق', 114: 'ناس'
+            1:'حمد',2:'بقره',3:'آل_عمران',4:'نساء',5:'مائده',6:'انعام',7:'اعراف',8:'انفال',9:'توبه',10:'یونس',
+            11:'هود',12:'یوسف',13:'رعد',14:'ابراهیم',15:'حجر',16:'نحل',17:'اسراء',18:'کهف',19:'مریم',20:'طه',
+            21:'انبیاء',22:'حج',23:'مؤمنون',24:'نور',25:'فرقان',26:'شعراء',27:'نمل',28:'قصص',29:'عنکبوت',30:'روم',
+            31:'لقمان',32:'سجده',33:'احزاب',34:'سبأ',35:'فاطر',36:'یس',37:'صافات',38:'ص',39:'زمر',40:'غافر',
+            41:'فصلت',42:'شوری',43:'زخرف',44:'دخان',45:'جاثیه',46:'احقاف',47:'محمد',48:'فتح',49:'حجرات',50:'ق',
+            51:'ذاریات',52:'طور',53:'نجم',54:'قمر',55:'الرحمن',56:'واقعه',57:'حدید',58:'مجادله',59:'حشر',60:'ممتحنه',
+            61:'صف',62:'جمعه',63:'منافقون',64:'تغابن',65:'طلاق',66:'تحریم',67:'ملک',68:'قلم',69:'حاقه',70:'معارج',
+            71:'نوح',72:'جن',73:'مزمل',74:'مدثر',75:'قیامه',76:'انسان',77:'مرسلات',78:'نبأ',79:'نازعات',80:'عبس',
+            81:'تکویر',82:'انفطار',83:'مطففین',84:'انشقاق',85:'بروج',86:'طارق',87:'اعلی',88:'غاشیه',89:'فجر',90:'بلد',
+            91:'شمس',92:'لیل',93:'ضحی',94:'شرح',95:'تین',96:'علق',97:'قدر',98:'بینه',99:'زلزله',100:'عادیات',
+            101:'قارعه',102:'تکاثر',103:'عصر',104:'همزه',105:'فیل',106:'قریش',107:'ماعون',108:'کوثر',109:'کافرون',110:'نصر',
+            111:'تبت',112:'اخلاص',113:'فلق',114:'ناس'
         };
 
-        // لیست پروکسیها (با ترتیب اولویت)
-        const METHODS = [
-            { id: 'direct', name: '🔴 مستقیم (بدون پروکسی)', type: 'direct' },
-            { id: 'proxy1', name: '🌐 allorigins.win', type: 'proxy', url: 'https://api.allorigins.win/raw?url=' },
-            { id: 'proxy2', name: '🌐 corsproxy.io', type: 'proxy', url: 'https://corsproxy.io/?url=' },
-            { id: 'proxy3', name: '🌐 api.cors.lol', type: 'proxy', url: 'https://api.cors.lol/?url=' },
-            { id: 'proxy4', name: '🌐 corsfix.com', type: 'proxy', url: 'https://corsfix.com/' },
-            { id: 'proxy5', name: '🌐 api.codetabs.com', type: 'proxy', url: 'https://api.codetabs.com/v1/proxy/?quest=' },
-            { id: 'proxy6', name: '🌐 cors.x2u.in', type: 'proxy', url: 'https://cors.x2u.in/' },
-            { id: 'proxy7', name: '🌐 proxy.cors.sh', type: 'proxy', url: 'https://proxy.cors.sh/' }
-        ];
-
+        // ---------- عناصر DOM ----------
         const surahInput = document.getElementById('surahInput');
         const ayahInput = document.getElementById('ayahInput');
-        const runBtn = document.getElementById('runBtn');
-        const resultsContainer = document.getElementById('resultsContainer');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const statusDiv = document.getElementById('status');
+        const tafsirDisplay = document.getElementById('tafsirDisplay');
+        const cacheCountSpan = document.getElementById('cacheCount');
+        const clearCacheBtn = document.getElementById('clearCacheBtn');
 
-        function getSurahName(num) {
-            return SURAH_NAMES[num] || null;
-        }
+        const STORAGE_PREFIX = 'tafsir_';
 
-        function buildTargetUrl(surahNum, ayah) {
-            const name = getSurahName(surahNum);
+        // ---------- توابع کمکی ----------
+        function getSurahName(num) { return SURAH_NAMES[num] || null; }
+
+        function buildTargetUrl(surah, ayah) {
+            const name = getSurahName(surah);
             if (!name) return null;
             return `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${name}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
+        }
+
+        // استفاده از corsproxy.io - بدون encodeURIComponent
+        function buildProxyUrl(target) {
+            return `https://corsproxy.io/?${target}`;
         }
 
         function extractTafsir(html) {
             const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
             const match = html.match(pattern);
             if (match && match[1]) {
-                return match[1].trim().replace(/\s+/g, ' ').substring(0, 2000);
+                return match[1].trim().replace(/\s+/g, ' ').substring(0, 5000);
             }
             return null;
         }
 
-        function createResultRow(method) {
-            const row = document.createElement('div');
-            row.className = 'result-row';
-            row.id = `row-${method.id}`;
-            row.innerHTML = `
-                <span class="method">${method.name}</span>
-                <span class="status" id="status-${method.id}">⏳ در انتظار...</span>
-                <span class="time" id="time-${method.id}">--</span>
-                <span class="detail" id="detail-${method.id}">آماده</span>
-                <button class="toggle-preview" id="toggle-${method.id}" style="display:none;">📄 نمایش متن</button>
-                <div class="preview" id="preview-${method.id}"></div>
-            `;
-            return row;
+        function getStorageKey(surah, ayah) {
+            return `${STORAGE_PREFIX}${surah}_${ayah}`;
         }
 
-        async function testMethod(method, surah, ayah) {
-            const row = document.getElementById(`row-${method.id}`);
-            const statusSpan = document.getElementById(`status-${method.id}`);
-            const timeSpan = document.getElementById(`time-${method.id}`);
-            const detailSpan = document.getElementById(`detail-${method.id}`);
-            const previewDiv = document.getElementById(`preview-${method.id}`);
-            const toggleBtn = document.getElementById(`toggle-${method.id}`);
+        function updateCacheCount() {
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                if (localStorage.key(i).startsWith(STORAGE_PREFIX)) count++;
+            }
+            cacheCountSpan.textContent = count;
+        }
 
-            const startTime = performance.now();
-            row.className = 'result-row';
-            statusSpan.textContent = '⏳ در حال تست...';
+        function setStatus(msg, isError = false) {
+            statusDiv.textContent = msg;
+            statusDiv.style.background = isError ? '#fdedec' : '#ecf0f1';
+            statusDiv.style.color = isError ? '#c0392b' : '#2c3e50';
+        }
+
+        function displayTafsir(text, fromCache = false) {
+            if (text) {
+                tafsirDisplay.textContent = text;
+                tafsirDisplay.className = 'tafsir-box';
+                tafsirDisplay.style.borderRightColor = fromCache ? '#2ecc71' : '#f1c40f';
+            } else {
+                tafsirDisplay.textContent = '❌ تفسیر یافت نشد.';
+                tafsirDisplay.className = 'tafsir-box empty';
+                tafsirDisplay.style.borderRightColor = '#e74c3c';
+            }
+        }
+
+        // ---------- تابع اصلی دریافت ----------
+        async function getTafsir(surah, ayah) {
+            const s = parseInt(surah);
+            const a = parseInt(ayah);
+            if (isNaN(s) || isNaN(a) || s < 1 || s > 114 || a < 1) {
+                setStatus('❌ شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.', true);
+                return;
+            }
+
+            const key = getStorageKey(s, a);
+
+            // ۱) بررسی کش
+            const cached = localStorage.getItem(key);
+            if (cached) {
+                setStatus(`✅ از حافظه محلی (کش) خوانده شد.`);
+                displayTafsir(cached, true);
+                return;
+            }
+
+            // ۲) واکشی از وب
+            fetchBtn.disabled = true;
+            setStatus('⏳ در حال دریافت از طریق corsproxy.io ...');
 
             try {
-                let fullUrl;
-                if (method.type === 'direct') {
-                    fullUrl = buildTargetUrl(surah, ayah);
-                } else {
-                    const target = buildTargetUrl(surah, ayah);
-                    fullUrl = method.url + encodeURIComponent(target);
+                const target = buildTargetUrl(s, a);
+                if (!target) {
+                    setStatus(`❌ نام سوره ${s} پیدا نشد.`, true);
+                    fetchBtn.disabled = false;
+                    return;
                 }
 
-                if (!fullUrl) {
-                    throw new Error('نام سوره پیدا نشد (شماره نامعتبر)');
-                }
-
-                const response = await fetch(fullUrl, {
-                    signal: AbortSignal.timeout(15000),
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
+                const proxyUrl = buildProxyUrl(target);
+                const response = await fetch(proxyUrl, {
+                    signal: AbortSignal.timeout(20000),
+                    headers: { 'User-Agent': 'Mozilla/5.0' }
                 });
 
-                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-                timeSpan.textContent = `${elapsed}s`;
-
                 if (!response.ok) {
-                    row.className = 'result-row fail';
-                    statusSpan.textContent = `❌ HTTP ${response.status}`;
-                    statusSpan.className = 'status red';
-                    detailSpan.textContent = `خطای سرور (کد ${response.status})`;
-                    return;
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 const html = await response.text();
                 const tafsir = extractTafsir(html);
 
                 if (tafsir) {
-                    row.className = 'result-row success';
-                    statusSpan.textContent = '✅ موفق';
-                    statusSpan.className = 'status green';
-                    detailSpan.textContent = `تفسیر دریافت شد (طول: ${tafsir.length} کاراکتر)`;
-                    previewDiv.textContent = tafsir;
-                    toggleBtn.style.display = 'inline-block';
-                    toggleBtn.onclick = () => {
-                        previewDiv.classList.toggle('show');
-                        toggleBtn.textContent = previewDiv.classList.contains('show') ? '📄 بستن متن' : '📄 نمایش متن';
-                    };
+                    localStorage.setItem(key, tafsir);
+                    updateCacheCount();
+                    setStatus(`💾 دریافت و در کش ذخیره شد.`);
+                    displayTafsir(tafsir, false);
                 } else {
-                    row.className = 'result-row fail';
-                    statusSpan.textContent = '⚠️ ساختار';
-                    statusSpan.className = 'status red';
-                    detailSpan.textContent = 'صفحه دریافت شد، اما متن تفسیر پیدا نشد.';
+                    setStatus(`⚠️ متن تفسیر در صفحه پیدا نشد.`, true);
+                    displayTafsir(null);
                 }
 
             } catch (error) {
-                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-                timeSpan.textContent = `${elapsed}s`;
-                row.className = 'result-row fail';
-                statusSpan.textContent = '❌ خطا';
-                statusSpan.className = 'status red';
-
-                let errorMsg = error.message;
+                let msg = error.message;
                 if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-                    errorMsg = '⏱️ تایم‌اوت ۱۵ ثانیه';
+                    msg = '⏱️ زمان پاسخ‌گویی تمام شد (تایم‌اوت)';
                 } else if (error.message.includes('Failed to fetch')) {
-                    errorMsg = '🚫 خطای شبکه (CORS یا قطعی اینترنت/پروکسی)';
+                    msg = '🚫 خطای شبکه (مشکل در corsproxy.io یا اینترنت)';
                 }
-                detailSpan.textContent = errorMsg;
+                setStatus(`❌ ${msg}`, true);
+                displayTafsir(null);
             }
+
+            fetchBtn.disabled = false;
         }
 
-        async function runAllTests() {
-            const surah = parseInt(surahInput.value.trim());
-            const ayah = parseInt(ayahInput.value.trim());
-            if (isNaN(surah) || isNaN(ayah) || surah < 1 || surah > 114 || ayah < 1) {
-                alert('شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.');
-                return;
-            }
-
-            // بررسی وجود نام سوره
-            if (!getSurahName(surah)) {
-                alert(`نامی برای سوره ${surah} پیدا نشد!`);
-                return;
-            }
-
-            resultsContainer.innerHTML = '';
-            METHODS.forEach(m => resultsContainer.appendChild(createResultRow(m)));
-            runBtn.disabled = true;
-            runBtn.textContent = '⏳ در حال تست...';
-
-            const promises = METHODS.map(m => testMethod(m, surah, ayah));
-            await Promise.allSettled(promises);
-
-            runBtn.disabled = false;
-            runBtn.textContent = '🚀 شروع دیباگ';
-        }
-
-        runBtn.addEventListener('click', runAllTests);
-        document.querySelectorAll('input').forEach(inp => {
-            inp.addEventListener('keypress', e => { if (e.key === 'Enter') runBtn.click(); });
+        // ---------- رویدادها ----------
+        fetchBtn.addEventListener('click', () => {
+            getTafsir(surahInput.value.trim(), ayahInput.value.trim());
         });
 
-        resultsContainer.innerHTML = `<div style="text-align:center;padding:40px;color:#7f8c8d;">⬅️ دکمه را بزنید تا همه روشها تست شوند.</div>`;
+        document.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('keypress', e => {
+                if (e.key === 'Enter') fetchBtn.click();
+            });
+        });
+
+        clearCacheBtn.addEventListener('click', () => {
+            if (confirm('همه تفاسیر ذخیره‌شده پاک شوند؟')) {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(STORAGE_PREFIX)) keys.push(key);
+                }
+                keys.forEach(k => localStorage.removeItem(k));
+                updateCacheCount();
+                setStatus('🗑️ کش پاک شد.');
+                displayTafsir(null);
+                tafsirDisplay.className = 'tafsir-box empty';
+                tafsirDisplay.style.borderRightColor = '#bdc3c7';
+                tafsirDisplay.textContent = 'تفسیر در اینجا نمایش داده می‌شود...';
+            }
+        });
+
+        // شروع
+        updateCacheCount();
+        setStatus('وضعیت: آماده (با corsproxy.io)');
     })();
 </script>
 </body>
