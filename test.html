@@ -2,113 +2,392 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تست مستقیم + پروکسی جایگزین</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 دیباگ‌کنندهٔ پروکسی‌ها</title>
     <style>
-        body { font-family: Tahoma, sans-serif; max-width: 700px; margin: 20px auto; padding: 15px; }
-        input, button { padding: 8px 12px; font-size: 14px; margin: 5px; }
-        .box { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 15px; white-space: pre-wrap; }
-        .status { color: #333; margin: 10px 0; }
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        .danger { background: #e67e22; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Tahoma', 'Vazir', sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+        .input-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+            margin: 20px 0;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #34495e;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+        }
+        .input-group input {
+            padding: 10px 12px;
+            border: 2px solid #dce1e8;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .input-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            flex: 0 0 auto;
+        }
+        .btn:hover { background: #2980b9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .summary {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+            padding: 15px;
+            background: #eaf2f8;
+            border-radius: 10px;
+        }
+        .summary-item {
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .summary-item strong { font-size: 18px; }
+
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .result-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 12px 18px;
+            border-radius: 10px;
+            border-right: 6px solid #bdc3c7;
+            background: #f8f9fa;
+            transition: 0.2s;
+            gap: 10px;
+        }
+        .result-row.success { border-right-color: #27ae60; background: #eafaf1; }
+        .result-row.fail { border-right-color: #e74c3c; background: #fdedec; }
+        .result-row.pending { border-right-color: #f39c12; background: #fef9e7; }
+        .result-row .method {
+            font-weight: bold;
+            min-width: 180px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .result-row .status {
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .result-row .status.green { background: #27ae60; color: white; }
+        .result-row .status.red { background: #e74c3c; color: white; }
+        .result-row .status.yellow { background: #f39c12; color: white; }
+        .result-row .time {
+            font-size: 12px;
+            color: #7f8c8d;
+            min-width: 60px;
+        }
+        .result-row .detail {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+            min-width: 200px;
+            word-break: break-word;
+        }
+        .result-row .preview {
+            width: 100%;
+            margin-top: 8px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #eee;
+            display: none;
+        }
+        .result-row .preview.show { display: block; }
+        .result-row .toggle-preview {
+            background: none;
+            border: 1px solid #3498db;
+            color: #3498db;
+            padding: 3px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        @media (max-width: 600px) {
+            .result-row .method { min-width: 120px; font-size: 12px; }
+            .input-group { flex-direction: column; }
+            .btn { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <h2>📖 تست تفسیر روان جاوید</h2>
-    <p><strong>سوره:</strong> <input type="number" id="surah" value="2" min="1" max="114"> 
-       <strong>آیه:</strong> <input type="number" id="ayah" value="63" min="1"></p>
-    
-    <div class="btn-group">
-        <button id="directBtn" class="danger">🚀 تست مستقیم (نیاز به افزونه CORS)</button>
-        <button id="proxyBtn">🌐 تست با پروکسی (corsproxy)</button>
+
+<div class="container">
+    <h1>🔍 دیباگ‌کنندهٔ پروکسی‌ها</h1>
+    <p style="text-align:center;color:#7f8c8d;">همهٔ روش‌ها را همزمان تست می‌کند تا ببینیم مشکل از کجاست</p>
+
+    <div class="input-group">
+        <label>شماره سوره <input type="number" id="surahInput" value="2" min="1" max="114"></label>
+        <label>شماره آیه <input type="number" id="ayahInput" value="63" min="1"></label>
+        <button class="btn" id="runBtn">🚀 شروع دیباگ</button>
     </div>
-    
-    <div id="status" class="status">وضعیت: منتظر دستور شما...</div>
-    <div id="result" class="box">نتیجه تفسیر اینجا نمایش داده میشود...</div>
 
-    <script>
-        const surahInp = document.getElementById('surah');
-        const ayahInp = document.getElementById('ayah');
-        const statusDiv = document.getElementById('status');
-        const resultDiv = document.getElementById('result');
+    <div class="summary" id="summary">
+        <span class="summary-item">✅ موفق: <strong id="successCount">0</strong></span>
+        <span class="summary-item">❌ شکست: <strong id="failCount">0</strong></span>
+        <span class="summary-item">⏳ در حال اجرا: <strong id="pendingCount">0</strong></span>
+    </div>
 
-        function setStatus(msg, isError = false) {
-            statusDiv.textContent = msg;
-            statusDiv.style.color = isError ? 'red' : '#2c3e50';
+    <div id="resultsContainer" class="results-grid">
+        <!-- ردیف‌های نتیجه به صورت خودکار ساخته می‌شوند -->
+    </div>
+
+    <div class="footer">
+        💡 اگر هیچکدام کار نکرد، مشکل از محدودیت شبکه (فیلترینگ) یا قطعی سرویس‌های پروکسی است.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // -------------------- تنظیمات --------------------
+        const TARGET_BASE = 'https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_{ayah}_%D8%B3%D9%88%D8%B1%D9%87_{surah}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF';
+        
+        // لیست روش‌ها (پروکسی‌ها)
+        const METHODS = [
+            { id: 'direct', name: '🔴 مستقیم (بدون پروکسی)', type: 'direct', url: null },
+            { id: 'proxy1', name: '🌐 allorigins.win', type: 'proxy', url: 'https://api.allorigins.win/raw?url=' },
+            { id: 'proxy2', name: '🌐 corsproxy.io', type: 'proxy', url: 'https://corsproxy.io/?url=' },
+            { id: 'proxy3', name: '🌐 api.cors.lol', type: 'proxy', url: 'https://api.cors.lol/?url=' },
+            { id: 'proxy4', name: '🌐 corsfix.com', type: 'proxy', url: 'https://corsfix.com/' },
+            { id: 'proxy5', name: '🌐 api.codetabs.com', type: 'proxy', url: 'https://api.codetabs.com/v1/proxy/?quest=' },
+            { id: 'proxy6', name: '🌐 cors.x2u.in', type: 'proxy', url: 'https://cors.x2u.in/' },
+            { id: 'proxy7', name: '🌐 proxy.cors.sh', type: 'proxy', url: 'https://proxy.cors.sh/' }
+        ];
+
+        // عناصر DOM
+        const surahInput = document.getElementById('surahInput');
+        const ayahInput = document.getElementById('ayahInput');
+        const runBtn = document.getElementById('runBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const successCountSpan = document.getElementById('successCount');
+        const failCountSpan = document.getElementById('failCount');
+        const pendingCountSpan = document.getElementById('pendingCount');
+
+        // تابع ساخت URL هدف
+        function buildTargetUrl(surah, ayah) {
+            return TARGET_BASE.replace('{surah}', surah).replace('{ayah}', ayah);
         }
 
-        function showResult(text) {
-            if (text) {
-                resultDiv.textContent = text;
-                resultDiv.style.background = '#eafaf1';
-            } else {
-                resultDiv.textContent = '❌ تفسیر پیدا نشد یا خطا رخ داد.';
-                resultDiv.style.background = '#fdedec';
-            }
-        }
-
-        // تابع استخراج متن تفسیر از HTML خام
+        // تابع استخراج تفسیر از HTML
         function extractTafsir(html) {
-            // الگوی دقیق برای عبارت "تفسیر روان جاوید"
-            const match = html.match(/تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s);
+            const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
+            const match = html.match(pattern);
             if (match && match[1]) {
-                return match[1].trim().replace(/\s+/g, ' ').substring(0, 3000);
+                return match[1].trim().replace(/\s+/g, ' ').substring(0, 2000);
             }
             return null;
         }
 
-        // تابع اصلی برای دریافت
-        async function fetchTafsir(url, methodName) {
-            setStatus(`⏳ در حال دریافت با روش "${methodName}" ...`);
-            resultDiv.style.background = '#f4f4f4';
-            
-            try {
-                const response = await fetch(url, {
-                    signal: AbortSignal.timeout(15000)
-                });
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const html = await response.text();
-                
-                const tafsir = extractTafsir(html);
-                if (tafsir) {
-                    setStatus(`✅ دریافت شد با روش "${methodName}"`);
-                    showResult(tafsir);
-                } else {
-                    setStatus(`⚠️ متن پیدا نشد (ساختار سایت تغییر کرده؟)`, true);
-                    showResult(null);
-                }
-            } catch (err) {
-                setStatus(`❌ خطا: ${err.message}`, true);
-                showResult(null);
-            }
+        // تابع برای ایجاد یک ردیف نتیجه در UI
+        function createResultRow(method) {
+            const row = document.createElement('div');
+            row.className = 'result-row pending';
+            row.id = `row-${method.id}`;
+            row.innerHTML = `
+                <span class="method">${method.name}</span>
+                <span class="status yellow" id="status-${method.id}">⏳ در حال تست...</span>
+                <span class="time" id="time-${method.id}">--</span>
+                <span class="detail" id="detail-${method.id}">در حال اتصال...</span>
+                <button class="toggle-preview" id="toggle-${method.id}" style="display:none;">📄 نمایش متن</button>
+                <div class="preview" id="preview-${method.id}"></div>
+            `;
+            return row;
         }
 
-        // --- دکمه ۱: تست مستقیم (فقط با افزونه CORS) ---
-        document.getElementById('directBtn').addEventListener('click', () => {
-            const s = surahInp.value.trim();
-            const a = ayahInp.value.trim();
-            if (!s || !a) return alert('شماره را وارد کنید');
-            
-            const directUrl = `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${a}_%D8%B3%D9%88%D8%B1%D9%87_${s}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
-            fetchTafsir(directUrl, 'مستقیم (نیاز به افزونه)');
+        // به‌روزرسانی آمار
+        function updateStats() {
+            const rows = resultsContainer.querySelectorAll('.result-row');
+            let success = 0, fail = 0, pending = 0;
+            rows.forEach(row => {
+                if (row.classList.contains('success')) success++;
+                else if (row.classList.contains('fail')) fail++;
+                else if (row.classList.contains('pending')) pending++;
+            });
+            successCountSpan.textContent = success;
+            failCountSpan.textContent = fail;
+            pendingCountSpan.textContent = pending;
+        }
+
+        // تست یک روش
+        async function testMethod(method, surah, ayah) {
+            const row = document.getElementById(`row-${method.id}`);
+            const statusSpan = document.getElementById(`status-${method.id}`);
+            const timeSpan = document.getElementById(`time-${method.id}`);
+            const detailSpan = document.getElementById(`detail-${method.id}`);
+            const previewDiv = document.getElementById(`preview-${method.id}`);
+            const toggleBtn = document.getElementById(`toggle-${method.id}`);
+
+            const startTime = performance.now();
+
+            try {
+                let fullUrl;
+                if (method.type === 'direct') {
+                    fullUrl = buildTargetUrl(surah, ayah);
+                } else {
+                    const target = buildTargetUrl(surah, ayah);
+                    fullUrl = method.url + encodeURIComponent(target);
+                }
+
+                const response = await fetch(fullUrl, {
+                    signal: AbortSignal.timeout(15000) // ۱۵ ثانیه تایم‌اوت
+                });
+
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                timeSpan.textContent = `${elapsed}s`;
+
+                if (!response.ok) {
+                    row.className = 'result-row fail';
+                    statusSpan.className = 'status red';
+                    statusSpan.textContent = `❌ HTTP ${response.status}`;
+                    detailSpan.textContent = `خطای سرور (کد ${response.status})`;
+                    updateStats();
+                    return;
+                }
+
+                const html = await response.text();
+                const tafsir = extractTafsir(html);
+
+                if (tafsir) {
+                    row.className = 'result-row success';
+                    statusSpan.className = 'status green';
+                    statusSpan.textContent = '✅ موفق';
+                    detailSpan.textContent = `تفسیر دریافت شد (طول: ${tafsir.length} کاراکتر)`;
+                    previewDiv.textContent = tafsir;
+                    toggleBtn.style.display = 'inline-block';
+                    toggleBtn.onclick = () => {
+                        previewDiv.classList.toggle('show');
+                        toggleBtn.textContent = previewDiv.classList.contains('show') ? '📄 بستن متن' : '📄 نمایش متن';
+                    };
+                } else {
+                    row.className = 'result-row fail';
+                    statusSpan.className = 'status red';
+                    statusSpan.textContent = '⚠️ ساختار';
+                    detailSpan.textContent = 'صفحه دریافت شد، اما متن تفسیر پیدا نشد (ساختار سایت تغییر کرده؟)';
+                }
+
+            } catch (error) {
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                timeSpan.textContent = `${elapsed}s`;
+
+                row.className = 'result-row fail';
+                statusSpan.className = 'status red';
+                statusSpan.textContent = '❌ خطا';
+
+                let errorMsg = error.message;
+                if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                    errorMsg = '⏱️ زمان پاسخ‌گویی تمام شد (تایم‌اوت ۱۵ ثانیه)';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMsg = '🚫 خطای شبکه (احتمالاً CORS یا فیلترینگ یا قطعی پروکسی)';
+                }
+                detailSpan.textContent = errorMsg;
+            }
+
+            updateStats();
+        }
+
+        // اجرای همه تست‌ها
+        async function runAllTests() {
+            const surah = surahInput.value.trim();
+            const ayah = ayahInput.value.trim();
+            if (!surah || !ayah || isNaN(surah) || isNaN(ayah) || surah < 1 || surah > 114 || ayah < 1) {
+                alert('لطفاً شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.');
+                return;
+            }
+
+            // پاک کردن نتایج قبلی
+            resultsContainer.innerHTML = '';
+            METHODS.forEach(m => {
+                resultsContainer.appendChild(createResultRow(m));
+            });
+            updateStats();
+            runBtn.disabled = true;
+            runBtn.textContent = '⏳ در حال تست...';
+
+            // اجرای همه روش‌ها به صورت همزمان
+            const promises = METHODS.map(m => testMethod(m, surah, ayah));
+            await Promise.allSettled(promises);
+
+            runBtn.disabled = false;
+            runBtn.textContent = '🚀 شروع دیباگ';
+        }
+
+        // رویداد دکمه
+        runBtn.addEventListener('click', runAllTests);
+
+        // اجرا با کلید Enter
+        document.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('keypress', e => { if (e.key === 'Enter') runBtn.click(); });
         });
 
-        // --- دکمه ۲: تست با پروکسی corsproxy.io (بدون افزونه) ---
-        document.getElementById('proxyBtn').addEventListener('click', () => {
-            const s = surahInp.value.trim();
-            const a = ayahInp.value.trim();
-            if (!s || !a) return alert('شماره را وارد کنید');
-
-            const targetUrl = `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${a}_%D8%B3%D9%88%D8%B1%D9%87_${s}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
-            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
-            
-            fetchTafsir(proxyUrl, 'پروکسی corsproxy.io');
-        });
-
-        // --- اجرای پیشفرض با پروکسی برای آیه ۶۳ سوره ۲ ---
-        window.onload = () => {
-            document.getElementById('proxyBtn').click();
-        };
-    </script>
+        // پیام اولیه
+        resultsContainer.innerHTML = `
+            <div style="text-align:center;padding:40px;color:#7f8c8d;background:#f8f9fa;border-radius:12px;">
+                ⬅️ شماره سوره و آیه را وارد کنید و دکمهٔ «شروع دیباگ» را بزنید.<br>
+                همهٔ ۸ روش همزمان تست می‌شوند.
+            </div>
+        `;
+        updateStats();
+    })();
+</script>
 </body>
 </html>
