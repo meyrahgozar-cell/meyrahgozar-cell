@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دریافت تفسیر روان جاوید</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Tahoma', 'Vazir', sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .form-row label {
+            font-weight: bold;
+            color: #34495e;
+            display: flex;
+            align-items: center;
+        }
+        .form-row input {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 12px;
+            border: 2px solid #dce1e8;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .form-row input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #ecf0f1;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .tafsir-box {
+            background: #fef9e7;
+            border-right: 6px solid #f1c40f;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.8;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 15px;
+        }
+        .tafsir-box.empty {
+            background: #f8f9fa;
+            border-right-color: #bdc3c7;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .cache-stats {
+            display: flex;
+            justify-content: space-between;
+            background: #eaf2f8;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin: 15px 0 5px;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+        .example {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📖 تفسیر روان جاوید</h1>
+        <div class="form-row">
+            <label>سوره:</label>
+            <input type="number" id="surahInput" min="1" max="114" placeholder="مثلاً ۲" value="۲">
+            <label>آیه:</label>
+            <input type="number" id="ayahInput" min="1" placeholder="مثلاً ۷۰" value="۷۰">
+            <button class="btn" id="fetchBtn">دریافت تفسیر</button>
+        </div>
+        <div class="example">مثال: سوره ۲، آیه ۶۳ یا ۷۰</div>
+
+        <div class="status" id="status">وضعیت: آماده</div>
+
+        <div class="cache-stats">
+            <span>📦 تعداد آیات ذخیره‌شده: <strong id="cacheCount">۰</strong></span>
+            <button class="clear-btn" id="clearCacheBtn">🗑️ پاک کردن کش</button>
+        </div>
+
+        <div id="tafsirDisplay" class="tafsir-box empty">تفسیر مورد نظر در اینجا نمایش داده می‌شود.</div>
+    </div>
+
+    <script>
+        (function() {
+            // -------------------- عناصر DOM --------------------
+            const surahInput = document.getElementById('surahInput');
+            const ayahInput = document.getElementById('ayahInput');
+            const fetchBtn = document.getElementById('fetchBtn');
+            const statusDiv = document.getElementById('status');
+            const tafsirDisplay = document.getElementById('tafsirDisplay');
+            const cacheCountSpan = document.getElementById('cacheCount');
+            const clearCacheBtn = document.getElementById('clearCacheBtn');
+
+            // کلید پیشوند برای ذخیره در localStorage
+            const STORAGE_PREFIX = 'tafsir_';
+
+            // -------------------- توابع کمکی --------------------
+            function getStorageKey(surah, ayah) {
+                return `${STORAGE_PREFIX}${surah}_${ayah}`;
+            }
+
+            // تعداد آیات ذخیره‌شده
+            function updateCacheCount() {
+                let count = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(STORAGE_PREFIX)) {
+                        count++;
+                    }
+                }
+                cacheCountSpan.textContent = count;
+            }
+
+            // نمایش وضعیت
+            function setStatus(msg, isError = false) {
+                statusDiv.textContent = msg;
+                statusDiv.style.background = isError ? '#fde2e2' : '#ecf0f1';
+                statusDiv.style.color = isError ? '#c0392b' : '#2c3e50';
+            }
+
+            // نمایش تفسیر
+            function displayTafsir(text, isCached = false) {
+                if (text) {
+                    tafsirDisplay.textContent = text;
+                    tafsirDisplay.className = 'tafsir-box';
+                    if (isCached) {
+                        tafsirDisplay.style.borderRightColor = '#2ecc71';
+                    } else {
+                        tafsirDisplay.style.borderRightColor = '#f1c40f';
+                    }
+                } else {
+                    tafsirDisplay.textContent = '❌ تفسیر یافت نشد.';
+                    tafsirDisplay.className = 'tafsir-box empty';
+                    tafsirDisplay.style.borderRightColor = '#e74c3c';
+                }
+            }
+
+            // -------------------- دریافت از وب (با پروکسی) --------------------
+            async function fetchTafsirFromWeb(surah, ayah) {
+                // ساخت آدرس صفحه مورد نظر
+                const pageUrl = `https://wiki.ahlolbait.com/%D8%A2%DB%8C%D9%87_${ayah}_%D8%B3%D9%88%D8%B1%D9%87_${surah}#!tafsir/%D8%B1%D9%88%D8%A7%D9%86+%D8%AC%D8%A7%D9%88%DB%8C%D8%AF`;
+                
+                // استفاده از پروکسی AllOrigins (رایگان)
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(pageUrl)}`;
+
+                setStatus('⏳ در حال دریافت از سایت (از طریق پروکسی)...');
+
+                try {
+                    const response = await fetch(proxyUrl, {
+                        signal: AbortSignal.timeout(20000) // ۲۰ ثانیه تایم‌اوت
+                    });
+                    if (!response.ok) {
+                        throw new Error(`خطای HTTP: ${response.status}`);
+                    }
+                    const html = await response.text();
+
+                    // استخراج متن تفسیر با regex (همان روش قبلی)
+                    const pattern = /تفسیر روان جاوید\s*\(ثقفی تهرانی\)\s*(.*?)(?=\nتفسیر|\Z)/s;
+                    const match = html.match(pattern);
+                    if (match && match[1]) {
+                        let tafsir = match[1].trim();
+                        // حذف خطوط اضافی و ارجاعات (اختیاری)
+                        tafsir = tafsir.replace(/\s+/g, ' ').trim();
+                        return tafsir;
+                    } else {
+                        // روش جایگزین: جستجوی div با کلاس mw-parser-output یا مشابه
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        // ممکن است تفسیر در یک div خاص باشد، اما در حال حاضر regex کافی است
+                        // اگر regex کار نکرد، خطا برگردانیم
+                        return null;
+                    }
+                } catch (error) {
+                    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                        setStatus('⏱️ زمان درخواست تمام شد (تایم‌اوت).', true);
+                    } else {
+                        setStatus(`❌ خطا در دریافت: ${error.message}`, true);
+                    }
+                    return null;
+                }
+            }
+
+            // -------------------- تابع اصلی دریافت --------------------
+            async function getTafsir(surah, ayah) {
+                // اعتبارسنجی ورودی
+                const s = parseInt(surah);
+                const a = parseInt(ayah);
+                if (isNaN(s) || isNaN(a) || s < 1 || s > 114 || a < 1) {
+                    setStatus('❌ شماره سوره (۱-۱۱۴) و آیه (>=۱) معتبر وارد کنید.', true);
+                    return;
+                }
+
+                const key = getStorageKey(s, a);
+
+                // ۱) بررسی کش
+                const cached = localStorage.getItem(key);
+                if (cached) {
+                    setStatus(`✅ تفسیر از حافظه محلی (کش) خوانده شد.`);
+                    displayTafsir(cached, true);
+                    return;
+                }
+
+                // ۲) واکشی از وب
+                fetchBtn.disabled = true;
+                const tafsir = await fetchTafsirFromWeb(s, a);
+                fetchBtn.disabled = false;
+
+                if (tafsir) {
+                    // ذخیره در localStorage
+                    localStorage.setItem(key, tafsir);
+                    updateCacheCount();
+                    setStatus(`💾 تفسیر دریافت و در کش ذخیره شد.`);
+                    displayTafsir(tafsir, false);
+                } else {
+                    setStatus(`❌ تفسیر برای آیه ${a} سوره ${s} پیدا نشد.`, true);
+                    displayTafsir(null);
+                }
+            }
+
+            // -------------------- رویدادها --------------------
+            fetchBtn.addEventListener('click', () => {
+                const surah = surahInput.value.trim();
+                const ayah = ayahInput.value.trim();
+                getTafsir(surah, ayah);
+            });
+
+            // پاک کردن کل کش
+            clearCacheBtn.addEventListener('click', () => {
+                if (confirm('آیا مطمئنید که می‌خواهید همه تفاسیر ذخیره‌شده را پاک کنید؟')) {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith(STORAGE_PREFIX)) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                    updateCacheCount();
+                    setStatus('🗑️ کش پاک شد.');
+                    displayTafsir(null);
+                    tafsirDisplay.className = 'tafsir-box empty';
+                    tafsirDisplay.style.borderRightColor = '#bdc3c7';
+                    tafsirDisplay.textContent = 'تفسیر مورد نظر در اینجا نمایش داده می‌شود.';
+                }
+            });
+
+            // امکان دریافت با کلید Enter
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') fetchBtn.click();
+                });
+            });
+
+            // نمایش تعداد کش در ابتدا
+            updateCacheCount();
+
+            // (اختیاری) برای آیه پیش‌فرض (۲:۷۰) بلافاصله اجرا نشود، اما کاربر می‌تواند دکمه بزند.
+
+        })();
+    </script>
+</body>
+</html>
