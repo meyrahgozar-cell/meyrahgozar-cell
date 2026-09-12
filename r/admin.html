@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>پنل مدیریت — برنج قسطی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<nav class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="dot">●</span> برنج قسطی · مدیریت</a>
+    <div class="row gap-sm">
+      <span class="text-muted" id="welcome-name"></span>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">خروج</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container section">
+  <div class="row gap-sm wrap" style="margin-bottom:1.5rem;" id="admin-tabs">
+    <button class="btn btn-ghost btn-sm is-active" data-tab="payments">پرداخت‌های در انتظار</button>
+    <button class="btn btn-ghost btn-sm" data-tab="orders">همه‌ی سفارش‌ها</button>
+    <button class="btn btn-ghost btn-sm" data-tab="products">محصولات</button>
+    <button class="btn btn-ghost btn-sm" data-tab="settings">فرمول اقساط</button>
+  </div>
+  <div id="admin-tab-content"><div class="skeleton" style="height:200px;"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { guardAdmin, signOut } from "./js/auth.js";
+  import { renderAdminPayments } from "./js/admin-payments.js";
+  import { renderAdminOrders } from "./js/admin-orders.js";
+  import { renderAdminProducts } from "./js/admin-products.js";
+  import { renderAdminSettings } from "./js/admin-settings.js";
+
+  const profile = await guardAdmin();
+  if (profile) {
+    document.getElementById("welcome-name").textContent = `سلام، ${profile.full_name || "مدیر"}`;
+    document.getElementById("logout-btn").addEventListener("click", signOut);
+
+    const content = document.getElementById("admin-tab-content");
+    const tabs = document.getElementById("admin-tabs");
+
+    const renderers = {
+      payments: renderAdminPayments,
+      orders: renderAdminOrders,
+      products: renderAdminProducts,
+      settings: renderAdminSettings,
+    };
+
+    async function activate(tabName) {
+      tabs.querySelectorAll("button").forEach((b) =>
+        b.classList.toggle("is-active", b.dataset.tab === tabName)
+      );
+      content.innerHTML = `<div class="skeleton" style="height:200px;"></div>`;
+      await renderers[tabName](content);
+    }
+
+    tabs.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      if (btn) activate(btn.dataset.tab);
+    });
+
+    activate("payments");
+  }
+</script>
+</body>
+</html>
