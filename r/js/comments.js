@@ -1,5 +1,5 @@
 // =========================================================
-// نظرات محصولات — نمایش، ثبت، و حذف
+// نظرات محصولات — نمایش، ثبت، ویرایش، و حذف
 // نام کسانی که این محصول رو خریده‌اند با رنگ طلایی و glow مشخص میشه
 // =========================================================
 import { supabase } from "./supabase-client.js";
@@ -23,7 +23,8 @@ function escapeHtml(str) {
 
 function commentRowHTML(comment, currentUserId) {
   const isBuyer = Number(comment.total_grams) > 0;
-  const canDelete = comment.user_id === currentUserId;
+  const isOwner = comment.user_id === currentUserId;
+  const wasEdited = new Date(comment.updated_at) > new Date(comment.created_at);
 
   return `
     <div class="comment-row" data-comment-id="${comment.id}">
@@ -31,10 +32,19 @@ function commentRowHTML(comment, currentUserId) {
         <span class="commenter-name${isBuyer ? " is-buyer" : ""}">${escapeHtml(comment.full_name)}</span>
         ${isBuyer ? `<span class="badge badge-approved">خرید: ${formatGramsAsKg(comment.total_grams)}</span>` : ""}
       </div>
-      <p style="margin:0.4rem 0;">${escapeHtml(comment.body)}</p>
-      <div class="row justify-between">
-        <span class="text-muted" style="font-size:0.8rem;">${formatJalali(comment.created_at)}</span>
-        ${canDelete ? `<button class="btn btn-ghost btn-sm delete-comment-btn" data-id="${comment.id}">حذف</button>` : ""}
+      <p class="comment-body" style="margin:0.4rem 0;">${escapeHtml(comment.body)}</p>
+      <div class="row justify-between wrap gap-sm">
+        <span class="text-muted" style="font-size:0.8rem;">
+          ${formatJalali(comment.created_at)}${wasEdited ? " · ویرایش شده" : ""}
+        </span>
+        ${
+          isOwner
+            ? `<div class="row gap-sm">
+                 <button class="btn btn-ghost btn-sm edit-comment-btn" data-id="${comment.id}">ویرایش</button>
+                 <button class="btn btn-ghost btn-sm delete-comment-btn" data-id="${comment.id}">حذف</button>
+               </div>`
+            : ""
+        }
       </div>
     </div>
   `;
@@ -45,6 +55,7 @@ export async function renderProductComments(container, productId) {
 
   const session = await getSession();
   const profile = session ? await getProfile() : null;
+  const inputId = `comment-input-${productId}`;
 
   async function refresh() {
     try {
@@ -56,7 +67,8 @@ export async function renderProductComments(container, productId) {
       const formHTML = profile
         ? `
           <div class="field" style="margin-top:1rem;">
-            <textarea class="input" id="comment-input" rows="2" placeholder="نظرت رو درباره‌ی این برنج بنویس..."></textarea>
+            <label>نظرت رو بنویس</label>
+            <textarea class="input" id="${inputId}" rows="2" placeholder="مثلاً: کیفیت و طعمش چطور بود؟"></textarea>
           </div>
           <button class="btn btn-primary btn-sm" id="comment-submit">ثبت نظر</button>
         `
@@ -68,7 +80,7 @@ export async function renderProductComments(container, productId) {
       `;
 
       container.querySelector("#comment-submit")?.addEventListener("click", async () => {
-        const textarea = container.querySelector("#comment-input");
+        const textarea = container.querySelector(`#${inputId}`);
         const body = textarea.value.trim();
         if (!body) return showError("نظر نمی‌تواند خالی باشد.");
         const { error } = await supabase
@@ -89,10 +101,43 @@ export async function renderProductComments(container, productId) {
           refresh();
         });
       });
+
+      container.querySelectorAll(".edit-comment-btn").forEach((btn) => {
+        btn.addEventListener("click", () => startEditing(btn.dataset.id));
+      });
     } catch (err) {
       console.error(err);
-      container.innerHTML = `<p class="text-muted">خطا در بارگذاری نظرات.</p>`;
+      container.innerHTML = `<p class="text-muted">خطا در بارگذاری نظرات. اگر تازه این قابلیت رو اضافه کردی، مطمئن شو migration مربوط به نظرات رو در Supabase اجرا کردی.</p>`;
     }
+  }
+
+  function startEditing(commentId) {
+    const row = container.querySelector(`.comment-row[data-comment-id="${commentId}"]`);
+    const bodyEl = row.querySelector(".comment-body");
+    const currentText = bodyEl.textContent;
+
+    bodyEl.outerHTML = `
+      <div class="field comment-body" style="margin:0.4rem 0;">
+        <textarea class="input" id="edit-${commentId}" rows="2">${escapeHtml(currentText)}</textarea>
+        <div class="row gap-sm mt-lg">
+          <button class="btn btn-primary btn-sm save-edit-btn" data-id="${commentId}">ذخیره</button>
+          <button class="btn btn-ghost btn-sm cancel-edit-btn">انصراف</button>
+        </div>
+      </div>
+    `;
+
+    row.querySelector(".save-edit-btn").addEventListener("click", async () => {
+      const newBody = row.querySelector(`#edit-${commentId}`).value.trim();
+      if (!newBody) return showError("نظر نمی‌تواند خالی باشد.");
+      const { error } = await supabase
+        .from("product_comments")
+        .update({ body: newBody })
+        .eq("id", commentId);
+      if (error) return showError(error.message);
+      toast("نظر ویرایش شد.");
+      refresh();
+    });
+    row.querySelector(".cancel-edit-btn").addEventListener("click", () => refresh());
   }
 
   await refresh();
