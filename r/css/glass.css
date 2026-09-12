@@ -102,10 +102,12 @@ body.app-bg {
 input[type="range"].slider {
   -webkit-appearance: none;
   appearance: none;
+  direction: ltr;
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--grain-500) var(--_p, 40%), rgba(247,243,232,0.18) var(--_p, 40%));
+  background: linear-gradient(90deg, var(--grain-500) var(--_p, 0%), rgba(247,243,232,0.18) var(--_p, 0%));
+  box-shadow: 0 0 10px rgba(232, 196, 104, 0.35);
 }
 input[type="range"].slider::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -115,6 +117,7 @@ input[type="range"].slider::-webkit-slider-thumb {
   background: var(--ivory);
   border: 3px solid var(--grain-600);
   cursor: pointer;
+  box-shadow: 0 0 8px rgba(232, 196, 104, 0.9), 0 0 18px rgba(232, 196, 104, 0.5);
 }
 input[type="range"].slider::-moz-range-thumb {
   width: 26px;
@@ -123,6 +126,18 @@ input[type="range"].slider::-moz-range-thumb {
   background: var(--ivory);
   border: 3px solid var(--grain-600);
   cursor: pointer;
+  box-shadow: 0 0 8px rgba(232, 196, 104, 0.9), 0 0 18px rgba(232, 196, 104, 0.5);
+}
+input[type="range"].slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+input[type="range"].slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--grain-500);
+  box-shadow: 0 0 10px rgba(232, 196, 104, 0.6);
 }
 
 /* انتخاب تعداد اقساط: چیپ‌های قابل کلیک */
