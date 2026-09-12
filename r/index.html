@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>برنج قسطی — خرید برنج با اقساط ماهانه</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<nav class="topbar">
+  <div class="container">
+    <div class="brand"><span class="dot">●</span> برنج قسطی</div>
+    <div class="row gap-sm">
+      <a href="auth.html" class="btn btn-ghost btn-sm">ورود</a>
+      <a href="auth.html#signup" class="btn btn-primary btn-sm">ثبت‌نام</a>
+    </div>
+  </div>
+</nav>
+
+<header class="section">
+  <div class="container">
+    <div class="grid-3" style="grid-template-columns: 1.1fr 0.9fr; align-items: center;">
+      <div>
+        <h1>برنج خونه رو بخر، قسطی حسابش کن.</h1>
+        <p style="font-size:1.05rem;">
+          سه نوع برنج مرغوب، خرید به هر مقدار که بخوای، و پرداخت در چند قسط ماهانه با کارت‌به‌کارت.
+          هر واریزی رو ثبت کن، ما بررسی می‌کنیم و بلافاصله سفارشت آماده‌ی ارسال میشه.
+        </p>
+        <div class="row gap-sm wrap">
+          <a href="auth.html#signup" class="btn btn-primary">شروع خرید قسطی</a>
+          <a href="#how" class="btn btn-ghost">روش کار چیه؟</a>
+        </div>
+      </div>
+      <div class="glass glass-strong glass-panel calc-card">
+        <h3 style="margin-bottom:1rem;">ماشین‌حساب قسط</h3>
+        <div id="landing-calc"><div class="skeleton" style="height:140px;"></div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="products">
+  <div class="container">
+    <h2>محصولات ما</h2>
+    <p>سه نوع برنج، با کیفیت و قیمت شفاف — هر گرم که بخری، معادلش رو به کیلوگرم می‌بینی.</p>
+    <div class="grid-3" id="product-grid" style="margin-top:1.5rem;"></div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="container">
+    <h2>روش کار</h2>
+    <div class="grid-3" style="margin-top:1.5rem;">
+      <div class="glass glass-card">
+        <h3>۱. انتخاب و سفارش</h3>
+        <p>نوع برنج، وزن، و تعداد اقساط دلخواهت رو انتخاب می‌کنی و مبلغ هر قسط رو از قبل می‌بینی.</p>
+      </div>
+      <div class="glass glass-card">
+        <h3>۲. واریز و ارسال رسید</h3>
+        <p>هر قسط رو کارت‌به‌کارت واریز می‌کنی و تصویر رسیدش رو توی حساب کاربریت آپلود می‌کنی.</p>
+      </div>
+      <div class="glass glass-card">
+        <h3>۳. بررسی و تسویه</h3>
+        <p>پرداختت رو بررسی و تایید می‌کنیم؛ سفارش هم بلافاصله بعد از ثبت درخواست برات ارسال میشه.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">برنج قسطی — فروش و مدیریت اقساط برنج</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { renderProductGrid } from "./js/products.js";
+  import { initLandingCalculator } from "./js/landing-calc.js";
+
+  renderProductGrid(document.getElementById("product-grid"));
+  initLandingCalculator(document.getElementById("landing-calc"));
+</script>
+</body>
+</html>
