@@ -4,7 +4,7 @@
 import { supabase } from "./supabase-client.js";
 import { fetchActiveProducts } from "./products.js";
 import { loadFeeSettings, calcOrderPricing } from "./pricing.js";
-import { formatToman, formatGramsAsKg } from "./ui.js";
+import { formatToman, formatGramsAsKg, syncSliderFill } from "./ui.js";
 
 export async function initLandingCalculator(root) {
   try {
@@ -60,13 +60,17 @@ export async function initLandingCalculator(root) {
 
     weightSlider.addEventListener("input", () => {
       state.weightGrams = Number(weightSlider.value);
+      syncSliderFill(weightSlider);
       render();
     });
     countSlider.addEventListener("input", () => {
       state.installmentCount = Number(countSlider.value);
+      syncSliderFill(countSlider);
       render();
     });
 
+    syncSliderFill(weightSlider);
+    syncSliderFill(countSlider);
     render();
   } catch (err) {
     console.error(err);
