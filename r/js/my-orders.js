@@ -2,7 +2,7 @@
 // سفارش‌های من — نمایش اقساط و آپلود رسید پرداخت کارت‌به‌کارت
 // =========================================================
 import { supabase, RECEIPTS_BUCKET } from "./supabase-client.js";
-import { formatToman, statusBadge, toast, showError, el } from "./ui.js";
+import { formatToman, statusBadge, effectiveInstallmentStatus, toast, showError, el } from "./ui.js";
 import { formatJalali } from "./jalali.js";
 
 export async function fetchMyOrders(userId) {
@@ -38,7 +38,7 @@ function orderCardHTML(order) {
             <div class="text-muted">سررسید: ${formatJalali(inst.due_date)}</div>
           </div>
           <div>${formatToman(inst.amount)}</div>
-          <div>${statusBadge(inst.status)}</div>
+          <div>${statusBadge(effectiveInstallmentStatus(inst.status, inst.due_date))}</div>
           <div>
             ${
               canUpload
