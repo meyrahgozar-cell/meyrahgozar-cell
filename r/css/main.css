@@ -200,13 +200,39 @@ img { max-width: 100%; display: block; }
   font-size: 0.8rem;
   font-weight: 700;
 }
-.badge-pending { background: rgba(232, 196, 104, 0.18); color: var(--grain-500); }
+.badge-pending {
+  background: rgba(205, 217, 208, 0.14);
+  color: var(--ivory-dim);
+  animation: glow-pulse-gray 3s ease-in-out infinite;
+}
 .badge-submitted { background: rgba(140, 170, 220, 0.18); color: #a9c2e8; }
-.badge-approved { background: rgba(127, 184, 138, 0.18); color: var(--success); }
-.badge-rejected, .badge-overdue { background: rgba(226, 114, 91, 0.18); color: var(--danger); }
+.badge-approved {
+  background: rgba(127, 184, 138, 0.18);
+  color: var(--success);
+  animation: glow-pulse-green 2.2s ease-in-out infinite;
+}
+.badge-rejected { background: rgba(226, 114, 91, 0.18); color: var(--danger); }
+.badge-overdue {
+  background: rgba(226, 114, 91, 0.2);
+  color: var(--danger);
+  animation: glow-pulse-red 1.6s ease-in-out infinite;
+}
 .badge-completed { background: rgba(127, 184, 138, 0.22); color: var(--success); }
 .badge-active { background: rgba(232, 196, 104, 0.16); color: var(--grain-500); }
 .badge-cancelled { background: rgba(226, 114, 91, 0.16); color: var(--danger); }
+
+@keyframes glow-pulse-red {
+  0%, 100% { box-shadow: 0 0 4px rgba(226, 114, 91, 0.5), 0 0 8px rgba(226, 114, 91, 0.25); }
+  50% { box-shadow: 0 0 11px rgba(226, 114, 91, 1), 0 0 24px rgba(226, 114, 91, 0.65); }
+}
+@keyframes glow-pulse-green {
+  0%, 100% { box-shadow: 0 0 4px rgba(127, 184, 138, 0.45), 0 0 8px rgba(127, 184, 138, 0.2); }
+  50% { box-shadow: 0 0 10px rgba(127, 184, 138, 0.9), 0 0 20px rgba(127, 184, 138, 0.5); }
+}
+@keyframes glow-pulse-gray {
+  0%, 100% { box-shadow: 0 0 3px rgba(205, 217, 208, 0.3), 0 0 6px rgba(205, 217, 208, 0.12); }
+  50% { box-shadow: 0 0 7px rgba(205, 217, 208, 0.55), 0 0 14px rgba(205, 217, 208, 0.28); }
+}
 
 /* ---------- کمکی ---------- */
 .text-muted { color: var(--ivory-dim); }
