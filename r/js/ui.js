@@ -75,6 +75,12 @@ export function statusBadge(status) {
   return `<span class="badge badge-${status}">${statusLabel(status)}</span>`;
 }
 
+/** اگر قسطی هنوز پرداخت نشده و تاریخ سررسیدش گذشته، برای نمایش به‌عنوان «معوق» در نظر گرفته میشه */
+export function effectiveInstallmentStatus(status, dueDate) {
+  if (status === "pending" && new Date(dueDate) < new Date()) return "overdue";
+  return status;
+}
+
 export function el(html) {
   const template = document.createElement("template");
   template.innerHTML = html.trim();
