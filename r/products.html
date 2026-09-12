@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>محصولات — برنج قسطی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<div id="navbar"></div>
+
+<div class="container section">
+  <h2>محصولات</h2>
+  <p>سه نوع برنج، با کیفیت و قیمت شفاف — هر گرم که بخری، معادلش رو به کیلوگرم می‌بینی. برای خرید قسطی، روی هر محصول بزن.</p>
+  <div class="grid-3" id="product-grid" style="margin-top:1.5rem;"></div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">برنج قسطی — فروش و مدیریت اقساط برنج</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { getSession } from "./js/auth.js";
+  import { renderNavbar } from "./js/navbar.js";
+  import { renderProductGrid } from "./js/products.js";
+
+  renderNavbar(document.getElementById("navbar"), { active: "products" });
+
+  const session = await getSession();
+  renderProductGrid(document.getElementById("product-grid"), {
+    renderCta: (product) =>
+      session
+        ? `<a href="dashboard.html?product=${product.id}" class="btn btn-primary btn-block">خرید این برنج</a>`
+        : `<a href="auth.html#signup" class="btn btn-primary btn-block">ثبت‌نام برای خرید</a>`,
+  });
+</script>
+</body>
+</html>
