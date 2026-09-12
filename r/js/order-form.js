@@ -9,7 +9,7 @@ import { addDays } from "./jalali.js";
 
 const DAYS_BETWEEN_INSTALLMENTS = 30;
 
-export async function initOrderForm(root, { onOrderCreated } = {}) {
+export async function initOrderForm(root, { onOrderCreated, preselectedProductId } = {}) {
   const [products, feeSettings] = await Promise.all([
     fetchActiveProducts(),
     loadFeeSettings(supabase),
@@ -20,8 +20,13 @@ export async function initOrderForm(root, { onOrderCreated } = {}) {
     return;
   }
 
+  const initialProductId =
+    preselectedProductId && products.some((p) => p.id === preselectedProductId)
+      ? preselectedProductId
+      : products[0].id;
+
   const state = {
-    productId: products[0].id,
+    productId: initialProductId,
     weightGrams: 1000,
     installmentCount: feeSettings.minInstallments,
   };
@@ -31,7 +36,10 @@ export async function initOrderForm(root, { onOrderCreated } = {}) {
       <label>نوع برنج</label>
       <select class="input" id="of-product">
         ${products
-          .map((p) => `<option value="${p.id}">${p.name} — ${formatToman(p.price_per_kg)} / کیلو</option>`)
+          .map(
+            (p) =>
+              `<option value="${p.id}" ${p.id === initialProductId ? "selected" : ""}>${p.name} — ${formatToman(p.price_per_kg)} / کیلو</option>`
+          )
           .join("")}
       </select>
     </div>
