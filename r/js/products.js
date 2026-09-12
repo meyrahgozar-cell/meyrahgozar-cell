@@ -3,6 +3,7 @@
 // =========================================================
 import { supabase } from "./supabase-client.js";
 import { formatToman } from "./ui.js";
+import { toPersianDigits } from "./jalali.js";
 
 export async function fetchActiveProducts() {
   const { data, error } = await supabase
@@ -14,7 +15,7 @@ export async function fetchActiveProducts() {
   return data;
 }
 
-export function productCardHTML(product, { renderCta } = {}) {
+export function productCardHTML(product, { renderCta, showComments = false } = {}) {
   const img = product.image_url
     ? `<img src="${product.image_url}" alt="${product.name}" style="height:150px;object-fit:cover;border-radius:14px;" />`
     : `<div class="grain-chip"></div>`;
@@ -23,13 +24,29 @@ export function productCardHTML(product, { renderCta } = {}) {
     ? renderCta(product)
     : `<a href="products.html" class="btn btn-primary btn-block">مشاهده و خرید</a>`;
 
+  const stats = `
+    <div class="row gap-sm wrap">
+      <span class="stat-chip">${toPersianDigits(product.comment_count ?? 0)} نظر</span>
+      <span class="stat-chip">${toPersianDigits(product.purchase_count ?? 0)} خرید</span>
+    </div>
+  `;
+
+  const commentsBlock = showComments
+    ? `
+      <button class="btn btn-ghost btn-sm toggle-comments-btn" data-product-id="${product.id}">نمایش نظرات</button>
+      <div class="comments-panel hidden" data-product-id="${product.id}"></div>
+    `
+    : "";
+
   return `
     <article class="glass glass-card product-card glass-hover" data-product-id="${product.id}">
       ${img}
       <h3>${product.name}</h3>
+      ${stats}
       <p>${product.description || ""}</p>
       <div class="price-line">${formatToman(product.price_per_kg)} <small>/ کیلوگرم</small></div>
       ${cta}
+      ${commentsBlock}
     </article>
   `;
 }
