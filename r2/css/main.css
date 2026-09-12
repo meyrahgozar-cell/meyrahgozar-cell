@@ -45,7 +45,7 @@ html {
 }
 
 body {
-  font-family: 'Vazirmatn', system-ui, sans-serif;
+  font-family: 'Vazirmatn', 'Tahoma', system-ui, sans-serif;
   background: var(--bg-dark);
   color: var(--text);
   min-height: 100vh;
@@ -53,6 +53,12 @@ body {
   overflow-x: hidden;
   line-height: 1.6;
   position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure all interactive elements inherit the Persian font */
+button, input, select, textarea, a, .btn, .nav a, .nav button, .logo, h1, h2, h3 {
+  font-family: inherit;
 }
 
 /* ========== Rice Grain Background ========== */
