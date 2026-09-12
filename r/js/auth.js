@@ -27,19 +27,11 @@ export async function signUp({ fullName, phone, email, password }) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: { data: { full_name: fullName, phone } },
   });
   if (error) throw error;
-
-  if (data.user) {
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: data.user.id,
-      full_name: fullName,
-      phone,
-      role: "customer",
-    });
-    if (profileError) throw profileError;
-  }
+  // پروفایل دیگر اینجا insert نمی‌شود — یک تریگر در دیتابیس (handle_new_user
+  // در schema.sql) به‌محض ساخته‌شدن کاربر، ردیف profiles را خودش می‌سازد.
   return data;
 }
 
