@@ -12,15 +12,7 @@
 </head>
 <body class="app-bg">
 
-<nav class="topbar">
-  <div class="container">
-    <div class="brand"><span class="dot">●</span> برنج قسطی</div>
-    <div class="row gap-sm">
-      <a href="auth.html" class="btn btn-ghost btn-sm">ورود</a>
-      <a href="auth.html#signup" class="btn btn-primary btn-sm">ثبت‌نام</a>
-    </div>
-  </div>
-</nav>
+<div id="navbar"></div>
 
 <header class="section">
   <div class="container">
@@ -32,7 +24,7 @@
           هر واریزی رو ثبت کن، ما بررسی می‌کنیم و بلافاصله سفارشت آماده‌ی ارسال میشه.
         </p>
         <div class="row gap-sm wrap">
-          <a href="auth.html#signup" class="btn btn-primary">شروع خرید قسطی</a>
+          <a href="products.html" class="btn btn-primary" id="hero-cta">مشاهده و خرید برنج</a>
           <a href="#how" class="btn btn-ghost">روش کار چیه؟</a>
         </div>
       </div>
@@ -78,9 +70,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
+  import { renderNavbar } from "./js/navbar.js";
   import { renderProductGrid } from "./js/products.js";
   import { initLandingCalculator } from "./js/landing-calc.js";
 
+  renderNavbar(document.getElementById("navbar"), { active: "home" });
   renderProductGrid(document.getElementById("product-grid"));
   initLandingCalculator(document.getElementById("landing-calc"));
 </script>
