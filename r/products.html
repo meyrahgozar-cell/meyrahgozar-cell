@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>محصولات — برنج قسطی</title>
+<title>محصولات — برنج ایرانی</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
@@ -21,7 +21,7 @@
 </div>
 
 <footer class="site-footer">
-  <div class="container">برنج قسطی — فروش و مدیریت اقساط برنج</div>
+  <div class="container">برنج ایرانی — فروش و مدیریت اقساط برنج</div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -29,15 +29,38 @@
   import { getSession } from "./js/auth.js";
   import { renderNavbar } from "./js/navbar.js";
   import { renderProductGrid } from "./js/products.js";
+  import { renderProductComments } from "./js/comments.js";
 
   renderNavbar(document.getElementById("navbar"), { active: "products" });
 
   const session = await getSession();
-  renderProductGrid(document.getElementById("product-grid"), {
+  const grid = document.getElementById("product-grid");
+
+  await renderProductGrid(grid, {
+    showComments: true,
     renderCta: (product) =>
       session
         ? `<a href="dashboard.html?product=${product.id}" class="btn btn-primary btn-block">خرید این برنج</a>`
         : `<a href="auth.html#signup" class="btn btn-primary btn-block">ثبت‌نام برای خرید</a>`,
+  });
+
+  grid.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".toggle-comments-btn");
+    if (!btn) return;
+    const panel = grid.querySelector(`.comments-panel[data-product-id="${btn.dataset.productId}"]`);
+    const isHidden = panel.classList.contains("hidden");
+
+    if (isHidden) {
+      panel.classList.remove("hidden");
+      btn.textContent = "بستن نظرات";
+      if (!panel.dataset.loaded) {
+        panel.dataset.loaded = "1";
+        await renderProductComments(panel, btn.dataset.productId);
+      }
+    } else {
+      panel.classList.add("hidden");
+      btn.textContent = "نمایش نظرات";
+    }
   });
 </script>
 </body>
