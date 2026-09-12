@@ -82,14 +82,21 @@
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      await signUp({
+      const result = await signUp({
         fullName: document.getElementById("su-name").value,
         phone: document.getElementById("su-phone").value,
         email: document.getElementById("su-email").value,
         password: document.getElementById("su-password").value,
       });
-      toast("ثبت‌نام با موفقیت انجام شد.");
-      window.location.href = "dashboard.html";
+      if (result.session) {
+        // تایید ایمیل غیرفعال است (یا از قبل تایید شده) → ورود مستقیم
+        toast("ثبت‌نام با موفقیت انجام شد.");
+        window.location.href = "dashboard.html";
+      } else {
+        // تایید ایمیل فعال است → کاربر باید اول روی لینک ایمیلش کلیک کند
+        toast("ثبت‌نام انجام شد. لطفاً ایمیلتان را برای تایید حساب بررسی کنید.", "info");
+        showLogin();
+      }
     } catch (err) {
       showError(err.message || "ثبت‌نام ناموفق بود.");
     }
