@@ -81,6 +81,13 @@ export function el(html) {
   return template.content.firstElementChild;
 }
 
+export function syncSliderFill(input) {
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 100;
+  const pct = max > min ? ((Number(input.value) - min) / (max - min)) * 100 : 0;
+  input.style.setProperty("--_p", `${pct}%`);
+}
+
 export function requireSession(session, redirectTo = "auth.html") {
   if (!session) {
     window.location.href = redirectTo;
