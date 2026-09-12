@@ -909,6 +909,16 @@ button { cursor: pointer; border: none; background: none; }
   line-height: 1.4;
 }
 
+
+a.icon-btn {
+  text-decoration: none;
+  color: inherit;
+  line-height: 1;
+}
+a.icon-btn.call-btn {
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
 </style>
 </head>
 <body>
@@ -949,6 +959,7 @@ button { cursor: pointer; border: none; background: none; }
 <button class="icon-btn theme-btn" id="themeButton" title="تم" aria-label="تم">
         <img src="images/favicon.png" alt="" class="theme-icon" width="22" height="22">
       </button>
+      <a class="icon-btn call-btn" id="callButton" href="tel:+989308778454" title="تماس با میثم رهگذر" aria-label="تماس">📞</a>
       <button class="icon-btn" id="userButton" title="کاربر">👤</button>
       <div id="menu" class="menu hidden">
         <button id="logoutButton">خروج</button>
