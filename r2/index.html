@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>برنج‌فروشی طلایی | خرید اقساطی برنج</title>
+  <meta name="description" content="خرید برنج با کیفیت ایرانی به صورت اقساطی. مدیریت مالی آسان و پرداخت کارت به کارت." />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>" />
+</head>
+<body>
+  <div class="rice-bg" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <span>🌾</span>
+        <span>برنج‌فروشی طلایی</span>
+      </a>
+      <nav class="nav" id="mainNav">
+        <a href="index.html">خانه</a>
+        <a href="#products">محصولات</a>
+        <a href="dashboard.html" id="dashboardLink" class="hidden">پنل من</a>
+        <a href="admin.html" id="adminLink" class="hidden">مدیریت</a>
+        <button id="loginBtn" class="btn-primary">ورود / ثبت‌نام</button>
+        <button id="logoutBtn" class="btn-outline hidden">خروج</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <h1>برنج اصیل ایرانی، اقساطی و آسان</h1>
+      <p>
+        بهترین برنج‌های شمال را با امکان پرداخت اقساطی خریداری کنید.
+        مدیریت مالی شفاف، تأیید سریع فیش کارت‌به‌کارت و ارسال مطمئن.
+      </p>
+      <a href="#products" class="btn btn-primary">مشاهده محصولات</a>
+    </section>
+
+    <section class="container" id="products">
+      <h2 class="section-title">محصولات فعال</h2>
+      <div id="productsGrid" class="product-grid">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <section class="container mt-3 mb-3">
+      <div class="glass glass-strong" style="padding: 1.75rem;">
+        <h2 class="section-title" style="margin-bottom: 0.75rem;">چگونه کار می‌کند؟</h2>
+        <ol style="padding-right: 1.25rem; color: var(--text-muted); line-height: 2;">
+          <li>محصول و مقدار (کیلوگرم) را انتخاب کنید.</li>
+          <li>تعداد اقساط مورد نظر خود را مشخص کنید (کارمزد بر اساس فرمول ادمین محاسبه می‌شود).</li>
+          <li>سفارش ثبت می‌شود و مبلغ هر قسط به شما نمایش داده می‌شود.</li>
+          <li>پرداخت را کارت‌به‌کارت انجام دهید و فیش را از طریق تلگرام ارسال کنید.</li>
+          <li>پس از بررسی و تأیید ادمین، سفارش شما نهایی و ارسال می‌شود.</li>
+        </ol>
+        <div class="mt-2">
+          <a href="https://t.me/+989308779454" target="_blank" rel="noopener" class="telegram-link">
+            📱 ارسال فیش به تلگرام (+989308779454)
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container text-center text-muted" style="padding: 2rem 0; font-size: 0.9rem;">
+    <p>© ۱۴۰۵ برنج‌فروشی طلایی — طراحی شده با ❤️ و Glassmorphism</p>
+  </footer>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal glass glass-strong">
+      <h2 id="authTitle">ورود به حساب</h2>
+      <div id="authError" class="alert alert-warning hidden"></div>
+      <form id="authForm">
+        <div class="form-group" id="nameGroup" style="display:none;">
+          <label>نام کامل</label>
+          <input type="text" class="form-control" id="fullName" placeholder="نام و نام خانوادگی" />
+        </div>
+        <div class="form-group">
+          <label>ایمیل</label>
+          <input type="email" class="form-control" id="email" required placeholder="example@email.com" />
+        </div>
+        <div class="form-group">
+          <label>رمز عبور</label>
+          <input type="password" class="form-control" id="password" required minlength="6" placeholder="حداقل ۶ کاراکتر" />
+        </div>
+        <div class="form-group" id="phoneGroup" style="display:none;">
+          <label>شماره موبایل</label>
+          <input type="tel" class="form-control" id="phone" placeholder="0912xxxxxxx" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="toggleAuthMode">ثبت‌نام</button>
+          <button type="submit" class="btn btn-primary" id="authSubmit">ورود</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Buy Modal -->
+  <div class="modal-overlay" id="buyModal">
+    <div class="modal glass glass-strong">
+      <h2 id="buyTitle">خرید اقساطی</h2>
+      <div id="buyContent"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/config.js"></script>
+  <script type="module">
+    import { supabase, getCurrentUser, signIn, signUp, signOut, onAuthChange } from './js/supabase-client.js';
+    import { fetchActiveProducts, renderProductCard } from './js/products.js';
+    import { getInstallmentSettings, createOrder } from './js/orders.js';
+    import { formatPrice, formatWeight, formatNumber, calculateInstallments, showToast } from './js/utils.js';
+
+    // ---------- Auth State ----------
+    let currentUser = null;
+    let isRegisterMode = false;
+
+    async function refreshAuthUI() {
+      currentUser = await getCurrentUser();
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const dashboardLink = document.getElementById('dashboardLink');
+      const adminLink = document.getElementById('adminLink');
+
+      if (currentUser) {
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        dashboardLink.classList.remove('hidden');
+        if (currentUser.profile?.role === 'admin') {
+          adminLink.classList.remove('hidden');
+        } else {
+          adminLink.classList.add('hidden');
+        }
+      } else {
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        dashboardLink.classList.add('hidden');
+        adminLink.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      isRegisterMode = false;
+      updateAuthModal();
+      document.getElementById('authModal').classList.add('active');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await signOut();
+      showToast('با موفقیت خارج شدید', 'success');
+      await refreshAuthUI();
+    });
+
+    document.getElementById('toggleAuthMode').addEventListener('click', () => {
+      isRegisterMode = !isRegisterMode;
+      updateAuthModal();
+    });
+
+    function updateAuthModal() {
+      document.getElementById('authTitle').textContent = isRegisterMode ? 'ثبت‌نام' : 'ورود به حساب';
+      document.getElementById('authSubmit').textContent = isRegisterMode ? 'ثبت‌نام' : 'ورود';
+      document.getElementById('toggleAuthMode').textContent = isRegisterMode ? 'ورود' : 'ثبت‌نام';
+      document.getElementById('nameGroup').style.display = isRegisterMode ? 'block' : 'none';
+      document.getElementById('phoneGroup').style.display = isRegisterMode ? 'block' : 'none';
+      document.getElementById('authError').classList.add('hidden');
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('authError');
+
+      try {
+        if (isRegisterMode) {
+          const fullName = document.getElementById('fullName').value.trim();
+          const phone = document.getElementById('phone').value.trim();
+          const { error } = await signUp(email, password, { full_name: fullName, phone });
+          if (error) throw error;
+          showToast('ثبت‌نام موفق! لطفاً ایمیل خود را تأیید کنید (اگر فعال باشد).', 'success');
+        } else {
+          const { error } = await signIn(email, password);
+          if (error) throw error;
+          showToast('ورود موفق', 'success');
+        }
+        document.getElementById('authModal').classList.remove('active');
+        await refreshAuthUI();
+      } catch (err) {
+        errorEl.textContent = err.message || 'خطا در احراز هویت';
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+    });
+
+    // ---------- Products ----------
+    async function loadProducts() {
+      const grid = document.getElementById('productsGrid');
+      const products = await fetchActiveProducts();
+
+      if (!products.length) {
+        grid.innerHTML = '<p class="text-muted text-center">هیچ محصول فعالی یافت نشد.</p>';
+        return;
+      }
+
+      grid.innerHTML = '';
+      products.forEach(p => {
+        grid.appendChild(renderProductCard(p, openBuyModal));
+      });
+    }
+
+    // ---------- Buy Flow ----------
+    let selectedProduct = null;
+    let settings = null;
+
+    async function openBuyModal(product) {
+      if (!currentUser) {
+        showToast('لطفاً ابتدا وارد حساب کاربری شوید', 'warning');
+        document.getElementById('loginBtn').click();
+        return;
+      }
+
+      selectedProduct = product;
+      settings = await getInstallmentSettings();
+
+      const content = document.getElementById('buyContent');
+      content.innerHTML = `
+        <p class="mb-2"><strong>${product.name}</strong> — ${formatPrice(product.price_per_kg)} / کیلو</p>
+        <div class="form-group">
+          <label>مقدار (کیلوگرم)</label>
+          <input type="number" class="form-control" id="qtyKg" min="0.5" step="0.5" value="5" />
+          <small class="text-muted" id="gramsPreview"></small>
+        </div>
+        <div class="form-group">
+          <label>تعداد اقساط (${settings.min_installments} تا ${settings.max_installments})</label>
+          <input type="number" class="form-control" id="numInst" min="${settings.min_installments}" max="${settings.max_installments}" value="3" />
+        </div>
+        <div class="form-group">
+          <label>آدرس ارسال</label>
+          <textarea class="form-control" id="address" rows="2" placeholder="آدرس کامل تحویل"></textarea>
+        </div>
+        <div class="glass glass-dark" style="padding: 1rem; margin: 1rem 0;" id="calcBox">
+          <div class="text-muted">در حال محاسبه...</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('buyModal').classList.remove('active')">انصراف</button>
+          <button type="button" class="btn btn-primary" id="confirmBuy">ثبت سفارش</button>
+        </div>
+      `;
+
+      document.getElementById('buyModal').classList.add('active');
+      updateCalc();
+
+      document.getElementById('qtyKg').addEventListener('input', updateCalc);
+      document.getElementById('numInst').addEventListener('input', updateCalc);
+      document.getElementById('confirmBuy').addEventListener('click', submitOrder);
+    }
+
+    function updateCalc() {
+      const qty = parseFloat(document.getElementById('qtyKg').value) || 0;
+      const num = parseInt(document.getElementById('numInst').value) || 1;
+      document.getElementById('gramsPreview').textContent = `معادل ${formatNumber(Math.round(qty * 1000))} گرم`;
+
+      if (qty <= 0 || !selectedProduct) return;
+
+      const subtotal = Math.round(qty * selectedProduct.price_per_kg);
+      const calc = calculateInstallments(subtotal, num, settings);
+
+      document.getElementById('calcBox').innerHTML = `
+        <div class="flex-between mb-1"><span>مبلغ کالا:</span> <strong>${formatPrice(subtotal)}</strong></div>
+        <div class="flex-between mb-1"><span>کارمزد اقساط (${calc.feePercent}٪):</span> <strong>${formatPrice(calc.feeAmount)}</strong></div>
+        <div class="flex-between mb-1" style="border-top:1px solid var(--glass-border); padding-top:0.5rem;">
+          <span>جمع کل:</span> <strong style="color:var(--primary-light)">${formatPrice(calc.total)}</strong>
+        </div>
+        <div class="flex-between mt-1">
+          <span>مبلغ هر قسط:</span> <strong>${formatPrice(calc.installmentAmount)}</strong>
+        </div>
+      `;
+    }
+
+    async function submitOrder() {
+      const qty = parseFloat(document.getElementById('qtyKg').value);
+      const num = parseInt(document.getElementById('numInst').value);
+      const address = document.getElementById('address').value.trim();
+
+      if (!qty || qty <= 0) {
+        showToast('مقدار معتبر وارد کنید', 'warning');
+        return;
+      }
+      if (!address) {
+        showToast('آدرس ارسال الزامی است', 'warning');
+        return;
+      }
+      if (qty > selectedProduct.stock_kg) {
+        showToast('موجودی کافی نیست', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('confirmBuy');
+      btn.disabled = true;
+      btn.textContent = 'در حال ثبت...';
+
+      const { data, error } = await createOrder({
+        userId: currentUser.user.id,
+        product: selectedProduct,
+        quantityKg: qty,
+        numInstallments: num,
+        shippingAddress: address
+      });
+
+      btn.disabled = false;
+      btn.textContent = 'ثبت سفارش';
+
+      if (error) {
+        showToast('خطا در ثبت سفارش: ' + (error.message || ''), 'error');
+        return;
+      }
+
+      document.getElementById('buyModal').classList.remove('active');
+      showToast('سفارش با موفقیت ثبت شد! به پنل کاربری بروید و فیش را ارسال کنید.', 'success');
+      // Optionally redirect
+      setTimeout(() => location.href = 'dashboard.html', 1500);
+    }
+
+    // Init
+    onAuthChange(() => refreshAuthUI());
+    refreshAuthUI();
+    loadProducts();
+  </script>
+</body>
+</html>
