@@ -1,5 +1,5 @@
 /* =========================================================
-   برنج قسطی — glass.css
+   برنج ایرانی — glass.css
    پس‌زمینه‌ی دانه‌های برنج + افکت گلس‌مورفیسم
    ========================================================= */
 
@@ -220,4 +220,35 @@ table.data-table th { color: var(--ivory-dim); font-weight: 700; font-size: 0.85
   .installment-row .btn { width: 100%; }
   .glass-panel { padding: 1.25rem; }
   .modal-backdrop { padding: 0.75rem; }
+}
+
+/* آمار محصول: تعداد نظر و تعداد خرید */
+.stat-chip {
+  font-size: 0.8rem;
+  color: var(--ivory-dim);
+  background: rgba(15, 39, 30, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+}
+
+/* نظرات محصول */
+.comments-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--glass-border);
+}
+.comment-row {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(15, 39, 30, 0.35);
+  border: 1px solid var(--glass-border);
+}
+.commenter-name {
+  font-weight: 700;
+}
+/* اسم خریدارهای واقعی، طلایی و با glow مشخص میشه */
+.commenter-name.is-buyer {
+  color: var(--grain-500);
+  text-shadow: 0 0 6px rgba(232, 196, 104, 0.85), 0 0 14px rgba(232, 196, 104, 0.45);
 }
