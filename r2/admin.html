@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>پنل مدیریت | برنج‌فروشی طلایی</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="rice-bg" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <span>🌾</span>
+        <span>برنج‌فروشی طلایی</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">خانه</a>
+        <a href="dashboard.html">پنل من</a>
+        <a href="admin.html">مدیریت</a>
+        <button id="logoutBtn" class="btn-outline">خروج</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 2rem 0;">
+    <h1 class="section-title">پنل مدیریت</h1>
+
+    <div class="nav gap-1 mb-3" style="flex-wrap: wrap;">
+      <button class="btn btn-primary btn-sm tab-btn active" data-tab="orders">سفارش‌ها و پرداخت‌ها</button>
+      <button class="btn btn-outline btn-sm tab-btn" data-tab="products">محصولات</button>
+      <button class="btn btn-outline btn-sm tab-btn" data-tab="settings">تنظیمات اقساط</button>
+    </div>
+
+    <!-- Orders Tab -->
+    <section id="tab-orders">
+      <h2 class="section-title">سفارش‌ها و فیش‌های در انتظار</h2>
+      <div id="adminOrders"><div class="spinner"></div></div>
+    </section>
+
+    <!-- Products Tab -->
+    <section id="tab-products" class="hidden">
+      <div class="flex-between mb-2">
+        <h2 class="section-title" style="margin:0;">مدیریت محصولات</h2>
+        <button class="btn btn-primary btn-sm" id="addProductBtn">+ محصول جدید</button>
+      </div>
+      <div id="adminProducts"><div class="spinner"></div></div>
+    </section>
+
+    <!-- Settings Tab -->
+    <section id="tab-settings" class="hidden">
+      <h2 class="section-title">فرمول کارمزد اقساط</h2>
+      <div class="glass" style="padding: 1.5rem; max-width: 500px;" id="settingsForm">
+        <div class="form-group">
+          <label>کارمزد پایه (٪)</label>
+          <input type="number" class="form-control" id="baseFee" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label>کارمزد اضافی به ازای هر قسط بیشتر (٪)</label>
+          <input type="number" class="form-control" id="perFee" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label>حداقل تعداد اقساط</label>
+          <input type="number" class="form-control" id="minInst" min="1" />
+        </div>
+        <div class="form-group">
+          <label>حداکثر تعداد اقساط</label>
+          <input type="number" class="form-control" id="maxInst" min="1" />
+        </div>
+        <button class="btn btn-primary" id="saveSettings">ذخیره تنظیمات</button>
+        <p class="text-muted mt-2" style="font-size:0.85rem;">
+          فرمول: کارمزد = مبلغ کالا × (پایه + (تعداداقساط - ۱) × اضافی) ٪
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal glass glass-strong">
+      <h2 id="productModalTitle">محصول</h2>
+      <div id="productFormContent"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/config.js"></script>
+  <script type="module">
+    import { getCurrentUser, signOut, isAdmin, supabase } from './js/supabase-client.js';
+    import { fetchAllOrders, reviewPayment, updateOrderStatus } from './js/orders.js';
+    import { fetchAllProducts, updateProduct, createProduct, toggleProductActive } from './js/products.js';
+    import { getInstallmentSettings } from './js/orders.js';
+    import { formatPrice, formatWeight, formatDate, statusLabel, statusClass, showToast } from './js/utils.js';
+
+    let currentUser = null;
+
+    async function init() {
+      currentUser = await getCurrentUser();
+      if (!currentUser || currentUser.profile?.role !== 'admin') {
+        showToast('دسترسی مجاز نیست', 'error');
+        setTimeout(() => location.href = 'index.html', 1200);
+        return;
+      }
+      loadOrders();
+      loadProducts();
+      loadSettings();
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'btn-primary');
+          b.classList.add('btn-outline');
+        });
+        btn.classList.add('active', 'btn-primary');
+        btn.classList.remove('btn-outline');
+
+        document.querySelectorAll('[id^="tab-"]').forEach(s => s.classList.add('hidden'));
+        document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // ---------- Orders ----------
+    async function loadOrders() {
+      const { data: orders } = await fetchAllOrders();
+      const container = document.getElementById('adminOrders');
+
+      if (!orders?.length) {
+        container.innerHTML = '<p class="text-muted">سفارشی وجود ندارد.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      orders.forEach(order => {
+        const pendingPayments = (order.payments || []).filter(p => p.status === 'pending');
+
+        const card = document.createElement('div');
+        card.className = 'glass';
+        card.style.cssText = 'padding:1.25rem; margin-bottom:1rem;';
+
+        let paymentsHtml = '';
+        if (pendingPayments.length) {
+          paymentsHtml = pendingPayments.map(p => `
+            <div class="glass glass-dark" style="padding:0.9rem; margin-top:0.75rem;">
+              <div class="flex-between">
+                <span>فیش: ${formatPrice(p.amount)} — ${formatDate(p.transfer_date)}</span>
+                <span class="status status-pending">در انتظار</span>
+              </div>
+              <p style="font-size:0.85rem; margin:0.4rem 0;">${p.receipt_url || '—'}</p>
+              <div class="gap-1 flex mt-1">
+                <button class="btn btn-success btn-sm approve-pay" data-id="${p.id}">تأیید</button>
+                <button class="btn btn-danger btn-sm reject-pay" data-id="${p.id}">رد</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        card.innerHTML = `
+          <div class="flex-between mb-1">
+            <div>
+              <strong>${order.product?.name}</strong> — ${formatWeight(order.quantity_kg)}
+              <br><small class="text-muted">${order.user?.full_name || ''} | ${order.user?.phone || ''}</small>
+            </div>
+            <span class="status ${statusClass(order.status)}">${statusLabel(order.status)}</span>
+          </div>
+          <div class="text-muted" style="font-size:0.85rem;">
+            ${formatDate(order.created_at)} | جمع: ${formatPrice(order.total_amount)} | ${order.num_installments} قسط
+          </div>
+          <div class="mt-1" style="font-size:0.85rem;">آدرس: ${order.shipping_address || '—'}</div>
+          ${paymentsHtml}
+          <div class="mt-2 gap-1 flex">
+            <select class="form-control status-select" data-id="${order.id}" style="width:auto; padding:0.4rem 0.8rem;">
+              <option value="">تغییر وضعیت...</option>
+              <option value="approved">تأیید شده</option>
+              <option value="shipping">در حال ارسال</option>
+              <option value="delivered">تحویل شده</option>
+              <option value="cancelled">لغو</option>
+            </select>
+          </div>
+        `;
+
+        card.querySelectorAll('.approve-pay').forEach(btn => {
+          btn.addEventListener('click', () => handleReview(btn.dataset.id, 'approved'));
+        });
+        card.querySelectorAll('.reject-pay').forEach(btn => {
+          btn.addEventListener('click', () => handleReview(btn.dataset.id, 'rejected'));
+        });
+        card.querySelector('.status-select')?.addEventListener('change', async (e) => {
+          if (!e.target.value) return;
+          await updateOrderStatus(e.target.dataset.id, e.target.value);
+          showToast('وضعیت به‌روز شد', 'success');
+          loadOrders();
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    async function handleReview(paymentId, status) {
+      const note = status === 'rejected' ? prompt('دلیل رد (اختیاری):') || '' : '';
+      const { error } = await reviewPayment(paymentId, status, currentUser.user.id, note);
+      if (error) {
+        showToast('خطا: ' + error.message, 'error');
+        return;
+      }
+      showToast(status === 'approved' ? 'پرداخت تأیید شد' : 'پرداخت رد شد', 'success');
+      loadOrders();
+    }
+
+    // ---------- Products ----------
+    async function loadProducts() {
+      const products = await fetchAllProducts();
+      const container = document.getElementById('adminProducts');
+
+      if (!products.length) {
+        container.innerHTML = '<p class="text-muted">محصولی نیست.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-wrap glass">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>قیمت/کیلو</th>
+                <th>موجودی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${products.map(p => `
+                <tr>
+                  <td>${p.name}</td>
+                  <td>${formatPrice(p.price_per_kg)}</td>
+                  <td>${formatWeight(p.stock_kg)}</td>
+                  <td><span class="status ${p.is_active ? 'status-approved' : 'status-rejected'}">${p.is_active ? 'فعال' : 'غیرفعال'}</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-sm edit-prod" data-id="${p.id}">ویرایش</button>
+                    <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'} toggle-prod" data-id="${p.id}" data-active="${p.is_active}">
+                      ${p.is_active ? 'غیرفعال' : 'فعال'}
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.querySelectorAll('.toggle-prod').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const active = btn.dataset.active === 'true';
+          await toggleProductActive(btn.dataset.id, !active);
+          showToast('وضعیت محصول تغییر کرد', 'success');
+          loadProducts();
+        });
+      });
+
+      container.querySelectorAll('.edit-prod').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prod = products.find(p => p.id === btn.dataset.id);
+          openProductModal(prod);
+        });
+      });
+    }
+
+    document.getElementById('addProductBtn').addEventListener('click', () => openProductModal(null));
+
+    function openProductModal(product) {
+      const isEdit = !!product;
+      document.getElementById('productModalTitle').textContent = isEdit ? 'ویرایش محصول' : 'محصول جدید';
+      document.getElementById('productFormContent').innerHTML = `
+        <div class="form-group">
+          <label>نام</label>
+          <input class="form-control" id="pName" value="${product?.name || ''}" />
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <textarea class="form-control" id="pDesc" rows="2">${product?.description || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>قیمت هر کیلو (تومان)</label>
+          <input type="number" class="form-control" id="pPrice" value="${product?.price_per_kg || ''}" />
+        </div>
+        <div class="form-group">
+          <label>موجودی (کیلوگرم)</label>
+          <input type="number" step="0.1" class="form-control" id="pStock" value="${product?.stock_kg || 0}" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="document.getElementById('productModal').classList.remove('active')">انصراف</button>
+          <button class="btn btn-primary" id="saveProduct">ذخیره</button>
+        </div>
+      `;
+
+      document.getElementById('productModal').classList.add('active');
+
+      document.getElementById('saveProduct').onclick = async () => {
+        const payload = {
+          name: document.getElementById('pName').value.trim(),
+          description: document.getElementById('pDesc').value.trim(),
+          price_per_kg: parseFloat(document.getElementById('pPrice').value),
+          stock_kg: parseFloat(document.getElementById('pStock').value)
+        };
+
+        if (!payload.name || !payload.price_per_kg) {
+          showToast('نام و قیمت الزامی است', 'warning');
+          return;
+        }
+
+        if (isEdit) {
+          await updateProduct(product.id, payload);
+        } else {
+          await createProduct({ ...payload, is_active: true });
+        }
+        document.getElementById('productModal').classList.remove('active');
+        showToast('ذخیره شد', 'success');
+        loadProducts();
+      };
+    }
+
+    // ---------- Settings ----------
+    async function loadSettings() {
+      const s = await getInstallmentSettings();
+      document.getElementById('baseFee').value = s.base_fee_percent;
+      document.getElementById('perFee').value = s.per_installment_fee_percent;
+      document.getElementById('minInst').value = s.min_installments;
+      document.getElementById('maxInst').value = s.max_installments;
+    }
+
+    document.getElementById('saveSettings').addEventListener('click', async () => {
+      const updates = {
+        base_fee_percent: parseFloat(document.getElementById('baseFee').value),
+        per_installment_fee_percent: parseFloat(document.getElementById('perFee').value),
+        min_installments: parseInt(document.getElementById('minInst').value),
+        max_installments: parseInt(document.getElementById('maxInst').value)
+      };
+
+      // Update the active settings row (simplified: update first active)
+      const { data: current } = await supabase
+        .from('installment_settings')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      if (current) {
+        await supabase.from('installment_settings').update(updates).eq('id', current.id);
+      }
+      showToast('تنظیمات ذخیره شد', 'success');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await signOut();
+      location.href = 'index.html';
+    });
+
+    document.getElementById('productModal').addEventListener('click', e => {
+      if (e.target.id === 'productModal') e.target.classList.remove('active');
+    });
+
+    init();
+  </script>
+</body>
+</html>
