@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>پنل کاربری | برنج‌فروشی طلایی</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="rice-bg" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <span>🌾</span>
+        <span>برنج‌فروشی طلایی</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">خانه</a>
+        <a href="dashboard.html">پنل من</a>
+        <a href="admin.html" id="adminLink" class="hidden">مدیریت</a>
+        <button id="logoutBtn" class="btn-outline">خروج</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 2rem 0;">
+    <h1 class="section-title">پنل کاربری من</h1>
+    <div id="userInfo" class="glass" style="padding: 1.25rem; margin-bottom: 1.5rem;"></div>
+
+    <div class="alert alert-info">
+      پس از ثبت سفارش، مبلغ را کارت‌به‌کارت واریز کنید و فیش را از طریق تلگرام ارسال نمایید.
+      <br />
+      <a href="https://t.me/+989308779454" target="_blank" class="telegram-link" style="margin-top: 0.75rem; display: inline-flex;">
+        📱 تلگرام: +989308779454
+      </a>
+    </div>
+
+    <h2 class="section-title">سفارش‌های من</h2>
+    <div id="ordersList">
+      <div class="spinner"></div>
+    </div>
+  </main>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="payModal">
+    <div class="modal glass glass-strong">
+      <h2>ثبت پرداخت (فیش)</h2>
+      <div id="payContent"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/config.js"></script>
+  <script type="module">
+    import { getCurrentUser, signOut, onAuthChange } from './js/supabase-client.js';
+    import { fetchUserOrders, submitPayment } from './js/orders.js';
+    import { formatPrice, formatWeight, formatDate, statusLabel, statusClass, showToast } from './js/utils.js';
+
+    let currentUser = null;
+
+    async function init() {
+      currentUser = await getCurrentUser();
+      if (!currentUser) {
+        showToast('لطفاً وارد شوید', 'warning');
+        setTimeout(() => location.href = 'index.html', 1000);
+        return;
+      }
+
+      if (currentUser.profile?.role === 'admin') {
+        document.getElementById('adminLink').classList.remove('hidden');
+      }
+
+      document.getElementById('userInfo').innerHTML = `
+        <strong>${currentUser.profile?.full_name || 'کاربر'}</strong>
+        <span class="text-muted"> — ${currentUser.user.email}</span>
+        ${currentUser.profile?.phone ? `<br><small>${currentUser.profile.phone}</small>` : ''}
+      `;
+
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      const { data: orders, error } = await fetchUserOrders(currentUser.user.id);
+      const container = document.getElementById('ordersList');
+
+      if (error || !orders.length) {
+        container.innerHTML = '<p class="text-muted">هنوز سفارشی ثبت نکرده‌اید.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      orders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'glass';
+        card.style.padding = '1.25rem';
+        card.style.marginBottom = '1rem';
+
+        const installmentsHtml = (order.installments || [])
+          .sort((a, b) => a.installment_number - b.installment_number)
+          .map(inst => `
+            <tr>
+              <td>قسط ${inst.installment_number}</td>
+              <td>${formatPrice(inst.amount)}</td>
+              <td>${formatDate(inst.due_date)}</td>
+              <td><span class="status ${statusClass(inst.status)}">${statusLabel(inst.status)}</span></td>
+            </tr>
+          `).join('');
+
+        card.innerHTML = `
+          <div class="flex-between mb-2">
+            <div>
+              <strong>${order.product?.name || 'محصول'}</strong>
+              <span class="text-muted"> — ${formatWeight(order.quantity_kg)}</span>
+            </div>
+            <span class="status ${statusClass(order.status)}">${statusLabel(order.status)}</span>
+          </div>
+          <div class="text-muted" style="font-size:0.9rem;">
+            تاریخ: ${formatDate(order.created_at)} | 
+            جمع: ${formatPrice(order.total_amount)} | 
+            ${order.num_installments} قسط
+          </div>
+          <div class="table-wrap mt-2">
+            <table>
+              <thead>
+                <tr><th>قسط</th><th>مبلغ</th><th>سررسید</th><th>وضعیت</th></tr>
+              </thead>
+              <tbody>${installmentsHtml}</tbody>
+            </table>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-primary btn-sm pay-btn" data-order='${JSON.stringify({
+              id: order.id,
+              total: order.total_amount,
+              installment_amount: order.installment_amount
+            })}'>ثبت فیش پرداخت</button>
+          </div>
+        `;
+
+        card.querySelector('.pay-btn').addEventListener('click', (e) => {
+          const data = JSON.parse(e.target.dataset.order);
+          openPayModal(data);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    function openPayModal(orderData) {
+      document.getElementById('payContent').innerHTML = `
+        <p class="mb-2">مبلغ تقریبی هر قسط: <strong>${formatPrice(orderData.installment_amount)}</strong></p>
+        <div class="form-group">
+          <label>مبلغ واریزی (تومان)</label>
+          <input type="number" class="form-control" id="payAmount" value="${orderData.installment_amount}" />
+        </div>
+        <div class="form-group">
+          <label>توضیحات فیش / شماره پیگیری</label>
+          <textarea class="form-control" id="payNote" rows="3" placeholder="مثلاً: واریز از کارت بانک ملی به شماره ... در تاریخ ..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>تاریخ واریز</label>
+          <input type="date" class="form-control" id="payDate" value="${new Date().toISOString().slice(0,10)}" />
+        </div>
+        <p class="text-muted" style="font-size:0.85rem;">
+          پس از ثبت، حتماً فیش را در تلگرام هم ارسال کنید تا سریع‌تر بررسی شود.
+        </p>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="document.getElementById('payModal').classList.remove('active')">انصراف</button>
+          <button class="btn btn-primary" id="submitPay">ثبت پرداخت</button>
+        </div>
+      `;
+
+      document.getElementById('payModal').classList.add('active');
+
+      document.getElementById('submitPay').onclick = async () => {
+        const amount = parseFloat(document.getElementById('payAmount').value);
+        const note = document.getElementById('payNote').value.trim();
+        const date = document.getElementById('payDate').value;
+
+        if (!amount || !note) {
+          showToast('مبلغ و توضیحات الزامی است', 'warning');
+          return;
+        }
+
+        const { error } = await submitPayment({
+          orderId: orderData.id,
+          amount,
+          receiptNote: note,
+          transferDate: date
+        });
+
+        if (error) {
+          showToast('خطا: ' + error.message, 'error');
+          return;
+        }
+
+        document.getElementById('payModal').classList.remove('active');
+        showToast('پرداخت ثبت شد. منتظر تأیید ادمین باشید.', 'success');
+        loadOrders();
+      };
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await signOut();
+      location.href = 'index.html';
+    });
+
+    document.getElementById('payModal').addEventListener('click', (e) => {
+      if (e.target.id === 'payModal') e.target.classList.remove('active');
+    });
+
+    onAuthChange(() => init());
+    init();
+  </script>
+</body>
+</html>
