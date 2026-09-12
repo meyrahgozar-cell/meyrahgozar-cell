@@ -12,15 +12,7 @@
 </head>
 <body class="app-bg">
 
-<nav class="topbar">
-  <div class="container">
-    <a href="index.html" class="brand"><span class="dot">●</span> برنج قسطی</a>
-    <div class="row gap-sm">
-      <span class="text-muted" id="welcome-name"></span>
-      <button class="btn btn-ghost btn-sm" id="logout-btn">خروج</button>
-    </div>
-  </div>
-</nav>
+<div id="navbar"></div>
 
 <div class="container section">
   <div class="row justify-between wrap gap-sm" style="margin-bottom:1.5rem;">
@@ -42,33 +34,40 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
-  import { guardCustomer, signOut } from "./js/auth.js";
+  import { guardCustomer } from "./js/auth.js";
+  import { renderNavbar } from "./js/navbar.js";
   import { renderMyOrders } from "./js/my-orders.js";
   import { initOrderForm } from "./js/order-form.js";
 
   const profile = await guardCustomer();
   if (profile) {
-    document.getElementById("welcome-name").textContent = `سلام، ${profile.full_name || ""}`;
+    renderNavbar(document.getElementById("navbar"), { active: "dashboard", profile });
+
     const ordersContainer = document.getElementById("orders-container");
     renderMyOrders(ordersContainer, profile.id);
-
-    document.getElementById("logout-btn").addEventListener("click", signOut);
 
     const modal = document.getElementById("order-modal");
     const formRoot = document.getElementById("order-form-root");
 
-    document.getElementById("new-order-btn").addEventListener("click", async () => {
+    async function openOrderForm(preselectedProductId) {
       modal.classList.remove("hidden");
       await initOrderForm(formRoot, {
+        preselectedProductId,
         onOrderCreated: () => {
           modal.classList.add("hidden");
           renderMyOrders(ordersContainer, profile.id);
         },
       });
-    });
+    }
+
+    document.getElementById("new-order-btn").addEventListener("click", () => openOrderForm());
     document.getElementById("close-order-modal").addEventListener("click", () => {
       modal.classList.add("hidden");
     });
+
+    // اگر از صفحه‌ی محصولات با ?product=<id> اومده، مستقیم فرم سفارش رو با همون محصول باز کن
+    const preselected = new URLSearchParams(window.location.search).get("product");
+    if (preselected) openOrderForm(preselected);
   }
 </script>
 </body>
