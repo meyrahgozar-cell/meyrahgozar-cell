@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>داشبورد من — برنج قسطی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<nav class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="dot">●</span> برنج قسطی</a>
+    <div class="row gap-sm">
+      <span class="text-muted" id="welcome-name"></span>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">خروج</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container section">
+  <div class="row justify-between wrap gap-sm" style="margin-bottom:1.5rem;">
+    <h2>سفارش‌های من</h2>
+    <button class="btn btn-primary" id="new-order-btn">+ سفارش جدید</button>
+  </div>
+  <div id="orders-container"><div class="skeleton" style="height:160px;"></div></div>
+</div>
+
+<div class="modal-backdrop hidden" id="order-modal">
+  <div class="glass glass-strong glass-panel modal-box">
+    <div class="row justify-between" style="margin-bottom:1rem;">
+      <h3>سفارش جدید</h3>
+      <button class="btn btn-ghost btn-sm" id="close-order-modal">✕</button>
+    </div>
+    <div id="order-form-root"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { guardCustomer, signOut } from "./js/auth.js";
+  import { renderMyOrders } from "./js/my-orders.js";
+  import { initOrderForm } from "./js/order-form.js";
+
+  const profile = await guardCustomer();
+  if (profile) {
+    document.getElementById("welcome-name").textContent = `سلام، ${profile.full_name || ""}`;
+    const ordersContainer = document.getElementById("orders-container");
+    renderMyOrders(ordersContainer, profile.id);
+
+    document.getElementById("logout-btn").addEventListener("click", signOut);
+
+    const modal = document.getElementById("order-modal");
+    const formRoot = document.getElementById("order-form-root");
+
+    document.getElementById("new-order-btn").addEventListener("click", async () => {
+      modal.classList.remove("hidden");
+      await initOrderForm(formRoot, {
+        onOrderCreated: () => {
+          modal.classList.add("hidden");
+          renderMyOrders(ordersContainer, profile.id);
+        },
+      });
+    });
+    document.getElementById("close-order-modal").addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+  }
+</script>
+</body>
+</html>
