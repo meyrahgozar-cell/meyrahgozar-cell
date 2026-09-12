@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ورود / ثبت‌نام — برنج قسطی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<nav class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="dot">●</span> برنج قسطی</a>
+  </div>
+</nav>
+
+<div class="container" style="display:flex; justify-content:center; padding-block:4rem;">
+  <div class="glass glass-strong glass-panel" style="max-width:420px; width:100%;">
+
+    <div class="row gap-sm" style="margin-bottom:1.5rem;">
+      <button class="btn btn-ghost btn-sm w-full" id="tab-login">ورود</button>
+      <button class="btn btn-ghost btn-sm w-full" id="tab-signup">ثبت‌نام</button>
+    </div>
+
+    <form id="login-form">
+      <div class="field"><label>ایمیل</label><input class="input" type="email" id="li-email" required /></div>
+      <div class="field"><label>رمز عبور</label><input class="input" type="password" id="li-password" required /></div>
+      <button class="btn btn-primary btn-block" type="submit">ورود</button>
+    </form>
+
+    <form id="signup-form" class="hidden">
+      <div class="field"><label>نام و نام خانوادگی</label><input class="input" id="su-name" required /></div>
+      <div class="field"><label>شماره تماس</label><input class="input" id="su-phone" required /></div>
+      <div class="field"><label>ایمیل</label><input class="input" type="email" id="su-email" required /></div>
+      <div class="field"><label>رمز عبور</label><input class="input" type="password" id="su-password" minlength="6" required /></div>
+      <button class="btn btn-primary btn-block" type="submit">ایجاد حساب کاربری</button>
+    </form>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { signIn, signUp, getSession } from "./js/auth.js";
+  import { toast, showError } from "./js/ui.js";
+
+  const loginTab = document.getElementById("tab-login");
+  const signupTab = document.getElementById("tab-signup");
+  const loginForm = document.getElementById("login-form");
+  const signupForm = document.getElementById("signup-form");
+
+  function showLogin() {
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+  }
+  function showSignup() {
+    signupForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+  }
+
+  loginTab.addEventListener("click", showLogin);
+  signupTab.addEventListener("click", showSignup);
+  if (window.location.hash === "#signup") showSignup(); else showLogin();
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await signIn({
+        email: document.getElementById("li-email").value,
+        password: document.getElementById("li-password").value,
+      });
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showError(err.message || "ورود ناموفق بود.");
+    }
+  });
+
+  signupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await signUp({
+        fullName: document.getElementById("su-name").value,
+        phone: document.getElementById("su-phone").value,
+        email: document.getElementById("su-email").value,
+        password: document.getElementById("su-password").value,
+      });
+      toast("ثبت‌نام با موفقیت انجام شد.");
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showError(err.message || "ثبت‌نام ناموفق بود.");
+    }
+  });
+
+  // اگر از قبل وارد شده، مستقیم به داشبورد برو
+  getSession().then((session) => {
+    if (session) window.location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>
