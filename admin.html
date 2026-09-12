@@ -1,924 +1,367 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<link rel="icon" type="image/png" href="images/favicon.png">
-<link rel="apple-touch-icon" href="images/favicon.png">
-<title>HQL | پنل ادمین</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
-<style>
-:root {
-  --bg: #05060a;
-  --card: #0d1019;
-  --card2: #131722;
-  --border: rgba(180, 100, 255, 0.18);
-  --text: #f0f2ff;
-  --muted: #8b92b0;
-  --neon: #b44cff;
-  --neon2: #00f0ff;
-  --positive: #00ff9d;
-  --negative: #ff4d6d;
-  --radius: 16px;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Vazirmatn", sans-serif;
-}
-body {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(180, 76, 255, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 240, 255, 0.06), transparent),
-    var(--bg);
-  min-height: 100vh;
-}
-button, select { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
-.hidden { display: none !important; }
-.page { max-width: 800px; margin: 0 auto; padding: 14px 14px 80px; }
-.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.brand {
-  font-size: 20px; font-weight: 800;
-  background: linear-gradient(90deg, #b44cff, #00f0ff);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.icon-btn {
-  width: 40px; height: 40px; border-radius: 11px;
-  background: var(--card); border: 1px solid var(--border);
-  display: grid; place-items: center; font-size: 16px;
-}
-.page-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-.page-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
-.badge {
-  display: inline-block; font-size: 11px; font-weight: 700;
-  padding: 4px 10px; border-radius: 99px;
-  background: rgba(180, 76, 255, 0.2);
-  border: 1px solid rgba(180, 100, 255, 0.35);
-  color: var(--neon2); margin-bottom: 14px;
-}
-.month-bar { display: flex; gap: 10px; margin-bottom: 16px; }
-.select {
-  flex: 1; height: 44px; padding: 0 12px; border-radius: 12px;
-  border: 1px solid var(--border); background: var(--card); outline: none; appearance: none;
-}
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
-}
-.card-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-.card-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-.user-list { display: grid; gap: 8px; }
-.user-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px; border-radius: 12px;
-  background: var(--card2); border: 1px solid var(--border);
-  cursor: pointer; transition: 0.15s; text-align: right; width: 100%;
-}
-.user-row:hover, .user-row.active {
-  border-color: rgba(180, 76, 255, 0.45);
-  box-shadow: 0 0 14px rgba(180, 76, 255, 0.12);
-}
-.avatar {
-  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
-  border: 1px solid rgba(180, 100, 255, 0.35); background: #fff;
-  flex-shrink: 0;
-}
-.avatar-fb {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: grid; place-items: center; font-weight: 700; font-size: 14px;
-  background: linear-gradient(145deg, rgba(180,76,255,0.25), rgba(0,240,255,0.1));
-  border: 1px solid rgba(180, 100, 255, 0.3); flex-shrink: 0;
-}
-.user-meta { flex: 1; min-width: 0; }
-.user-name { font-weight: 700; font-size: 14px; }
-.user-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.user-score { font-weight: 800; color: var(--neon2); font-size: 15px; }
-.summary {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px;
-}
-@media (min-width: 640px) { .summary { grid-template-columns: repeat(4, 1fr); } }
-.stat {
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: 14px; padding: 14px; text-align: center;
-}
-.stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-.stat-value { font-size: 22px; font-weight: 800; }
-.stat-value.pos { color: var(--positive); }
-.stat-value.neg { color: var(--negative); }
-.habit-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 10px;
-}
-.habit-row:last-child { border-bottom: none; }
-.habit-name { font-weight: 600; }
-.habit-nums { display: flex; gap: 14px; color: var(--muted); font-size: 12px; text-align: center; }
-.habit-nums b { display: block; color: var(--text); font-size: 14px; }
-.empty, .loading, .deny {
-  text-align: center; padding: 40px 16px; color: var(--muted); font-size: 14px;
-}
-.deny { color: var(--negative); }
-.back-user {
-  margin-bottom: 12px; font-size: 13px; color: var(--neon2);
-  display: inline-flex; align-items: center; gap: 6px;
-}
-
-.chart-wrap {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
-}
-.chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 150px;
-  padding-top: 12px;
-  min-width: 100%;
-}
-/* 30–31 روز: فشرده‌تر */
-.chart.dense {
-  gap: 2px;
-}
-.chart.dense .bar {
-  max-width: 10px;
-  border-radius: 3px 3px 1px 1px;
-}
-.chart.dense .bar-label {
-  font-size: 8px;
-  transform: rotate(-55deg);
-  transform-origin: center top;
-  margin-top: 6px;
-  height: 18px;
-}
-.bar-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  justify-content: flex-end;
-  gap: 4px;
-  min-width: 0;
-  position: relative;
-}
-.bar {
-  width: 100%;
-  max-width: 14px;
-  border-radius: 4px 4px 2px 2px;
-  background: linear-gradient(180deg, #b44cff, #5a2db0);
-  min-height: 2px;
-  transition: height 0.4s cubic-bezier(.22,1,.36,1);
-}
-.bar.positive { background: linear-gradient(180deg, #00ff9d, #00a86b); }
-.bar.negative { background: linear-gradient(180deg, #ff4d6d, #b03040); }
-.bar.zero { background: var(--card); border: 1px solid var(--border); min-height: 2px; opacity: 0.5; }
-.bar-label {
-  font-size: 9px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-.bar-wrap.best .bar {
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.45);
-}
-.bar-wrap.best .bar-label { color: #ffd700; font-weight: 700; }
-
-
-.day-modal-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(5,6,10,0.78);
-  backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px;
-  animation: fadeIn .2s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.day-modal {
-  width: 100%; max-width: 380px; max-height: 85vh; overflow-y: auto;
-  background: linear-gradient(160deg, #141828, #0a0d16);
-  border: 1px solid rgba(180,100,255,0.5);
-  border-radius: 18px;
-  box-shadow: 0 0 32px rgba(180,76,255,0.4), 0 0 64px rgba(0,240,255,0.12);
-  padding: 20px 18px 16px;
-  animation: modalPop .28s cubic-bezier(.22,1,.36,1);
-}
-@keyframes modalPop {
-  from { transform: scale(.92) translateY(12px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
-}
-.day-modal-header { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-.day-modal-title {
-  font-size: 16px; font-weight: 800;
-  background: linear-gradient(90deg,#b44cff,#00f0ff);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.day-modal-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.day-modal-close {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--card2); border: 1px solid var(--border);
-  display: grid; place-items: center; color: var(--muted); flex-shrink: 0;
-}
-.day-modal-total {
-  text-align: center; padding: 14px; margin-bottom: 12px;
-  border-radius: 14px;
-  background: rgba(180,76,255,0.1);
-  border: 1px solid rgba(180,100,255,0.3);
-}
-.day-modal-total-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.day-modal-total-value { font-size: 30px; font-weight: 800; }
-.day-modal-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 11px 2px; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.day-modal-row:last-child { border-bottom: none; }
-.day-modal-row-name { font-weight: 600; }
-.day-modal-row-val { font-weight: 700; color: var(--neon2); }
-.day-modal-row-val.pos { color: var(--positive); }
-.day-modal-row-val.neg { color: var(--negative); }
-.bar-wrap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.bar-wrap:active .bar { filter: brightness(1.3); }
-
-.bar.timely {
-  background: linear-gradient(180deg, #00ff9d, #00a86b) !important;
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.35);
-}
-.bar.late {
-  background: linear-gradient(180deg, #ffc14d, #e8950a) !important;
-  box-shadow: 0 0 10px rgba(255, 180, 50, 0.4);
-}
-.bar.future {
-  background: rgba(139, 146, 176, 0.25) !important;
-  min-height: 3px !important;
-  box-shadow: none;
-  opacity: 0.4;
-}
-.bar.missed {
-  background: linear-gradient(180deg, #ff4d6d, #8b2035) !important;
-  box-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
-  opacity: 0.85;
-  min-height: 6px !important;
-}
-.bar-wrap.missed .bar-label { color: #ff4d6d; }
-
-
-
-
-
-
-
-.settings-card { margin-top: 28px; }
-.settings-card .card-title { margin-bottom: 4px; }
-.settings-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 12px 0 14px;
-}
-@media (max-width: 520px) {
-  .settings-row { grid-template-columns: 1fr; }
-}
-.settings-field label {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-.settings-field input {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--card2);
-  color: var(--text);
-  padding: 0 12px;
-  font-size: 15px;
-  font-weight: 700;
-  direction: ltr;
-  text-align: left;
-}
-.settings-field input:focus {
-  outline: none;
-  border-color: var(--neon);
-  box-shadow: 0 0 0 2px rgba(180, 76, 255, 0.15);
-}
-.settings-save {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(180, 76, 255, 0.4);
-  background: linear-gradient(135deg, rgba(180,76,255,0.25), rgba(0,240,255,0.12));
-  font-weight: 800;
-  color: var(--text);
-  cursor: pointer;
-}
-.settings-save:active { transform: scale(0.98); }
-.settings-msg {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 8px;
-  min-height: 18px;
-}
-.settings-msg.ok { color: var(--positive, #00ff9d); }
-.settings-msg.err { color: var(--negative, #ff4d6d); }
-
-
-.hql-top-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-.hql-top-row .page-title { flex: 0 0 auto; margin-bottom: 0; }
-</style>
-
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>پنل مدیریت | برنج‌فروشی طلایی</title>
+  <link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
-<div class="page">
-  <div id="denyBox" class="deny hidden">دسترسی ادمین نداری.</div>
+  <div class="rice-bg" aria-hidden="true"></div>
 
-  <div id="appBox" class="hidden">
-    <div class="badge">ADMIN</div>
-    <div class="hql-top-row">
-      <h1 class="page-title">پنل ادمین</h1>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <span>🌾</span>
+        <span>برنج‌فروشی طلایی</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">خانه</a>
+        <a href="dashboard.html">پنل من</a>
+        <a href="admin.html">مدیریت</a>
+        <button id="logoutBtn" class="btn-outline">خروج</button>
+      </nav>
     </div>
-    <p class="page-sub">آمار کاربران در ماه انتخاب‌شده</p>
+  </header>
 
-    <div class="month-bar">
-      <select id="yearSelect" class="select"></select>
-      <select id="monthSelect" class="select"></select>
+  <main class="container" style="padding: 2rem 0;">
+    <h1 class="section-title">پنل مدیریت</h1>
+
+    <div class="nav gap-1 mb-3" style="flex-wrap: wrap;">
+      <button class="btn btn-primary btn-sm tab-btn active" data-tab="orders">سفارش‌ها و پرداخت‌ها</button>
+      <button class="btn btn-outline btn-sm tab-btn" data-tab="products">محصولات</button>
+      <button class="btn btn-outline btn-sm tab-btn" data-tab="settings">تنظیمات اقساط</button>
     </div>
 
-    <div id="listView">
-      <div class="card">
-        <div class="card-title">کاربران</div>
-        <div class="card-sub">برای جزئیات روی هر نفر بزن</div>
-        <div class="user-list" id="userList"><div class="loading">در حال بارگذاری...</div></div>
+    <!-- Orders Tab -->
+    <section id="tab-orders">
+      <h2 class="section-title">سفارش‌ها و فیش‌های در انتظار</h2>
+      <div id="adminOrders"><div class="spinner"></div></div>
+    </section>
+
+    <!-- Products Tab -->
+    <section id="tab-products" class="hidden">
+      <div class="flex-between mb-2">
+        <h2 class="section-title" style="margin:0;">مدیریت محصولات</h2>
+        <button class="btn btn-primary btn-sm" id="addProductBtn">+ محصول جدید</button>
       </div>
-    </div>
+      <div id="adminProducts"><div class="spinner"></div></div>
+    </section>
 
-    <div id="detailView" class="hidden">
-      <button class="back-user" id="backToList">← بازگشت به لیست</button>
-      <div id="detailContent"></div>
-    </div>
-
-
-    <div class="card settings-card" id="kmSettingsCard">
-      <div class="card-title">ضریب امتیاز کیلومتر (زن / مرد)</div>
-      <div class="card-sub">روی کالری مؤثر ورزش اعمال می‌شود: calories × ضریب — سپس همان پله‌های امتیاز</div>
-      <div class="settings-row">
-        <div class="settings-field">
-          <label for="factorMale">ضریب مرد (پیش‌فرض ۱)</label>
-          <input type="number" id="factorMale" step="0.01" min="0.1" max="5" value="1">
+    <!-- Settings Tab -->
+    <section id="tab-settings" class="hidden">
+      <h2 class="section-title">فرمول کارمزد اقساط</h2>
+      <div class="glass" style="padding: 1.5rem; max-width: 500px;" id="settingsForm">
+        <div class="form-group">
+          <label>کارمزد پایه (٪)</label>
+          <input type="number" class="form-control" id="baseFee" step="0.1" />
         </div>
-        <div class="settings-field">
-          <label for="factorFemale">ضریب زن (پیش‌فرض ۱.۱۵)</label>
-          <input type="number" id="factorFemale" step="0.01" min="0.1" max="5" value="1.15">
+        <div class="form-group">
+          <label>کارمزد اضافی به ازای هر قسط بیشتر (٪)</label>
+          <input type="number" class="form-control" id="perFee" step="0.1" />
         </div>
+        <div class="form-group">
+          <label>حداقل تعداد اقساط</label>
+          <input type="number" class="form-control" id="minInst" min="1" />
+        </div>
+        <div class="form-group">
+          <label>حداکثر تعداد اقساط</label>
+          <input type="number" class="form-control" id="maxInst" min="1" />
+        </div>
+        <button class="btn btn-primary" id="saveSettings">ذخیره تنظیمات</button>
+        <p class="text-muted mt-2" style="font-size:0.85rem;">
+          فرمول: کارمزد = مبلغ کالا × (پایه + (تعداداقساط - ۱) × اضافی) ٪
+        </p>
       </div>
-      <button type="button" class="settings-save" id="saveKmFactors">ذخیره ضرایب</button>
-      <div class="settings-msg" id="settingsMsg"></div>
+    </section>
+  </main>
 
-    <div class="card" id="coachWordCard" style="margin-top:14px">
-      <div class="card-title">سخن هفته (هفتگی)</div>
-      <div class="card-sub">این جمله بالای همه صفحات برای همه کاربران دیده می‌شود</div>
-      <textarea id="coachWeeklyWord" rows="3" placeholder="جمله این هفته..." style="width:100%;box-sizing:border-box;margin-top:8px;border-radius:12px;border:1px solid var(--border);background:var(--card2,#12131c);color:var(--text);padding:10px 12px;font:inherit;resize:vertical"></textarea>
-      <button type="button" class="settings-save" id="saveCoachWord" style="margin-top:10px">ذخیره سخن هفته</button>
-      <div class="settings-msg" id="coachWordMsg"></div>
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal glass glass-strong">
+      <h2 id="productModalTitle">محصول</h2>
+      <div id="productFormContent"></div>
     </div>
-
-    </div>
-
   </div>
-</div>
 
-<script>
-const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
-const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
-const db = window.__hqlDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-});
+  <script type="module" src="js/config.js"></script>
+  <script type="module">
+    import { getCurrentUser, signOut, isAdmin, supabase } from './js/supabase-client.js';
+    import { fetchAllOrders, reviewPayment, updateOrderStatus } from './js/orders.js';
+    import { fetchAllProducts, updateProduct, createProduct, toggleProductActive } from './js/products.js';
+    import { getInstallmentSettings } from './js/orders.js';
+    import { formatPrice, formatWeight, formatDate, statusLabel, statusClass, showToast } from './js/utils.js';
 
-const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
-const START_YEAR = 1405;
-const HABIT_LABELS = {
-  water: "💧 آب", sleep: "🌙 خواب", instagram: "📱 اینستا", sun: "☀️ آفتاب",
-  solitude: "🧘 خلوت", reading: "📖 مطالعه", sugar: "🍬 قند", dinner: "🍽️ شام", exercise: "🏃 ورزش", discipline: "✅ نظم"
-};
+    let currentUser = null;
 
-let currentUser = null;
-let selectedYear = null;
-let selectedMonth = null;
-let usersCache = [];
-let dayDetailsCache = {};
-let detailUserName = '';
-
-function fa(v) {
-  return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
-}
-function scoreText(v) {
-  const n = Number(v || 0);
-  let s = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  return fa(s);
-}
-function isoDate(d) {
-  return d.toISOString().slice(0, 10);
-}
-function jalaliRange(jy, jm) {
-  const startG = jalaali.toGregorian(jy, jm, 1);
-  const days = jalaali.jalaaliMonthLength(jy, jm);
-  const endG = jalaali.toGregorian(jy, jm, days);
-  return {
-    start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
-    end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd))),
-    days
-  };
-}
-function avatarHtml(name) {
-  const letter = (name && name.trim()[0]) || "?";
-  const src = name ? "images/" + encodeURIComponent(String(name).trim()) + ".png" : null;
-  if (!src) return `<div class="avatar-fb">${letter}</div>`;
-  return `<img class="avatar" src="${src}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${letter}</div>`;
-}
-
-/* backBtn removed — glass nav */
-document.getElementById("backToList").onclick = () => {
-  document.getElementById("detailView").classList.add("hidden");
-  document.getElementById("listView").classList.remove("hidden");
-};
-
-async function init() {
-  let r = await db.auth.getSession();
-  if (!r.data.session) {
-    await new Promise(res => setTimeout(res, 150));
-    r = await db.auth.getSession();
-    if (!r.data.session) {
-      location.href = "index.html";
-      return;
-    }
-  }
-  currentUser = r.data.session.user;
-
-  const prof = await db.from("profiles").select("is_admin, display_name").eq("id", currentUser.id).maybeSingle();
-  if (prof.error || !prof.data || !prof.data.is_admin) {
-    document.getElementById("denyBox").classList.remove("hidden");
-    return;
-  }
-
-  document.getElementById("appBox").classList.remove("hidden");
-  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(true);
-  loadKmFactors();
-  loadCoachWord();
-  const __scw = document.getElementById("saveCoachWord");
-  if (__scw) __scw.onclick = () => saveCoachWord();
-  const saveBtn = document.getElementById("saveKmFactors");
-  if (saveBtn) saveBtn.onclick = saveKmFactors;
-  initMonthPicker();
-  await loadUsers();
-  // deep link از صفحه گزارش: admin.html?u=USER_ID
-  const params = new URLSearchParams(location.search);
-  const deepU = params.get("u");
-  if (deepU) {
-    await openUser(deepU);
-    // اگر کاربر در کش نبود، بعد از لیست باز هم تلاش نکن — openUser خودش هندل می‌کند
-  }
-}
-
-function initMonthPicker() {
-  const now = new Date();
-  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  selectedYear = j.jy;
-  selectedMonth = j.jm;
-
-  const yearSel = document.getElementById("yearSelect");
-  const monthSel = document.getElementById("monthSelect");
-  yearSel.innerHTML = "";
-  for (let y = START_YEAR; y <= j.jy; y++) {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = fa(y);
-    if (y === selectedYear) opt.selected = true;
-    yearSel.appendChild(opt);
-  }
-  monthSel.innerHTML = "";
-  J_MONTHS.forEach((name, i) => {
-    const opt = document.createElement("option");
-    opt.value = i + 1;
-    opt.textContent = name;
-    if (i + 1 === selectedMonth) opt.selected = true;
-    monthSel.appendChild(opt);
-  });
-  yearSel.onchange = () => { selectedYear = Number(yearSel.value); loadUsers(); };
-  monthSel.onchange = () => { selectedMonth = Number(monthSel.value); loadUsers(); };
-}
-
-async function loadUsers() {
-  const list = document.getElementById("userList");
-  list.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
-  document.getElementById("detailView").classList.add("hidden");
-  document.getElementById("listView").classList.remove("hidden");
-
-  const range = jalaliRange(selectedYear, selectedMonth);
-  const now = new Date();
-  const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  let completedDays = range.days;
-  if (selectedYear === jNow.jy && selectedMonth === jNow.jm) {
-    completedDays = Math.max(0, jNow.jd - 1);
-  }
-
-  let boardEnd = range.end;
-  if (selectedYear === jNow.jy && selectedMonth === jNow.jm && completedDays > 0) {
-    const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
-    boardEnd = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
-  }
-
-  try {
-    const [boardRes, profilesRes] = await Promise.all([
-      db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: boardEnd }),
-      db.from("profiles").select("id, display_name, is_admin")
-    ]);
-
-    const board = boardRes.data || [];
-    const profiles = profilesRes.data || [];
-    const byId = Object.fromEntries(profiles.map(p => [p.id, p]));
-
-    // merge all profiles with board scores
-    const scoreMap = Object.fromEntries(board.map(b => [b.user_id, b]));
-    usersCache = profiles.map(p => {
-      const b = scoreMap[p.id];
-      const total = b ? Number(b.total_score) || 0 : 0;
-      const avg = completedDays > 0 ? total / completedDays : 0;
-      return {
-        id: p.id,
-        display_name: p.display_name || "کاربر",
-        is_admin: !!p.is_admin,
-        total,
-        avg: Math.round(avg * 100) / 100,
-        completedDays
-      };
-    }).sort((a, b) => b.avg - a.avg || b.total - a.total);
-
-    if (!usersCache.length) {
-      list.innerHTML = `<div class="empty">کاربری نیست</div>`;
-      return;
-    }
-
-    list.innerHTML = usersCache.map(u => `
-      <button class="user-row" data-id="${u.id}">
-        ${avatarHtml(u.display_name)}
-        <div class="user-meta">
-          <div class="user-name">${u.display_name}${u.is_admin ? " · admin" : ""}</div>
-          <div class="user-sub">مجموع ${scoreText(u.total)} · میانگین ${scoreText(u.avg)}</div>
-        </div>
-        <div class="user-score">${scoreText(u.avg)}</div>
-      </button>
-    `).join("");
-
-    list.querySelectorAll(".user-row").forEach(btn => {
-      btn.onclick = () => openUser(btn.dataset.id);
-    });
-  } catch (e) {
-    list.innerHTML = `<div class="empty">خطا: ${e.message}</div>`;
-  }
-}
-
-async function openUser(userId) {
-  let u = usersCache.find(x => x.id === userId);
-  if (!u) {
-    // از لینک گزارش ممکن است در لیست رتبه نباشد
-    try {
-      const pr = await db.from("profiles").select("id, display_name, is_admin").eq("id", userId).maybeSingle();
-      if (pr.data) {
-        u = { id: pr.data.id, display_name: pr.data.display_name || "کاربر", is_admin: !!pr.data.is_admin, total: 0, avg: 0 };
-        usersCache.push(u);
+    async function init() {
+      currentUser = await getCurrentUser();
+      if (!currentUser || currentUser.profile?.role !== 'admin') {
+        showToast('دسترسی مجاز نیست', 'error');
+        setTimeout(() => location.href = 'index.html', 1200);
+        return;
       }
-    } catch (e) {}
-  }
-  if (!u) {
-    const box = document.getElementById("detailContent");
-    document.getElementById("listView").classList.add("hidden");
-    document.getElementById("detailView").classList.remove("hidden");
-    if (box) box.innerHTML = `<div class="empty">کاربر پیدا نشد</div>`;
-    return;
-  }
-
-  document.getElementById("listView").classList.add("hidden");
-  document.getElementById("detailView").classList.remove("hidden");
-  const box = document.getElementById("detailContent");
-  box.innerHTML = `<div class="loading">در حال بارگذاری آمار ${u.display_name}...</div>`;
-
-  const range = jalaliRange(selectedYear, selectedMonth);
-  const daysInMonth = range.days;
-
-  try {
-    const [logsRes, exRes, mtRes, penRes] = await Promise.all([
-      db.from("daily_logs").select("item_type, score, log_date, value").eq("user_id", userId).gte("log_date", range.start).lte("log_date", range.end),
-      db.from("exercise_logs").select("score, log_date, total_km, weight_kg, aerobic_minutes, running_km").eq("user_id", userId).gte("log_date", range.start).lte("log_date", range.end),
-      db.from("mountain_trips").select("trip_date").eq("user_id", userId).gte("trip_date", range.start).lte("trip_date", range.end),
-      db.from("daily_penalties").select("score, log_date").eq("user_id", userId).gte("log_date", range.start).lte("log_date", range.end)
-    ]);
-
-    if (logsRes.error) throw logsRes.error;
-    if (exRes.error) throw exRes.error;
-
-    const logs = logsRes.data || [];
-    const ex = exRes.data || [];
-    const mt = mtRes.data || [];
-    const pens = (!penRes.error && penRes.data) ? penRes.data : [];
-
-    // Daily totals + breakdown for modal
-    const dayMap = {};
-    const dayBreakdown = {};
-    for (let d = 1; d <= daysInMonth; d++) {
-      const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
-      const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
-      dayMap[iso] = 0;
-      dayBreakdown[iso] = [];
+      loadOrders();
+      loadProducts();
+      loadSettings();
     }
-    logs.forEach(r => {
-      if (dayMap[r.log_date] !== undefined) {
-        dayMap[r.log_date] += Number(r.score) || 0;
-        dayBreakdown[r.log_date].push({
-          type: r.item_type,
-          label: HABIT_LABELS[r.item_type] || r.item_type,
-          score: Number(r.score) || 0
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'btn-primary');
+          b.classList.add('btn-outline');
         });
+        btn.classList.add('active', 'btn-primary');
+        btn.classList.remove('btn-outline');
+
+        document.querySelectorAll('[id^="tab-"]').forEach(s => s.classList.add('hidden'));
+        document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // ---------- Orders ----------
+    async function loadOrders() {
+      const { data: orders } = await fetchAllOrders();
+      const container = document.getElementById('adminOrders');
+
+      if (!orders?.length) {
+        container.innerHTML = '<p class="text-muted">سفارشی وجود ندارد.</p>';
+        return;
       }
-    });
-    ex.forEach(r => {
-      if (dayMap[r.log_date] !== undefined) {
-        dayMap[r.log_date] += Number(r.score) || 0;
-        dayBreakdown[r.log_date].push({
-          type: "exercise",
-          label: HABIT_LABELS.exercise || "🏃 ورزش",
-          score: Number(r.score) || 0
-        });
-      }
-    });
-    pens.forEach(r => {
-      if (dayMap[r.log_date] !== undefined) {
-        dayMap[r.log_date] += Number(r.score) || 0;
-        dayBreakdown[r.log_date].push({
-          type: "penalty",
-          label: "⚠️ جریمه",
-          score: Number(r.score) || 0
-        });
-      }
-    });
 
-    const daily = Object.keys(dayMap).sort().map(date => {
-      const items = dayBreakdown[date] || [];
-      const hasDisc = items.some(it => it.type === "discipline");
-      const hasOther = items.some(it => it.type !== "discipline");
-      let status = "missed";
-      if (hasOther || hasDisc) {
-        status = hasDisc ? "timely" : "late";
-      }
-      // فقط روزهای آینده را missed نکن — بی‌رنگ‌تر؟ برای سادگی missed فقط گذشته بدون ثبت
-      const todayISO = isoDate(new Date());
-      if (date > todayISO) status = "future";
-      return { date, score: dayMap[date], items, status };
-    });
-    dayDetailsCache = {};
-    daily.forEach(d => { dayDetailsCache[d.date] = d; });
-    detailUserName = u.display_name || "کاربر";
+      container.innerHTML = '';
+      orders.forEach(order => {
+        const pendingPayments = (order.payments || []).filter(p => p.status === 'pending');
 
-    const maxAbs = Math.max(...daily.map(d => Math.abs(d.score)), 1);
-    let bestDay = null, bestScore = -Infinity;
-    daily.forEach(d => {
-      if (d.score > bestScore) { bestScore = d.score; bestDay = d.date; }
-    });
-    if (bestScore <= 0) bestDay = null;
+        const card = document.createElement('div');
+        card.className = 'glass';
+        card.style.cssText = 'padding:1.25rem; margin-bottom:1rem;';
 
-    const dense = daysInMonth >= 30;
-    const chartHtml = `<div class="chart-wrap"><div class="chart ${dense ? "dense" : ""}" id="adminChart">` +
-      daily.map(d => {
-        const sc = d.score;
-        const status = d.status || "missed";
-        const h = status === "missed" ? 8 : status === "future" ? 3 : (Math.abs(sc) < 0.001 ? 4 : Math.max(4, (Math.abs(sc) / maxAbs) * 110));
-        const [y, m, day] = d.date.split("-").map(Number);
-        const j = jalaali.toJalaali(y, m, day);
-        const isBest = bestDay === d.date && status !== "missed";
-        const showLabel = !dense || j.jd === 1 || j.jd === daysInMonth || j.jd % 2 === 0 || isBest;
-        const statusFa = status === "timely" ? "به‌موقع" : status === "late" ? "با تأخیر" : "بدون ثبت";
-        const tip = `${fa(j.jd)} ${J_MONTHS[selectedMonth - 1]}: ${scoreText(sc)} · ${statusFa}`;
-        return `<div class="bar-wrap ${isBest ? "best" : ""} ${status === "missed" ? "missed" : ""}" data-date="${d.date}" title="${tip}">
-          <div class="bar ${status}" style="height:${h}px"></div>
-          <div class="bar-label">${showLabel ? fa(j.jd) : ""}</div>
-        </div>`;
-      }).join("") + `</div></div>`;
+        let paymentsHtml = '';
+        if (pendingPayments.length) {
+          paymentsHtml = pendingPayments.map(p => `
+            <div class="glass glass-dark" style="padding:0.9rem; margin-top:0.75rem;">
+              <div class="flex-between">
+                <span>فیش: ${formatPrice(p.amount)} — ${formatDate(p.transfer_date)}</span>
+                <span class="status status-pending">در انتظار</span>
+              </div>
+              <p style="font-size:0.85rem; margin:0.4rem 0;">${p.receipt_url || '—'}</p>
+              <div class="gap-1 flex mt-1">
+                <button class="btn btn-success btn-sm approve-pay" data-id="${p.id}">تأیید</button>
+                <button class="btn btn-danger btn-sm reject-pay" data-id="${p.id}">رد</button>
+              </div>
+            </div>
+          `).join('');
+        }
 
-    const totalScore = logs.reduce((s, r) => s + (Number(r.score) || 0), 0)
-      + ex.reduce((s, r) => s + (Number(r.score) || 0), 0)
-      + pens.reduce((s, r) => s + (Number(r.score) || 0), 0);
-    const totalKm = ex.reduce((s, r) => s + (Number(r.total_km) || 0), 0);
-    const activeDays = new Set([
-      ...logs.map(r => r.log_date),
-      ...ex.map(r => r.log_date)
-    ]).size;
-
-    const habitMap = {};
-    logs.forEach(r => {
-      if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
-      habitMap[r.item_type].count++;
-      habitMap[r.item_type].total += Number(r.score) || 0;
-    });
-    if (ex.length) {
-      habitMap.exercise = {
-        count: ex.length,
-        total: ex.reduce((s, r) => s + (Number(r.score) || 0), 0)
-      };
-    }
-
-    const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
-    const habitsHtml = order.filter(k => habitMap[k]).map(k => {
-      const h = habitMap[k];
-      const avg = h.count ? h.total / h.count : 0;
-      return `<div class="habit-row">
-        <div class="habit-name">${HABIT_LABELS[k] || k}</div>
-        <div class="habit-nums">
-          <div><b>${fa(h.count)}</b>روز</div>
-          <div><b>${scoreText(h.total)}</b>مجموع</div>
-          <div><b>${scoreText(avg)}</b>میانگین</div>
-        </div>
-      </div>`;
-    }).join("") || `<div class="empty">عادتی ثبت نشده</div>`;
-
-    box.innerHTML = `
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-          ${avatarHtml(u.display_name)}
-          <div>
-            <div class="card-title" style="margin:0">${u.display_name}</div>
-            <div class="card-sub" style="margin:0">جزئیات ماه انتخاب‌شده</div>
+        card.innerHTML = `
+          <div class="flex-between mb-1">
+            <div>
+              <strong>${order.product?.name}</strong> — ${formatWeight(order.quantity_kg)}
+              <br><small class="text-muted">${order.user?.full_name || ''} | ${order.user?.phone || ''}</small>
+            </div>
+            <span class="status ${statusClass(order.status)}">${statusLabel(order.status)}</span>
           </div>
-        </div>
-        <div class="summary">
-          <div class="stat"><div class="stat-label">امتیاز کل</div><div class="stat-value ${totalScore>0?"pos":totalScore<0?"neg":""}">${scoreText(totalScore)}</div></div>
-          <div class="stat"><div class="stat-label">روز فعال</div><div class="stat-value">${fa(activeDays)}</div></div>
-          <div class="stat"><div class="stat-label">کیلومتر</div><div class="stat-value">${scoreText(Math.round(totalKm*100)/100)}</div></div>
-          <div class="stat"><div class="stat-label">کوه</div><div class="stat-value">${fa(mt.length)} / ۳</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">نمودار روزانه</div>
-        <div class="card-sub">امتیاز هر روز · ${fa(daysInMonth)} روز ماه${dense ? " · فشرده" : ""}</div>
-        ${chartHtml}
-      </div>
-      <div class="card">
-        <div class="card-title">عادت‌ها</div>
-        <div class="card-sub">تعداد روز · مجموع · میانگین</div>
-        ${habitsHtml}
-      </div>
-    `;
+          <div class="text-muted" style="font-size:0.85rem;">
+            ${formatDate(order.created_at)} | جمع: ${formatPrice(order.total_amount)} | ${order.num_installments} قسط
+          </div>
+          <div class="mt-1" style="font-size:0.85rem;">آدرس: ${order.shipping_address || '—'}</div>
+          ${paymentsHtml}
+          <div class="mt-2 gap-1 flex">
+            <select class="form-control status-select" data-id="${order.id}" style="width:auto; padding:0.4rem 0.8rem;">
+              <option value="">تغییر وضعیت...</option>
+              <option value="approved">تأیید شده</option>
+              <option value="shipping">در حال ارسال</option>
+              <option value="delivered">تحویل شده</option>
+              <option value="cancelled">لغو</option>
+            </select>
+          </div>
+        `;
 
-    box.querySelectorAll(".bar-wrap[data-date]").forEach(el => {
-      el.addEventListener("click", () => openDayModal(el.dataset.date));
+        card.querySelectorAll('.approve-pay').forEach(btn => {
+          btn.addEventListener('click', () => handleReview(btn.dataset.id, 'approved'));
+        });
+        card.querySelectorAll('.reject-pay').forEach(btn => {
+          btn.addEventListener('click', () => handleReview(btn.dataset.id, 'rejected'));
+        });
+        card.querySelector('.status-select')?.addEventListener('change', async (e) => {
+          if (!e.target.value) return;
+          await updateOrderStatus(e.target.dataset.id, e.target.value);
+          showToast('وضعیت به‌روز شد', 'success');
+          loadOrders();
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    async function handleReview(paymentId, status) {
+      const note = status === 'rejected' ? prompt('دلیل رد (اختیاری):') || '' : '';
+      const { error } = await reviewPayment(paymentId, status, currentUser.user.id, note);
+      if (error) {
+        showToast('خطا: ' + error.message, 'error');
+        return;
+      }
+      showToast(status === 'approved' ? 'پرداخت تأیید شد' : 'پرداخت رد شد', 'success');
+      loadOrders();
+    }
+
+    // ---------- Products ----------
+    async function loadProducts() {
+      const products = await fetchAllProducts();
+      const container = document.getElementById('adminProducts');
+
+      if (!products.length) {
+        container.innerHTML = '<p class="text-muted">محصولی نیست.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-wrap glass">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>قیمت/کیلو</th>
+                <th>موجودی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${products.map(p => `
+                <tr>
+                  <td>${p.name}</td>
+                  <td>${formatPrice(p.price_per_kg)}</td>
+                  <td>${formatWeight(p.stock_kg)}</td>
+                  <td><span class="status ${p.is_active ? 'status-approved' : 'status-rejected'}">${p.is_active ? 'فعال' : 'غیرفعال'}</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-sm edit-prod" data-id="${p.id}">ویرایش</button>
+                    <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'} toggle-prod" data-id="${p.id}" data-active="${p.is_active}">
+                      ${p.is_active ? 'غیرفعال' : 'فعال'}
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.querySelectorAll('.toggle-prod').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const active = btn.dataset.active === 'true';
+          await toggleProductActive(btn.dataset.id, !active);
+          showToast('وضعیت محصول تغییر کرد', 'success');
+          loadProducts();
+        });
+      });
+
+      container.querySelectorAll('.edit-prod').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prod = products.find(p => p.id === btn.dataset.id);
+          openProductModal(prod);
+        });
+      });
+    }
+
+    document.getElementById('addProductBtn').addEventListener('click', () => openProductModal(null));
+
+    function openProductModal(product) {
+      const isEdit = !!product;
+      document.getElementById('productModalTitle').textContent = isEdit ? 'ویرایش محصول' : 'محصول جدید';
+      document.getElementById('productFormContent').innerHTML = `
+        <div class="form-group">
+          <label>نام</label>
+          <input class="form-control" id="pName" value="${product?.name || ''}" />
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <textarea class="form-control" id="pDesc" rows="2">${product?.description || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>قیمت هر کیلو (تومان)</label>
+          <input type="number" class="form-control" id="pPrice" value="${product?.price_per_kg || ''}" />
+        </div>
+        <div class="form-group">
+          <label>موجودی (کیلوگرم)</label>
+          <input type="number" step="0.1" class="form-control" id="pStock" value="${product?.stock_kg || 0}" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="document.getElementById('productModal').classList.remove('active')">انصراف</button>
+          <button class="btn btn-primary" id="saveProduct">ذخیره</button>
+        </div>
+      `;
+
+      document.getElementById('productModal').classList.add('active');
+
+      document.getElementById('saveProduct').onclick = async () => {
+        const payload = {
+          name: document.getElementById('pName').value.trim(),
+          description: document.getElementById('pDesc').value.trim(),
+          price_per_kg: parseFloat(document.getElementById('pPrice').value),
+          stock_kg: parseFloat(document.getElementById('pStock').value)
+        };
+
+        if (!payload.name || !payload.price_per_kg) {
+          showToast('نام و قیمت الزامی است', 'warning');
+          return;
+        }
+
+        if (isEdit) {
+          await updateProduct(product.id, payload);
+        } else {
+          await createProduct({ ...payload, is_active: true });
+        }
+        document.getElementById('productModal').classList.remove('active');
+        showToast('ذخیره شد', 'success');
+        loadProducts();
+      };
+    }
+
+    // ---------- Settings ----------
+    async function loadSettings() {
+      const s = await getInstallmentSettings();
+      document.getElementById('baseFee').value = s.base_fee_percent;
+      document.getElementById('perFee').value = s.per_installment_fee_percent;
+      document.getElementById('minInst').value = s.min_installments;
+      document.getElementById('maxInst').value = s.max_installments;
+    }
+
+    document.getElementById('saveSettings').addEventListener('click', async () => {
+      const updates = {
+        base_fee_percent: parseFloat(document.getElementById('baseFee').value),
+        per_installment_fee_percent: parseFloat(document.getElementById('perFee').value),
+        min_installments: parseInt(document.getElementById('minInst').value),
+        max_installments: parseInt(document.getElementById('maxInst').value)
+      };
+
+      // Update the active settings row (simplified: update first active)
+      const { data: current } = await supabase
+        .from('installment_settings')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      if (current) {
+        await supabase.from('installment_settings').update(updates).eq('id', current.id);
+      }
+      showToast('تنظیمات ذخیره شد', 'success');
     });
-  } catch (e) {
-    box.innerHTML = `<div class="empty">خطا: ${e.message}<br><small>اگر RLS ادمین را ندادی، آمار دیگران خوانده نمی‌شود.</small></div>`;
-  }
-}
 
-function openDayModal(isoDateStr) {
-  const data = dayDetailsCache[isoDateStr];
-  if (!data) return;
-  const [y, m, d] = isoDateStr.split("-").map(Number);
-  const j = jalaali.toJalaali(y, m, d);
-  const dateLabel = fa(j.jd) + " " + J_MONTHS[j.jm - 1] + " " + fa(j.jy);
-  const total = Number(data.score) || 0;
-  const items = data.items || [];
-  let rows = items.length
-    ? items.map(it => {
-        const sc = Number(it.score) || 0;
-        const cls = sc > 0 ? "pos" : sc < 0 ? "neg" : "";
-        return `<div class="day-modal-row">
-          <div class="day-modal-row-name">${it.label}</div>
-          <div class="day-modal-row-val ${cls}">${scoreText(sc)}</div>
-        </div>`;
-      }).join("")
-    : `<div class="empty" style="padding:16px">ثبتی برای این روز نیست</div>`;
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await signOut();
+      location.href = 'index.html';
+    });
 
-  const overlay = document.createElement("div");
-  overlay.className = "day-modal-overlay";
-  overlay.innerHTML = `
-    <div class="day-modal" role="dialog">
-      <div class="day-modal-header">
-        <div>
-          <div class="day-modal-title">${detailUserName}</div>
-          <div class="day-modal-sub">${dateLabel}</div>
-        </div>
-        <button type="button" class="day-modal-close" aria-label="بستن">✕</button>
-      </div>
-      <div class="day-modal-total">
-        <div class="day-modal-total-label">امتیاز روز</div>
-        <div class="day-modal-total-value ${total>0?"pos":total<0?"neg":""}" style="color:${total>0?"var(--positive)":total<0?"var(--negative)":"var(--text)"}">${scoreText(total)}</div>
-      </div>
-      <div class="day-modal-list">${rows}</div>
-    </div>`;
-  const close = () => overlay.remove();
-  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-  overlay.querySelector(".day-modal-close").onclick = close;
-  document.body.appendChild(overlay);
-}
+    document.getElementById('productModal').addEventListener('click', e => {
+      if (e.target.id === 'productModal') e.target.classList.remove('active');
+    });
 
-
-db.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_OUT") location.href = "index.html";
-});
-
-
-async function loadKmFactors() {
-  const msg = document.getElementById("settingsMsg");
-  try {
-    const { data, error } = await db.from("app_settings")
-      .select("key, value")
-      .in("key", ["km_factor_male", "km_factor_female"]);
-    if (error) throw error;
-    const map = {};
-    (data || []).forEach(r => { map[r.key] = Number(r.value); });
-    const m = document.getElementById("factorMale");
-    const f = document.getElementById("factorFemale");
-    if (m && map.km_factor_male != null) m.value = map.km_factor_male;
-    if (f && map.km_factor_female != null) f.value = map.km_factor_female;
-  } catch (e) {
-    if (msg) {
-      msg.textContent = "خواندن تنظیمات: " + (e.message || e);
-      msg.className = "settings-msg err";
-    }
-  }
-}
-
-async function saveKmFactors() {
-  const msg = document.getElementById("settingsMsg");
-  const male = Number(document.getElementById("factorMale").value);
-  const female = Number(document.getElementById("factorFemale").value);
-  if (!(male > 0) || !(female > 0)) {
-    msg.textContent = "ضرایب باید عدد مثبت باشند";
-    msg.className = "settings-msg err";
-    return;
-  }
-  msg.textContent = "در حال ذخیره...";
-  msg.className = "settings-msg";
-  try {
-    const uid = currentUser?.id || null;
-    const rows = [
-      { key: "km_factor_male", value: male, updated_at: new Date().toISOString(), updated_by: uid },
-      { key: "km_factor_female", value: female, updated_at: new Date().toISOString(), updated_by: uid }
-    ];
-    const { error } = await db.from("app_settings").upsert(rows, { onConflict: "key" });
-    if (error) throw error;
-    msg.textContent = "ذخیره شد ✓";
-    msg.className = "settings-msg ok";
-  } catch (e) {
-    msg.textContent = "خطا: " + (e.message || e);
-    msg.className = "settings-msg err";
-  }
-}
-
-
-
-  async function loadCoachWord() {
-    try {
-      const { data } = await db.from("site_messages").select("key, body").eq("key", "coach_weekly_word").maybeSingle();
-      const ta = document.getElementById("coachWeeklyWord");
-      if (ta && data && data.body != null) ta.value = data.body;
-    } catch (e) {}
-  }
-  async function saveCoachWord() {
-    const ta = document.getElementById("coachWeeklyWord");
-    const msg = document.getElementById("coachWordMsg");
-    if (!ta) return;
-    const val = ta.value.trim();
-    try {
-      const { error } = await db.from("site_messages").upsert(
-        { key: "coach_weekly_word", body: val, updated_at: new Date().toISOString() },
-        { onConflict: "key" }
-      );
-      if (error) throw error;
-      if (msg) {
-        msg.textContent = "ذخیره شد ✓";
-        msg.className = "settings-msg ok";
-      }
-      const existing = document.getElementById("hqlCoachWord");
-      if (existing) existing.remove();
-      if (typeof window.hqlReloadCoachWord === "function") setTimeout(window.hqlReloadCoachWord, 200);
-    } catch (e) {
-      if (msg) {
-        msg.textContent = "خطا: " + (e.message || e);
-        msg.className = "settings-msg err";
-      }
-    }
-  }
-
-init();
-</script>
-  <script src="nav.js"></script>
+    init();
+  </script>
 </body>
 </html>
