@@ -40,7 +40,7 @@ export async function renderNavbar(container, { active = "", profile: preloadedP
   container.innerHTML = `
     <nav class="topbar">
       <div class="container">
-        <a href="index.html" class="brand"><span class="dot">●</span> برنج قسطی</a>
+        <a href="index.html" class="brand"><span class="dot">●</span> برنج ایرانی</a>
         <button class="nav-toggle" id="nav-toggle-btn" aria-label="باز کردن منو" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
