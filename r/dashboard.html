@@ -67,7 +67,13 @@
 
     // اگر از صفحه‌ی محصولات با ?product=<id> اومده، مستقیم فرم سفارش رو با همون محصول باز کن
     const preselected = new URLSearchParams(window.location.search).get("product");
-    if (preselected) openOrderForm(preselected);
+    if (preselected) {
+      openOrderForm(preselected);
+      // پاک کردن query param از URL تا رفرش دوباره‌ی صفحه باعث باز شدن مجدد پاپ‌آپ نشه
+      const url = new URL(window.location.href);
+      url.searchParams.delete("product");
+      window.history.replaceState({}, "", url);
+    }
   }
 </script>
 </body>
