@@ -1,15 +1,16 @@
 // =========================================================
-// سفارش‌های من — نمایش اقساط و آپلود رسید پرداخت کارت‌به‌کارت
+// سفارش‌های من — نمایش اقساط و ارسال رسید پرداخت از طریق تلگرام
 // =========================================================
-import { supabase, RECEIPTS_BUCKET } from "./supabase-client.js";
-import { formatToman, statusBadge, effectiveInstallmentStatus, toast, showError, el } from "./ui.js";
+import { supabase } from "./supabase-client.js";
+import { formatToman, statusBadge, effectiveInstallmentStatus, toast, showError } from "./ui.js";
 import { formatJalali } from "./jalali.js";
+import { telegramReceiptLink } from "./config.js";
 
 export async function fetchMyOrders(userId) {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      `id, weight_grams, total_price, installment_count, status, created_at,
+      `id, weight_grams, total_price, installment_count, status, fulfillment_status, created_at,
        rice_products ( name ),
        installments ( id, installment_number, amount, due_date, status,
          payments ( id, status, created_at ) )`
@@ -24,13 +25,15 @@ function orderCardHTML(order) {
   const installments = [...order.installments].sort(
     (a, b) => a.installment_number - b.installment_number
   );
+  const productName = order.rice_products?.name || "برنج";
+  const orderLabel = `${productName} (${order.id.slice(0, 8)})`;
 
   const rows = installments
     .map((inst) => {
       const latestPayment = [...(inst.payments || [])].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       )[0];
-      const canUpload = inst.status === "pending" || inst.status === "rejected";
+      const canSend = inst.status === "pending" || inst.status === "rejected";
       return `
         <div class="installment-row" data-installment-id="${inst.id}">
           <div>
@@ -41,10 +44,14 @@ function orderCardHTML(order) {
           <div>${statusBadge(effectiveInstallmentStatus(inst.status, inst.due_date))}</div>
           <div>
             ${
-              canUpload
+              canSend
                 ? `<label class="btn btn-ghost btn-sm">
-                     آپلود رسید
-                     <input type="file" accept="image/*" class="hidden receipt-input" data-installment-id="${inst.id}" data-amount="${inst.amount}" />
+                     ارسال رسید در تلگرام
+                     <input type="file" accept="image/*" class="hidden receipt-input"
+                       data-installment-id="${inst.id}"
+                       data-amount="${inst.amount}"
+                       data-installment-number="${inst.installment_number}"
+                       data-order-label="${orderLabel}" />
                    </label>`
                 : latestPayment
                 ? `<span class="text-muted">ارسال شده</span>`
@@ -59,8 +66,11 @@ function orderCardHTML(order) {
   return `
     <div class="glass glass-card" data-order-id="${order.id}">
       <div class="row justify-between wrap gap-sm">
-        <h3>${order.rice_products?.name || "برنج"}</h3>
-        ${statusBadge(order.status)}
+        <h3>${productName}</h3>
+        <div class="row gap-sm">
+          ${statusBadge(order.status)}
+          ${statusBadge(order.fulfillment_status)}
+        </div>
       </div>
       <p class="text-muted">
         وزن: ${(order.weight_grams / 1000).toLocaleString("fa-IR")} کیلوگرم ·
@@ -80,31 +90,27 @@ export async function renderMyOrders(root, userId) {
       return;
     }
     root.innerHTML = orders.map(orderCardHTML).join("");
-    root.addEventListener("change", (e) => handleReceiptUpload(e, userId, () => renderMyOrders(root, userId)));
+    root.addEventListener("change", (e) => handleSendReceipt(e, () => renderMyOrders(root, userId)));
   } catch (err) {
     console.error(err);
     root.innerHTML = `<div class="empty-state">خطا در بارگذاری سفارش‌ها.</div>`;
   }
 }
 
-async function handleReceiptUpload(e, userId, onDone) {
+async function handleSendReceipt(e, onDone) {
   const input = e.target.closest(".receipt-input");
   if (!input || !input.files?.length) return;
 
-  const file = input.files[0];
   const installmentId = input.dataset.installmentId;
   const amount = Number(input.dataset.amount);
+  const installmentNumber = input.dataset.installmentNumber;
+  const orderLabel = input.dataset.orderLabel;
 
   try {
-    const path = `${userId}/${installmentId}-${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from(RECEIPTS_BUCKET)
-      .upload(path, file, { upsert: false });
-    if (uploadError) throw uploadError;
-
+    // یک ادعای پرداخت ثبت میشه تا ادمین توی پنل ببینتش (بدون تصویر —
+    // تصویر مستقیم توی تلگرام برای فروشنده ارسال میشه)
     const { error: paymentError } = await supabase.from("payments").insert({
       installment_id: installmentId,
-      receipt_image_path: path,
       amount_claimed: amount,
       status: "pending",
     });
@@ -112,10 +118,19 @@ async function handleReceiptUpload(e, userId, onDone) {
 
     await supabase.from("installments").update({ status: "submitted" }).eq("id", installmentId);
 
-    toast("رسید با موفقیت ارسال شد و در انتظار بررسی است.");
+    const link = telegramReceiptLink({
+      orderLabel,
+      installmentNumber,
+      amount: formatToman(amount),
+    });
+    window.open(link, "_blank");
+
+    toast("حالا توی تلگرامی که باز شد، همون عکس رسید رو ضمیمه و ارسال کن.");
     onDone?.();
   } catch (err) {
     console.error(err);
-    showError(err.message || "آپلود رسید با خطا مواجه شد.");
+    showError(err.message || "ثبت درخواست با خطا مواجه شد.");
+  } finally {
+    input.value = "";
   }
 }
