@@ -13,6 +13,7 @@ export async function renderAdminSettings(root) {
       <h3>فرمول کارمزد اقساط</h3>
       <p class="text-muted">
         کارمزد = پایه + (تعداد اقساط − ۱) × افزایش به‌ازای هر قسط. این فرمول روی قیمت نهایی سفارش‌های جدید اعمال می‌شود.
+        برای پرداخت یک‌جا (۱ قسط)، هیچ کارمزدی اعمال نمی‌شود.
       </p>
       <div class="field"><label>کارمزد پایه (٪)</label>
         <input class="input" type="number" step="0.1" id="st-base" value="${settings.feeBasePercent}" /></div>
