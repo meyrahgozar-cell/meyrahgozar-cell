@@ -1,5 +1,6 @@
 // =========================================================
-// سفارش‌های من — نمایش اقساط و ارسال رسید پرداخت از طریق تلگرام
+// سفارش‌های من — هر سفارش یک کارت، با یک گزینه‌ی جداگانه برای لیست اقساط
+// (به‌جای نمایش فله‌ای همه‌ی اقساط همه‌ی سفارش‌ها پشت سر هم)
 // =========================================================
 import { supabase } from "./supabase-client.js";
 import { formatToman, statusBadge, effectiveInstallmentStatus, toast, showError } from "./ui.js";
@@ -21,47 +22,61 @@ export async function fetchMyOrders(userId) {
   return data;
 }
 
+function installmentRowHTML(inst, orderLabel, { plainLabel = false } = {}) {
+  const latestPayment = [...(inst.payments || [])].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  )[0];
+  const canSend = inst.status === "pending" || inst.status === "rejected";
+  const titleText = plainLabel ? "پرداخت" : `قسط ${inst.installment_number}`;
+
+  return `
+    <div class="installment-row" data-installment-id="${inst.id}">
+      <div>
+        <strong>${titleText}</strong>
+        <div class="text-muted">سررسید: ${formatJalali(inst.due_date)}</div>
+      </div>
+      <div>${formatToman(inst.amount)}</div>
+      <div>${statusBadge(effectiveInstallmentStatus(inst.status, inst.due_date))}</div>
+      <div>
+        ${
+          canSend
+            ? `<label class="btn btn-ghost btn-sm">
+                 ارسال رسید در تلگرام
+                 <input type="file" accept="image/*" class="hidden receipt-input"
+                   data-installment-id="${inst.id}"
+                   data-amount="${inst.amount}"
+                   data-installment-number="${inst.installment_number}"
+                   data-order-label="${orderLabel}" />
+               </label>`
+            : latestPayment
+            ? `<span class="text-muted">ارسال شده</span>`
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
+
 function orderCardHTML(order) {
   const installments = [...order.installments].sort(
     (a, b) => a.installment_number - b.installment_number
   );
   const productName = order.rice_products?.name || "برنج";
   const orderLabel = `${productName} (${order.id.slice(0, 8)})`;
+  const isSinglePayment = order.installment_count <= 1;
 
-  const rows = installments
-    .map((inst) => {
-      const latestPayment = [...(inst.payments || [])].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      )[0];
-      const canSend = inst.status === "pending" || inst.status === "rejected";
-      return `
-        <div class="installment-row" data-installment-id="${inst.id}">
-          <div>
-            <strong>قسط ${inst.installment_number}</strong>
-            <div class="text-muted">سررسید: ${formatJalali(inst.due_date)}</div>
-          </div>
-          <div>${formatToman(inst.amount)}</div>
-          <div>${statusBadge(effectiveInstallmentStatus(inst.status, inst.due_date))}</div>
-          <div>
-            ${
-              canSend
-                ? `<label class="btn btn-ghost btn-sm">
-                     ارسال رسید در تلگرام
-                     <input type="file" accept="image/*" class="hidden receipt-input"
-                       data-installment-id="${inst.id}"
-                       data-amount="${inst.amount}"
-                       data-installment-number="${inst.installment_number}"
-                       data-order-label="${orderLabel}" />
-                   </label>`
-                : latestPayment
-                ? `<span class="text-muted">ارسال شده</span>`
-                : ""
-            }
-          </div>
-        </div>
-      `;
-    })
-    .join("");
+  const summaryLine = isSinglePayment
+    ? `وزن: ${(order.weight_grams / 1000).toLocaleString("fa-IR")} کیلوگرم · مبلغ: ${formatToman(order.total_price)}`
+    : `وزن: ${(order.weight_grams / 1000).toLocaleString("fa-IR")} کیلوگرم · مبلغ کل: ${formatToman(order.total_price)} · ${order.installment_count} قسط`;
+
+  const installmentsSection = isSinglePayment
+    ? `<div class="installment-list">${installmentRowHTML(installments[0], orderLabel, { plainLabel: true })}</div>`
+    : `
+      <button class="btn btn-ghost btn-sm toggle-installments-btn" data-order-id="${order.id}">نمایش لیست اقساط</button>
+      <div class="installment-list hidden" data-order-id="${order.id}">
+        ${installments.map((inst) => installmentRowHTML(inst, orderLabel)).join("")}
+      </div>
+    `;
 
   return `
     <div class="glass glass-card" data-order-id="${order.id}">
@@ -72,11 +87,8 @@ function orderCardHTML(order) {
           ${statusBadge(order.fulfillment_status)}
         </div>
       </div>
-      <p class="text-muted">
-        وزن: ${(order.weight_grams / 1000).toLocaleString("fa-IR")} کیلوگرم ·
-        مبلغ کل: ${formatToman(order.total_price)} · ${order.installment_count} قسط
-      </p>
-      <div class="installment-list">${rows}</div>
+      <p class="text-muted">${summaryLine}</p>
+      ${installmentsSection}
     </div>
   `;
 }
@@ -89,8 +101,15 @@ export async function renderMyOrders(root, userId) {
       root.innerHTML = `<div class="empty-state">هنوز سفارشی ثبت نکرده‌اید.</div>`;
       return;
     }
-    root.innerHTML = orders.map(orderCardHTML).join("");
+    root.innerHTML = `<div class="stack gap-md">${orders.map(orderCardHTML).join("")}</div>`;
     root.addEventListener("change", (e) => handleSendReceipt(e, () => renderMyOrders(root, userId)));
+    root.addEventListener("click", (e) => {
+      const btn = e.target.closest(".toggle-installments-btn");
+      if (!btn) return;
+      const list = root.querySelector(`.installment-list[data-order-id="${btn.dataset.orderId}"]`);
+      const isHidden = list.classList.toggle("hidden");
+      btn.textContent = isHidden ? "نمایش لیست اقساط" : "بستن لیست اقساط";
+    });
   } catch (err) {
     console.error(err);
     root.innerHTML = `<div class="empty-state">خطا در بارگذاری سفارش‌ها.</div>`;
