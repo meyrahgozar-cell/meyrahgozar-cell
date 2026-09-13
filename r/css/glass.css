@@ -267,3 +267,16 @@ table.data-table th { color: var(--ivory-dim); font-weight: 700; font-size: 0.85
   color: var(--grain-500);
   text-shadow: 0 0 6px rgba(232, 196, 104, 0.85), 0 0 14px rgba(232, 196, 104, 0.45);
 }
+
+/* نشان مقدار خرید کنار اسم نظردهنده — درخشش روی خودِ نوشته‌ست، نه روی کادر */
+.buy-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(232, 196, 104, 0.1);
+  color: var(--grain-500);
+  text-shadow: 0 0 6px rgba(232, 196, 104, 0.75), 0 0 12px rgba(232, 196, 104, 0.4);
+}
