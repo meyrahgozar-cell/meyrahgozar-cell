@@ -178,7 +178,7 @@ input[type="range"].slider::-moz-range-progress {
 }
 
 /* جدول اقساط */
-.installment-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.installment-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.85rem; }
 .installment-row {
   display: flex;
   align-items: center;
