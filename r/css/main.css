@@ -358,3 +358,13 @@ footer.site-footer {
   font-weight: 700;
 }
 .text-link:hover { text-decoration: underline; }
+
+.btn-xs {
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+}
+
+/* وضعیت ارسال سفارش (جدا از وضعیت مالی) */
+.badge-processing { background: rgba(232, 196, 104, 0.16); color: var(--grain-500); }
+.badge-shipped { background: rgba(140, 170, 220, 0.18); color: #a9c2e8; }
+.badge-delivered { background: rgba(127, 184, 138, 0.18); color: var(--success); }
