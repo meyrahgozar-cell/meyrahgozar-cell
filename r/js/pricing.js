@@ -29,6 +29,7 @@ export async function loadFeeSettings(supabase) {
 }
 
 export function calcFeePercent(installmentCount, settings) {
+  if (installmentCount <= 1) return 0; // پرداخت یک‌جا بدون کارمزد
   return (
     settings.feeBasePercent +
     Math.max(0, installmentCount - 1) * settings.feePerInstallmentPercent
