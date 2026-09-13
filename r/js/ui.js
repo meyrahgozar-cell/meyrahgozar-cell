@@ -65,6 +65,9 @@ const STATUS_LABELS = {
   active: "در حال پرداخت",
   completed: "تسویه شده",
   cancelled: "لغو شده",
+  processing: "در حال آماده‌سازی",
+  shipped: "ارسال شد",
+  delivered: "تحویل داده شد",
 };
 
 export function statusLabel(status) {
