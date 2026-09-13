@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>داشبورد من — برنج ایرانی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/glass.css" />
+</head>
+<body class="app-bg">
+
+<div id="navbar"></div>
+
+<div class="container section">
+  <div class="row justify-between wrap gap-sm" style="margin-bottom:1.5rem;">
+    <h2>سفارش‌های من</h2>
+    <button class="btn btn-primary" id="new-order-btn">+ سفارش جدید</button>
+  </div>
+  <div id="orders-container"><div class="skeleton" style="height:160px;"></div></div>
+</div>
+
+<div class="modal-backdrop hidden" id="order-modal">
+  <div class="glass glass-strong glass-panel modal-box">
+    <div class="row justify-between" style="margin-bottom:1rem;">
+      <h3>سفارش جدید</h3>
+      <button class="btn btn-ghost btn-sm" id="close-order-modal">✕</button>
+    </div>
+    <div id="order-form-root"></div>
+  </div>
+</div>
+
+<script>
+  // ابزار موقت عیب‌یابی: هر خطایی رو مستقیم روی صفحه نشون میده،
+  // چون بدون دسترسی به کنسول، صفحه‌ی سفید هیچ سرنخی نمیده.
+  // بعد از حل مشکل می‌تونی این بلوک رو حذف کنی.
+  function showDebugBox(text) {
+    var box = document.createElement("div");
+    box.style.cssText =
+      "max-width:640px;margin:1.5rem auto;padding:1rem;background:#3a1c16;color:#f7f3e8;" +
+      "border-radius:12px;font-family:monospace;white-space:pre-wrap;direction:ltr;" +
+      "text-align:left;font-size:0.8rem;position:relative;z-index:999;";
+    box.textContent = text;
+    document.body.prepend(box);
+  }
+  window.addEventListener("error", function (e) {
+    showDebugBox("خطای اسکریپت: " + (e.message || "") + "\n" + (e.filename ? e.filename + ":" + e.lineno : ""));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e.reason;
+    showDebugBox("خطای async: " + ((r && (r.stack || r.message)) || String(r)));
+  });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+  import { guardCustomer } from "./js/auth.js";
+  import { renderNavbar } from "./js/navbar.js";
+  import { renderMyOrders } from "./js/my-orders.js";
+  import { initOrderForm } from "./js/order-form.js";
+  import { showError } from "./js/ui.js";
+
+  function showFatalError(err) {
+    console.error(err);
+    document.body.innerHTML = `
+      <div style="max-width:640px;margin:3rem auto;padding:1.5rem;background:#3a1c16;
+        color:#f7f3e8;border-radius:12px;font-family:monospace;white-space:pre-wrap;
+        direction:ltr;text-align:left;font-size:0.85rem;">
+        <strong>خطای بارگذاری داشبورد (این پیام موقتی برای عیب‌یابیه):</strong>
+        ${(err && (err.stack || err.message)) || String(err)}
+      </div>
+    `;
+  }
+
+  try {
+    const profile = await guardCustomer();
+    if (profile) {
+      renderNavbar(document.getElementById("navbar"), { active: "dashboard", profile });
+
+      const ordersContainer = document.getElementById("orders-container");
+      renderMyOrders(ordersContainer, profile.id);
+
+      const modal = document.getElementById("order-modal");
+      const formRoot = document.getElementById("order-form-root");
+
+      async function openOrderForm(preselectedProductId) {
+        modal.classList.remove("hidden");
+        await initOrderForm(formRoot, {
+          preselectedProductId,
+          onOrderCreated: () => {
+            modal.classList.add("hidden");
+            renderMyOrders(ordersContainer, profile.id);
+          },
+        });
+      }
+
+      document.getElementById("new-order-btn").addEventListener("click", () => {
+        openOrderForm().catch((err) => {
+          console.error(err);
+          showError(err.message || "باز کردن فرم سفارش با خطا مواجه شد.");
+        });
+      });
+      document.getElementById("close-order-modal").addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+
+      // اگر از صفحه‌ی محصولات با ?product=<id> اومده، مستقیم فرم سفارش رو با همون محصول باز کن
+      const preselected = new URLSearchParams(window.location.search).get("product");
+      if (preselected) {
+        openOrderForm(preselected).catch(showFatalError);
+        // پاک کردن query param از URL تا رفرش دوباره‌ی صفحه باعث باز شدن مجدد پاپ‌آپ نشه
+        const url = new URL(window.location.href);
+        url.searchParams.delete("product");
+        window.history.replaceState({}, "", url);
+      }
+    }
+  } catch (err) {
+    showFatalError(err);
+  }
+</script>
+</body>
+</html>
