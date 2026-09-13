@@ -30,7 +30,7 @@ function commentRowHTML(comment, currentUserId) {
     <div class="comment-row" data-comment-id="${comment.id}">
       <div class="row justify-between wrap gap-sm">
         <span class="commenter-name${isBuyer ? " is-buyer" : ""}">${escapeHtml(comment.full_name)}</span>
-        ${isBuyer ? `<span class="badge badge-approved">خرید: ${formatGramsAsKg(comment.total_grams)}</span>` : ""}
+        ${isBuyer ? `<span class="buy-badge">خرید: ${formatGramsAsKg(comment.total_grams)}</span>` : ""}
       </div>
       <p class="comment-body" style="margin:0.4rem 0;">${escapeHtml(comment.body)}</p>
       <div class="row justify-between wrap gap-sm">
@@ -40,8 +40,8 @@ function commentRowHTML(comment, currentUserId) {
         ${
           isOwner
             ? `<div class="row gap-sm">
-                 <button class="btn btn-ghost btn-sm edit-comment-btn" data-id="${comment.id}">ویرایش</button>
-                 <button class="btn btn-ghost btn-sm delete-comment-btn" data-id="${comment.id}">حذف</button>
+                 <button class="btn btn-ghost btn-xs edit-comment-btn" data-id="${comment.id}">ویرایش</button>
+                 <button class="btn btn-ghost btn-xs delete-comment-btn" data-id="${comment.id}">حذف</button>
                </div>`
             : ""
         }
