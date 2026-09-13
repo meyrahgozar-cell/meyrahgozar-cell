@@ -1,7 +1,9 @@
 // =========================================================
-// پنل ادمین — بررسی و تایید/رد رسیدهای پرداخت
+// پنل ادمین — بررسی و تایید/رد ادعاهای پرداخت
+// تصویر رسید دیگه اینجا نیست — مشتری اون رو مستقیم توی تلگرام فرستاده؛
+// این بخش فقط برای ثبت نهایی تایید/رد توی سیستمه
 // =========================================================
-import { supabase, RECEIPTS_BUCKET } from "./supabase-client.js";
+import { supabase } from "./supabase-client.js";
 import { formatToman, toast, showError, confirmAction } from "./ui.js";
 import { formatJalali } from "./jalali.js";
 
@@ -9,7 +11,7 @@ async function fetchPendingPayments() {
   const { data, error } = await supabase
     .from("payments")
     .select(
-      `id, amount_claimed, receipt_image_path, created_at,
+      `id, amount_claimed, created_at,
        installments ( id, installment_number, due_date,
          orders ( id, weight_grams,
            profiles ( full_name, phone ),
@@ -21,26 +23,14 @@ async function fetchPendingPayments() {
   return data;
 }
 
-async function signedReceiptUrl(path) {
-  const { data, error } = await supabase.storage
-    .from(RECEIPTS_BUCKET)
-    .createSignedUrl(path, 300);
-  if (error) {
-    console.error(error);
-    return null;
-  }
-  return data.signedUrl;
-}
-
-async function paymentRowHTML(payment) {
+function paymentRowHTML(payment) {
   const order = payment.installments.orders;
-  const url = await signedReceiptUrl(payment.receipt_image_path);
   return `
     <div class="glass glass-card" data-payment-id="${payment.id}">
       <div class="row justify-between wrap gap-sm">
         <div>
           <strong>${order.profiles?.full_name || "مشتری"}</strong>
-          <div class="text-muted">${order.profiles?.phone || ""}</div>
+          <div class="text-muted">${order.profiles?.phone || "شماره ثبت نشده"}</div>
         </div>
         <span class="badge badge-pending">قسط ${payment.installments.installment_number}</span>
       </div>
@@ -49,11 +39,9 @@ async function paymentRowHTML(payment) {
         سررسید: ${formatJalali(payment.installments.due_date)}
       </p>
       <p><strong>مبلغ ادعا شده:</strong> ${formatToman(payment.amount_claimed)}</p>
-      ${
-        url
-          ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">مشاهده‌ی رسید</a>`
-          : `<span class="text-muted">تصویر رسید در دسترس نیست</span>`
-      }
+      <p class="text-muted" style="font-size:0.85rem;">
+        رسید این پرداخت مستقیم توی تلگرام برای شما ارسال شده — با شماره‌ی بالا چت رو پیدا کن و رسید رو چک کن.
+      </p>
       <div class="row gap-sm mt-lg">
         <button class="btn btn-primary btn-sm approve-btn" data-id="${payment.id}" data-installment="${payment.installments.id}">تایید</button>
         <button class="btn btn-danger btn-sm reject-btn" data-id="${payment.id}" data-installment="${payment.installments.id}">رد</button>
@@ -72,8 +60,7 @@ export async function renderAdminPayments(root) {
         root.innerHTML = `<div class="empty-state">پرداختی در انتظار بررسی نیست.</div>`;
         return;
       }
-      const rows = await Promise.all(payments.map(paymentRowHTML));
-      root.innerHTML = `<div class="stack gap-md">${rows.join("")}</div>`;
+      root.innerHTML = `<div class="stack gap-md">${payments.map(paymentRowHTML).join("")}</div>`;
     } catch (err) {
       console.error(err);
       root.innerHTML = `<div class="empty-state">خطا در بارگذاری پرداخت‌ها.</div>`;
