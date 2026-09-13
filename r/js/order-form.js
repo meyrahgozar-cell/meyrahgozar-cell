@@ -92,12 +92,18 @@ export async function initOrderForm(root, { onOrderCreated, preselectedProductId
       settings: feeSettings,
     });
 
-    preview.innerHTML = `
-      <div class="calc-row"><span>قیمت پایه</span><span class="val">${formatToman(pricing.basePrice)}</span></div>
-      <div class="calc-row"><span>کارمزد اقساط</span><span class="val">٪${pricing.feePercent.toFixed(1)}</span></div>
-      <div class="calc-row"><span>مبلغ هر قسط (${state.installmentCount} قسط)</span><span class="val">${formatToman(pricing.installmentAmount)}</span></div>
-      <div class="calc-row calc-total"><span>مبلغ نهایی</span><span class="val">${formatToman(pricing.totalPrice)}</span></div>
-    `;
+    if (state.installmentCount <= 1) {
+      preview.innerHTML = `
+        <div class="calc-row calc-total"><span>مبلغ قابل پرداخت</span><span class="val">${formatToman(pricing.totalPrice)}</span></div>
+      `;
+    } else {
+      preview.innerHTML = `
+        <div class="calc-row"><span>قیمت پایه</span><span class="val">${formatToman(pricing.basePrice)}</span></div>
+        <div class="calc-row"><span>کارمزد اقساط</span><span class="val">٪${pricing.feePercent.toFixed(1)}</span></div>
+        <div class="calc-row"><span>مبلغ هر قسط (${state.installmentCount} قسط)</span><span class="val">${formatToman(pricing.installmentAmount)}</span></div>
+        <div class="calc-row calc-total"><span>مبلغ نهایی</span><span class="val">${formatToman(pricing.totalPrice)}</span></div>
+      `;
+    }
     return pricing;
   }
 
@@ -148,7 +154,7 @@ export async function initOrderForm(root, { onOrderCreated, preselectedProductId
         order_id: order.id,
         installment_number: index + 1,
         amount,
-        due_date: addDays(today, (index + 1) * DAYS_BETWEEN_INSTALLMENTS)
+        due_date: addDays(today, index * DAYS_BETWEEN_INSTALLMENTS)
           .toISOString()
           .slice(0, 10),
       }));
