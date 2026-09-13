@@ -28,7 +28,7 @@ export async function initOrderForm(root, { onOrderCreated, preselectedProductId
   const state = {
     productId: initialProductId,
     weightGrams: 1000,
-    installmentCount: feeSettings.minInstallments,
+    installmentCount: 1,
   };
 
   root.innerHTML = `
@@ -66,8 +66,8 @@ export async function initOrderForm(root, { onOrderCreated, preselectedProductId
   const preview = root.querySelector("#of-preview");
   const submitBtn = root.querySelector("#of-submit");
 
-  const installmentOptions = [];
-  for (let n = feeSettings.minInstallments; n <= feeSettings.maxInstallments; n += 1) {
+  const installmentOptions = [1];
+  for (let n = Math.max(2, feeSettings.minInstallments); n <= feeSettings.maxInstallments; n += 1) {
     installmentOptions.push(n);
   }
   installmentsWrap.innerHTML = installmentOptions
