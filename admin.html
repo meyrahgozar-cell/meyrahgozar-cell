@@ -142,7 +142,6 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
   padding-top: 12px;
   min-width: 100%;
 }
-/* 30–31 روز: فشرده‌تر */
 .chart.dense {
   gap: 2px;
 }
@@ -271,7 +270,6 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 
 
 
-
 .settings-card { margin-top: 28px; }
 .settings-card .card-title { margin-bottom: 4px; }
 .settings-row {
@@ -303,6 +301,27 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
   text-align: left;
 }
 .settings-field input:focus {
+  outline: none;
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(180, 76, 255, 0.15);
+}
+.settings-field textarea {
+  width: 100%;
+  min-height: 96px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+  direction: rtl;
+  text-align: right;
+  resize: vertical;
+  font-family: inherit;
+}
+.settings-field textarea:focus {
   outline: none;
   border-color: var(--neon);
   box-shadow: 0 0 0 2px rgba(180, 76, 255, 0.15);
@@ -374,6 +393,17 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
       </div>
       <button type="button" class="settings-save" id="saveKmFactors">ذخیره ضرایب</button>
       <div class="settings-msg" id="settingsMsg"></div>
+    </div>
+
+    <div class="card settings-card" id="weeklyWordCard">
+      <div class="card-title">سخن هفته</div>
+      <div class="card-sub">این متن در بالای همهٔ صفحات برای کاربران نمایش داده می‌شود</div>
+      <div class="settings-field" style="margin:12px 0 14px">
+        <label for="weeklyWordInput">متن سخن هفته</label>
+        <textarea id="weeklyWordInput" rows="4" placeholder="جملهٔ هفته را اینجا بنویس..."></textarea>
+      </div>
+      <button type="button" class="settings-save" id="saveWeeklyWord">ذخیره سخن هفته</button>
+      <div class="settings-msg" id="weeklyWordMsg"></div>
     </div>
 
   </div>
@@ -457,6 +487,11 @@ async function init() {
   loadKmFactors();
   const saveBtn = document.getElementById("saveKmFactors");
   if (saveBtn) saveBtn.onclick = saveKmFactors;
+
+  loadWeeklyWord();
+  const saveWordBtn = document.getElementById("saveWeeklyWord");
+  if (saveWordBtn) saveWordBtn.onclick = saveWeeklyWord;
+
   initMonthPicker();
   await loadUsers();
   // deep link از صفحه گزارش: admin.html?u=USER_ID
@@ -854,6 +889,59 @@ async function saveKmFactors() {
     if (error) throw error;
     msg.textContent = "ذخیره شد ✓";
     msg.className = "settings-msg ok";
+  } catch (e) {
+    msg.textContent = "خطا: " + (e.message || e);
+    msg.className = "settings-msg err";
+  }
+}
+
+
+async function loadWeeklyWord() {
+  const msg = document.getElementById("weeklyWordMsg");
+  const ta = document.getElementById("weeklyWordInput");
+  if (!ta) return;
+  try {
+    const { data, error } = await db.from("site_messages")
+      .select("key, body")
+      .eq("key", "coach_weekly_word")
+      .maybeSingle();
+    if (error) throw error;
+    if (data && typeof data.body === "string") ta.value = data.body;
+  } catch (e) {
+    if (msg) {
+      msg.textContent = "خواندن سخن هفته: " + (e.message || e);
+      msg.className = "settings-msg err";
+    }
+  }
+}
+
+async function saveWeeklyWord() {
+  const msg = document.getElementById("weeklyWordMsg");
+  const ta = document.getElementById("weeklyWordInput");
+  if (!ta) return;
+  const body = (ta.value || "").trim();
+  if (!body) {
+    msg.textContent = "متن سخن هفته را وارد کن";
+    msg.className = "settings-msg err";
+    return;
+  }
+  msg.textContent = "در حال ذخیره...";
+  msg.className = "settings-msg";
+  try {
+    const { error } = await db.from("site_messages").upsert(
+      {
+        key: "coach_weekly_word",
+        body: body,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "key" }
+    );
+    if (error) throw error;
+    msg.textContent = "ذخیره شد ✓";
+    msg.className = "settings-msg ok";
+    if (typeof window.hqlReloadCoachWord === "function") {
+      try { window.hqlReloadCoachWord(); } catch (_) {}
+    }
   } catch (e) {
     msg.textContent = "خطا: " + (e.message || e);
     msg.className = "settings-msg err";
