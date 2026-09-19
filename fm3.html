@@ -28,19 +28,21 @@
             --warn: #ffd93d;
             --danger: #ff4d6d;
 
-            /* glass surfaces — deliberately translucent so the backdrop reads through */
-            --glass: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.028));
-            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.145), rgba(255,255,255,.05));
-            --glass-border: rgba(255,255,255,.15);
-            --glass-edge: rgba(255,255,255,.26);
-            --glass-shadow: 0 8px 32px rgba(0,0,0,.42),
+            /* glass surfaces — heavily translucent, low blur, so the
+               background pattern is clearly visible through every panel */
+            --glass: linear-gradient(135deg, rgba(255,255,255,.052), rgba(255,255,255,.014));
+            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.092), rgba(255,255,255,.03));
+            --glass-border: rgba(255,255,255,.16);
+            --glass-edge: rgba(255,255,255,.28);
+            --glass-shadow: 0 8px 32px rgba(0,0,0,.40),
                             inset 0 1px 0 rgba(255,255,255,.16),
                             inset 0 -1px 0 rgba(255,255,255,.03);
-            /* the saturate() boost is what makes colours *behind* the glass pop */
-            --blur: blur(22px) saturate(190%);
-            --field: rgba(0,0,0,.30);
-            --menu: linear-gradient(145deg, rgba(48,48,84,.55), rgba(18,18,36,.62));
-            --panel: linear-gradient(145deg, rgba(34,34,62,.55), rgba(14,14,28,.66));
+            /* low blur + mild saturate boost: glass reads as a tinted pane,
+               not a frosted card. Background detail stays recognisable. */
+            --blur: blur(9px) saturate(170%);
+            --field: rgba(0,0,0,.28);
+            --menu: linear-gradient(145deg, rgba(48,48,84,.48), rgba(18,18,36,.55));
+            --panel: linear-gradient(145deg, rgba(34,34,62,.48), rgba(14,14,28,.58));
 
             --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
         }
@@ -78,8 +80,7 @@
         }
 
         /* ══════════════════════════════════════════════════════════════
-           BACKDROP — professional, but with enough structure for the
-           glass to actually have something to blur.
+           BACKDROP — professional, but with structure the glass can reveal
            Layers (back → front):
              1. deep navy gradient base
              2. three muted colour fields (blue / cyan / indigo)
@@ -101,15 +102,15 @@
         .bg .field {
             position: absolute;
             border-radius: 50%;
-            filter: blur(20px);
+            filter: blur(14px);
             will-change: transform;
         }
         .bg .f1 {
             width: 82vmax; height: 82vmax;
             left: -30vmax; top: -24vmax;
             background: radial-gradient(circle,
-                rgba(59, 130, 246, .26) 0%,
-                rgba(59, 130, 246, .09) 42%,
+                rgba(59, 130, 246, .30) 0%,
+                rgba(59, 130, 246, .10) 42%,
                 transparent 70%);
             animation: drift1 34s ease-in-out infinite alternate;
         }
@@ -117,8 +118,8 @@
             width: 70vmax; height: 70vmax;
             right: -22vmax; top: 4vh;
             background: radial-gradient(circle,
-                rgba(6, 182, 212, .22) 0%,
-                rgba(6, 182, 212, .07) 45%,
+                rgba(6, 182, 212, .26) 0%,
+                rgba(6, 182, 212, .08) 45%,
                 transparent 68%);
             animation: drift2 40s ease-in-out infinite alternate;
         }
@@ -126,8 +127,8 @@
             width: 64vmax; height: 64vmax;
             left: 14vw; bottom: -30vmax;
             background: radial-gradient(circle,
-                rgba(99, 102, 241, .20) 0%,
-                rgba(99, 102, 241, .06) 45%,
+                rgba(99, 102, 241, .24) 0%,
+                rgba(99, 102, 241, .07) 45%,
                 transparent 68%);
             animation: drift3 46s ease-in-out infinite alternate;
         }
@@ -140,7 +141,7 @@
             position: absolute;
             inset: 0;
             background-image: radial-gradient(circle at center,
-                rgba(255,255,255,.10) 1.15px,
+                rgba(255,255,255,.085) 1.15px,
                 transparent 1.4px);
             background-size: 30px 30px;
             -webkit-mask-image: radial-gradient(125% 100% at 50% 0%, #000 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.08) 100%);
@@ -152,18 +153,18 @@
             position: absolute;
             inset: -1px;
             background-image:
-                linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+                linear-gradient(to right, rgba(255,255,255,.035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,.035) 1px, transparent 1px);
             background-size: 120px 120px;
             -webkit-mask-image: radial-gradient(120% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 55%, transparent 100%);
                     mask-image: radial-gradient(120% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 55%, transparent 100%);
         }
 
-        /* ── film grain: gives blur something to "catch" ── */
+        /* ── film grain: subtle tooth so the glass has texture to reveal ── */
         .bg .noise {
             position: absolute;
             inset: 0;
-            opacity: .28;
+            opacity: .22;
             mix-blend-mode: overlay;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
@@ -179,8 +180,8 @@
             margin-left: -450px;
             margin-top: -450px;
             background: radial-gradient(circle,
-                rgba(120, 180, 255, .11) 0%,
-                rgba(120, 180, 255, .035) 40%,
+                rgba(120, 180, 255, .13) 0%,
+                rgba(120, 180, 255, .04) 40%,
                 transparent 70%);
             transform: translate(var(--mx, 50vw), var(--my, 30vh));
             transition: transform .12s cubic-bezier(.2,.8,.3,1);
@@ -365,7 +366,7 @@
             gap: 14px;
         }
         .card {
-            --blur: blur(16px) saturate(180%);
+            --blur: blur(6px) saturate(160%);
             background: var(--glass);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
@@ -394,6 +395,7 @@
             margin-top: 8px;
             font-weight: 500;
             color: var(--text);
+            text-shadow: 0 1px 3px rgba(0,0,0,.45);
         }
         .card .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
         .card .del,
@@ -460,7 +462,7 @@
             background: var(--menu);
             border: 1px solid var(--glass-edge);
             box-shadow: 0 22px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2);
-            --blur: blur(28px) saturate(200%);
+            --blur: blur(12px) saturate(180%);
             transform-origin: top left;
             outline: none;
         }
@@ -670,18 +672,18 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(4,4,12,.58);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            background: rgba(4,4,12,.55);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
         }
         .editor-overlay.open { display: flex; }
         .editor-overlay.open::before { animation: fadeIn .2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .editor-modal {
-            --blur: blur(30px) saturate(200%);
+            --blur: blur(14px) saturate(180%);
             position: relative;
-            background: linear-gradient(145deg, rgba(34,34,62,.55), rgba(10,10,22,.68));
+            background: linear-gradient(145deg, rgba(34,34,62,.52), rgba(10,10,22,.64));
             border: 1px solid var(--glass-edge);
             border-radius: 20px;
             width: 100%;
@@ -756,7 +758,7 @@
         .editor-body {
             flex: 1;
             position: relative;
-            background: rgba(3,3,10,.32);
+            background: rgba(3,3,10,.42);
             overflow: hidden;
             min-height: 0;
         }
