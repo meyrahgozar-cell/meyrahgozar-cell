@@ -1616,6 +1616,117 @@
             flex: 0 0 auto;
             margin: 0;
         }
+
+        /* ---- Week picker ---- */
+        .week-pick-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            margin: 0 0 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.28);
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(180, 76, 255, 0.06));
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.12);
+            transition: border-color .15s, box-shadow .15s, transform .12s;
+        }
+        .week-pick-btn:active { transform: scale(0.98); }
+        .week-pick-btn .wp-label { color: var(--muted); font-weight: 500; font-size: 12px; }
+        .week-pick-btn .wp-value { color: var(--neon2); font-weight: 800; }
+        .week-pick-btn .wp-chevron { color: var(--muted); }
+        .week-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0,0,0,0.55);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+            padding: 12px;
+        }
+        .week-modal.hidden { display: none !important; }
+        .week-sheet {
+            width: min(420px, 100%);
+            max-height: min(78vh, 640px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 18px 18px 14px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(165deg, rgba(30,34,52,0.96), rgba(10,12,20,0.98));
+            box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 28px rgba(180,76,255,0.18);
+        }
+        .week-sheet-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 14px 10px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .week-sheet-head h3 {
+            font-size: 15px;
+            font-weight: 800;
+            margin: 0;
+        }
+        .week-sheet-sub {
+            padding: 0 14px 10px;
+            font-size: 11px;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 4px 14px 18px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .week-grid::-webkit-scrollbar { display: none; }
+        .week-chip {
+            min-height: 52px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            color: var(--muted);
+            opacity: 0.42;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: opacity .15s, border-color .15s, box-shadow .15s, background .15s;
+        }
+        .week-chip .wn { font-size: 14px; font-weight: 800; color: var(--text); opacity: 0.7; }
+        .week-chip .wr { font-size: 9px; direction: ltr; }
+        .week-chip.in-month {
+            opacity: 1;
+            border-color: rgba(0, 240, 255, 0.35);
+            background: rgba(0, 240, 255, 0.07);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.12);
+            color: var(--text);
+        }
+        .week-chip.in-month .wn { opacity: 1; color: var(--neon2); }
+        .week-chip.selected {
+            opacity: 1;
+            border-color: rgba(180, 76, 255, 0.65);
+            background: linear-gradient(145deg, rgba(180,76,255,0.22), rgba(0,240,255,0.1));
+            box-shadow: 0 0 18px rgba(180, 76, 255, 0.35);
+        }
+        .week-chip.selected .wn { color: #fff; text-shadow: 0 0 10px rgba(180,76,255,0.6); }
+        .week-chip:active { transform: scale(0.96); }
+
 </style>
 </head>
 <body>
@@ -1678,6 +1789,8 @@
         let reportBooted = false;
         let isAdmin = false;
         let rankMode = "month";
+        /** @type {number|null} شماره هفته شمسی ۱…۵۲؛ null = هفته جاری */
+        let selectedWeekNum = null;
         let selectedYear = null;
         let selectedMonth = null;
         let lastRenderData = null;
@@ -1821,11 +1934,13 @@
 
             yearSel.onchange = () => {
                 selectedYear = Number(yearSel.value);
+                selectedWeekNum = null;
                 updateReportChrome();
                 loadReport();
             };
             monthSel.onchange = () => {
                 selectedMonth = Number(monthSel.value);
+                selectedWeekNum = null;
                 updateReportChrome();
                 loadReport();
             };
@@ -2717,6 +2832,214 @@ function initWeightStrip(strip) {
             };
         }
 
+        function isoFromUTCDate(dt) {
+            const y = dt.getUTCFullYear();
+            const m = dt.getUTCMonth() + 1;
+            const d = dt.getUTCDate();
+            return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+        }
+
+        /** شنبهٔ هفته‌ای که ۱ فروردین jy داخل آن است */
+        function shamsiWeek1StartUTC(jy) {
+            const g = jalaali.toGregorian(jy, 1, 1);
+            const far1 = new Date(Date.UTC(g.gy, g.gm - 1, g.gd));
+            const dow = far1.getUTCDay(); // 0=یکشنبه … ۶=شنبه
+            const sinceSat = (dow + 1) % 7;
+            const start = new Date(far1);
+            start.setUTCDate(far1.getUTCDate() - sinceSat);
+            return start;
+        }
+
+        /** ۵۲ هفته سال شمسی؛ week 1 شامل ۱ فروردین */
+        function buildShamsiWeeks(jy) {
+            const w1 = shamsiWeek1StartUTC(jy);
+            const weeks = [];
+            for (let n = 1; n <= 52; n++) {
+                const start = new Date(w1);
+                start.setUTCDate(w1.getUTCDate() + (n - 1) * 7);
+                const endFri = new Date(start);
+                endFri.setUTCDate(start.getUTCDate() + 6);
+                const startISO = isoFromUTCDate(start);
+                const endISO = isoFromUTCDate(endFri);
+                // برچسب شمسی شروع و پایان
+                const js = jalaali.toJalaali(start.getUTCFullYear(), start.getUTCMonth() + 1, start.getUTCDate());
+                const je = jalaali.toJalaali(endFri.getUTCFullYear(), endFri.getUTCMonth() + 1, endFri.getUTCDate());
+                const label = fa(js.jd) + " " + (J_MONTHS[js.jm - 1] || "") + " – " + fa(je.jd) + " " + (J_MONTHS[je.jm - 1] || "");
+                weeks.push({
+                    num: n,
+                    startISO,
+                    endISO,
+                    startUTC: start,
+                    endUTC: endFri,
+                    label,
+                    startJ: js,
+                    endJ: je
+                });
+            }
+            return weeks;
+        }
+
+        function monthRangeISO(jy, jm) {
+            const days = jalaali.jalaaliMonthLength(jy, jm);
+            const g0 = jalaali.toGregorian(jy, jm, 1);
+            const g1 = jalaali.toGregorian(jy, jm, days);
+            return {
+                start: isoDate(new Date(Date.UTC(g0.gy, g0.gm - 1, g0.gd))),
+                end: isoDate(new Date(Date.UTC(g1.gy, g1.gm - 1, g1.gd)))
+            };
+        }
+
+        function weekOverlapsMonth(week, jy, jm) {
+            const mr = monthRangeISO(jy, jm);
+            return week.startISO <= mr.end && week.endISO >= mr.start;
+        }
+
+        function currentShamsiWeekNum(jy) {
+            const weeks = buildShamsiWeeks(jy);
+            const now = new Date();
+            const today = isoDate(now);
+            for (const w of weeks) {
+                if (today >= w.startISO && today <= w.endISO) return w.num;
+            }
+            // اگر بعد از هفته ۵۲
+            return 52;
+        }
+
+        function ensureSelectedWeek() {
+            const jy = selectedYear;
+            if (!jy) return;
+            const weeks = buildShamsiWeeks(jy);
+            if (selectedWeekNum != null && selectedWeekNum >= 1 && selectedWeekNum <= 52) return;
+            const now = new Date();
+            const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            if (jy === jNow.jy) {
+                selectedWeekNum = currentShamsiWeekNum(jy);
+            } else {
+                // آخرین هفته هم‌پوشان با ماه انتخاب‌شده
+                const inMonth = weeks.filter(w => weekOverlapsMonth(w, jy, selectedMonth));
+                selectedWeekNum = inMonth.length ? inMonth[inMonth.length - 1].num : 1;
+            }
+        }
+
+        /** بازه رتبه/کیلومتر برای هفته انتخاب‌شده */
+        function selectedWeekRange() {
+            ensureSelectedWeek();
+            const jy = selectedYear;
+            const weeks = buildShamsiWeeks(jy);
+            const w = weeks.find(x => x.num === selectedWeekNum) || weeks[0];
+            const now = new Date();
+            const todayISO = isoDate(now);
+            const start = w.startISO;
+            const endFri = w.endISO;
+
+            // پایان برای امتیاز تکمیل‌شده: min(دیروز، جمعه هفته)
+            const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            const yestISO = isoFromLocalYMD(yest.getFullYear(), yest.getMonth(), yest.getDate());
+
+            let endCompleted;
+            if (todayISO < start) {
+                // هفته آینده
+                endCompleted = start; // بی‌معنی؛ completed=0
+            } else if (todayISO > endFri) {
+                endCompleted = endFri; // هفته کامل گذشته
+            } else {
+                // هفته جاری: تا دیروز (اگر دیروز >= start)
+                endCompleted = yestISO >= start ? yestISO : start;
+            }
+
+            const end = todayISO < start ? start : (todayISO > endFri ? endFri : todayISO);
+
+            // تعداد روزهای تکمیل‌شده از start تا endCompleted
+            let completedDays = 0;
+            if (endCompleted >= start && todayISO >= start) {
+                const a = Date.parse(start + "T00:00:00Z");
+                const b = Date.parse(endCompleted + "T00:00:00Z");
+                if (!Number.isNaN(a) && !Number.isNaN(b) && b >= a) {
+                    completedDays = Math.floor((b - a) / 86400000) + 1;
+                }
+                // اگر هنوز داخل هفته‌ایم و امروز اولین روز است و دیروز قبل از start
+                if (todayISO >= start && todayISO <= endFri && yestISO < start) {
+                    completedDays = 0;
+                }
+            }
+
+            return {
+                start,
+                end,
+                endCompleted,
+                completedDays,
+                weekNum: w.num,
+                label: w.label,
+                endFri
+            };
+        }
+
+        function weekPickerLabel() {
+            ensureSelectedWeek();
+            const wr = selectedWeekRange();
+            return {
+                num: wr.weekNum,
+                text: "هفته " + fa(wr.weekNum) + " · " + wr.label
+            };
+        }
+
+        function openWeekPicker() {
+            ensureSelectedWeek();
+            let modal = document.getElementById("weekModal");
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "weekModal";
+                modal.className = "week-modal hidden";
+                modal.innerHTML = `
+                  <div class="week-sheet" role="dialog" aria-label="انتخاب هفته">
+                    <div class="week-sheet-head">
+                      <h3>انتخاب هفته</h3>
+                      <button type="button" class="icon-btn" id="weekModalClose" aria-label="بستن">✕</button>
+                    </div>
+                    <div class="week-sheet-sub" id="weekModalSub"></div>
+                    <div class="week-grid" id="weekGrid"></div>
+                  </div>`;
+                document.body.appendChild(modal);
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) closeWeekPicker();
+                });
+                modal.querySelector("#weekModalClose").onclick = () => closeWeekPicker();
+            }
+            const jy = selectedYear;
+            const weeks = buildShamsiWeeks(jy);
+            const sub = document.getElementById("weekModalSub");
+            if (sub) {
+                sub.textContent = "سال " + fa(jy) + " · هفته‌های «" + (J_MONTHS[selectedMonth - 1] || "") + "» روشن‌اند";
+            }
+            const grid = document.getElementById("weekGrid");
+            grid.innerHTML = weeks.map(w => {
+                const inM = weekOverlapsMonth(w, jy, selectedMonth);
+                const sel = w.num === selectedWeekNum;
+                return `<button type="button" class="week-chip${inM ? " in-month" : ""}${sel ? " selected" : ""}" data-week="${w.num}">
+                    <span class="wn">${fa(w.num)}</span>
+                    <span class="wr">${w.label}</span>
+                  </button>`;
+            }).join("");
+            grid.querySelectorAll(".week-chip").forEach(btn => {
+                btn.onclick = () => {
+                    selectedWeekNum = Number(btn.getAttribute("data-week"));
+                    closeWeekPicker();
+                    if (rankMode === "week") loadReport();
+                };
+            });
+            modal.classList.remove("hidden");
+            // اسکرول به هفته انتخاب‌شده / اول ماه
+            requestAnimationFrame(() => {
+                const sel = grid.querySelector(".week-chip.selected") || grid.querySelector(".week-chip.in-month");
+                if (sel) sel.scrollIntoView({ block: "center", behavior: "smooth" });
+            });
+        }
+
+        function closeWeekPicker() {
+            const modal = document.getElementById("weekModal");
+            if (modal) modal.classList.add("hidden");
+        }
+
         async function loadReport() {
             const seq = ++reportLoadSeq;
 
@@ -2777,8 +3100,8 @@ function initWeightStrip(strip) {
                 let rankCompletedDays = completedDays;
 
                 if (rankMode === "week") {
-                    // همان منطق ماه: مجموع امتیاز بازه ÷ تعداد روزهای تکمیل‌شده (+ جایزه امروز)
-                    const wr = currentWeekRange();
+                    ensureSelectedWeek();
+                    const wr = selectedWeekRange();
                     rankCompletedDays = wr.completedDays;
                     if (rankCompletedDays <= 0) {
                         boardData = [];
@@ -2806,7 +3129,12 @@ function initWeightStrip(strip) {
 
                 const todayISO = isoDate(now);
                 let todayActive = new Set();
-                if (isCurrentMonth || rankMode === "week") {
+                let weekIncludesToday = false;
+                if (rankMode === "week") {
+                    const wrNow = selectedWeekRange();
+                    weekIncludesToday = todayISO >= wrNow.start && todayISO <= wrNow.endFri;
+                }
+                if ((rankMode === "month" && isCurrentMonth) || (rankMode === "week" && weekIncludesToday)) {
                     try {
                         const act = await db.rpc("get_today_active_users", { p_today: todayISO });
                         if (!act.error && Array.isArray(act.data)) {
@@ -2878,7 +3206,7 @@ function initWeightStrip(strip) {
                 let kmStart = range.start;
                 let kmEnd = range.end;
                 if (rankMode === "week") {
-                    const wrKm = currentWeekRange();
+                    const wrKm = selectedWeekRange();
                     kmStart = wrKm.start;
                     kmEnd = wrKm.end;
                 }
@@ -3278,9 +3606,17 @@ function initWeightStrip(strip) {
                 <div class="card-title">جدول امتیازات</div>
                 <div class="rank-tabs">
                   <button type="button" class="rank-tab ${rankMode === "month" ? "on" : ""}" data-rank="month">ماهانه</button>
-                  <button type="button" class="rank-tab ${rankMode === "week" ? "on" : ""}" data-rank="week">از اول هفته</button>
+                  <button type="button" class="rank-tab ${rankMode === "week" ? "on" : ""}" data-rank="week">هفتگی</button>
                 </div>
-                <div class="card-sub">${rankMode === "week" ? "رتبه هفته: از شنبه تا دیروز + جایزه امروز" : "رتبه ماه: میانگین تا دیروز + جایزه فعالیت امروز"}</div>
+                ${rankMode === "week" ? (() => {
+                    const lab = weekPickerLabel();
+                    return `<button type="button" class="week-pick-btn" id="weekPickBtn">
+                      <span class="wp-label">انتخاب هفته</span>
+                      <span class="wp-value">${lab.text}</span>
+                      <span class="wp-chevron">‹</span>
+                    </button>
+                    <div class="card-sub">رتبه هفته ${fa(lab.num)}: شنبه تا پایان بازه تکمیل‌شده + جایزه امروز (اگر همین هفته باشد)</div>`;
+                })() : `<div class="card-sub">رتبه ماه: میانگین تا دیروز + جایزه فعالیت امروز</div>`}
                 ${podiumHtml}
               </div>
 
@@ -3352,9 +3688,15 @@ function initWeightStrip(strip) {
                     const m = btn.getAttribute("data-rank");
                     if (!m || m === rankMode) return;
                     rankMode = m;
+                    if (m === "week") ensureSelectedWeek();
                     loadReport();
                 };
             });
+            const wPick = document.getElementById("weekPickBtn");
+            if (wPick) wPick.onclick = (e) => {
+                e.preventDefault();
+                openWeekPicker();
+            };
         }
 
         // ---- Interactions ----
@@ -3433,6 +3775,7 @@ function initWeightStrip(strip) {
             if (y > j.jy || (y === j.jy && m > j.jm)) return;
             selectedYear = y;
             selectedMonth = m;
+            selectedWeekNum = null; // هفته مناسب ماه جدید
             document.getElementById("yearSelect").value = String(y);
             document.getElementById("monthSelect").value = String(m);
             updateReportChrome();
