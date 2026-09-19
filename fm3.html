@@ -16,7 +16,7 @@
            TOKENS
            ══════════════════════════════════════════════════════════════ */
         :root {
-            --bg: #0a0e15;
+            --bg: #06090f;
             --text: #ecebff;
             --muted: #9a9ab8;
             --dim: #666687;
@@ -28,18 +28,19 @@
             --warn: #ffd93d;
             --danger: #ff4d6d;
 
-            /* glass surfaces */
-            --glass: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
-            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
-            --glass-border: rgba(255,255,255,.13);
-            --glass-edge: rgba(255,255,255,.24);
-            --glass-shadow: 0 8px 32px rgba(0,0,0,.35),
+            /* glass surfaces — deliberately translucent so the backdrop reads through */
+            --glass: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.028));
+            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.145), rgba(255,255,255,.05));
+            --glass-border: rgba(255,255,255,.15);
+            --glass-edge: rgba(255,255,255,.26);
+            --glass-shadow: 0 8px 32px rgba(0,0,0,.42),
                             inset 0 1px 0 rgba(255,255,255,.16),
                             inset 0 -1px 0 rgba(255,255,255,.03);
-            --blur: blur(20px) saturate(160%);
-            --field: rgba(0,0,0,.28);
-            --menu: linear-gradient(145deg, rgba(48,48,84,.58), rgba(18,18,36,.64));
-            --panel: linear-gradient(145deg, rgba(34,34,62,.60), rgba(14,14,28,.70));
+            /* the saturate() boost is what makes colours *behind* the glass pop */
+            --blur: blur(22px) saturate(190%);
+            --field: rgba(0,0,0,.30);
+            --menu: linear-gradient(145deg, rgba(48,48,84,.55), rgba(18,18,36,.62));
+            --panel: linear-gradient(145deg, rgba(34,34,62,.55), rgba(14,14,28,.66));
 
             --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
         }
@@ -77,9 +78,15 @@
         }
 
         /* ══════════════════════════════════════════════════════════════
-           BACKDROP — quiet, professional surface
-           Deep slate base, hairline grid, one soft accent wash.
-           No animated colour blobs, nothing competing with the content.
+           BACKDROP — professional, but with enough structure for the
+           glass to actually have something to blur.
+           Layers (back → front):
+             1. deep navy gradient base
+             2. three muted colour fields (blue / cyan / indigo)
+             3. fine dot lattice
+             4. coarse line grid
+             5. film-grain noise
+             6. cursor-tracking spotlight
            ══════════════════════════════════════════════════════════════ */
         .bg {
             position: fixed;
@@ -87,29 +94,97 @@
             z-index: -1;
             overflow: hidden;
             pointer-events: none;
-            background:
-                radial-gradient(130% 90% at 50% -20%, #151d2b 0%, #0c111a 48%, #080b12 100%);
+            background: radial-gradient(140% 100% at 50% -30%, #131c2c 0%, #0b1018 50%, #06090f 100%);
         }
-        /* hairline grid, faded toward the edges so it reads as texture, not pattern */
+
+        /* ── colour fields: muted, cool, professional ── */
+        .bg .field {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(20px);
+            will-change: transform;
+        }
+        .bg .f1 {
+            width: 82vmax; height: 82vmax;
+            left: -30vmax; top: -24vmax;
+            background: radial-gradient(circle,
+                rgba(59, 130, 246, .26) 0%,
+                rgba(59, 130, 246, .09) 42%,
+                transparent 70%);
+            animation: drift1 34s ease-in-out infinite alternate;
+        }
+        .bg .f2 {
+            width: 70vmax; height: 70vmax;
+            right: -22vmax; top: 4vh;
+            background: radial-gradient(circle,
+                rgba(6, 182, 212, .22) 0%,
+                rgba(6, 182, 212, .07) 45%,
+                transparent 68%);
+            animation: drift2 40s ease-in-out infinite alternate;
+        }
+        .bg .f3 {
+            width: 64vmax; height: 64vmax;
+            left: 14vw; bottom: -30vmax;
+            background: radial-gradient(circle,
+                rgba(99, 102, 241, .20) 0%,
+                rgba(99, 102, 241, .06) 45%,
+                transparent 68%);
+            animation: drift3 46s ease-in-out infinite alternate;
+        }
+        @keyframes drift1 { to { transform: translate3d(8vmax, 6vmax, 0) scale(1.08); } }
+        @keyframes drift2 { to { transform: translate3d(-9vmax, -5vmax, 0) scale(1.06); } }
+        @keyframes drift3 { to { transform: translate3d(6vmax, -8vmax, 0) scale(1.10); } }
+
+        /* ── fine dot lattice: designer / notebook-paper feel ── */
+        .bg .dots {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle at center,
+                rgba(255,255,255,.10) 1.15px,
+                transparent 1.4px);
+            background-size: 30px 30px;
+            -webkit-mask-image: radial-gradient(125% 100% at 50% 0%, #000 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.08) 100%);
+                    mask-image: radial-gradient(125% 100% at 50% 0%, #000 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.08) 100%);
+        }
+
+        /* ── coarse line grid: faint structural guides ── */
         .bg .grid {
             position: absolute;
             inset: -1px;
             background-image:
-                linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
-            background-size: 56px 56px;
-            -webkit-mask-image: radial-gradient(125% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 60%, transparent 100%);
-                    mask-image: radial-gradient(125% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 60%, transparent 100%);
+                linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+            background-size: 120px 120px;
+            -webkit-mask-image: radial-gradient(120% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 55%, transparent 100%);
+                    mask-image: radial-gradient(120% 95% at 50% 0%, #000 0%, rgba(0,0,0,.5) 55%, transparent 100%);
         }
-        /* a single restrained accent glow behind the header */
-        .bg .glow {
+
+        /* ── film grain: gives blur something to "catch" ── */
+        .bg .noise {
             position: absolute;
-            left: 50%;
-            top: -38vh;
-            width: 100vmax;
-            height: 72vmax;
-            transform: translateX(-50%);
-            background: radial-gradient(closest-side, rgba(var(--accent-rgb), .09), rgba(var(--accent-rgb), .03) 55%, transparent 100%);
+            inset: 0;
+            opacity: .28;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ── cursor spotlight: soft light that follows the pointer, so
+              the frosted panels nearest the cursor brighten slightly ── */
+        .bg .spotlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 900px;
+            height: 900px;
+            margin-left: -450px;
+            margin-top: -450px;
+            background: radial-gradient(circle,
+                rgba(120, 180, 255, .11) 0%,
+                rgba(120, 180, 255, .035) 40%,
+                transparent 70%);
+            transform: translate(var(--mx, 50vw), var(--my, 30vh));
+            transition: transform .12s cubic-bezier(.2,.8,.3,1);
+            will-change: transform;
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -290,7 +365,7 @@
             gap: 14px;
         }
         .card {
-            --blur: blur(12px) saturate(140%);
+            --blur: blur(16px) saturate(180%);
             background: var(--glass);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
@@ -385,7 +460,7 @@
             background: var(--menu);
             border: 1px solid var(--glass-edge);
             box-shadow: 0 22px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2);
-            --blur: blur(26px) saturate(180%);
+            --blur: blur(28px) saturate(200%);
             transform-origin: top left;
             outline: none;
         }
@@ -591,7 +666,6 @@
             justify-content: center;
             padding: 16px;
         }
-        /* the scrim is a sibling of the modal (not its parent) so the modal's own blur still sees the page */
         .editor-overlay::before {
             content: "";
             position: absolute;
@@ -605,9 +679,9 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .editor-modal {
-            --blur: blur(30px) saturate(170%);
+            --blur: blur(30px) saturate(200%);
             position: relative;
-            background: linear-gradient(145deg, rgba(34,34,62,.62), rgba(10,10,22,.74));
+            background: linear-gradient(145deg, rgba(34,34,62,.55), rgba(10,10,22,.68));
             border: 1px solid var(--glass-edge);
             border-radius: 20px;
             width: 100%;
@@ -682,11 +756,10 @@
         .editor-body {
             flex: 1;
             position: relative;
-            background: rgba(3,3,10,.38);
+            background: rgba(3,3,10,.32);
             overflow: hidden;
             min-height: 0;
         }
-        /* CodeMirror fills the body — specificity beats the material-darker theme */
         .editor-body .CodeMirror.cm-s-material-darker {
             height: 100% !important;
             font-family: var(--mono);
@@ -749,6 +822,8 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
+            .bg .field { animation: none; }
+            .bg .spotlight { display: none; }
             .context-menu.open, .upload-panel.show,
             .editor-overlay.open .editor-modal, .editor-overlay.open::before { animation: none; }
             .card, .card:hover { transition: none; transform: none; }
@@ -759,8 +834,13 @@
 <body>
 
     <div class="bg" aria-hidden="true">
+        <div class="field f1"></div>
+        <div class="field f2"></div>
+        <div class="field f3"></div>
+        <div class="dots"></div>
         <div class="grid"></div>
-        <div class="glow"></div>
+        <div class="noise"></div>
+        <div class="spotlight" id="spotlight"></div>
     </div>
 
     <header>
@@ -865,6 +945,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
 
     <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  CURSOR SPOTLIGHT (background layer only — visual flourish)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        (function () {
+            const spot = document.getElementById('spotlight');
+            if (!spot) return;
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            let raf = 0;
+            document.addEventListener('pointermove', e => {
+                if (raf) return;
+                raf = requestAnimationFrame(() => {
+                    spot.style.setProperty('--mx', e.clientX + 'px');
+                    spot.style.setProperty('--my', e.clientY + 'px');
+                    raf = 0;
+                });
+            }, { passive: true });
+        })();
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  STATE
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1219,9 +1317,6 @@
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  CONTEXT MENU
-        //  (previous bug: hideContextMenu() cleared the target *before* the
-        //   handler read it, so `const { item } = contextTarget` threw and
-        //   no action ever ran. The target is now captured first.)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function showContextMenu(x, y, item, card) {
             hideContextMenu();
@@ -1234,7 +1329,6 @@
             ctxTitle.textContent = item.name;
             ctxTitle.title = item.path;
 
-            // measure at 0,0 so the width isn't squeezed by the viewport edge
             contextMenu.style.left = '0px';
             contextMenu.style.top = '0px';
             contextMenu.classList.add('open');
@@ -1270,7 +1364,6 @@
         });
         contextMenu.addEventListener('contextmenu', e => e.preventDefault());
 
-        // dismiss on outside press, scroll, resize, focus loss
         document.addEventListener('pointerdown', e => {
             if (ctx && !contextMenu.contains(e.target)) hideContextMenu();
         }, true);
@@ -1280,7 +1373,6 @@
         window.addEventListener('scroll', hideContextMenu, true);
         window.addEventListener('blur', hideContextMenu);
 
-        // keyboard: Esc closes, arrows move, Enter activates (capture so Esc doesn't also close the editor)
         document.addEventListener('keydown', e => {
             if (!ctx) return;
             const items = [...contextMenu.querySelectorAll('.item:not([hidden])')];
@@ -1344,8 +1436,6 @@
             input.remove();
         }
 
-        // ── Download: fetched with the token so private repos and >1 MB files work,
-        //    then saved via a blob (cross-origin <a download> is ignored by browsers)
         async function downloadItem(item) {
             setStatus(`Downloading ${item.name}…`, 'loading');
             try {
@@ -1372,7 +1462,6 @@
             }
         }
 
-        // ── Rename: copy via the blob API (works for any size), then remove the old path
         async function renameItem(item, newName) {
             if (/[\\/]/.test(newName)) {
                 alert('A name can’t contain “/” or “\\”.');
@@ -1414,7 +1503,6 @@
             load();
         }
 
-        // ── Delete: files via Contents API, folders in ONE commit via the Git Data API
         async function deleteItem(item) {
             const isDir = item.type === 'dir';
             const ok = confirm(isDir
@@ -1520,7 +1608,6 @@
                 const data = await api('GET', `/contents/${enc(item.path)}${refQ()}`);
 
                 // The Contents API returns an empty body for files over 1 MB.
-                // Without this fallback the editor opened blank and Save wiped the file.
                 let b64 = data.content || '';
                 if (!b64 && data.size > 0) {
                     const blob = await api('GET', `/git/blobs/${data.sha}`);
@@ -1573,8 +1660,6 @@
                 extraKeys: {
                     'Ctrl-S': function () { saveFile(); },
                     'Cmd-S': function () { saveFile(); },
-                    // Esc is handled once by the document listener below
-                    // (binding it here too made the "discard changes?" prompt appear twice)
                     'Ctrl-F': 'findPersistent',
                     'Cmd-F': 'findPersistent',
                 }
@@ -1654,7 +1739,7 @@
                     editorFile.sha = data.sha;
                 }
                 setEditorStatus('● saved ✓', 'saved');
-                load(); // refresh list (size may change)
+                load();
             } catch (e) {
                 console.error('Save error:', e);
                 setEditorStatus('✕ save failed', 'error');
@@ -1665,12 +1750,11 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  UPLOAD  (queued one at a time — GitHub rejects parallel commits
-        //           to the same branch — with real byte-level progress)
+        //  UPLOAD
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        const MAX_UPLOAD = 100 * 1024 * 1024; // GitHub's hard per-file limit
+        const MAX_UPLOAD = 100 * 1024 * 1024;
         const SETTLED = ['done', 'error', 'cancelled'];
-        const uploads = [];   // entries in the current batch
+        const uploads = [];
         let uploadId = 0;
         let pumping = false;
         let hideTimer = null;
@@ -1684,7 +1768,6 @@
             });
         }
 
-        // fetch() can't report upload progress, XHR can
         function xhrPut(path, body, u, onProgress) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
@@ -1700,7 +1783,7 @@
                     lastLoaded = e.loaded;
                     onProgress(e.loaded / e.total, e.loaded);
                 };
-                xhr.upload.onload = () => onProgress(1, lastLoaded); // body fully sent, server is committing
+                xhr.upload.onload = () => onProgress(1, lastLoaded);
                 xhr.onload = () => {
                     let data = {};
                     try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
@@ -1722,7 +1805,7 @@
         function uploadFiles(files) {
             if (!files.length) return;
             clearTimeout(hideTimer);
-            if (!pumping) {               // fresh batch: forget the previous one
+            if (!pumping) {
                 uploads.length = 0;
                 upList.innerHTML = '';
             }
@@ -1770,9 +1853,9 @@
                 let sha;
                 try {
                     const exist = await api('GET', `/contents/${enc(path)}${refQ()}`);
-                    if (!Array.isArray(exist)) sha = exist.sha;   // overwrite an existing file
+                    if (!Array.isArray(exist)) sha = exist.sha;
                 } catch (err) {
-                    if (err.status !== 404) throw err;             // 404 = new file, anything else is real
+                    if (err.status !== 404) throw err;
                 }
                 if (u.cancelled) throw cancelledErr();
 
@@ -1812,7 +1895,6 @@
             u.cancelled = true;
             if (u.status === 'queued') setUpload(u, 'cancelled');
             else if (u.status === 'uploading' && u.xhr) u.xhr.abort();
-            // 'preparing' notices the flag as soon as the file has been read
         }
 
         function setUpload(u, status) {
@@ -1879,7 +1961,6 @@
             const settled = done + failed + cancelled;
             const active = settled < total;
 
-            // weight by file size so one big file doesn't count the same as a tiny one
             const w = u => Math.max(u.file.size, 1);
             const totalW = uploads.reduce((s, u) => s + w(u), 0);
             const doneW = uploads.reduce((s, u) => s + w(u) * (SETTLED.includes(u.status) ? 1 : u.fraction), 0);
@@ -1916,7 +1997,6 @@
                        : 'Upload complete',
                 failed ? 'err' : 'ok'
             );
-            // tidy up after a clean run; keep the panel if something failed so the reason stays readable
             if (!failed) {
                 hideTimer = setTimeout(() => { if (!pumping) upPanel.classList.remove('show'); }, cancelled ? 2500 : 4500);
             }
@@ -1959,7 +2039,6 @@
 
             const path = state.path ? `${state.path}/${clean}` : clean;
 
-            // Already there? Offer to open it instead.
             let existing = null;
             try {
                 existing = await api('GET', `/contents/${enc(path)}${refQ()}`);
