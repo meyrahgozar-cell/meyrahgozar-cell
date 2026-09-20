@@ -29,24 +29,22 @@
             --danger: #ff4d6d;
 
             /* glass surfaces */
-            --glass: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
-            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
-            --glass-border: rgba(255,255,255,.13);
-            --glass-edge: rgba(255,255,255,.24);
-            --glass-shadow: 0 8px 32px rgba(0,0,0,.35),
-                            inset 0 1px 0 rgba(255,255,255,.16),
-                            inset 0 -1px 0 rgba(255,255,255,.03);
-            --blur: blur(20px) saturate(160%);
+            --glass: linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.03));
+            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+            --glass-border: rgba(255,255,255,.11);
+            --glass-edge: rgba(255,255,255,.20);
+            --glass-shadow: 0 8px 28px rgba(0,0,0,.28),
+                            inset 0 1px 0 rgba(255,255,255,.12),
+                            inset 0 -1px 0 rgba(255,255,255,.02);
+            --blur: blur(8px) saturate(140%);
             --field: rgba(0,0,0,.28);
-            --menu: linear-gradient(145deg, rgba(48,48,84,.58), rgba(18,18,36,.64));
-            --panel: linear-gradient(145deg, rgba(34,34,62,.60), rgba(14,14,28,.70));
+            --menu: linear-gradient(145deg, rgba(48,48,84,.46), rgba(18,18,36,.56));
+            --panel: linear-gradient(145deg, rgba(34,34,62,.50), rgba(14,14,28,.62));
 
             --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
-
-            /* background texture: big enough to stay readable through the glass blur.
-               Keep --tex-size at 120px or more — smaller dots get smoothed away by blur(20px). */
-            --tex-size: 160px;
-            --tex-opacity: .30;
+            /* background halo rings (alpha = strength) */
+            --ring-a: rgba(160, 190, 255, .15);
+            --ring-b: rgba(130, 235, 255, .12);
         }
 
         /* Browsers without backdrop-filter get near-opaque surfaces instead */
@@ -82,7 +80,11 @@
         }
 
         /* ══════════════════════════════════════════════════════════════
-           BACKDROP — soft colour fields so the glass has something to blur
+           BACKDROP
+           Two soft light sources — indigo top-right, teal bottom-left — each with
+           concentric rings fading out from it. Bands are ~20px wide and ~100px apart,
+           wide enough to stay readable through the glass, quiet enough not to
+           compete with the content. A touch of grain keeps the dark matte.
            ══════════════════════════════════════════════════════════════ */
         .bg {
             position: fixed;
@@ -90,49 +92,37 @@
             z-index: -1;
             overflow: hidden;
             pointer-events: none;
-            background: radial-gradient(120% 90% at 50% -10%, #10102a 0%, var(--bg) 62%);
+            background: linear-gradient(180deg, #080b16 0%, var(--bg) 100%);
         }
-        .bg i { position: absolute; border-radius: 50%; will-change: transform; }
+        .bg i { position: absolute; border-radius: 50%; }
         .bg .o1 {
-            width: 62vmax; height: 62vmax; left: -18vmax; top: -24vmax;
-            background: radial-gradient(circle, rgba(var(--accent-rgb), .40), transparent 66%);
-            animation: drift1 30s ease-in-out infinite alternate;
+            width: 80vmax; height: 80vmax; right: -22vmax; top: -34vmax;
+            background: radial-gradient(circle, rgba(70, 95, 255, .34), transparent 65%);
         }
         .bg .o2 {
-            width: 58vmax; height: 58vmax; right: -20vmax; top: 18vh;
-            background: radial-gradient(circle, rgba(var(--violet-rgb), .42), transparent 66%);
-            animation: drift2 36s ease-in-out infinite alternate;
+            width: 70vmax; height: 70vmax; left: -22vmax; bottom: -34vmax;
+            background: radial-gradient(circle, rgba(0, 205, 255, .20), transparent 65%);
         }
-        .bg .o3 {
-            width: 50vmax; height: 50vmax; left: 22vw; bottom: -28vmax;
-            background: radial-gradient(circle, rgba(255, 60, 172, .26), transparent 66%);
-            animation: drift3 42s ease-in-out infinite alternate;
-        }
-        /* Big offset dot lattice, tinted with a cyan → violet → pink sweep.
-           Dots are ~35% of the tile, so at 160px they're 56px wide: sharp on the bare
-           background, and still a clear soft blob behind a blurred panel.
-           The layer is fixed, so content slides over it and the blur visibly changes. */
-        .bg .tex {
+        .bg .halo {
             position: absolute;
             inset: 0;
-            -webkit-mask-image: radial-gradient(130% 100% at 50% 30%, #000 35%, rgba(0,0,0,.5) 100%);
-                    mask-image: radial-gradient(130% 100% at 50% 30%, #000 35%, rgba(0,0,0,.5) 100%);
+            --at: 84% -8%;
+            --ring: var(--ring-a);
+            background: repeating-radial-gradient(circle at var(--at),
+                transparent 0, transparent 41px,
+                var(--ring) 50px, var(--ring) 54px,
+                transparent 63px, transparent 104px);
+            -webkit-mask-image: radial-gradient(circle 88vmax at var(--at), #000 0, #000 25%, transparent 100%);
+                    mask-image: radial-gradient(circle 88vmax at var(--at), #000 0, #000 25%, transparent 100%);
         }
-        .bg .tex span {
+        .bg .halo.b { --at: 8% 110%; --ring: var(--ring-b); }
+        .bg .grain {
             position: absolute;
             inset: 0;
-            opacity: var(--tex-opacity);
-            background: linear-gradient(125deg, #00f0ff 0%, #6a7dff 42%, #b06bff 68%, #ff3cac 100%);
-            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='40' cy='40' r='28'/%3E%3Ccircle cx='120' cy='120' r='28'/%3E%3C/svg%3E");
-                    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='40' cy='40' r='28'/%3E%3Ccircle cx='120' cy='120' r='28'/%3E%3C/svg%3E");
-            -webkit-mask-size: var(--tex-size) var(--tex-size);
-                    mask-size: var(--tex-size) var(--tex-size);
-            -webkit-mask-repeat: repeat;
-                    mask-repeat: repeat;
+            opacity: .07;
+            background-size: 200px 200px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
-        @keyframes drift1 { to { transform: translate3d(10vmax, 8vmax, 0) scale(1.1); } }
-        @keyframes drift2 { to { transform: translate3d(-12vmax, -6vmax, 0) scale(1.08); } }
-        @keyframes drift3 { to { transform: translate3d(8vmax, -10vmax, 0) scale(1.12); } }
 
         /* ══════════════════════════════════════════════════════════════
            HEADER / PATH / TOOLBAR
@@ -312,7 +302,7 @@
             gap: 14px;
         }
         .card {
-            --blur: blur(12px) saturate(140%);
+            --blur: blur(5px) saturate(130%);
             background: var(--glass);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
@@ -324,7 +314,7 @@
             transition: transform .22s, border-color .22s, background .22s, box-shadow .22s;
             user-select: none;
         }
-        .card.folder { background: linear-gradient(135deg, rgba(var(--accent-rgb), .11), rgba(255,255,255,.035)); }
+        .card.folder { background: linear-gradient(135deg, rgba(var(--accent-rgb), .08), rgba(255,255,255,.03)); }
         .card:hover,
         .card.ctx-active {
             background: var(--glass-hi);
@@ -407,7 +397,7 @@
             background: var(--menu);
             border: 1px solid var(--glass-edge);
             box-shadow: 0 22px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2);
-            --blur: blur(26px) saturate(180%);
+            --blur: blur(14px) saturate(150%);
             transform-origin: top left;
             outline: none;
         }
@@ -618,18 +608,18 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(4,4,12,.58);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            background: rgba(4,4,12,.50);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
         }
         .editor-overlay.open { display: flex; }
         .editor-overlay.open::before { animation: fadeIn .2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .editor-modal {
-            --blur: blur(30px) saturate(170%);
+            --blur: blur(14px) saturate(150%);
             position: relative;
-            background: linear-gradient(145deg, rgba(34,34,62,.62), rgba(10,10,22,.74));
+            background: linear-gradient(145deg, rgba(34,34,62,.52), rgba(10,10,22,.66));
             border: 1px solid var(--glass-edge);
             border-radius: 20px;
             width: 100%;
@@ -771,7 +761,6 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .bg i { animation: none; }
             .context-menu.open, .upload-panel.show,
             .editor-overlay.open .editor-modal, .editor-overlay.open::before { animation: none; }
             .card, .card:hover { transition: none; transform: none; }
@@ -781,7 +770,7 @@
 </head>
 <body>
 
-    <div class="bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><div class="tex"><span></span></div></div>
+    <div class="bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><div class="halo a"></div><div class="halo b"></div><div class="grain"></div></div>
 
     <header>
         <form id="auth" autocomplete="off">
