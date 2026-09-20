@@ -1903,6 +1903,7 @@
             try {
                 const pr = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
                 isAdmin = !!(pr.data && pr.data.is_admin);
+                document.body.classList.toggle("admin-mode", isAdmin);
             } catch (e) {
                 isAdmin = false;
             }
@@ -3869,6 +3870,13 @@ function initWeightStrip(strip) {
                 const profileHit = e.target.closest(".profile-hit");
                 if (profileHit) {
                     e.stopPropagation();
+                    // ادمین: رفتن به جزئیات همان کاربر در پنل ادمین
+                    if (isAdmin) {
+                        const uid = profileHit.dataset.uid;
+                        if (uid) {
+                            location.href = "admin.html?u=" + encodeURIComponent(uid);
+                        }
+                    }
                     return;
                 }
                 if (rankRow) {
