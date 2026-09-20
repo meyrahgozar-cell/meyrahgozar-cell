@@ -1811,7 +1811,8 @@
 
                 const HABIT_MAX = {
             water: 1.5, sleep: 2, instagram: 1.5, sun: 1.5, solitude: 1.5,
-            reading: 1, sugar: 2, dinner: 2, exercise: 5
+            reading: 1, sugar: 2, dinner: 2, exercise: 5,
+            discipline: 1, mountain: 3
         };
         const HABIT_LABELS = {
             water: { icon: "💧", title: "آب" },
@@ -1822,7 +1823,9 @@
             reading: { icon: "📖", title: "مطالعه" },
             sugar: { icon: "🍬", title: "قند" },
             dinner: { icon: "🍽️", title: "شام" },
-            exercise: { icon: "🏃", title: "ورزش" }
+            exercise: { icon: "🏃", title: "ورزش" },
+            discipline: { icon: "✅", title: "نظم" },
+            mountain: { icon: "⛰️", title: "کوهنوردی" }
         };
 
         let currentUser = null;
@@ -2961,7 +2964,7 @@ function initWeightStrip(strip) {
             const range = jalaliRange(selectedYear, selectedMonth);
 
             try {
-                const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes] = await Promise.all([
+                const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes, mtRes] = await Promise.all([
                     db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
                     db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
                     db.from("daily_logs")
@@ -2975,7 +2978,12 @@ function initWeightStrip(strip) {
                     .gte("log_date", range.start)
                     .lte("log_date", range.end),
                     db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
-                    db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end })
+                    db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end }),
+                    db.from("mountain_trips")
+                    .select("trip_date")
+                    .eq("user_id", currentUser.id)
+                    .gte("trip_date", range.start)
+                    .lte("trip_date", range.end)
                 ]);
 
                 if (statsRes.error) throw statsRes.error;
@@ -3149,6 +3157,15 @@ function initWeightStrip(strip) {
                         count: exRes.data.length,
                         total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
                     };
+                }
+
+                const mtList = (mtRes && !mtRes.error && mtRes.data) ? mtRes.data : [];
+                habitMap.mountain = {
+                    count: mtList.length,
+                    total: mtList.length
+                };
+                if (!habitMap.discipline) {
+                    habitMap.discipline = { count: 0, total: 0 };
                 }
 
                 // کیلومتر من و جامعه: فیلتر به همان بازه (هفته یا ماه)
@@ -3412,26 +3429,68 @@ function initWeightStrip(strip) {
                 }
             }
 
-            const orderH = ["water", "sleep", "instagram", "sun", "solitude", "reading", "sugar", "dinner", "exercise"];
+            const orderH = ["water", "sleep", "instagram", "sun", "solitude", "reading", "sugar", "dinner", "exercise", "discipline", "mountain"];
             const activeKeys = orderH.filter(k => habitMap[k]);
 
             let habitsHtml = "";
             if (!activeKeys.length) {
                 habitsHtml = `<div class="empty"><div class="empty-icon">🌱</div>هیچ عادتی ثبت نشده</div>`;
             } else {
+                const nowH = new Date();
+                const jNowH = jalaali.toJalaali(nowH.getFullYear(), nowH.getMonth() + 1, nowH.getDate());
+                const daysInMH = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                let daysElapsed = daysInMH;
+                if (selectedYear === jNowH.jy && selectedMonth === jNowH.jm) {
+                    daysElapsed = Math.max(1, jNowH.jd);
+                } else if (selectedYear > jNowH.jy || (selectedYear === jNowH.jy && selectedMonth > jNowH.jm)) {
+                    daysElapsed = 0;
+                }
+
                 const rows = activeKeys.map(k => {
                     const h = habitMap[k];
                     const maxP = HABIT_MAX[k] != null ? HABIT_MAX[k] : 2;
                     const days = h.count || 0;
                     const total = Number(h.total) || 0;
                     const avg = days > 0 ? total / days : 0;
-                    const denom = days * maxP;
-                    let pct = denom > 0 ? (total / denom) * 100 : 0;
+                    let pct, denom, formula, detailExtra;
+                    if (k === "mountain") {
+                        // ۳ سفر در ماه = ۱۰۰٪
+                        denom = 3;
+                        pct = Math.min(100, (days / 3) * 100);
+                        formula = `${fa(days)} سفر ÷ ۳ = <b>${scoreText(Math.round(pct * 10) / 10)}٪</b>`;
+                        detailExtra = {
+                            d1: `سفرهای ثبت‌شده: <b>${fa(days)}</b>`,
+                            d2: `سقف ماه: <b>۳</b> سفر`,
+                            d3: `پیشرفت: <b>${fa(days)} / ۳</b>`,
+                            d4: days >= 3 ? `پاداش ماه: <b>+۱</b>` : `تا پاداش: <b>${fa(3 - days)}</b> سفر`
+                        };
+                    } else if (k === "discipline") {
+                        // نظم نسبت به روزهای سپری‌شده ماه
+                        denom = daysElapsed;
+                        pct = denom > 0 ? Math.min(100, (days / denom) * 100) : 0;
+                        formula = `${fa(days)} روز نظم ÷ ${fa(denom)} روز سپری‌شده = <b>${scoreText(Math.round(pct * 10) / 10)}٪</b>`;
+                        detailExtra = {
+                            d1: `روزهای با نظم: <b>${fa(days)}</b>`,
+                            d2: `روزهای سپری‌شده: <b>${fa(denom)}</b>`,
+                            d3: `مجموع امتیاز نظم: <b>${scoreText(total)}</b>`,
+                            d4: `میانگین: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`
+                        };
+                    } else {
+                        denom = days * maxP;
+                        pct = denom > 0 ? (total / denom) * 100 : 0;
+                        formula = `${scoreText(total)} ÷ (${fa(days)} × ${scoreText(maxP)}) = <b>${scoreText(Math.round(Math.max(0, Math.min(100, pct)) * 10) / 10)}٪</b>`;
+                        detailExtra = {
+                            d1: `روزهای ثبت‌شده: <b>${fa(days)}</b>`,
+                            d2: `سقف هر روز: <b>${scoreText(maxP)}</b>`,
+                            d3: `مجموع امتیاز: <b>${scoreText(total)}</b>`,
+                            d4: `میانگین روزانه: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`
+                        };
+                    }
                     if (pct < 0) pct = 0;
                     if (pct > 100) pct = 100;
                     const info = HABIT_LABELS[k] || { icon: "•", title: k };
                     const tier = pct >= 75 ? "hi" : pct <= 25 ? "lo" : "mid";
-                    return { k, h, pct, info, tier, days, total, avg, maxP, denom };
+                    return { k, h, pct, info, tier, days, total, avg, maxP, denom, formula, detailExtra };
                 });
                 rows.sort((a, b) => b.pct - a.pct);
 
@@ -3447,11 +3506,11 @@ function initWeightStrip(strip) {
                       <div class="habit-bar-track"><div class="habit-bar-fill ${r.tier}" data-w="${r.pct}"></div></div>
                       <div class="habit-detail">
                         <div class="habit-detail-grid">
-                          <div>روزهای ثبت‌شده: <b>${fa(r.days)}</b></div>
-                          <div>سقف هر روز: <b>${scoreText(r.maxP)}</b></div>
-                          <div>مجموع امتیاز: <b>${scoreText(r.total)}</b></div>
-                          <div>میانگین روزانه: <b>${scoreText(Math.round(r.avg * 100) / 100)}</b></div>
-                          <div class="habit-detail-formula">درصد موفقیت = ${scoreText(r.total)} ÷ (${fa(r.days)} × ${scoreText(r.maxP)}) = <b>${pctFa}٪</b></div>
+                          <div>${r.detailExtra.d1}</div>
+                          <div>${r.detailExtra.d2}</div>
+                          <div>${r.detailExtra.d3}</div>
+                          <div>${r.detailExtra.d4}</div>
+                          <div class="habit-detail-formula">درصد موفقیت = ${r.formula}</div>
                         </div>
                       </div>
                     </div>`;
