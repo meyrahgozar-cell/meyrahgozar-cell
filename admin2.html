@@ -525,11 +525,12 @@ const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","م�
 const START_YEAR = 1405;
 const HABIT_LABELS = {
   water: "💧 آب", sleep: "🌙 خواب", instagram: "📱 اینستا", sun: "☀️ آفتاب",
-  solitude: "🧘 خلوت", reading: "📖 مطالعه", sugar: "🍬 قند", dinner: "🍽️ شام", exercise: "🏃 ورزش", discipline: "✅ نظم"
+  solitude: "🧘 خلوت", reading: "📖 مطالعه", sugar: "🍬 قند", dinner: "🍽️ شام", exercise: "🏃 ورزش",
+  discipline: "✅ نظم", mountain: "⛰️ کوهنوردی"
 };
 const HABIT_MAX = {
   water: 1.5, sleep: 2, instagram: 1.5, sun: 1.5, solitude: 1.5,
-  reading: 1, sugar: 2, dinner: 2, exercise: 5, discipline: 1
+  reading: 1, sugar: 2, dinner: 2, exercise: 5, discipline: 1, mountain: 3
 };
 
 let currentUser = null;
@@ -857,25 +858,58 @@ async function openUser(userId) {
         total: ex.reduce((s, r) => s + (Number(r.score) || 0), 0)
       };
     }
+    habitMap.mountain = { count: mt.length, total: mt.length };
+    if (!habitMap.discipline) habitMap.discipline = { count: 0, total: 0 };
 
-    const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise"];
+    const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise","discipline","mountain"];
+    const nowH = new Date();
+    const jNowH = jalaali.toJalaali(nowH.getFullYear(), nowH.getMonth() + 1, nowH.getDate());
+    let daysElapsed = daysInMonth;
+    if (selectedYear === jNowH.jy && selectedMonth === jNowH.jm) {
+      daysElapsed = Math.max(1, jNowH.jd);
+    } else if (selectedYear > jNowH.jy || (selectedYear === jNowH.jy && selectedMonth > jNowH.jm)) {
+      daysElapsed = 0;
+    }
+
     const habitRows = order.filter(k => habitMap[k]).map(k => {
       const h = habitMap[k];
       const days = h.count || 0;
       const total = Number(h.total) || 0;
       const avg = days ? total / days : 0;
       const maxP = HABIT_MAX[k] != null ? HABIT_MAX[k] : 2;
-      const denom = days * maxP;
-      let pct = denom > 0 ? (total / denom) * 100 : 0;
+      let pct, formula, d1, d2, d3, d4;
+      if (k === "mountain") {
+        pct = Math.min(100, (days / 3) * 100);
+        formula = `${fa(days)} سفر ÷ ۳ = <b>${scoreText(Math.round(pct * 10) / 10)}٪</b>`;
+        d1 = `سفرهای ثبت‌شده: <b>${fa(days)}</b>`;
+        d2 = `سقف ماه: <b>۳</b> سفر`;
+        d3 = `پیشرفت: <b>${fa(days)} / ۳</b>`;
+        d4 = days >= 3 ? `پاداش ماه: <b>+۱</b>` : `تا پاداش: <b>${fa(3 - days)}</b> سفر`;
+      } else if (k === "discipline") {
+        const denom = daysElapsed;
+        pct = denom > 0 ? Math.min(100, (days / denom) * 100) : 0;
+        formula = `${fa(days)} روز نظم ÷ ${fa(denom)} روز سپری‌شده = <b>${scoreText(Math.round(pct * 10) / 10)}٪</b>`;
+        d1 = `روزهای با نظم: <b>${fa(days)}</b>`;
+        d2 = `روزهای سپری‌شده: <b>${fa(denom)}</b>`;
+        d3 = `مجموع امتیاز نظم: <b>${scoreText(total)}</b>`;
+        d4 = `میانگین: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`;
+      } else {
+        const denom = days * maxP;
+        pct = denom > 0 ? (total / denom) * 100 : 0;
+        formula = `${scoreText(total)} ÷ (${fa(days)} × ${scoreText(maxP)}) = <b>${scoreText(Math.round(Math.max(0, Math.min(100, pct)) * 10) / 10)}٪</b>`;
+        d1 = `روزهای ثبت‌شده: <b>${fa(days)}</b>`;
+        d2 = `سقف هر روز: <b>${scoreText(maxP)}</b>`;
+        d3 = `مجموع امتیاز: <b>${scoreText(total)}</b>`;
+        d4 = `میانگین روزانه: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`;
+      }
       if (pct < 0) pct = 0;
       if (pct > 100) pct = 100;
       const tier = pct >= 75 ? "hi" : pct <= 25 ? "lo" : "mid";
-      return { k, days, total, avg, maxP, pct, tier };
+      return { k, days, total, avg, maxP, pct, tier, formula, d1, d2, d3, d4 };
     }).sort((a, b) => b.pct - a.pct);
 
     const habitsHtml = habitRows.length
       ? habitRows.map(r => {
-          const pctFa = scoreText(Math.round(r.pct * 10) / 10);
           return `<div class="habit-item" data-pct="${r.pct.toFixed(1)}">
         <div class="habit-row" role="button" tabindex="0" aria-expanded="false">
           <div class="habit-name">${HABIT_LABELS[r.k] || r.k}</div>
@@ -885,11 +919,11 @@ async function openUser(userId) {
         <div class="habit-bar-track"><div class="habit-bar-fill ${r.tier}" data-w="${r.pct}"></div></div>
         <div class="habit-detail">
           <div class="habit-detail-grid">
-            <div>روزهای ثبت‌شده: <b>${fa(r.days)}</b></div>
-            <div>سقف هر روز: <b>${scoreText(r.maxP)}</b></div>
-            <div>مجموع امتیاز: <b>${scoreText(r.total)}</b></div>
-            <div>میانگین روزانه: <b>${scoreText(Math.round(r.avg * 100) / 100)}</b></div>
-            <div class="habit-detail-formula">درصد موفقیت = ${scoreText(r.total)} ÷ (${fa(r.days)} × ${scoreText(r.maxP)}) = <b>${pctFa}٪</b></div>
+            <div>${r.d1}</div>
+            <div>${r.d2}</div>
+            <div>${r.d3}</div>
+            <div>${r.d4}</div>
+            <div class="habit-detail-formula">درصد موفقیت = ${r.formula}</div>
           </div>
         </div>
       </div>`;
