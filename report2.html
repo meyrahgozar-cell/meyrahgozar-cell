@@ -1820,13 +1820,19 @@
             -webkit-backdrop-filter: blur(8px);
             backdrop-filter: blur(8px);
         }
+        .rank-metric-summary::before,
         .rank-metric-summary::after {
             content: "";
             position: absolute;
             top: -40%;
             left: -60%;
-            width: 45%;
             height: 180%;
+            transform: skewX(-18deg);
+            pointer-events: none;
+        }
+        /* نوار اصلی */
+        .rank-metric-summary::after {
+            width: 45%;
             background: linear-gradient(
               105deg,
               transparent 0%,
@@ -1836,9 +1842,22 @@
               rgba(255, 255, 255, 0.05) 65%,
               transparent 100%
             );
-            transform: skewX(-18deg);
-            pointer-events: none;
             animation: rankSheenSweep 3.6s ease-in-out infinite;
+        }
+        /* نوار باریک‌تر کنار همان افکت */
+        .rank-metric-summary::before {
+            width: 14%;
+            background: linear-gradient(
+              105deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.04) 40%,
+              rgba(255, 255, 255, 0.4) 50%,
+              rgba(0, 240, 255, 0.22) 58%,
+              transparent 100%
+            );
+            animation: rankSheenSweepNarrow 3.6s ease-in-out infinite;
+            animation-delay: 0.12s;
+            opacity: 0.9;
         }
         @keyframes rankSheenSweep {
             0%   { left: -70%; opacity: 0; }
@@ -1847,51 +1866,93 @@
             70%  { left: 120%; opacity: 0; }
             100% { left: 120%; opacity: 0; }
         }
+        @keyframes rankSheenSweepNarrow {
+            0%   { left: -55%; opacity: 0; }
+            12%  { opacity: 0.95; }
+            55%  { opacity: 0.95; }
+            70%  { left: 125%; opacity: 0; }
+            100% { left: 125%; opacity: 0; }
+        }
         .bmi-chip {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 52px;
-            padding: 4px 8px;
-            border-radius: 999px;
-            font-size: 11px;
+            min-width: 0;
+            padding: 2px 5px;
+            border-radius: 6px;
+            font-size: 9px;
             font-weight: 800;
             direction: ltr;
             unicode-bidi: isolate;
-            border: 1px solid transparent;
-            cursor: default;
+            border: none;
+            cursor: pointer;
             flex-shrink: 0;
+            letter-spacing: 0.02em;
         }
-        .bmi-chip.editable { cursor: pointer; }
-        .bmi-chip.editable:active { transform: scale(0.96); }
+        .bmi-chip:active { transform: scale(0.95); }
         .bmi-chip.ok {
             color: #00ff9d;
-            background: rgba(0, 255, 157, 0.12);
-            border-color: rgba(0, 255, 157, 0.45);
-            box-shadow: 0 0 12px rgba(0, 255, 157, 0.35), 0 0 22px rgba(0, 255, 157, 0.15);
-            text-shadow: 0 0 8px rgba(0, 255, 157, 0.55);
+            background: rgba(0, 255, 157, 0.1);
+            box-shadow: 0 0 8px rgba(0, 255, 157, 0.35);
+            text-shadow: 0 0 6px rgba(0, 255, 157, 0.5);
         }
         .bmi-chip.warn {
             color: #ffc857;
-            background: rgba(255, 200, 87, 0.12);
-            border-color: rgba(255, 200, 87, 0.5);
-            box-shadow: 0 0 12px rgba(255, 200, 87, 0.4), 0 0 22px rgba(255, 180, 50, 0.18);
-            text-shadow: 0 0 8px rgba(255, 200, 87, 0.55);
+            background: rgba(255, 200, 87, 0.1);
+            box-shadow: 0 0 8px rgba(255, 200, 87, 0.35);
+            text-shadow: 0 0 6px rgba(255, 200, 87, 0.5);
         }
         .bmi-chip.bad {
             color: #ff4d6d;
-            background: rgba(255, 77, 109, 0.12);
-            border-color: rgba(255, 77, 109, 0.5);
-            box-shadow: 0 0 12px rgba(255, 77, 109, 0.4), 0 0 22px rgba(255, 77, 109, 0.18);
-            text-shadow: 0 0 8px rgba(255, 77, 109, 0.55);
+            background: rgba(255, 77, 109, 0.1);
+            box-shadow: 0 0 8px rgba(255, 77, 109, 0.35);
+            text-shadow: 0 0 6px rgba(255, 77, 109, 0.5);
         }
         .bmi-chip.na {
             color: var(--muted);
             background: rgba(255,255,255,0.04);
-            border-color: var(--border);
             font-weight: 600;
-            font-size: 10px;
+            font-size: 9px;
+            box-shadow: none;
         }
+        .bmi-info-grid {
+            display: grid;
+            gap: 8px;
+            margin: 12px 0 14px;
+        }
+        .bmi-info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            font-size: 12px;
+        }
+        .bmi-info-row b { font-weight: 800; direction: ltr; unicode-bidi: isolate; }
+        .bmi-info-row.ok { box-shadow: inset 0 0 0 1px rgba(0,255,157,0.25); }
+        .bmi-info-row.ok b { color: #00ff9d; text-shadow: 0 0 8px rgba(0,255,157,0.4); }
+        .bmi-info-row.warn { box-shadow: inset 0 0 0 1px rgba(255,200,87,0.25); }
+        .bmi-info-row.warn b { color: #ffc857; text-shadow: 0 0 8px rgba(255,200,87,0.4); }
+        .bmi-info-row.bad { box-shadow: inset 0 0 0 1px rgba(255,77,109,0.25); }
+        .bmi-info-row.bad b { color: #ff4d6d; text-shadow: 0 0 8px rgba(255,77,109,0.4); }
+        .bmi-info-you {
+            text-align: center;
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            background: rgba(180,76,255,0.1);
+        }
+        .bmi-info-you .big {
+            font-size: 28px;
+            font-weight: 800;
+            direction: ltr;
+            unicode-bidi: isolate;
+            line-height: 1.1;
+        }
+        .bmi-info-you .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
         .bmi-modal {
             position: fixed;
             inset: 0;
@@ -3184,6 +3245,67 @@ function initWeightStrip(strip) {
             }
         }
 
+        function openBmiInfo(userId) {
+            const uid = userId || (currentUser && currentUser.id) || null;
+            const isSelf = currentUser && uid && String(uid) === String(currentUser.id);
+            const data = uid ? (bmiDataByUser[String(uid)] || {}) : {};
+            const bmi = calcBmi(data.weight_kg, data.height_cm);
+            const tier = bmiTier(bmi);
+            const tierLabel = tier === "ok" ? "مناسب" : tier === "warn" ? "مرزی" : tier === "bad" ? "خارج از محدوده سالم" : "نامشخص";
+            const wTxt = data.weight_kg != null ? scoreText(Math.round(data.weight_kg * 10) / 10) + " kg" : "—";
+            const hTxt = data.height_cm != null ? scoreText(data.height_cm) + " cm" : "—";
+            const ageTxt = data.age_years != null ? fa(data.age_years) + " سال" : "—";
+            const bmiTxt = bmi != null ? scoreText(bmi) : "—";
+
+            let modal = document.getElementById("bmiInfoModal");
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "bmiInfoModal";
+                modal.className = "bmi-modal hidden";
+                modal.innerHTML = `
+                  <div class="bmi-sheet" role="dialog" aria-label="راهنمای BMI">
+                    <h3>شاخص توده بدنی (BMI)</h3>
+                    <div class="bmi-sub">وزن (kg) ÷ مربع قد (m) — بر اساس آخرین وزن ثبت‌شده و قد پروفایل</div>
+                    <div id="bmiInfoYou" class="bmi-info-you"></div>
+                    <div class="bmi-info-grid">
+                      <div class="bmi-info-row ok"><span>مناسب</span><b>۱۸.۵ – ۲۴.۹</b></div>
+                      <div class="bmi-info-row warn"><span>مرزی (کم‌وزن / اضافه‌وزن خفیف)</span><b>۱۷–۱۸.۴ · ۲۵–۲۹.۹</b></div>
+                      <div class="bmi-info-row bad"><span>خارج از محدوده</span><b>&lt; ۱۷ یا ≥ ۳۰</b></div>
+                    </div>
+                    <div class="bmi-actions">
+                      <button type="button" class="bmi-cancel" id="bmiInfoClose">بستن</button>
+                      <button type="button" class="bmi-save hidden" id="bmiInfoEdit">ویرایش قد و سن</button>
+                    </div>
+                  </div>`;
+                document.body.appendChild(modal);
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) closeBmiInfo();
+                });
+                modal.querySelector("#bmiInfoClose").onclick = () => closeBmiInfo();
+                modal.querySelector("#bmiInfoEdit").onclick = () => {
+                    closeBmiInfo();
+                    openBmiEditor();
+                };
+            }
+            const you = modal.querySelector("#bmiInfoYou");
+            const editBtn = modal.querySelector("#bmiInfoEdit");
+            if (you) {
+                const color = tier === "ok" ? "#00ff9d" : tier === "warn" ? "#ffc857" : tier === "bad" ? "#ff4d6d" : "var(--text)";
+                you.innerHTML = `
+                  <div class="big" style="color:${color};text-shadow:0 0 14px ${color}55">${bmiTxt}</div>
+                  <div class="meta">${tierLabel} · وزن ${wTxt} · قد ${hTxt} · سن ${ageTxt}</div>
+                  <div class="meta" style="margin-top:6px">فرمول: BMI = وزن ÷ (قد به متر)²</div>`;
+            }
+            if (editBtn) {
+                if (isSelf) editBtn.classList.remove("hidden");
+                else editBtn.classList.add("hidden");
+            }
+            modal.classList.remove("hidden");
+        }
+        function closeBmiInfo() {
+            const modal = document.getElementById("bmiInfoModal");
+            if (modal) modal.classList.add("hidden");
+        }
         function openBmiEditor() {
             if (!currentUser) return;
             let modal = document.getElementById("bmiModal");
@@ -4261,11 +4383,17 @@ function initWeightStrip(strip) {
                     return;
                 }
 
-                const bmiEdit = e.target.closest(".bmi-chip.editable, .bmi-chip[data-bmi-edit='1']");
-                if (bmiEdit && bmiEdit.getAttribute("data-bmi-edit") === "1") {
+                const bmiChip = e.target.closest(".bmi-chip");
+                if (bmiChip) {
                     e.preventDefault();
                     e.stopPropagation();
-                    openBmiEditor();
+                    const row = bmiChip.closest(".rank-item, .podium-place");
+                    let uid = null;
+                    if (row) {
+                        const hit = row.querySelector(".profile-hit");
+                        if (hit) uid = hit.dataset.uid || null;
+                    }
+                    openBmiInfo(uid);
                     return;
                 }
 
