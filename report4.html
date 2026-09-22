@@ -1267,9 +1267,6 @@
             box-sizing: border-box;
             contain: paint;
         }
-        .weight-strip-wrap {
-            /* glow via RAF */
-        }
         .weight-strip-wrap::after {
             content: "";
             position: absolute;
@@ -1277,19 +1274,11 @@
             pointer-events: none;
             border-radius: 16px;
             box-shadow: inset 0 0 0 0 transparent;
-            opacity: 0;
-            /* glow via RAF */
+            transition: box-shadow 0.08s linear;
             z-index: 2;
         }
         .weight-strip-wrap.lava-hot::after {
-            opacity: var(--lava-a, 1);
             box-shadow: inset 0 0 20px rgba(255, 100, 40, 0.35), inset 0 0 40px rgba(255, 60, 0, 0.2);
-        }
-        .weight-strip {
-            transition: filter 0.18s linear;
-        }
-        #weightEndL, #weightEndR, .weight-end {
-            transition: opacity 0.2s linear, transform 0.2s linear;
         }
         .weight-strip {
             position: relative;
@@ -1824,66 +1813,7 @@
         }
 
 
-        /* sheen / shiny glass light sweep on metric summary */
-        .rank-metric-summary {
-            position: relative;
-            overflow: hidden;
-            -webkit-backdrop-filter: blur(8px);
-            backdrop-filter: blur(8px);
-        }
-        .rank-metric-summary::before,
-        .rank-metric-summary::after {
-            content: "";
-            position: absolute;
-            top: -40%;
-            left: -60%;
-            height: 180%;
-            transform: skewX(-18deg);
-            pointer-events: none;
-        }
-        /* نوار اصلی */
-        .rank-metric-summary::after {
-            width: 45%;
-            background: linear-gradient(
-              105deg,
-              transparent 0%,
-              rgba(255, 255, 255, 0.02) 35%,
-              rgba(255, 255, 255, 0.28) 50%,
-              rgba(0, 240, 255, 0.18) 55%,
-              rgba(255, 255, 255, 0.05) 65%,
-              transparent 100%
-            );
-            animation: rankSheenSweep 3.6s ease-in-out infinite;
-        }
-        /* نوار باریک‌تر کنار همان افکت */
-        .rank-metric-summary::before {
-            width: 14%;
-            background: linear-gradient(
-              105deg,
-              transparent 0%,
-              rgba(255, 255, 255, 0.04) 40%,
-              rgba(255, 255, 255, 0.4) 50%,
-              rgba(0, 240, 255, 0.22) 58%,
-              transparent 100%
-            );
-            animation: rankSheenSweepNarrow 3.6s ease-in-out infinite;
-            animation-delay: 0.12s;
-            opacity: 0.9;
-        }
-        @keyframes rankSheenSweep {
-            0%   { left: -70%; opacity: 0; }
-            12%  { opacity: 1; }
-            55%  { opacity: 1; }
-            70%  { left: 120%; opacity: 0; }
-            100% { left: 120%; opacity: 0; }
-        }
-        @keyframes rankSheenSweepNarrow {
-            0%   { left: -55%; opacity: 0; }
-            12%  { opacity: 0.95; }
-            55%  { opacity: 0.95; }
-            70%  { left: 125%; opacity: 0; }
-            100% { left: 125%; opacity: 0; }
-        }
+        /* === recovered: BMI === */
         .bmi-chip {
             display: inline-flex;
             align-items: center;
@@ -1926,20 +1856,10 @@
             font-size: 9px;
             box-shadow: none;
         }
-        .bmi-info-grid {
-            display: grid;
-            gap: 8px;
-            margin: 12px 0 14px;
-        }
+        .bmi-info-grid { display: grid; gap: 8px; margin: 12px 0 14px; }
         .bmi-info-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.04);
-            font-size: 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.04); font-size: 12px;
         }
         .bmi-info-row b { font-weight: 800; direction: ltr; unicode-bidi: isolate; }
         .bmi-info-row.ok { box-shadow: inset 0 0 0 1px rgba(0,255,157,0.25); }
@@ -1949,38 +1869,19 @@
         .bmi-info-row.bad { box-shadow: inset 0 0 0 1px rgba(255,77,109,0.25); }
         .bmi-info-row.bad b { color: #ff4d6d; text-shadow: 0 0 8px rgba(255,77,109,0.4); }
         .bmi-info-you {
-            text-align: center;
-            padding: 12px;
-            border-radius: 14px;
-            margin-bottom: 12px;
+            text-align: center; padding: 12px; border-radius: 14px; margin-bottom: 12px;
             background: rgba(180,76,255,0.1);
         }
-        .bmi-info-you .big {
-            font-size: 28px;
-            font-weight: 800;
-            direction: ltr;
-            unicode-bidi: isolate;
-            line-height: 1.1;
-        }
+        .bmi-info-you .big { font-size: 28px; font-weight: 800; direction: ltr; unicode-bidi: isolate; line-height: 1.1; }
         .bmi-info-you .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
-
         .bmi-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 13000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            background: rgba(0,0,0,0.55);
-            -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
+            position: fixed; inset: 0; z-index: 13000; display: flex; align-items: center; justify-content: center;
+            padding: 16px; background: rgba(0,0,0,0.55);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
         }
         .bmi-modal.hidden { display: none !important; }
         .bmi-sheet {
-            width: min(360px, 100%);
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.2);
+            width: min(360px, 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2);
             background: linear-gradient(165deg, rgba(30,34,52,0.98), rgba(10,12,20,0.99));
             box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 28px rgba(180,76,255,0.2);
             padding: 18px 16px 16px;
@@ -2009,47 +1910,104 @@
         .bmi-msg.err { color: var(--negative); }
         .bmi-msg.ok { color: var(--positive); }
 
-
-        /* idle shiny sheen on each weight box surface — only when not glowing/moving */
-        .weight-chip {
+        /* rank metric summary dual sheen */
+        .rank-metric-summary {
             position: relative;
             overflow: hidden;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
         }
-        .weight-chip::after {
+        .rank-metric-summary::before,
+        .rank-metric-summary::after {
             content: "";
             position: absolute;
-            top: -30%;
-            left: -80%;
-            width: 55%;
-            height: 160%;
+            top: -40%;
+            left: -60%;
+            height: 180%;
+            transform: skewX(-18deg);
+            pointer-events: none;
+        }
+        .rank-metric-summary::after {
+            width: 45%;
+            background: linear-gradient(
+              105deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.02) 35%,
+              rgba(255, 255, 255, 0.28) 50%,
+              rgba(0, 240, 255, 0.18) 55%,
+              rgba(255, 255, 255, 0.05) 65%,
+              transparent 100%
+            );
+            animation: rankSheenSweep 3.6s ease-in-out infinite;
+        }
+        .rank-metric-summary::before {
+            width: 14%;
+            background: linear-gradient(
+              105deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.04) 40%,
+              rgba(255, 255, 255, 0.4) 50%,
+              rgba(0, 240, 255, 0.22) 58%,
+              transparent 100%
+            );
+            animation: rankSheenSweepNarrow 3.6s ease-in-out infinite;
+            animation-delay: 0.12s;
+            opacity: 0.9;
+        }
+        @keyframes rankSheenSweep {
+            0%   { left: -70%; opacity: 0; }
+            12%  { opacity: 1; }
+            55%  { opacity: 1; }
+            70%  { left: 120%; opacity: 0; }
+            100% { left: 120%; opacity: 0; }
+        }
+        @keyframes rankSheenSweepNarrow {
+            0%   { left: -55%; opacity: 0; }
+            12%  { opacity: 0.95; }
+            55%  { opacity: 0.95; }
+            70%  { left: 125%; opacity: 0; }
+            100% { left: 125%; opacity: 0; }
+        }
+
+        /* whole weight strip idle sheen — surfaces of day boxes show in the light */
+        .weight-strip-wrap {
+            position: relative;
+        }
+        .weight-strip-wrap::before {
+            content: "";
+            position: absolute;
+            top: -35%;
+            left: -70%;
+            width: 48%;
+            height: 170%;
+            z-index: 6;
             pointer-events: none;
             background: linear-gradient(
               105deg,
               transparent 0%,
-              rgba(255, 255, 255, 0.02) 38%,
-              rgba(255, 255, 255, 0.22) 50%,
-              rgba(0, 240, 255, 0.12) 56%,
-              transparent 72%
+              rgba(255, 255, 255, 0.015) 34%,
+              rgba(255, 255, 255, 0.26) 48%,
+              rgba(0, 240, 255, 0.14) 54%,
+              rgba(255, 255, 255, 0.04) 62%,
+              transparent 100%
             );
-            transform: skewX(-16deg);
+            transform: skewX(-18deg);
             opacity: 0;
-            animation: weightChipSheen 4.2s ease-in-out infinite;
-            z-index: 2;
+            animation: weightStripSheen 3.8s ease-in-out infinite;
         }
-        .weight-chip:nth-child(odd)::after { animation-delay: 0s; }
-        .weight-chip:nth-child(even)::after { animation-delay: 0.55s; }
-        .weight-chip:nth-child(3n)::after { animation-delay: 1.1s; }
-        @keyframes weightChipSheen {
-            0%   { left: -80%; opacity: 0; }
-            8%   { opacity: 1; }
-            42%  { opacity: 1; }
-            58%  { left: 120%; opacity: 0; }
-            100% { left: 120%; opacity: 0; }
+        .weight-strip-wrap.idle-sheen-on::before {
+            opacity: 1;
         }
-        /* hide sheen while scrolling or lava glow active */
-        .weight-strip.is-dragging .weight-chip::after,
-        .weight-strip-wrap.lava-hot .weight-chip::after,
-        .weight-strip-wrap.has-glow .weight-chip::after {
+        @keyframes weightStripSheen {
+            0%   { left: -75%; opacity: 0; }
+            10%  { opacity: 1; }
+            50%  { opacity: 1; }
+            68%  { left: 125%; opacity: 0; }
+            100% { left: 125%; opacity: 0; }
+        }
+        .weight-strip-wrap.has-glow::before,
+        .weight-strip-wrap.lava-hot::before,
+        .weight-strip-wrap:has(.weight-strip.is-dragging)::before {
             animation: none !important;
             opacity: 0 !important;
         }
@@ -2085,10 +2043,6 @@
     </div>
 
     <script>
-        // All JavaScript remains exactly the same – no changes to logic.
-        // The only modifications are CSS (no metal bars, added noise texture).
-        // For brevity, I'll include the entire script as before.
-
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
         const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
@@ -2705,6 +2659,7 @@ function initWeightStrip(strip) {
 
             if (strip.dataset.lavaReady === "1") return;
             strip.dataset.lavaReady = "1";
+            wrap.classList.add("idle-sheen-on");
 
             strip.style.direction = "ltr";
             strip.style.overflowX = "auto";
@@ -2769,6 +2724,7 @@ function initWeightStrip(strip) {
                     const glowing = lavaA > 0.08 || eh > 0.15 || heat > 0.06;
                     wrap.classList.toggle("lava-hot", glowing);
                     wrap.classList.toggle("has-glow", glowing);
+                    wrap.classList.toggle("idle-sheen-on", !glowing);
                     wrap.style.setProperty("--lava-a", lavaA.toFixed(4));
                     if (heat > 0.02 || eh > 0.04) {
                         const g1 = (10 + heat * 36);
@@ -4635,7 +4591,8 @@ const spawnSparks = (speed, fromLeft) => {
         }
 
         initInteractions();
-    </script>
+    
+</script>
   <script src="nav.js"></script>
 
 <div class="wchart-modal hidden" id="wchartModal" aria-hidden="true">
