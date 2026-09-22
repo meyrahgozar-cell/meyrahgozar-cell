@@ -1969,47 +1969,64 @@
             100% { left: 125%; opacity: 0; }
         }
 
-        /* whole weight strip idle sheen — surfaces of day boxes show in the light */
+        /* single soft light band across whole strip — // with smooth edges */
         .weight-strip-wrap {
             position: relative;
         }
         .weight-strip-wrap::before {
             content: "";
             position: absolute;
-            top: -35%;
-            left: -70%;
-            width: 48%;
-            height: 170%;
+            top: 0;
+            bottom: 0;
+            left: -40%;
+            width: 28%;
             z-index: 6;
             pointer-events: none;
+            /* one fixed-width beam: soft edge / core / soft edge */
             background: linear-gradient(
-              105deg,
+              90deg,
               transparent 0%,
-              rgba(255, 255, 255, 0.015) 34%,
-              rgba(255, 255, 255, 0.26) 48%,
-              rgba(0, 240, 255, 0.14) 54%,
-              rgba(255, 255, 255, 0.04) 62%,
+              rgba(255, 255, 255, 0.04) 18%,
+              rgba(255, 255, 255, 0.14) 38%,
+              rgba(255, 255, 255, 0.22) 50%,
+              rgba(255, 255, 255, 0.14) 62%,
+              rgba(255, 255, 255, 0.04) 82%,
               transparent 100%
             );
             transform: skewX(-18deg);
+            mix-blend-mode: soft-light;
             opacity: 0;
-            animation: weightStripSheen 3.8s ease-in-out infinite;
+            animation: weightStripSheen 4.2s ease-in-out infinite;
+            will-change: left, opacity;
         }
         .weight-strip-wrap.idle-sheen-on::before {
-            opacity: 1;
+            opacity: 0.95;
         }
         @keyframes weightStripSheen {
-            0%   { left: -75%; opacity: 0; }
-            10%  { opacity: 1; }
-            50%  { opacity: 1; }
-            68%  { left: 125%; opacity: 0; }
-            100% { left: 125%; opacity: 0; }
+            0%   { left: -45%; }
+            100% { left: 115%; }
         }
         .weight-strip-wrap.has-glow::before,
         .weight-strip-wrap.lava-hot::before,
         .weight-strip-wrap:has(.weight-strip.is-dragging)::before {
             animation: none !important;
             opacity: 0 !important;
+        }
+        /* chip relief so the beam reveals box surfaces */
+        .weight-strip .weight-chip {
+            position: relative;
+            z-index: 1;
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.1),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+              0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .weight-strip .weight-chip.max {
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.14),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+              0 0 16px rgba(0, 240, 255, 0.25),
+              0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
 </style>
