@@ -451,6 +451,53 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
   box-shadow: 0 0 6px currentColor;
 }
 
+
+.user-stats-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+.user-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+}
+.user-pill.wt {
+  color: var(--neon2);
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+}
+.user-pill.bmi-ok {
+  color: #00ff9d;
+  background: rgba(0, 255, 157, 0.1);
+  box-shadow: 0 0 8px rgba(0, 255, 157, 0.2);
+}
+.user-pill.bmi-warn {
+  color: #ffc857;
+  background: rgba(255, 200, 87, 0.1);
+  box-shadow: 0 0 8px rgba(255, 200, 87, 0.2);
+}
+.user-pill.bmi-bad {
+  color: #ff4d6d;
+  background: rgba(255, 77, 109, 0.1);
+  box-shadow: 0 0 8px rgba(255, 77, 109, 0.2);
+}
+.user-pill.bmi-na {
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+}
+.user-pill.priv {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
 </style>
 
 
@@ -641,6 +688,22 @@ function initMonthPicker() {
   monthSel.onchange = () => { selectedMonth = Number(monthSel.value); loadUsers(); };
 }
 
+
+function calcBmi(weightKg, heightCm) {
+  const w = Number(weightKg);
+  const h = Number(heightCm);
+  if (!(w > 0) || !(h > 0)) return null;
+  const m = h / 100;
+  if (m <= 0) return null;
+  return Math.round((w / (m * m)) * 10) / 10;
+}
+function bmiTier(bmi) {
+  if (bmi == null || Number.isNaN(bmi)) return "na";
+  if (bmi >= 18.5 && bmi < 25) return "ok";
+  if ((bmi >= 17 && bmi < 18.5) || (bmi >= 25 && bmi < 30)) return "warn";
+  return "bad";
+}
+
 async function loadUsers() {
   const list = document.getElementById("userList");
   list.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
@@ -664,12 +727,33 @@ async function loadUsers() {
   try {
     const [boardRes, profilesRes] = await Promise.all([
       db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: boardEnd }),
-      db.from("profiles").select("id, display_name, is_admin")
+      db.from("profiles").select("id, display_name, is_admin, height_cm, age_years, bmi_public")
     ]);
 
     const board = boardRes.data || [];
     const profiles = profilesRes.data || [];
     const byId = Object.fromEntries(profiles.map(p => [p.id, p]));
+
+    // وزن و BMI (ادمین همه را می‌بیند — تابع با is_admin)
+    let bmiMap = {};
+    try {
+      const ids = profiles.map(p => p.id).filter(Boolean);
+      if (ids.length) {
+        const bmiRes = await db.rpc("get_users_bmi_data", { p_user_ids: ids });
+        if (!bmiRes.error && bmiRes.data) {
+          (bmiRes.data || []).forEach(row => {
+            bmiMap[String(row.user_id)] = {
+              height_cm: row.height_cm != null ? Number(row.height_cm) : null,
+              age_years: row.age_years != null ? Number(row.age_years) : null,
+              weight_kg: row.weight_kg != null ? Number(row.weight_kg) : null,
+              bmi_public: row.bmi_public !== false
+            };
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("bmi list", e);
+    }
 
     // merge all profiles with board scores
     const scoreMap = Object.fromEntries(board.map(b => [b.user_id, b]));
@@ -677,13 +761,23 @@ async function loadUsers() {
       const b = scoreMap[p.id];
       const total = b ? Number(b.total_score) || 0 : 0;
       const avg = completedDays > 0 ? total / completedDays : 0;
+      const bm = bmiMap[String(p.id)] || {};
+      // fallback from profiles select if RPC null but profile has height
+      const height = bm.height_cm != null ? bm.height_cm : (p.height_cm != null ? Number(p.height_cm) : null);
+      const weight = bm.weight_kg != null ? bm.weight_kg : null;
+      const bmi = calcBmi(weight, height);
       return {
         id: p.id,
         display_name: p.display_name || "کاربر",
         is_admin: !!p.is_admin,
         total,
         avg: Math.round(avg * 100) / 100,
-        completedDays
+        completedDays,
+        weight_kg: weight,
+        height_cm: height,
+        age_years: bm.age_years != null ? bm.age_years : (p.age_years != null ? Number(p.age_years) : null),
+        bmi,
+        bmi_public: bm.bmi_public !== false && p.bmi_public !== false
       };
     }).sort((a, b) => b.avg - a.avg || b.total - a.total);
 
@@ -692,16 +786,29 @@ async function loadUsers() {
       return;
     }
 
-    list.innerHTML = usersCache.map(u => `
+    list.innerHTML = usersCache.map(u => {
+      const wt = u.weight_kg != null
+        ? `<span class="user-pill wt">${scoreText(Math.round(u.weight_kg * 10) / 10)} kg</span>`
+        : `<span class="user-pill">وزن —</span>`;
+      let bmiHtml;
+      if (u.bmi != null) {
+        const tier = bmiTier(u.bmi);
+        bmiHtml = `<span class="user-pill bmi-${tier}">BMI ${scoreText(u.bmi)}</span>`;
+      } else {
+        bmiHtml = `<span class="user-pill bmi-na">BMI —</span>`;
+      }
+      const priv = u.bmi_public === false ? `<span class="user-pill priv">مخفی</span>` : "";
+      return `
       <button class="user-row" data-id="${u.id}">
         ${avatarHtml(u.display_name)}
         <div class="user-meta">
           <div class="user-name">${u.display_name}${u.is_admin ? " · admin" : ""}</div>
           <div class="user-sub">مجموع ${scoreText(u.total)} · میانگین ${scoreText(u.avg)}</div>
+          <div class="user-stats-inline">${wt}${bmiHtml}${priv}</div>
         </div>
         <div class="user-score">${scoreText(u.avg)}</div>
-      </button>
-    `).join("");
+      </button>`;
+    }).join("");
 
     list.querySelectorAll(".user-row").forEach(btn => {
       btn.onclick = () => openUser(btn.dataset.id);
