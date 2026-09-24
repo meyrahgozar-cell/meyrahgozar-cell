@@ -3904,7 +3904,7 @@ const spawnSparks = (speed, fromLeft) => {
                     dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false, items: [] };
                 }
                 const habitLabel = (type) => {
-                    const m = HABIT_META[type];
+                    const m = HABIT_LABELS[type];
                     return m ? ((m.icon ? m.icon + " " : "") + (m.title || type)) : type;
                 };
                 (logsRes.data || []).forEach(row => {
