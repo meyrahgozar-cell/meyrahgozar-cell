@@ -2146,6 +2146,108 @@
         .day-modal-row-val.pos { color: var(--positive, #00ff9d); }
         .day-modal-row-val.neg { color: var(--negative, #ff4d6d); }
 
+
+        .final-month-banner {
+            position: relative;
+            margin-bottom: 10px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(180, 120, 255, 0.45);
+            background: linear-gradient(
+              145deg,
+              rgba(180, 76, 255, 0.18) 0%,
+              rgba(0, 240, 255, 0.1) 50%,
+              rgba(20, 16, 40, 0.55) 100%
+            );
+            box-shadow:
+              0 0 18px rgba(180, 76, 255, 0.35),
+              0 0 36px rgba(0, 240, 255, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .final-month-banner::before,
+        .final-month-banner::after {
+            content: "";
+            position: absolute;
+            top: -40%;
+            height: 180%;
+            pointer-events: none;
+            transform: skewX(-18deg);
+        }
+        .final-month-banner::after {
+            left: -60%;
+            width: 48%;
+            background: linear-gradient(
+              105deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.02) 35%,
+              rgba(255, 255, 255, 0.32) 50%,
+              rgba(0, 240, 255, 0.2) 56%,
+              transparent 100%
+            );
+            animation: finalMonthSheen 3.4s ease-in-out infinite;
+        }
+        .final-month-banner::before {
+            left: -50%;
+            width: 14%;
+            background: linear-gradient(
+              105deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.05) 40%,
+              rgba(255, 255, 255, 0.45) 50%,
+              rgba(0, 240, 255, 0.25) 58%,
+              transparent 100%
+            );
+            animation: finalMonthSheenNarrow 3.4s ease-in-out infinite;
+            animation-delay: 0.12s;
+            opacity: 0.95;
+        }
+        @keyframes finalMonthSheen {
+            0%   { left: -70%; opacity: 0; }
+            12%  { opacity: 1; }
+            55%  { opacity: 1; }
+            72%  { left: 120%; opacity: 0; }
+            100% { left: 120%; opacity: 0; }
+        }
+        @keyframes finalMonthSheenNarrow {
+            0%   { left: -55%; opacity: 0; }
+            12%  { opacity: 0.95; }
+            55%  { opacity: 0.95; }
+            72%  { left: 125%; opacity: 0; }
+            100% { left: 125%; opacity: 0; }
+        }
+        .final-month-banner-inner {
+            position: relative;
+            z-index: 1;
+            padding: 12px 14px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .final-month-kicker {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: rgba(200, 180, 255, 0.95);
+            text-shadow: 0 0 10px rgba(180, 76, 255, 0.55);
+        }
+        .final-month-title {
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.45;
+            background: linear-gradient(90deg, #e8d6ff, #7ef9ff, #e8d6ff);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: finalMonthGlowText 3.6s ease-in-out infinite;
+            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+        }
+        @keyframes finalMonthGlowText {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
 </style>
 </head>
 <body>
@@ -2168,6 +2270,12 @@
         </div>
         <p class="report-period-note" id="reportPeriodNote"></p>
         <div class="month-special-bar" id="monthSpecialBar">
+            <div class="final-month-banner" id="finalMonthBanner" aria-live="polite">
+                <div class="final-month-banner-inner">
+                    <span class="final-month-kicker">گزارش بسته شد</span>
+                    <span class="final-month-title" id="finalMonthTitle">نتایج نهایی ماه قبل که تمام شد</span>
+                </div>
+            </div>
             <button type="button" class="btn-go-current" id="goCurrentMonth">برو به ماه جاری ↗</button>
         </div>
 
@@ -2453,7 +2561,14 @@
             }
 
             if (bar) {
-                bar.classList.toggle("show", !isCurrent);
+                const past = selectedYear < j.jy || (selectedYear === j.jy && selectedMonth < j.jm);
+                bar.classList.toggle("show", !isCurrent && past);
+                const titleEl = document.getElementById("finalMonthTitle");
+                if (titleEl && past && !isCurrent) {
+                    const monthName = J_MONTHS[selectedMonth - 1] || "";
+                    titleEl.textContent =
+                        "نتایج نهایی «" + monthName + " " + fa(selectedYear) + "» که تمام شد";
+                }
             }
         }
 
