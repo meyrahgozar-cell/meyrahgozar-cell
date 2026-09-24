@@ -2147,77 +2147,118 @@
         .day-modal-row-val.neg { color: var(--negative, #ff4d6d); }
 
 
+        
         .final-month-banner {
             position: relative;
             margin-bottom: 10px;
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid rgba(180, 120, 255, 0.45);
+            border: 1px solid rgba(180, 120, 255, 0.4);
             background: linear-gradient(
-              145deg,
-              rgba(180, 76, 255, 0.18) 0%,
-              rgba(0, 240, 255, 0.1) 50%,
-              rgba(20, 16, 40, 0.55) 100%
+              160deg,
+              rgba(18, 20, 36, 0.95) 0%,
+              rgba(12, 14, 28, 0.98) 100%
             );
             box-shadow:
-              0 0 18px rgba(180, 76, 255, 0.35),
-              0 0 36px rgba(0, 240, 255, 0.15),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+              0 0 16px rgba(180, 76, 255, 0.28),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            isolation: isolate;
         }
-        .final-month-banner::before,
-        .final-month-banner::after {
+        /* نام ماه — طرح شیشه‌ای برجسته؛ بدون نور تقریباً نامرئی */
+        .final-month-etch {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+            pointer-events: none;
+            font-size: clamp(28px, 12vw, 48px);
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            line-height: 1;
+            color: rgba(200, 220, 255, 0.03);
+            text-shadow:
+              0 1px 0 rgba(255, 255, 255, 0.04),
+              0 -1px 0 rgba(0, 0, 0, 0.35);
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.04);
+            user-select: none;
+            opacity: 1;
+        }
+        /* یک نوار نور ثابت — لبه‌ها پررنگ‌تر، وسط یکدست (نه گرادیان نرم عبور نور) */
+        .final-month-beam {
+            position: absolute;
+            top: -15%;
+            bottom: -15%;
+            left: -35%;
+            width: 26%;
+            z-index: 1;
+            pointer-events: none;
+            transform: skewX(-16deg);
+            /* لبه روشن | بدنه ثابت | لبه روشن */
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              transparent 6%,
+              rgba(180, 220, 255, 0.55) 7%,
+              rgba(255, 255, 255, 0.22) 14%,
+              rgba(255, 255, 255, 0.18) 50%,
+              rgba(255, 255, 255, 0.22) 86%,
+              rgba(180, 220, 255, 0.55) 93%,
+              transparent 94%,
+              transparent 100%
+            );
+            mix-blend-mode: soft-light;
+            animation: finalMonthBeam 3.6s linear infinite;
+            will-change: left;
+        }
+        /* لایه دوم فقط برای روشن‌کردن حکاکی شیشه */
+        .final-month-beam::after {
             content: "";
             position: absolute;
-            top: -40%;
-            height: 180%;
-            pointer-events: none;
-            transform: skewX(-18deg);
-        }
-        .final-month-banner::after {
-            left: -60%;
-            width: 48%;
+            inset: 0;
             background: linear-gradient(
-              105deg,
+              90deg,
               transparent 0%,
-              rgba(255, 255, 255, 0.02) 35%,
-              rgba(255, 255, 255, 0.32) 50%,
-              rgba(0, 240, 255, 0.2) 56%,
+              transparent 6%,
+              rgba(255, 255, 255, 0.7) 8%,
+              rgba(200, 240, 255, 0.25) 50%,
+              rgba(255, 255, 255, 0.7) 92%,
+              transparent 94%,
               transparent 100%
             );
-            animation: finalMonthSheen 3.4s ease-in-out infinite;
+            mix-blend-mode: overlay;
         }
-        .final-month-banner::before {
-            left: -50%;
-            width: 14%;
-            background: linear-gradient(
-              105deg,
-              transparent 0%,
-              rgba(255, 255, 255, 0.05) 40%,
-              rgba(255, 255, 255, 0.45) 50%,
-              rgba(0, 240, 255, 0.25) 58%,
-              transparent 100%
-            );
-            animation: finalMonthSheenNarrow 3.4s ease-in-out infinite;
-            animation-delay: 0.12s;
-            opacity: 0.95;
+        @keyframes finalMonthBeam {
+            0%   { left: -40%; }
+            100% { left: 120%; }
         }
-        @keyframes finalMonthSheen {
-            0%   { left: -70%; opacity: 0; }
-            12%  { opacity: 1; }
-            55%  { opacity: 1; }
-            72%  { left: 120%; opacity: 0; }
-            100% { left: 120%; opacity: 0; }
+        /* وقتی نور روی حکاکی است — با soft-light دیده می‌شود؛ بیرون از نوار نامرئی می‌ماند */
+        .final-month-banner:has(.final-month-beam) .final-month-etch {
+            color: rgba(210, 230, 255, 0.55);
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.12);
+            text-shadow:
+              0 1px 0 rgba(255, 255, 255, 0.15),
+              0 -1px 0 rgba(0, 0, 0, 0.5),
+              0 0 12px rgba(0, 240, 255, 0.15);
+            /* فقط داخل ناحیه نور دیده شود */
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000, transparent);
+            -webkit-mask-size: 26% 100%;
+            mask-size: 26% 100%;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: -40% 0;
+            mask-position: -40% 0;
+            animation: finalMonthEtchReveal 3.6s linear infinite;
         }
-        @keyframes finalMonthSheenNarrow {
-            0%   { left: -55%; opacity: 0; }
-            12%  { opacity: 0.95; }
-            55%  { opacity: 0.95; }
-            72%  { left: 125%; opacity: 0; }
-            100% { left: 125%; opacity: 0; }
+        @keyframes finalMonthEtchReveal {
+            0%   { -webkit-mask-position: -40% 0; mask-position: -40% 0; }
+            100% { -webkit-mask-position: 120% 0; mask-position: 120% 0; }
         }
         .final-month-banner-inner {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             padding: 12px 14px;
             text-align: center;
             display: flex;
@@ -2235,17 +2276,10 @@
             font-size: 14px;
             font-weight: 800;
             line-height: 1.45;
-            background: linear-gradient(90deg, #e8d6ff, #7ef9ff, #e8d6ff);
-            background-size: 200% 100%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: finalMonthGlowText 3.6s ease-in-out infinite;
-            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+            color: #e8f4ff;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
         }
-        @keyframes finalMonthGlowText {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+
         }
 
 </style>
@@ -2271,6 +2305,8 @@
         <p class="report-period-note" id="reportPeriodNote"></p>
         <div class="month-special-bar" id="monthSpecialBar">
             <div class="final-month-banner" id="finalMonthBanner" aria-live="polite">
+                <div class="final-month-etch" id="finalMonthEtch" aria-hidden="true"></div>
+                <div class="final-month-beam" aria-hidden="true"></div>
                 <div class="final-month-banner-inner">
                     <span class="final-month-kicker">گزارش بسته شد</span>
                     <span class="final-month-title" id="finalMonthTitle">نتایج نهایی ماه قبل که تمام شد</span>
@@ -2564,10 +2600,14 @@
                 const past = selectedYear < j.jy || (selectedYear === j.jy && selectedMonth < j.jm);
                 bar.classList.toggle("show", !isCurrent && past);
                 const titleEl = document.getElementById("finalMonthTitle");
-                if (titleEl && past && !isCurrent) {
+                if (past && !isCurrent) {
                     const monthName = J_MONTHS[selectedMonth - 1] || "";
-                    titleEl.textContent =
-                        "نتایج نهایی «" + monthName + " " + fa(selectedYear) + "» که تمام شد";
+                    if (titleEl) {
+                        titleEl.textContent =
+                            "نتایج نهایی «" + monthName + " " + fa(selectedYear) + "» که تمام شد";
+                    }
+                    const etch = document.getElementById("finalMonthEtch");
+                    if (etch) etch.textContent = monthName;
                 }
             }
         }
