@@ -2029,6 +2029,123 @@
               0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
+
+        /* day detail popup (report chart bars) */
+        .bar-wrap[data-date] {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bar-wrap[data-date]:active .bar {
+            filter: brightness(1.15);
+        }
+        .day-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            background: rgba(5, 6, 10, 0.78);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            animation: dayModalFade 0.2s ease;
+        }
+        @keyframes dayModalFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .day-modal {
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: linear-gradient(160deg, #141828, #0a0d16);
+            border: 1px solid rgba(180, 100, 255, 0.5);
+            border-radius: 18px;
+            box-shadow: 0 0 32px rgba(180, 76, 255, 0.4), 0 0 64px rgba(0, 240, 255, 0.12);
+            padding: 20px 18px 16px;
+            animation: dayModalPop 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            direction: rtl;
+        }
+        @keyframes dayModalPop {
+            from { transform: scale(0.92) translateY(12px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .day-modal-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .day-modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #b44cff, #00f0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .day-modal-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .day-modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .day-modal-total {
+            text-align: center;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-radius: 14px;
+            background: rgba(180, 76, 255, 0.1);
+            border: 1px solid rgba(180, 100, 255, 0.3);
+        }
+        .day-modal-total-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .day-modal-total-value {
+            font-size: 30px;
+            font-weight: 800;
+            direction: ltr;
+            unicode-bidi: isolate;
+        }
+        .day-modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .day-modal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+        }
+        .day-modal-row-name { font-weight: 600; }
+        .day-modal-row-val {
+            font-weight: 800;
+            direction: ltr;
+            unicode-bidi: isolate;
+        }
+        .day-modal-row-val.pos { color: var(--positive, #00ff9d); }
+        .day-modal-row-val.neg { color: var(--negative, #ff4d6d); }
+
 </style>
 </head>
 <body>
@@ -3528,46 +3645,79 @@ const spawnSparks = (speed, fromLeft) => {
         }
 
         function openDayModal(isoDateStr) {
-            const data = dayDetailsCache[isoDateStr];
-            if (!data) return;
-            const [y, m, d] = isoDateStr.split("-").map(Number);
+            if (!isoDateStr) return;
+            const data = dayDetailsCache[isoDateStr] || { score: 0, items: [] };
+            const [y, m, d] = String(isoDateStr).split("-").map(Number);
             const j = jalaali.toJalaali(y, m, d);
             const dateLabel = fa(j.jd) + " " + J_MONTHS[j.jm - 1] + " " + fa(j.jy);
             const total = Number(data.score) || 0;
             const items = data.items || [];
-            let displayName = "خلاصه روز";
-            let rows = items.length
-                ? items.map(it => {
-                    const sc = Number(it.score) || 0;
-                    const cls = sc > 0 ? "pos" : sc < 0 ? "neg" : "";
-                    return `<div class="day-modal-row">
-                      <div class="day-modal-row-name">${it.label}</div>
-                      <div class="day-modal-row-val ${cls}">${scoreText(sc)}</div>
-                    </div>`;
-                  }).join("")
-                : `<div class="empty" style="padding:16px;text-align:center;color:var(--muted)">ثبتی برای این روز نیست</div>`;
+            const displayName = "خلاصه روز";
 
             document.querySelectorAll(".day-modal-overlay").forEach(el => el.remove());
+
             const overlay = document.createElement("div");
             overlay.className = "day-modal-overlay";
-            overlay.innerHTML = `
-              <div class="day-modal" role="dialog" aria-label="خلاصه روز">
-                <div class="day-modal-header">
-                  <div>
-                    <div class="day-modal-title">${displayName}</div>
-                    <div class="day-modal-sub">${dateLabel}</div>
-                  </div>
-                  <button type="button" class="day-modal-close" aria-label="بستن">✕</button>
-                </div>
-                <div class="day-modal-total">
-                  <div class="day-modal-total-label">امتیاز روز</div>
-                  <div class="day-modal-total-value" style="color:${total > 0 ? "var(--positive)" : total < 0 ? "var(--negative)" : "var(--text)"}">${scoreText(total)}</div>
-                </div>
-                <div class="day-modal-list">${rows}</div>
-              </div>`;
-            const close = () => overlay.remove();
+            overlay.setAttribute("role", "presentation");
+
+            const modal = document.createElement("div");
+            modal.className = "day-modal";
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-label", "خلاصه روز");
+
+            const header = document.createElement("div");
+            header.className = "day-modal-header";
+            header.innerHTML = `
+              <div>
+                <div class="day-modal-title"></div>
+                <div class="day-modal-sub"></div>
+              </div>
+              <button type="button" class="day-modal-close" aria-label="بستن">✕</button>`;
+            header.querySelector(".day-modal-title").textContent = displayName;
+            header.querySelector(".day-modal-sub").textContent = dateLabel;
+
+            const totalBox = document.createElement("div");
+            totalBox.className = "day-modal-total";
+            totalBox.innerHTML = `
+              <div class="day-modal-total-label">امتیاز روز</div>
+              <div class="day-modal-total-value"></div>`;
+            const totalVal = totalBox.querySelector(".day-modal-total-value");
+            totalVal.textContent = scoreText(total);
+            totalVal.style.color = total > 0 ? "var(--positive)" : total < 0 ? "var(--negative)" : "var(--text)";
+
+            const list = document.createElement("div");
+            list.className = "day-modal-list";
+            if (!items.length) {
+                const empty = document.createElement("div");
+                empty.className = "empty";
+                empty.style.cssText = "padding:16px;text-align:center;color:var(--muted)";
+                empty.textContent = "ثبتی برای این روز نیست";
+                list.appendChild(empty);
+            } else {
+                items.forEach(it => {
+                    const sc = Number(it.score) || 0;
+                    const row = document.createElement("div");
+                    row.className = "day-modal-row";
+                    const name = document.createElement("div");
+                    name.className = "day-modal-row-name";
+                    name.textContent = it.label || it.type || "";
+                    const val = document.createElement("div");
+                    val.className = "day-modal-row-val" + (sc > 0 ? " pos" : sc < 0 ? " neg" : "");
+                    val.textContent = scoreText(sc);
+                    row.appendChild(name);
+                    row.appendChild(val);
+                    list.appendChild(row);
+                });
+            }
+
+            modal.appendChild(header);
+            modal.appendChild(totalBox);
+            modal.appendChild(list);
+            overlay.appendChild(modal);
+
+            const close = () => { try { overlay.remove(); } catch (e) {} };
             overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-            overlay.querySelector(".day-modal-close").onclick = close;
+            header.querySelector(".day-modal-close").onclick = close;
             document.body.appendChild(overlay);
         }
 
