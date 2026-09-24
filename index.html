@@ -1017,7 +1017,21 @@ function floatingScore(score,x,y){
   document.body.appendChild(e);
   setTimeout(()=>e.remove(),850);
 }
-function isoDate(d){ return d.toISOString().slice(0,10); }
+function isoDate(d) {
+  /* تاریخ تقویمی به وقت ایران — مرز روز = ۰۰:۰۰ تهران */
+  const dt = d instanceof Date ? d : new Date(d);
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Tehran",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(dt);
+  } catch (e) {
+    const shifted = new Date(dt.getTime() + 3.5 * 60 * 60 * 1000);
+    return shifted.toISOString().slice(0, 10);
+  }
+}
 function parseISO(s){ const[y,m,d]=s.split("-").map(Number); return new Date(Date.UTC(y,m-1,d)); }
 function toMinutes(t){ if(!t)return null; const[h,m]=t.split(":").map(Number); return h*60+m; }
 function minutesToTime(mins){
