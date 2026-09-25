@@ -9,6 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<div class="aura-info">✦ 3D Geometric Aura ✦ | <span>Drag to rotate</span></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 <style>
@@ -505,78 +508,72 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 }
 
 
-/* Easter egg — 3D Geometric Aura (overscroll at page end) */
-#hqlAuraEgg {
+
+/* Easter egg — 3D Geometric Aura as page continuation */
+#hqlAuraSection {
   display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 20000;
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 24px auto 0;
+  height: min(72vh, 560px);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(180, 120, 255, 0.35);
   background: #050814;
-  flex-direction: column;
+  box-shadow:
+    0 0 24px rgba(180, 76, 255, 0.25),
+    0 0 48px rgba(0, 240, 255, 0.1);
 }
-#hqlAuraEgg.show {
-  display: flex;
+#hqlAuraSection.show {
+  display: block;
 }
-#hqlAuraEgg canvas {
+#hqlAuraSection canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
-  flex: 1;
   touch-action: none;
 }
-#hqlAuraEgg .aura-info {
+#hqlAuraSection .aura-info {
   position: absolute;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-  color: hsla(0,0%,100%,.75);
-  font-size: 12px;
-  letter-spacing: 1px;
+  color: hsla(0,0%,100%,.7);
+  font-size: 11px;
+  letter-spacing: 0.5px;
   font-family: monospace;
   backdrop-filter: blur(8px);
   background: rgba(0,0,0,.35);
-  padding: 8px 18px;
+  padding: 6px 14px;
   border-radius: 40px;
-  z-index: 10;
-  border: 1px solid hsla(0,0%,100%,.15);
+  z-index: 2;
+  border: 1px solid hsla(0,0%,100%,.12);
   pointer-events: none;
+  max-width: calc(100% - 20px);
   white-space: nowrap;
-  max-width: calc(100% - 24px);
   overflow: hidden;
   text-overflow: ellipsis;
 }
-#hqlAuraEgg .aura-info span { color: #88ccff; }
-#hqlAuraEgg .aura-close {
-  position: absolute;
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  left: 12px;
-  z-index: 11;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(0,0,0,.45);
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-}
-#hqlAuraEgg .aura-loading {
+#hqlAuraSection .aura-info span { color: #88ccff; }
+#hqlAuraSection .aura-loading {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
   color: #fff;
   font-family: monospace;
+  font-size: 12px;
   background: rgba(0,0,0,.55);
-  padding: 12px 24px;
+  padding: 10px 18px;
   border-radius: 30px;
-  z-index: 12;
+  z-index: 3;
   backdrop-filter: blur(5px);
   transition: opacity .6s;
   pointer-events: none;
 }
+
 
 </style>
 
@@ -1427,23 +1424,23 @@ async function saveWeeklyWord() {
 init();
 
 
-/* ===== Easter egg: overscroll past end → 3D Geometric Aura (CodePen jEVVqBe) ===== */
+
+/* ===== Easter egg: overscroll past end → 3D section (part of page) ===== */
 (function setupAuraEasterEgg() {
   let bottomHits = 0;
   let lastHit = 0;
-  let armed = false;
-  let running = false;
+  let started = false;
   let rafStop = false;
   let cleanupFns = [];
 
   function atPageBottom() {
     const doc = document.documentElement;
     const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
-    return window.scrollY >= maxScroll - 4;
+    return window.scrollY >= maxScroll - 6;
   }
 
   function onWheel(e) {
-    if (running || armed) return;
+    if (started) return;
     if (e.deltaY <= 0) {
       bottomHits = 0;
       return;
@@ -1458,20 +1455,19 @@ init();
     bottomHits += 1;
     if (bottomHits >= 3) {
       bottomHits = 0;
-      openAuraEgg();
+      revealAuraSection();
     }
   }
 
   function onTouchStart(e) {
-    if (running || armed) return;
+    if (started) return;
     window.__hqlAuraTouchY = e.touches[0] ? e.touches[0].clientY : 0;
   }
   function onTouchMove(e) {
-    if (running || armed) return;
+    if (started) return;
     if (!atPageBottom()) return;
     const y = e.touches[0] ? e.touches[0].clientY : 0;
     const start = window.__hqlAuraTouchY || y;
-    // pull up (finger moves up → content wants to go further down)
     if (start - y > 70) {
       const now = Date.now();
       if (now - lastHit > 1800) bottomHits = 0;
@@ -1480,7 +1476,7 @@ init();
       window.__hqlAuraTouchY = y;
       if (bottomHits >= 2) {
         bottomHits = 0;
-        openAuraEgg();
+        revealAuraSection();
       }
     }
   }
@@ -1489,55 +1485,32 @@ init();
   window.addEventListener("touchstart", onTouchStart, { passive: true });
   window.addEventListener("touchmove", onTouchMove, { passive: true });
 
-  async function openAuraEgg() {
-    if (running || armed) return;
-    armed = true;
-    running = true;
-    rafStop = false;
-    const egg = document.getElementById("hqlAuraEgg");
+  async function revealAuraSection() {
+    if (started) return;
+    started = true;
+    const section = document.getElementById("hqlAuraSection");
     const loading = document.getElementById("hqlAuraLoading");
-    if (!egg) return;
-    egg.classList.add("show");
-    egg.setAttribute("aria-hidden", "false");
-    if (loading) {
-      loading.style.opacity = "1";
-      loading.style.display = "block";
-      loading.textContent = "Loading visual engine...";
-    }
+    if (!section) return;
+    section.classList.add("show");
+    section.setAttribute("aria-hidden", "false");
+    // scroll into view as natural page continuation
+    requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     try {
-      await runAuraScene(egg, loading);
+      await runAuraScene(section, loading);
     } catch (err) {
       console.warn("aura egg", err);
-      if (loading) loading.textContent = "Engine failed — tap ✕";
-      armed = false;
+      if (loading) {
+        loading.style.opacity = "1";
+        loading.style.display = "block";
+        loading.textContent = "Engine failed";
+      }
+      started = false;
     }
   }
-
-  function closeAuraEgg() {
-    rafStop = true;
-    running = false;
-    armed = false;
-    bottomHits = 0;
-    cleanupFns.forEach(fn => { try { fn(); } catch (e) {} });
-    cleanupFns = [];
-    const egg = document.getElementById("hqlAuraEgg");
-    if (egg) {
-      egg.querySelectorAll("canvas").forEach(c => c.remove());
-      egg.classList.remove("show");
-      egg.setAttribute("aria-hidden", "true");
-    }
-    const loading = document.getElementById("hqlAuraLoading");
-    if (loading) {
-      loading.style.opacity = "1";
-      loading.style.display = "block";
-    }
-  }
-
-  const closeBtn = document.getElementById("hqlAuraClose");
-  if (closeBtn) closeBtn.onclick = closeAuraEgg;
 
   async function runAuraScene(container, loadingEl) {
-    // dynamic import only when egg opens
     const THREE = await import("https://esm.sh/three@0.170.0");
     const { OrbitControls } = await import("https://esm.sh/three@0.170.0/addons/controls/OrbitControls.js");
     const { EffectComposer } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/EffectComposer.js");
@@ -1545,13 +1518,13 @@ init();
     const { UnrealBloomPass } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/UnrealBloomPass.js");
 
     const w = () => container.clientWidth || window.innerWidth;
-    const h = () => container.clientHeight || window.innerHeight;
+    const h = () => container.clientHeight || 480;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050814);
     scene.fog = new THREE.FogExp2(0x050814, 0.008);
 
-    const camera = new THREE.PerspectiveCamera(45, w() / h(), 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, w() / Math.max(1, h()), 0.1, 1000);
     camera.position.set(3, 2, 5);
     camera.lookAt(0, 0, 0);
 
@@ -1594,19 +1567,19 @@ init();
     colorLight.position.set(1, 1, 2);
     scene.add(colorLight);
 
-    const starGeometry = new THREE.BufferGeometry();
     const starPositions = new Float32Array(2400);
     for (let e = 0; e < 800; e++) {
       starPositions[3 * e] = 200 * (Math.random() - 0.5);
       starPositions[3 * e + 1] = 100 * (Math.random() - 0.5);
       starPositions[3 * e + 2] = 80 * (Math.random() - 0.5) - 40;
     }
+    const starGeometry = new THREE.BufferGeometry();
     starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const stars = new THREE.Points(
+    scene.add(new THREE.Points(
       starGeometry,
       new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.6 })
-    );
-    scene.add(stars);
+    ));
+    const stars = scene.children[scene.children.length - 1];
 
     const geometryIco = new THREE.IcosahedronGeometry(1.1, 0);
     const coreMesh = new THREE.Mesh(
@@ -1632,14 +1605,14 @@ init();
     const ringPositions = new Float32Array(3600);
     const ringColors = new Float32Array(3600);
     for (let e = 0; e < 1200; e++) {
-      const t = (e / 1200) * Math.PI * 2;
+      const tt = (e / 1200) * Math.PI * 2;
       const o = 1.55;
-      ringPositions[3 * e] = Math.cos(t) * o;
-      ringPositions[3 * e + 1] = 0.35 * Math.sin(3 * t);
-      ringPositions[3 * e + 2] = Math.sin(t) * o;
-      ringColors[3 * e] = 0.4 + 0.6 * Math.sin(t);
-      ringColors[3 * e + 1] = 0.3 + 0.7 * Math.cos(1.7 * t);
-      ringColors[3 * e + 2] = 0.8 + 0.2 * Math.sin(2.3 * t);
+      ringPositions[3 * e] = Math.cos(tt) * o;
+      ringPositions[3 * e + 1] = 0.35 * Math.sin(3 * tt);
+      ringPositions[3 * e + 2] = Math.sin(tt) * o;
+      ringColors[3 * e] = 0.4 + 0.6 * Math.sin(tt);
+      ringColors[3 * e + 1] = 0.3 + 0.7 * Math.cos(1.7 * tt);
+      ringColors[3 * e + 2] = 0.8 + 0.2 * Math.sin(2.3 * tt);
     }
     const ringGeometry = new THREE.BufferGeometry();
     ringGeometry.setAttribute("position", new THREE.BufferAttribute(ringPositions, 3));
@@ -1655,22 +1628,14 @@ init();
     );
     scene.add(ringParticles);
 
-    const torusMat = new THREE.MeshStandardMaterial({
-      color: 0x88aaff,
-      emissive: 0x2266aa,
-      roughness: 0.3,
-      metalness: 0.9
-    });
-    const torusRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.045, 64, 500), torusMat);
+    const torusRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.45, 0.045, 64, 500),
+      new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x2266aa, roughness: 0.3, metalness: 0.9 })
+    );
     scene.add(torusRing);
     const torusRing2 = new THREE.Mesh(
       new THREE.TorusGeometry(1.68, 0.03, 64, 500),
-      new THREE.MeshStandardMaterial({
-        color: 0xffa088,
-        emissive: 0x442200,
-        roughness: 0.5,
-        metalness: 0.7
-      })
+      new THREE.MeshStandardMaterial({ color: 0xffa088, emissive: 0x442200, roughness: 0.5, metalness: 0.7 })
     );
     scene.add(torusRing2);
 
@@ -1702,9 +1667,7 @@ init();
 
     if (loadingEl) {
       loadingEl.style.opacity = "0";
-      setTimeout(() => {
-        loadingEl.style.display = "none";
-      }, 700);
+      setTimeout(() => { loadingEl.style.display = "none"; }, 600);
     }
 
     let time = 0;
@@ -1742,6 +1705,7 @@ init();
     }
     window.addEventListener("resize", onResize);
     cleanupFns.push(() => {
+      rafStop = true;
       window.removeEventListener("resize", onResize);
       try {
         controls.dispose();
@@ -1752,14 +1716,17 @@ init();
   }
 })();
 
-</script>
-  <script src="nav.js"></script>
 
-<div id="hqlAuraEgg" aria-hidden="true">
-  <button type="button" class="aura-close" id="hqlAuraClose" aria-label="بستن">✕</button>
+</script>
+  
+<div id="hqlAuraSection" aria-hidden="true">
   <div class="aura-loading" id="hqlAuraLoading">Loading visual engine...</div>
-  <div class="aura-info">✦ 3D Geometric Aura ✦ | <span>Drag to rotate</span> | Easter egg</div>
+  <div class="aura-info">✦ 3D Geometric Aura ✦ | <span>Drag to rotate</span></div>
 </div>
+
+<script src="nav.js"></script>
+
+
 
 </body>
 </html>
