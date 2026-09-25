@@ -1068,15 +1068,19 @@ function calculateScore(type,value){
       if(value<=4) return 0.6;   // ۲–۴ لیوان
       if(value<=6) return 0.7;   // ۴–۶ لیوان
       return 1.5;                // ۶–۸ لیوان
-    case"sleep":
-      // minutes from 00:00
-      // قبل ۱۱ (<23:00) → +2
-      // قبل ۱۲ (23:00–23:59) → +0.5
-      // بعد ۱۲ (00:00–05:59) → -0.5
-      if(value>=0 && value<360) return -0.5;      // بعد نیمه‌شب
-      if(value>=1380 && value<1440) return 0.5;  // ۲۳:۰۰–۲۳:۵۹
-      if(value<1380) return 2;                    // قبل از ۲۳:۰۰
-      return -0.5;
+    case"sleep": {
+      // value = دقیقه از ۰۰:۰۰ (۰ تا ۱۴۳۹)
+      // قبل ۲۳:۰۰ (۱۲:۰۰–۲۲:۵۹) → +2
+      // ۲۳:۰۰–۲۳:۵۹ → +0.5
+      // بعد نیمه‌شب / دیر (۰۰:۰۰–۱۱:۵۹) → -0.5
+      // باگ قبلی: ۶:۰۰–۱۱:۵۹ به‌اشتباه +2 می‌گرفت
+      let mins = Number(value);
+      if (!Number.isFinite(mins)) return 0;
+      mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+      if (mins >= 23 * 60) return 0.5;   // ۲۳:۰۰–۲۳:۵۹
+      if (mins < 12 * 60) return -0.5;   // ۰۰:۰۰–۱۱:۵۹ دیرخوابی
+      return 2;                          // ۱۲:۰۰–۲۲:۵۹ قبل از ۲۳
+    }
     case"instagram": return value===1?1.5:0;
     case"sun": return value===1?1.5:0;
     case"solitude": return value===1?1.5:0;
