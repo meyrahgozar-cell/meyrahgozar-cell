@@ -9,9 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<div class="aura-info">✦ 3D Geometric Aura ✦ | <span>Drag to rotate</span></div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 <style>
@@ -508,71 +505,6 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 }
 
 
-
-/* Easter egg — 3D Geometric Aura as page continuation */
-#hqlAuraSection {
-  display: none;
-  position: relative;
-  width: 100%;
-  max-width: 720px;
-  margin: 24px auto 0;
-  height: min(72vh, 560px);
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(180, 120, 255, 0.35);
-  background: #050814;
-  box-shadow:
-    0 0 24px rgba(180, 76, 255, 0.25),
-    0 0 48px rgba(0, 240, 255, 0.1);
-}
-#hqlAuraSection.show {
-  display: block;
-}
-#hqlAuraSection canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-  touch-action: none;
-}
-#hqlAuraSection .aura-info {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  color: hsla(0,0%,100%,.7);
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  font-family: monospace;
-  backdrop-filter: blur(8px);
-  background: rgba(0,0,0,.35);
-  padding: 6px 14px;
-  border-radius: 40px;
-  z-index: 2;
-  border: 1px solid hsla(0,0%,100%,.12);
-  pointer-events: none;
-  max-width: calc(100% - 20px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#hqlAuraSection .aura-info span { color: #88ccff; }
-#hqlAuraSection .aura-loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
-  color: #fff;
-  font-family: monospace;
-  font-size: 12px;
-  background: rgba(0,0,0,.55);
-  padding: 10px 18px;
-  border-radius: 30px;
-  z-index: 3;
-  backdrop-filter: blur(5px);
-  transition: opacity .6s;
-  pointer-events: none;
-}
 
 
 </style>
@@ -1425,305 +1357,183 @@ init();
 
 
 
-/* ===== Easter egg: overscroll past end → 3D section (part of page) ===== */
+
+/* Easter egg — silent until overscroll past real page end */
 (function setupAuraEasterEgg() {
-  let bottomHits = 0;
-  let lastHit = 0;
-  let started = false;
-  let rafStop = false;
-  let cleanupFns = [];
+  let hits = 0, last = 0, open = false, stop = false, clean = [];
 
-  function atPageBottom() {
-    const doc = document.documentElement;
-    const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
-    return window.scrollY >= maxScroll - 6;
+  function canArm() {
+    const sh = document.documentElement.scrollHeight;
+    const ih = window.innerHeight;
+    if (sh < ih + 80) return false;
+    return window.scrollY >= sh - ih - 4;
   }
-
-  function onWheel(e) {
-    if (started) return;
-    if (e.deltaY <= 0) {
-      bottomHits = 0;
-      return;
-    }
-    if (!atPageBottom()) {
-      bottomHits = 0;
-      return;
-    }
+  function bump() {
+    if (open) return;
     const now = Date.now();
-    if (now - lastHit > 1800) bottomHits = 0;
-    lastHit = now;
-    bottomHits += 1;
-    if (bottomHits >= 3) {
-      bottomHits = 0;
-      revealAuraSection();
-    }
+    if (now - last > 1600) hits = 0;
+    last = now;
+    hits++;
+    if (hits >= 4) { hits = 0; openAura(); }
   }
 
-  function onTouchStart(e) {
-    if (started) return;
-    window.__hqlAuraTouchY = e.touches[0] ? e.touches[0].clientY : 0;
-  }
-  function onTouchMove(e) {
-    if (started) return;
-    if (!atPageBottom()) return;
+  window.addEventListener("wheel", (e) => {
+    if (open) return;
+    if (e.deltaY <= 8) { hits = 0; return; }
+    if (!canArm()) { hits = 0; return; }
+    bump();
+  }, { passive: true });
+
+  window.addEventListener("touchstart", (e) => {
+    if (open) return;
+    window.__hqlAuraY = e.touches[0] ? e.touches[0].clientY : 0;
+  }, { passive: true });
+
+  window.addEventListener("touchmove", (e) => {
+    if (open) return;
+    if (!canArm()) return;
     const y = e.touches[0] ? e.touches[0].clientY : 0;
-    const start = window.__hqlAuraTouchY || y;
-    if (start - y > 70) {
-      const now = Date.now();
-      if (now - lastHit > 1800) bottomHits = 0;
-      lastHit = now;
-      bottomHits += 1;
-      window.__hqlAuraTouchY = y;
-      if (bottomHits >= 2) {
-        bottomHits = 0;
-        revealAuraSection();
-      }
-    }
+    const s = window.__hqlAuraY || y;
+    if (s - y > 90) { window.__hqlAuraY = y; bump(); }
+  }, { passive: true });
+
+  async function openAura() {
+    if (open) return;
+    open = true; stop = false;
+    const root = document.createElement("div");
+    root.id = "hqlAuraRoot";
+    root.style.cssText = "position:fixed;inset:0;z-index:30000;background:#050814;display:flex;flex-direction:column;";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "بستن";
+    btn.style.cssText = "position:absolute;top:12px;left:12px;z-index:2;padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font:600 13px sans-serif;cursor:pointer;";
+    btn.onclick = () => {
+      stop = true; open = false; hits = 0;
+      clean.forEach(fn => { try { fn(); } catch (e) {} });
+      clean = [];
+      try { root.remove(); } catch (e) {}
+    };
+    const stage = document.createElement("div");
+    stage.style.cssText = "flex:1;position:relative;min-height:0;width:100%;";
+    root.appendChild(btn);
+    root.appendChild(stage);
+    document.body.appendChild(root);
+    try { await runScene(stage); }
+    catch (err) { console.warn(err); btn.onclick(); }
   }
 
-  window.addEventListener("wheel", onWheel, { passive: true });
-  window.addEventListener("touchstart", onTouchStart, { passive: true });
-  window.addEventListener("touchmove", onTouchMove, { passive: true });
-
-  async function revealAuraSection() {
-    if (started) return;
-    started = true;
-    const section = document.getElementById("hqlAuraSection");
-    const loading = document.getElementById("hqlAuraLoading");
-    if (!section) return;
-    section.classList.add("show");
-    section.setAttribute("aria-hidden", "false");
-    // scroll into view as natural page continuation
-    requestAnimationFrame(() => {
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    try {
-      await runAuraScene(section, loading);
-    } catch (err) {
-      console.warn("aura egg", err);
-      if (loading) {
-        loading.style.opacity = "1";
-        loading.style.display = "block";
-        loading.textContent = "Engine failed";
-      }
-      started = false;
-    }
-  }
-
-  async function runAuraScene(container, loadingEl) {
+  async function runScene(container) {
     const THREE = await import("https://esm.sh/three@0.170.0");
     const { OrbitControls } = await import("https://esm.sh/three@0.170.0/addons/controls/OrbitControls.js");
     const { EffectComposer } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/EffectComposer.js");
     const { RenderPass } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/RenderPass.js");
     const { UnrealBloomPass } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/UnrealBloomPass.js");
-
-    const w = () => container.clientWidth || window.innerWidth;
-    const h = () => container.clientHeight || 480;
-
+    const W = () => container.clientWidth || window.innerWidth;
+    const H = () => container.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050814);
     scene.fog = new THREE.FogExp2(0x050814, 0.008);
-
-    const camera = new THREE.PerspectiveCamera(45, w() / Math.max(1, h()), 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, W() / Math.max(1, H()), 0.1, 1000);
     camera.position.set(3, 2, 5);
-    camera.lookAt(0, 0, 0);
-
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(w(), h());
+    renderer.setSize(W(), H());
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
-
-    const renderScene = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(w(), h()), 1.2, 0.3, 0.85);
-    bloomPass.threshold = 0.1;
-    bloomPass.strength = 0.8;
-    bloomPass.radius = 0.5;
-    const effectComposer = new EffectComposer(renderer);
-    effectComposer.addPass(renderScene);
-    effectComposer.addPass(bloomPass);
-
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.2, 0.3, 0.85);
+    bloom.threshold = 0.1; bloom.strength = 0.8; bloom.radius = 0.5;
+    composer.addPass(bloom);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.2;
-    controls.enableZoom = true;
-    controls.enablePan = false;
-    controls.target.set(0, 0, 0);
-
+    controls.enableDamping = true; controls.dampingFactor = 0.05;
+    controls.autoRotate = true; controls.autoRotateSpeed = 1.2; controls.enablePan = false;
     scene.add(new THREE.AmbientLight(0x222222));
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    mainLight.position.set(2, 3, 4);
-    scene.add(mainLight);
-    const backLight = new THREE.PointLight(0x4477cc, 0.6);
-    backLight.position.set(-2, 1, -3);
-    scene.add(backLight);
-    const fillLight = new THREE.PointLight(0xffa0a6, 0.5);
-    fillLight.position.set(1.5, 1, 2);
-    scene.add(fillLight);
+    mainLight.position.set(2, 3, 4); scene.add(mainLight);
     const colorLight = new THREE.PointLight(0xff4d6d, 0.8);
-    colorLight.position.set(1, 1, 2);
-    scene.add(colorLight);
-
-    const starPositions = new Float32Array(2400);
-    for (let e = 0; e < 800; e++) {
-      starPositions[3 * e] = 200 * (Math.random() - 0.5);
-      starPositions[3 * e + 1] = 100 * (Math.random() - 0.5);
-      starPositions[3 * e + 2] = 80 * (Math.random() - 0.5) - 40;
+    colorLight.position.set(1, 1, 2); scene.add(colorLight);
+    const backLight = new THREE.PointLight(0x4477cc, 0.6);
+    backLight.position.set(-2, 1, -3); scene.add(backLight);
+    const starPos = new Float32Array(2400);
+    for (let i = 0; i < 800; i++) {
+      starPos[3*i] = 200*(Math.random()-0.5);
+      starPos[3*i+1] = 100*(Math.random()-0.5);
+      starPos[3*i+2] = 80*(Math.random()-0.5)-40;
     }
-    const starGeometry = new THREE.BufferGeometry();
-    starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    scene.add(new THREE.Points(
-      starGeometry,
-      new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.6 })
-    ));
-    const stars = scene.children[scene.children.length - 1];
-
-    const geometryIco = new THREE.IcosahedronGeometry(1.1, 0);
-    const coreMesh = new THREE.Mesh(
-      geometryIco,
-      new THREE.MeshStandardMaterial({
-        color: 0x4a6b9c,
-        emissive: 0x112233,
-        roughness: 0.28,
-        metalness: 0.75,
-        transparent: true,
-        opacity: 0.92
-      })
-    );
-    scene.add(coreMesh);
-
-    const wireframeIco = new THREE.Mesh(
-      geometryIco,
-      new THREE.MeshBasicMaterial({ color: 0x66aaff, wireframe: true, transparent: true, opacity: 0.25 })
-    );
-    wireframeIco.scale.setScalar(1.08);
-    scene.add(wireframeIco);
-
-    const ringPositions = new Float32Array(3600);
-    const ringColors = new Float32Array(3600);
-    for (let e = 0; e < 1200; e++) {
-      const tt = (e / 1200) * Math.PI * 2;
-      const o = 1.55;
-      ringPositions[3 * e] = Math.cos(tt) * o;
-      ringPositions[3 * e + 1] = 0.35 * Math.sin(3 * tt);
-      ringPositions[3 * e + 2] = Math.sin(tt) * o;
-      ringColors[3 * e] = 0.4 + 0.6 * Math.sin(tt);
-      ringColors[3 * e + 1] = 0.3 + 0.7 * Math.cos(1.7 * tt);
-      ringColors[3 * e + 2] = 0.8 + 0.2 * Math.sin(2.3 * tt);
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.6 }));
+    scene.add(stars);
+    const ico = new THREE.IcosahedronGeometry(1.1, 0);
+    const core = new THREE.Mesh(ico, new THREE.MeshStandardMaterial({ color: 0x4a6b9c, emissive: 0x112233, roughness: 0.28, metalness: 0.75, transparent: true, opacity: 0.92 }));
+    scene.add(core);
+    const wire = new THREE.Mesh(ico, new THREE.MeshBasicMaterial({ color: 0x66aaff, wireframe: true, transparent: true, opacity: 0.25 }));
+    wire.scale.setScalar(1.08); scene.add(wire);
+    const ringPos = new Float32Array(3600), ringCol = new Float32Array(3600);
+    for (let i = 0; i < 1200; i++) {
+      const a = (i/1200)*Math.PI*2, r = 1.55;
+      ringPos[3*i] = Math.cos(a)*r; ringPos[3*i+1] = 0.35*Math.sin(3*a); ringPos[3*i+2] = Math.sin(a)*r;
+      ringCol[3*i] = 0.4+0.6*Math.sin(a); ringCol[3*i+1] = 0.3+0.7*Math.cos(1.7*a); ringCol[3*i+2] = 0.8+0.2*Math.sin(2.3*a);
     }
-    const ringGeometry = new THREE.BufferGeometry();
-    ringGeometry.setAttribute("position", new THREE.BufferAttribute(ringPositions, 3));
-    ringGeometry.setAttribute("color", new THREE.BufferAttribute(ringColors, 3));
-    const ringParticles = new THREE.Points(
-      ringGeometry,
-      new THREE.PointsMaterial({
-        size: 0.05,
-        vertexColors: true,
-        transparent: true,
-        blending: THREE.AdditiveBlending
-      })
-    );
-    scene.add(ringParticles);
-
-    const torusRing = new THREE.Mesh(
-      new THREE.TorusGeometry(1.45, 0.045, 64, 500),
-      new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x2266aa, roughness: 0.3, metalness: 0.9 })
-    );
-    scene.add(torusRing);
-    const torusRing2 = new THREE.Mesh(
-      new THREE.TorusGeometry(1.68, 0.03, 64, 500),
-      new THREE.MeshStandardMaterial({ color: 0xffa088, emissive: 0x442200, roughness: 0.5, metalness: 0.7 })
-    );
-    scene.add(torusRing2);
-
-    const cloudPositions = new Float32Array(2400);
-    for (let e = 0; e < 800; e++) {
-      cloudPositions[3 * e] = 5 * (Math.random() - 0.5);
-      cloudPositions[3 * e + 1] = 3 * (Math.random() - 0.5);
-      cloudPositions[3 * e + 2] = 4 * (Math.random() - 0.5) - 1;
+    const ringGeo = new THREE.BufferGeometry();
+    ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
+    ringGeo.setAttribute("color", new THREE.BufferAttribute(ringCol, 3));
+    const ring = new THREE.Points(ringGeo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending }));
+    scene.add(ring);
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.045, 64, 500), new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x2266aa, roughness: 0.3, metalness: 0.9 }));
+    scene.add(torus);
+    const torus2 = new THREE.Mesh(new THREE.TorusGeometry(1.68, 0.03, 64, 500), new THREE.MeshStandardMaterial({ color: 0xffa088, emissive: 0x442200, roughness: 0.5, metalness: 0.7 }));
+    scene.add(torus2);
+    const cloudPos = new Float32Array(2400);
+    for (let i = 0; i < 800; i++) {
+      cloudPos[3*i] = 5*(Math.random()-0.5);
+      cloudPos[3*i+1] = 3*(Math.random()-0.5);
+      cloudPos[3*i+2] = 4*(Math.random()-0.5)-1;
     }
     const cloudGeo = new THREE.BufferGeometry();
-    cloudGeo.setAttribute("position", new THREE.BufferAttribute(cloudPositions, 3));
-    const cloudPoints = new THREE.Points(
-      cloudGeo,
-      new THREE.PointsMaterial({
-        color: 0x77aaff,
-        size: 0.025,
-        transparent: true,
-        opacity: 0.4,
-        blending: THREE.AdditiveBlending
-      })
-    );
-    scene.add(cloudPoints);
-
-    const gridHelper = new THREE.GridHelper(12, 24, 0x88aaff, 0x335566);
-    gridHelper.position.y = -1.8;
-    gridHelper.material.transparent = true;
-    gridHelper.material.opacity = 0.2;
-    scene.add(gridHelper);
-
-    if (loadingEl) {
-      loadingEl.style.opacity = "0";
-      setTimeout(() => { loadingEl.style.display = "none"; }, 600);
-    }
-
+    cloudGeo.setAttribute("position", new THREE.BufferAttribute(cloudPos, 3));
+    const clouds = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ color: 0x77aaff, size: 0.025, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending }));
+    scene.add(clouds);
+    const grid = new THREE.GridHelper(12, 24, 0x88aaff, 0x335566);
+    grid.position.y = -1.8; grid.material.transparent = true; grid.material.opacity = 0.2;
+    scene.add(grid);
     let time = 0;
-    function animate() {
-      if (rafStop) return;
-      requestAnimationFrame(animate);
+    function tick() {
+      if (stop) return;
+      requestAnimationFrame(tick);
       time += 0.012;
-      coreMesh.rotation.y = 0.25 * time;
-      coreMesh.rotation.x = 0.2 * Math.sin(0.37 * time);
-      coreMesh.rotation.z = 0.15 * Math.cos(0.23 * time);
-      wireframeIco.rotation.copy(coreMesh.rotation);
-      ringParticles.rotation.y = 0.35 * time;
-      ringParticles.rotation.x = 0.2 * Math.sin(0.28 * time);
-      torusRing.rotation.x = Math.PI / 2;
-      torusRing.rotation.z = 0.5 * time;
-      torusRing2.rotation.x = Math.PI / 2 + 0.3;
-      torusRing2.rotation.z = 0.65 * time;
-      const e = (0.2 * time) % (2 * Math.PI);
-      colorLight.color.setHSL(0.55 + 0.1 * Math.sin(e), 1, 0.6);
-      stars.rotation.y += 0.0005;
-      stars.rotation.x += 0.0003;
-      cloudPoints.rotation.y = 0.05 * time;
-      cloudPoints.rotation.x = 0.1 * Math.sin(0.1 * time);
-      controls.update();
-      effectComposer.render();
+      core.rotation.y = 0.25*time;
+      core.rotation.x = 0.2*Math.sin(0.37*time);
+      core.rotation.z = 0.15*Math.cos(0.23*time);
+      wire.rotation.copy(core.rotation);
+      ring.rotation.y = 0.35*time;
+      ring.rotation.x = 0.2*Math.sin(0.28*time);
+      torus.rotation.x = Math.PI/2; torus.rotation.z = 0.5*time;
+      torus2.rotation.x = Math.PI/2+0.3; torus2.rotation.z = 0.65*time;
+      colorLight.color.setHSL(0.55+0.1*Math.sin((0.2*time)%(Math.PI*2)), 1, 0.6);
+      stars.rotation.y += 0.0005; stars.rotation.x += 0.0003;
+      clouds.rotation.y = 0.05*time; clouds.rotation.x = 0.1*Math.sin(0.1*time);
+      controls.update(); composer.render();
     }
-    animate();
-
+    tick();
     function onResize() {
-      const ww = w(), hh = h();
-      camera.aspect = ww / Math.max(1, hh);
-      camera.updateProjectionMatrix();
-      renderer.setSize(ww, hh);
-      effectComposer.setSize(ww, hh);
+      const ww = W(), hh = H();
+      camera.aspect = ww/Math.max(1,hh); camera.updateProjectionMatrix();
+      renderer.setSize(ww, hh); composer.setSize(ww, hh);
     }
     window.addEventListener("resize", onResize);
-    cleanupFns.push(() => {
-      rafStop = true;
+    clean.push(() => {
+      stop = true;
       window.removeEventListener("resize", onResize);
-      try {
-        controls.dispose();
-        renderer.dispose();
-        renderer.domElement.remove();
-      } catch (e) {}
+      try { controls.dispose(); renderer.dispose(); renderer.domElement.remove(); } catch (e) {}
     });
   }
 })();
 
-
 </script>
   
-<div id="hqlAuraSection" aria-hidden="true">
-  <div class="aura-loading" id="hqlAuraLoading">Loading visual engine...</div>
-  <div class="aura-info">✦ 3D Geometric Aura ✦ | <span>Drag to rotate</span></div>
-</div>
-
 <script src="nav.js"></script>
 
 
