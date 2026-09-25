@@ -1358,68 +1358,89 @@ init();
 
 
 
-/* Easter egg — silent until overscroll past real page end */
+
+/* Easter egg — overscroll past end reveals 3D section as page continuation */
 (function setupAuraEasterEgg() {
-  let hits = 0, last = 0, open = false, stop = false, clean = [];
+  let hits = 0, last = 0, started = false, stop = false, clean = [];
 
   function canArm() {
+    if (started) return false;
     const sh = document.documentElement.scrollHeight;
     const ih = window.innerHeight;
     if (sh < ih + 80) return false;
     return window.scrollY >= sh - ih - 4;
   }
   function bump() {
-    if (open) return;
+    if (started) return;
     const now = Date.now();
     if (now - last > 1600) hits = 0;
     last = now;
     hits++;
-    if (hits >= 4) { hits = 0; openAura(); }
+    if (hits >= 4) { hits = 0; revealSection(); }
   }
 
   window.addEventListener("wheel", (e) => {
-    if (open) return;
+    if (started) return;
     if (e.deltaY <= 8) { hits = 0; return; }
     if (!canArm()) { hits = 0; return; }
     bump();
   }, { passive: true });
 
   window.addEventListener("touchstart", (e) => {
-    if (open) return;
+    if (started) return;
     window.__hqlAuraY = e.touches[0] ? e.touches[0].clientY : 0;
   }, { passive: true });
 
   window.addEventListener("touchmove", (e) => {
-    if (open) return;
+    if (started) return;
     if (!canArm()) return;
     const y = e.touches[0] ? e.touches[0].clientY : 0;
     const s = window.__hqlAuraY || y;
     if (s - y > 90) { window.__hqlAuraY = y; bump(); }
   }, { passive: true });
 
-  async function openAura() {
-    if (open) return;
-    open = true; stop = false;
-    const root = document.createElement("div");
-    root.id = "hqlAuraRoot";
-    root.style.cssText = "position:fixed;inset:0;z-index:30000;background:#050814;display:flex;flex-direction:column;";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = "بستن";
-    btn.style.cssText = "position:absolute;top:12px;left:12px;z-index:2;padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font:600 13px sans-serif;cursor:pointer;";
-    btn.onclick = () => {
-      stop = true; open = false; hits = 0;
-      clean.forEach(fn => { try { fn(); } catch (e) {} });
-      clean = [];
-      try { root.remove(); } catch (e) {}
-    };
+  function revealSection() {
+    if (started) return;
+    started = true;
+
+    // create section only when needed — zero footprint before this
+    const section = document.createElement("section");
+    section.id = "hqlAuraSection";
+    section.setAttribute("aria-label", "بخش ویژه");
+    section.style.cssText = [
+      "position:relative",
+      "width:100%",
+      "max-width:720px",
+      "margin:28px auto 100px",
+      "height:min(72vh,560px)",
+      "border-radius:18px",
+      "overflow:hidden",
+      "border:1px solid rgba(180,120,255,0.35)",
+      "background:#050814",
+      "box-shadow:0 0 24px rgba(180,76,255,0.25),0 0 48px rgba(0,240,255,0.1)"
+    ].join(";");
+
     const stage = document.createElement("div");
-    stage.style.cssText = "flex:1;position:relative;min-height:0;width:100%;";
-    root.appendChild(btn);
-    root.appendChild(stage);
-    document.body.appendChild(root);
-    try { await runScene(stage); }
-    catch (err) { console.warn(err); btn.onclick(); }
+    stage.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+    section.appendChild(stage);
+
+    // append after .page so it is natural continuation of the document
+    const page = document.querySelector(".page");
+    if (page && page.parentNode) {
+      page.parentNode.insertBefore(section, page.nextSibling);
+    } else {
+      document.body.appendChild(section);
+    }
+
+    requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    runScene(stage).catch((err) => {
+      console.warn(err);
+      try { section.remove(); } catch (e) {}
+      started = false;
+    });
   }
 
   async function runScene(container) {
@@ -1428,27 +1449,38 @@ init();
     const { EffectComposer } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/EffectComposer.js");
     const { RenderPass } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/RenderPass.js");
     const { UnrealBloomPass } = await import("https://esm.sh/three@0.170.0/addons/postprocessing/UnrealBloomPass.js");
+
     const W = () => container.clientWidth || window.innerWidth;
-    const H = () => container.clientHeight || window.innerHeight;
+    const H = () => container.clientHeight || 480;
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050814);
     scene.fog = new THREE.FogExp2(0x050814, 0.008);
+
     const camera = new THREE.PerspectiveCamera(45, W() / Math.max(1, H()), 0.1, 1000);
     camera.position.set(3, 2, 5);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(W(), H());
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
+    renderer.domElement.style.cssText = "display:block;width:100%!important;height:100%!important;touch-action:none;";
+
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.2, 0.3, 0.85);
     bloom.threshold = 0.1; bloom.strength = 0.8; bloom.radius = 0.5;
     composer.addPass(bloom);
+
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; controls.dampingFactor = 0.05;
-    controls.autoRotate = true; controls.autoRotateSpeed = 1.2; controls.enablePan = false;
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.2;
+    controls.enablePan = false;
+
     scene.add(new THREE.AmbientLight(0x222222));
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
     mainLight.position.set(2, 3, 4); scene.add(mainLight);
@@ -1456,6 +1488,7 @@ init();
     colorLight.position.set(1, 1, 2); scene.add(colorLight);
     const backLight = new THREE.PointLight(0x4477cc, 0.6);
     backLight.position.set(-2, 1, -3); scene.add(backLight);
+
     const starPos = new Float32Array(2400);
     for (let i = 0; i < 800; i++) {
       starPos[3*i] = 200*(Math.random()-0.5);
@@ -1464,28 +1497,45 @@ init();
     }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.6 }));
-    scene.add(stars);
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.6 })));
+
     const ico = new THREE.IcosahedronGeometry(1.1, 0);
-    const core = new THREE.Mesh(ico, new THREE.MeshStandardMaterial({ color: 0x4a6b9c, emissive: 0x112233, roughness: 0.28, metalness: 0.75, transparent: true, opacity: 0.92 }));
+    const core = new THREE.Mesh(ico, new THREE.MeshStandardMaterial({
+      color: 0x4a6b9c, emissive: 0x112233, roughness: 0.28, metalness: 0.75, transparent: true, opacity: 0.92
+    }));
     scene.add(core);
     const wire = new THREE.Mesh(ico, new THREE.MeshBasicMaterial({ color: 0x66aaff, wireframe: true, transparent: true, opacity: 0.25 }));
     wire.scale.setScalar(1.08); scene.add(wire);
+
     const ringPos = new Float32Array(3600), ringCol = new Float32Array(3600);
     for (let i = 0; i < 1200; i++) {
       const a = (i/1200)*Math.PI*2, r = 1.55;
-      ringPos[3*i] = Math.cos(a)*r; ringPos[3*i+1] = 0.35*Math.sin(3*a); ringPos[3*i+2] = Math.sin(a)*r;
-      ringCol[3*i] = 0.4+0.6*Math.sin(a); ringCol[3*i+1] = 0.3+0.7*Math.cos(1.7*a); ringCol[3*i+2] = 0.8+0.2*Math.sin(2.3*a);
+      ringPos[3*i] = Math.cos(a)*r;
+      ringPos[3*i+1] = 0.35*Math.sin(3*a);
+      ringPos[3*i+2] = Math.sin(a)*r;
+      ringCol[3*i] = 0.4+0.6*Math.sin(a);
+      ringCol[3*i+1] = 0.3+0.7*Math.cos(1.7*a);
+      ringCol[3*i+2] = 0.8+0.2*Math.sin(2.3*a);
     }
     const ringGeo = new THREE.BufferGeometry();
     ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
     ringGeo.setAttribute("color", new THREE.BufferAttribute(ringCol, 3));
-    const ring = new THREE.Points(ringGeo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending }));
+    const ring = new THREE.Points(ringGeo, new THREE.PointsMaterial({
+      size: 0.05, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending
+    }));
     scene.add(ring);
-    const torus = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.045, 64, 500), new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x2266aa, roughness: 0.3, metalness: 0.9 }));
+
+    const torus = new THREE.Mesh(
+      new THREE.TorusGeometry(1.45, 0.045, 64, 500),
+      new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x2266aa, roughness: 0.3, metalness: 0.9 })
+    );
     scene.add(torus);
-    const torus2 = new THREE.Mesh(new THREE.TorusGeometry(1.68, 0.03, 64, 500), new THREE.MeshStandardMaterial({ color: 0xffa088, emissive: 0x442200, roughness: 0.5, metalness: 0.7 }));
+    const torus2 = new THREE.Mesh(
+      new THREE.TorusGeometry(1.68, 0.03, 64, 500),
+      new THREE.MeshStandardMaterial({ color: 0xffa088, emissive: 0x442200, roughness: 0.5, metalness: 0.7 })
+    );
     scene.add(torus2);
+
     const cloudPos = new Float32Array(2400);
     for (let i = 0; i < 800; i++) {
       cloudPos[3*i] = 5*(Math.random()-0.5);
@@ -1494,34 +1544,49 @@ init();
     }
     const cloudGeo = new THREE.BufferGeometry();
     cloudGeo.setAttribute("position", new THREE.BufferAttribute(cloudPos, 3));
-    const clouds = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ color: 0x77aaff, size: 0.025, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending }));
+    const clouds = new THREE.Points(cloudGeo, new THREE.PointsMaterial({
+      color: 0x77aaff, size: 0.025, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+    }));
     scene.add(clouds);
+
     const grid = new THREE.GridHelper(12, 24, 0x88aaff, 0x335566);
-    grid.position.y = -1.8; grid.material.transparent = true; grid.material.opacity = 0.2;
+    grid.position.y = -1.8;
+    grid.material.transparent = true;
+    grid.material.opacity = 0.2;
     scene.add(grid);
+
     let time = 0;
+    const stars = scene.children.find(c => c.isPoints && c !== ring && c !== clouds) || scene.children[scene.children.length - 5];
+
     function tick() {
       if (stop) return;
       requestAnimationFrame(tick);
       time += 0.012;
-      core.rotation.y = 0.25*time;
-      core.rotation.x = 0.2*Math.sin(0.37*time);
-      core.rotation.z = 0.15*Math.cos(0.23*time);
+      core.rotation.y = 0.25 * time;
+      core.rotation.x = 0.2 * Math.sin(0.37 * time);
+      core.rotation.z = 0.15 * Math.cos(0.23 * time);
       wire.rotation.copy(core.rotation);
-      ring.rotation.y = 0.35*time;
-      ring.rotation.x = 0.2*Math.sin(0.28*time);
-      torus.rotation.x = Math.PI/2; torus.rotation.z = 0.5*time;
-      torus2.rotation.x = Math.PI/2+0.3; torus2.rotation.z = 0.65*time;
-      colorLight.color.setHSL(0.55+0.1*Math.sin((0.2*time)%(Math.PI*2)), 1, 0.6);
-      stars.rotation.y += 0.0005; stars.rotation.x += 0.0003;
-      clouds.rotation.y = 0.05*time; clouds.rotation.x = 0.1*Math.sin(0.1*time);
-      controls.update(); composer.render();
+      ring.rotation.y = 0.35 * time;
+      ring.rotation.x = 0.2 * Math.sin(0.28 * time);
+      torus.rotation.x = Math.PI / 2;
+      torus.rotation.z = 0.5 * time;
+      torus2.rotation.x = Math.PI / 2 + 0.3;
+      torus2.rotation.z = 0.65 * time;
+      colorLight.color.setHSL(0.55 + 0.1 * Math.sin((0.2 * time) % (Math.PI * 2)), 1, 0.6);
+      if (stars && stars.rotation) { stars.rotation.y += 0.0005; stars.rotation.x += 0.0003; }
+      clouds.rotation.y = 0.05 * time;
+      clouds.rotation.x = 0.1 * Math.sin(0.1 * time);
+      controls.update();
+      composer.render();
     }
     tick();
+
     function onResize() {
       const ww = W(), hh = H();
-      camera.aspect = ww/Math.max(1,hh); camera.updateProjectionMatrix();
-      renderer.setSize(ww, hh); composer.setSize(ww, hh);
+      camera.aspect = ww / Math.max(1, hh);
+      camera.updateProjectionMatrix();
+      renderer.setSize(ww, hh);
+      composer.setSize(ww, hh);
     }
     window.addEventListener("resize", onResize);
     clean.push(() => {
