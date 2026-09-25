@@ -1,0 +1,26 @@
+function makePattern(g,fg,bg){const p=document.createElement('canvas');p.width=14;p.height=14;const pg=p.getContext('2d');pg.fillStyle=bg;pg.fillRect(0,0,14,14);pg.fillStyle=fg;pg.fillRect(0,0,7,7);pg.fillRect(7,7,7,7);return g.createPattern(p,'repeat');}
+function floodFillLayer(layer,p,color,tol){const g=layer.canvas.getContext('2d'),img=g.getImageData(0,0,layer.canvas.width,layer.canvas.height),d=img.data,w=img.width,h=img.height,x0=Math.floor(p.x),y0=Math.floor(p.y);const target=[d[(y0*w+x0)*4],d[(y0*w+x0)*4+1],d[(y0*w+x0)*4+2],d[(y0*w+x0)*4+3]],fill=hexToRgb(color),stack=[[x0,y0]],seen=new Uint8Array(w*h);let n=0;while(stack.length&&n<90000){const [x,y]=stack.pop();if(x<0||y<0||x>=w||y>=h)continue;const idx=y*w+x;if(seen[idx])continue;seen[idx]=1;const i=idx*4;if(Math.abs(d[i]-target[0])+Math.abs(d[i+1]-target[1])+Math.abs(d[i+2]-target[2])>tol*3)continue;d[i]=fill.r;d[i+1]=fill.g;d[i+2]=fill.b;d[i+3]=255;n++;stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);}g.putImageData(img,0,0);toast(`Filled ${n.toLocaleString()} pixels.`);}
+function boxBlurCanvas(c,passes=1){const g=c.getContext('2d');for(let p=0;p<passes;p++){const img=g.getImageData(0,0,c.width,c.height),d=img.data,copy=new Uint8ClampedArray(d);for(let y=1;y<c.height-1;y++)for(let x=1;x<c.width-1;x++){let r=0,gr=0,b=0,a=0;for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++){const i=((y+yy)*c.width+x+xx)*4;r+=copy[i];gr+=copy[i+1];b+=copy[i+2];a+=copy[i+3];}const i=(y*c.width+x)*4;d[i]=r/9;d[i+1]=gr/9;d[i+2]=b/9;d[i+3]=a/9;}g.putImageData(img,0,0);}}
+function rotatedCanvas(c){const nc=document.createElement('canvas');nc.width=c.height;nc.height=c.width;const g=nc.getContext('2d');g.translate(nc.width/2,nc.height/2);g.rotate(Math.PI/2);g.drawImage(c,-c.width/2,-c.height/2);return nc;}
+function cloneCanvas(c){const n=document.createElement('canvas');n.width=c.width;n.height=c.height;n.getContext('2d').drawImage(c,0,0);return n;}
+function trianglePath(g,r){g.beginPath();g.moveTo(r.x+r.w/2,r.y);g.lineTo(r.x+r.w,r.y+r.h);g.lineTo(r.x,r.y+r.h);g.closePath();}
+function polygonPath(g,r,n=6){const cx=r.x+r.w/2,cy=r.y+r.h/2,rad=Math.min(Math.abs(r.w),Math.abs(r.h))/2;g.beginPath();for(let i=0;i<n;i++){const a=-Math.PI/2+i*Math.PI*2/n,x=cx+Math.cos(a)*rad,y=cy+Math.sin(a)*rad;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.closePath();}
+function starPath(g,r){const cx=r.x+r.w/2,cy=r.y+r.h/2,rad=Math.min(Math.abs(r.w),Math.abs(r.h))/2;g.beginPath();for(let i=0;i<10;i++){const rr=i%2?rad*.45:rad,a=-Math.PI/2+i*Math.PI/5,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.closePath();}
+function normalizeRect(a,b){return{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(b.x-a.x),h:Math.abs(b.y-a.y)};} function distance(m){return Math.hypot(m.x2-m.x1,m.y2-m.y1);} function samplePixel(p){const d=ctx.getImageData(Math.round(p.x),Math.round(p.y),1,1).data;return{r:d[0],g:d[1],b:d[2],a:d[3]};}
+function hexToRgb(hex){hex=hex.replace('#','');return{r:parseInt(hex.slice(0,2),16),g:parseInt(hex.slice(2,4),16),b:parseInt(hex.slice(4,6),16)};} function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>Math.round(clamp(v,0,255)).toString(16).padStart(2,'0')).join('');}
+function wrapText(g,text,x,y,maxWidth,lineHeight){const words=String(text).split(/\s+/);let line='';for(const word of words){const test=line+word+' ';if(g.measureText(test).width>maxWidth&&line){g.fillText(line,x,y);line=word+' ';y+=lineHeight;}else line=test;}g.fillText(line,x,y);} function cssFont(f){return /\s/.test(f)?`"${f}"`:f;}
+
+function toast(message){
+  const box=$('#toast');
+  if(!box)return;
+  box.textContent=message;
+  box.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer=setTimeout(()=>box.classList.remove('show'),2300);
+}
+function labelize(s){return String(s).replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase());} function percent(v){return `${(v*100).toFixed(1)}%`;} function clamp(v,min,max){return Math.max(min,Math.min(max,v));} function escapeHtml(s){return String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));} function copyObj(o){return o==null?o:JSON.parse(JSON.stringify(o));}
+init();
+})();
+</script>
+</body>
+</html>
