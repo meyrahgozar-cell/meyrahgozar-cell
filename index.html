@@ -167,6 +167,28 @@ button { cursor: pointer; border: none; background: none; }
 
 .header-actions { display: flex; gap: 7px; position: relative; }
 
+
+.icon-btn.user-btn {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+.icon-btn.user-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 11px;
+  background: #fff;
+}
+.icon-btn.user-btn .user-btn-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 16px;
+}
+
 .icon-btn {
   width: 40px;
   height: 40px;
@@ -885,7 +907,7 @@ a.icon-btn.call-btn {
         <img src="images/favicon.png" alt="" class="theme-icon" width="22" height="22">
       </button>
       <a class="icon-btn call-btn" id="callButton" href="tel:+989308779454" title="تماس با میثم رهگذر" aria-label="تماس">📞</a>
-      <button class="icon-btn" id="userButton" title="کاربر">👤</button>
+      <button class="icon-btn user-btn" id="userButton" title="کاربر" aria-label="کاربر"><span class="user-btn-fallback">👤</span></button>
       <div id="menu" class="menu hidden">
         <button id="logoutButton">خروج</button>
       </div>
@@ -1032,6 +1054,21 @@ function isoDate(d) {
     return shifted.toISOString().slice(0, 10);
   }
 }
+/** YYYY-MM-DD یکدست (پد صفر) — مقایسه/lag بدون وابستگی به ماه */
+function normalizeISO(s) {
+  if (!s || typeof s !== "string") return s;
+  const m = s.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!m) return s.trim();
+  return m[1] + "-" + String(+m[2]).padStart(2, "0") + "-" + String(+m[3]).padStart(2, "0");
+}
+/** ساخت ISO از اجزای میلادی بدون تبدیل دوبارهٔ timezone (مرز ماه امن) */
+function gregorianISO(gy, gm, gd) {
+  return gy + "-" + String(gm).padStart(2, "0") + "-" + String(gd).padStart(2, "0");
+}
+function refreshTodayDate() {
+  todayDate = normalizeISO(isoDate(new Date()));
+  return todayDate;
+}
 function parseISO(s){ const[y,m,d]=s.split("-").map(Number); return new Date(Date.UTC(y,m-1,d)); }
 function toMinutes(t){ if(!t)return null; const[h,m]=t.split(":").map(Number); return h*60+m; }
 function minutesToTime(mins){
@@ -1047,8 +1084,8 @@ function monthRangeISO(iso){
   const startG = jalaali.toGregorian(j.jy, j.jm, 1);
   const endG = jalaali.toGregorian(j.jy, j.jm, days);
   return {
-    start: isoDate(new Date(Date.UTC(startG.gy, startG.gm - 1, startG.gd))),
-    end: isoDate(new Date(Date.UTC(endG.gy, endG.gm - 1, endG.gd)))
+    start: gregorianISO(startG.gy, startG.gm, startG.gd),
+    end: gregorianISO(endG.gy, endG.gm, endG.gd)
   };
 }
 function jalaliLabel(iso){
@@ -1178,10 +1215,11 @@ document.getElementById("calToggle").onclick=()=>{
 
 
 function prevDayISO(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
+  const [y, m, d] = normalizeISO(iso).split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() - 1);
-  return isoDate(dt);
+  // فقط حساب تقویمی UTC — بدون isoDate/Tehran تا مرز ماه جابه‌جا نشود
+  return gregorianISO(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
 }
 function updateDayContext() {
   const el = document.getElementById("dayContext");
@@ -1246,7 +1284,7 @@ function renderCalendar(){
     btn.textContent=fa(d);
 
     const gDay=jalaali.toGregorian(viewYear,viewMonth,d);
-    const iso=isoDate(new Date(Date.UTC(gDay.gy,gDay.gm-1,gDay.gd)));
+    const iso=gregorianISO(gDay.gy,gDay.gm,gDay.gd);
 
     if(iso===todayDate) btn.classList.add("today");
     if(iso===selectedDate) btn.classList.add("selected");
@@ -1501,7 +1539,8 @@ function updateScoreUI(){
    دیرتر از یک روز → بدون امتیاز نظم.
 */
 function daysBetweenISO(a, b) {
-  // a, b: YYYY-MM-DD → تعداد روز تقویمی (b - a)
+  // a, b: YYYY-MM-DD → تعداد روز تقویمی (b - a) — مستقل از ماه شمسی/میلادی
+  a = normalizeISO(a); b = normalizeISO(b);
   const [ay, am, ad] = a.split("-").map(Number);
   const [by, bm, bd] = b.split("-").map(Number);
   const ua = Date.UTC(ay, am - 1, ad);
@@ -1509,15 +1548,19 @@ function daysBetweenISO(a, b) {
   return Math.round((ub - ua) / 86400000);
 }
 function isTimelyLog(logDate) {
+  // ارفاق یک‌روزه: همان‌روز یا فردا برای دیروز — حتی اگر ماه عوض شده باشد
+  // مثال: ۱ مهر برای ۳۱ شهریور → lag=1 → نظم تعلق می‌گیرد
+  refreshTodayDate();
+  logDate = normalizeISO(logDate);
   if (!logDate || !todayDate) return false;
   if (logDate > todayDate) return false;
-  const lag = daysBetweenISO(logDate, todayDate); // 0 = همان روز، 1 = فردا برای دیروز
+  const lag = daysBetweenISO(logDate, todayDate);
   return lag === 0 || lag === 1;
 }
 async function ensureDisciplineBonus(logDate) {
+  logDate = normalizeISO(logDate);
   if (!isTimelyLog(logDate)) return null;
-  // اگر از قبل ثبت شده، دست نزن
-  if (logDate === selectedDate && todayLogs.has("discipline")) {
+  if (logDate === normalizeISO(selectedDate) && todayLogs.has("discipline")) {
     const existing = todayLogs.get("discipline");
     if (Number(existing?.score) > 0) return existing;
   }
@@ -1528,12 +1571,23 @@ async function ensureDisciplineBonus(logDate) {
       p_value: 1,
       p_score: 1
     });
-    if (q.error) return null;
-    if (logDate === selectedDate && q.data) {
-      todayLogs.set("discipline", q.data);
+    if (q.error) {
+      console.warn("discipline save", q.error);
+      return null;
     }
-    return q.data;
+    let row = q.data;
+    if (Array.isArray(row)) row = row[0] || null;
+    if (!row) {
+      const f = await db.from("daily_logs").select("*")
+        .eq("log_date", logDate).eq("item_type", "discipline").maybeSingle();
+      row = f.data || { item_type: "discipline", log_date: logDate, value: 1, score: 1 };
+    }
+    if (normalizeISO(logDate) === normalizeISO(selectedDate)) {
+      todayLogs.set("discipline", row);
+    }
+    return row;
   } catch (e) {
+    console.warn("discipline", e);
     return null;
   }
 }
@@ -1669,6 +1723,34 @@ function showAuthShell() {
 let __appOpened = false;
 let __authInit = false;
 
+
+function setUserButtonAvatar(displayName) {
+  const btn = document.getElementById("userButton");
+  if (!btn) return;
+  const name = (displayName || "").trim();
+  const fallback = '<span class="user-btn-fallback">👤</span>';
+  if (!name) {
+    btn.innerHTML = fallback;
+    btn.title = "کاربر";
+    return;
+  }
+  btn.title = name;
+  const src = "images/" + encodeURIComponent(name) + ".png";
+  const img = new Image();
+  img.onload = () => {
+    btn.innerHTML = "";
+    const el = document.createElement("img");
+    el.src = src;
+    el.alt = name;
+    el.draggable = false;
+    btn.appendChild(el);
+  };
+  img.onerror = () => {
+    btn.innerHTML = fallback;
+  };
+  img.src = src;
+}
+
 async function openApp(user) {
   if (!user) return;
   currentUser = user;
@@ -1677,8 +1759,9 @@ async function openApp(user) {
 
   try {
     const now = new Date();
-    todayDate = isoDate(now);
+    todayDate = refreshTodayDate();
     if (!selectedDate) selectedDate = todayDate;
+    else selectedDate = normalizeISO(selectedDate);
     const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
     viewYear = j.jy;
     viewMonth = j.jm;
@@ -1688,9 +1771,12 @@ async function openApp(user) {
 
   try { await loadGenderAndKmFactors(); } catch (e) { console.warn(e); }
   try {
-    const __pa = await db.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+    const __pa = await db.from("profiles").select("is_admin, display_name").eq("id", user.id).maybeSingle();
     if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(__pa.data && __pa.data.is_admin));
-  } catch (_) {}
+    setUserButtonAvatar(__pa.data && __pa.data.display_name);
+  } catch (_) {
+    setUserButtonAvatar(null);
+  }
   try { await loadDayData(); } catch (e) { console.warn("loadDayData", e); }
   try {
   } catch (_) {}
