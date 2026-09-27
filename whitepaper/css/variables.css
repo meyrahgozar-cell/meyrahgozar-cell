@@ -1,0 +1,145 @@
+/* ============================================================
+   کاغذ سفید — توکن‌های طراحی
+   ============================================================ */
+:root {
+  /* --- پالت پایه: سطوح تیره --- */
+  --ink-0:   #05050a;
+  --ink-50:  #0a0a12;
+  --ink-100: #0f0f18;
+  --ink-150: #14141f;
+  --ink-200: #1a1a26;
+  --ink-250: #20202e;
+  --ink-300: #262636;
+  --ink-350: #2e2e40;
+  --ink-400: #3a3a4e;
+  --ink-500: #52526a;
+  --ink-600: #6e6e88;
+  --ink-700: #9494ad;
+  --ink-800: #bdbdd0;
+  --ink-850: #d8d8e4;
+  --ink-900: #ececf2;
+  --ink-950: #f7f7fb;
+
+  /* --- رنگ‌های تأکیدی --- */
+  --iris-400: #a5a8ff;
+  --iris-500: #818cf8;
+  --iris-600: #6366f1;
+  --iris-700: #4f46e5;
+  --iris-800: #4338ca;
+
+  --violet-500: #a855f7;
+  --violet-600: #9333ea;
+
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+
+  --sky-400: #38bdf8;
+  --sky-500: #0ea5e9;
+
+  /* --- توکن‌های معنایی --- */
+  --bg-base:      var(--ink-50);
+  --bg-surface:   var(--ink-100);
+  --bg-elevated:  var(--ink-150);
+  --bg-raised:    var(--ink-200);
+  --bg-hover:     var(--ink-250);
+  --bg-active:    var(--ink-300);
+
+  --text-primary:   var(--ink-900);
+  --text-secondary: var(--ink-700);
+  --text-tertiary:  var(--ink-600);
+  --text-muted:     var(--ink-500);
+  --text-inverse:   var(--ink-50);
+
+  --border-faint:   rgba(255,255,255,0.04);
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.09);
+  --border-strong:  rgba(255,255,255,0.14);
+
+  --accent:        var(--iris-600);
+  --accent-soft:   rgba(99,102,241,0.14);
+  --accent-hover:  var(--iris-500);
+  --accent-glow:   rgba(99,102,241,0.35);
+
+  --success:       var(--emerald-500);
+  --success-soft:  rgba(16,185,129,0.14);
+  --warning:       var(--amber-500);
+  --warning-soft:  rgba(245,158,11,0.14);
+  --danger:        var(--rose-500);
+  --danger-soft:   rgba(244,63,94,0.14);
+  --info:          var(--sky-500);
+  --info-soft:     rgba(14,165,233,0.14);
+
+  /* --- سایه‌ها --- */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+  --shadow-xl: 0 24px 80px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 40px var(--accent-glow);
+
+  /* --- شعاع گوشه‌ها --- */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-2xl: 32px;
+  --r-full: 9999px;
+
+  /* --- فاصله‌ها --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* --- تایپوگرافی --- */
+  --font: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-xs:  11px;
+  --fs-sm:  12.5px;
+  --fs-md:  14px;
+  --fs-base:15px;
+  --fs-lg:  17px;
+  --fs-xl:  20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+  --fs-4xl: 38px;
+  --fs-5xl: 48px;
+
+  --lh-tight: 1.3;
+  --lh-base:  1.7;
+  --lh-loose: 2;
+
+  /* --- انتقالات --- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --tr-fast: 140ms var(--ease-out);
+  --tr-base: 240ms var(--ease-out);
+  --tr-slow: 420ms var(--ease-out);
+
+  /* --- چیدمان --- */
+  --sidebar-w: 260px;
+  --header-h: 64px;
+  --footer-h: 40px;
+  --content-max: 1400px;
+
+  /* --- z-index --- */
+  --z-sidebar: 40;
+  --z-header: 50;
+  --z-modal: 100;
+  --z-toast: 200;
+}
