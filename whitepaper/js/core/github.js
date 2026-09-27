@@ -1,5 +1,5 @@
 /* ============================================================
-   کاغذ سفید — لایه GitHub API
+   کاغذ سفید — لایه GitHub API (نسخه اصلاح‌شده)
    ============================================================ */
 
 import { Auth } from './auth.js';
@@ -13,6 +13,8 @@ export class GitHubAPI {
     this.repo = repo;
     this.branch = branch;
     this.path = path;
+    // صف نوشتن — همه نوشتن‌ها به ترتیب اجرا می‌شوند
+    this._queue = Promise.resolve();
   }
 
   get rawUrl() {
@@ -23,20 +25,21 @@ export class GitHubAPI {
     return `${API}/repos/${this.owner}/${this.repo}/contents/${this.path}`;
   }
 
-  /** خواندن فایل (بدون نیاز به توکن اگر مخزن عمومی باشد) */
+  /** خواندن فایل */
   async read() {
-    // تلاش با raw
     try {
-      const res = await fetch(this.rawUrl + '?t=' + Date.now());
+      const res = await fetch(this.rawUrl + '?t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) return await res.json();
-    } catch (e) { /* ادامه */ }
+    } catch (_) { /* ادامه */ }
 
-    // تلاش با API (برای مخزن خصوصی)
     const token = Auth.getToken();
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    const res = await fetch(this.apiUrl, { headers });
+    const headers = { 'Accept': 'application/vnd.github+json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(this.apiUrl + '?t=' + Date.now(), { headers, cache: 'no-store' });
     if (!res.ok) {
       if (res.status === 404) throw new Error('فایل داده یافت نشد');
+      if (res.status === 401) throw new Error('توکن نامعتبر است');
       throw new Error(`خطای خواندن: ${res.status}`);
     }
     const data = await res.json();
@@ -44,30 +47,55 @@ export class GitHubAPI {
     return JSON.parse(decoded);
   }
 
-  /** نوشتن فایل (نیاز به توکن) */
-  async write(payload, message = 'به‌روزرسانی کاغذ سفید') {
+  /**
+   * نوشتن فایل — به صورت سریالی از طریق صف
+   * همه فراخوانی‌ها به ترتیب اجرا می‌شوند و از ۴۰۹ جلوگیری می‌شود.
+   */
+  write(payload, message = 'به‌روزرسانی کاغذ سفید') {
+    const task = () => this._writeOnce(payload, message, true);
+    // زنجیره صف: هر تسک بعد از تسک قبلی
+    const result = this._queue.then(task, task);
+    // جلوگیری از شکستن صف در صورت خطا
+    this._queue = result.catch(() => {});
+    return result;
+  }
+
+  /** نوشتن واقعی با دریافت تازه SHA */
+  async _writeOnce(payload, message, allowRetry) {
     const token = Auth.getToken();
     if (!token) throw new Error('توکن GitHub تنظیم نشده است');
 
-    // گرفتن SHA فعلی
+    // ۱. دریافت تازه‌ی SHA دقیقاً قبل از نوشتن
     let sha = null;
-    try {
-      const res = await fetch(this.apiUrl, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        sha = data.sha;
-      }
-    } catch (e) { /* فایل جدید */ }
+    const head = await fetch(this.apiUrl + '?t=' + Date.now(), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+      },
+      cache: 'no-store',
+    });
+
+    if (head.ok) {
+      const info = await head.json();
+      sha = info.sha;
+    } else if (head.status === 401) {
+      throw new Error('توکن نامعتبر است');
+    } else if (head.status !== 404) {
+      throw new Error(`خطا در خواندن فایل فعلی: ${head.status}`);
+    }
+
+    // ۲. رمزگذاری محتوا
+    const json = JSON.stringify(payload, null, 2);
+    const content = btoa(unescape(encodeURIComponent(json)));
 
     const body = {
       message,
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))),
+      content,
       branch: this.branch,
       ...(sha && { sha }),
     };
 
+    // ۳. نوشتن
     const res = await fetch(this.apiUrl, {
       method: 'PUT',
       headers: {
@@ -78,17 +106,24 @@ export class GitHubAPI {
       body: JSON.stringify(body),
     });
 
+    // ۴. اگر ۴۰۹ خورد (کسی دیگر بین کار ما نوشت) → یک بار دیگر تلاش کن
+    if (res.status === 409 && allowRetry) {
+      await new Promise(r => setTimeout(r, 500));
+      return this._writeOnce(payload, message, false);
+    }
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || `خطای نوشتن: ${res.status}`);
     }
+
     return res.json();
   }
 
   /** تست اتصال */
   async ping() {
     try {
-      const res = await fetch(this.rawUrl + '?t=' + Date.now());
+      const res = await fetch(this.rawUrl + '?t=' + Date.now(), { cache: 'no-store' });
       return { ok: res.ok, status: res.status };
     } catch (e) {
       return { ok: false, error: e.message };
@@ -96,7 +131,7 @@ export class GitHubAPI {
   }
 }
 
-/* نمونه پیش‌فرض برای کاغذ سفید */
+/* نمونه پیش‌فرض */
 export const defaultGitHub = new GitHubAPI({
   owner: 'meyrahgozar-cell',
   repo: 'meyrahgozar-cell',
