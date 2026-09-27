@@ -132,15 +132,15 @@
     }
   ],
   "settings": {
-    "birthDate": "1995-01-01",
-    "lifeExpectancy": 85,
-    "userName": "",
+    "birthDate": "1992-02-04",
+    "lifeExpectancy": 83,
+    "userName": "میثم",
     "theme": "dark",
     "lastSyncedAt": "2026-09-27T11:47:45.027Z",
     "githubTokenSet": false
   },
   "meta": {
     "version": 1,
-    "updatedAt": "2026-09-27T12:21:51.583Z"
+    "updatedAt": "2026-09-27T12:22:43.027Z"
   }
 }
