@@ -1,33 +1,44 @@
 /* ============================================================
-   کاغذ سفید — لایه ذخیره‌سازی (GitHub + Local)
+   کاغذ سفید — لایه ذخیره‌سازی (نسخه اصلاح‌شده)
    ============================================================ */
 
 import { defaultGitHub } from '../core/github.js';
 import { Auth } from '../core/auth.js';
-import { State } from '../core/state.js';
 import { safeParse } from '../core/utils.js';
 
 const LOCAL_KEY = 'kaghaz:data';
 
+/* ---------- سیستم اطلاع‌رسانی وضعیت همگام‌سازی ---------- */
+const statusSubs = new Set();
+export function onSyncStatus(fn) {
+  statusSubs.add(fn);
+  return () => statusSubs.delete(fn);
+}
+function emitStatus(patch) {
+  for (const fn of statusSubs) {
+    try { fn(patch); } catch (e) { console.error(e); }
+  }
+}
+
 export const Storage = {
-  /** بارگذاری از LocalStorage */
+  _savingPromise: null,   // جلوگیری از save همزمان
+
+  /* ---------- Local ---------- */
   loadLocal() {
-    const raw = localStorage.getItem(LOCAL_KEY);
-    return safeParse(raw, null);
+    return safeParse(localStorage.getItem(LOCAL_KEY), null);
   },
 
-  /** ذخیره در LocalStorage */
   saveLocal(data) {
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
       return true;
     } catch (e) {
-      console.warn('LocalStorage پر است', e);
+      console.warn('LocalStorage پر است:', e);
       return false;
     }
   },
 
-  /** بارگذاری از GitHub (اگر توکن موجود باشد) */
+  /* ---------- Remote ---------- */
   async loadRemote() {
     if (!Auth.hasToken()) return null;
     try {
@@ -38,64 +49,78 @@ export const Storage = {
     }
   },
 
-  /** ذخیره در GitHub */
   async saveRemote(data) {
     if (!Auth.hasToken()) throw new Error('توکن تنظیم نشده');
-    return await defaultGitHub.write(data, `به‌روزرسانی کاغذ سفید — ${new Date().toISOString()}`);
+    return defaultGitHub.write(
+      data,
+      `به‌روزرسانی کاغذ سفید — ${new Date().toISOString()}`
+    );
   },
 
-  /** بارگذاری ترکیبی: اول Local، سپس تلاش GitHub */
+  /* ---------- ترکیبی ---------- */
   async load() {
-    State.updateUI({ syncing: true });
+    emitStatus({ syncing: true, error: null });
     try {
       const remote = await this.loadRemote();
       if (remote) {
         this.saveLocal(remote);
-        State.updateSettings({ lastSyncedAt: new Date().toISOString() });
+        emitStatus({ syncing: false, error: null, lastSyncedAt: new Date().toISOString() });
         return remote;
       }
-      const local = this.loadLocal();
-      if (local) return local;
-      return null;
+      return this.loadLocal();
     } finally {
-      State.updateUI({ syncing: false });
+      emitStatus({ syncing: false });
     }
   },
 
-  /** ذخیره ترکیبی: ابتدا Local، سپس GitHub در پس‌زمینه */
+  /**
+   * ذخیره — با قفل ضد-همزمانی
+   * اگر در حال ذخیره باشیم، همان promise برگردانده می‌شود.
+   */
   async save(data) {
-    // ذخیره محلی فوری
+    // ذخیره محلی همیشه فوری
     this.saveLocal(data);
 
-    // اگر توکن داریم، به GitHub هم بفرست
-    if (Auth.hasToken()) {
-      State.updateUI({ syncing: true });
+    if (!Auth.hasToken()) {
+      return { ok: true, synced: false };
+    }
+
+    // اگر قبلاً در حال ذخیره هستیم، همان را برگردان
+    if (this._savingPromise) return this._savingPromise;
+
+    emitStatus({ syncing: true, error: null });
+
+    this._savingPromise = (async () => {
       try {
         await this.saveRemote(data);
-        State.updateSettings({ lastSyncedAt: new Date().toISOString() });
-        State.updateUI({ syncing: false, lastError: null });
+        emitStatus({
+          syncing: false,
+          error: null,
+          lastSyncedAt: new Date().toISOString(),
+        });
         return { ok: true, synced: true };
       } catch (e) {
-        State.updateUI({ syncing: false, lastError: e.message });
-        return { ok: true, synced: false, error: e.message };
+        console.error('Save remote error:', e);
+        emitStatus({ syncing: false, error: e.message });
+        return { ok: false, synced: false, error: e.message };
+      } finally {
+        this._savingPromise = null;
       }
-    }
-    return { ok: true, synced: false };
+    })();
+
+    return this._savingPromise;
   },
 
-  /** پاکسازی کامل */
+  /* ---------- ابزارها ---------- */
   clearLocal() {
     localStorage.removeItem(LOCAL_KEY);
   },
 
-  /** تست اتصال */
   async ping() {
-    return await defaultGitHub.ping();
+    return defaultGitHub.ping();
   },
 
-  /** اطلاعات آخرین ذخیره */
   lastLocalSaveAt() {
-    const d = this.loadLocal();
-    return d?.meta?.updatedAt || null;
+    return this.loadLocal()?.meta?.updatedAt || null;
   },
 };
