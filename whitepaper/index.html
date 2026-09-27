@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="کاغذ سفید — برنامه‌ریزی برای زندگی" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>کاغذ سفید | برنامه‌ریزی برای زندگی</title>
+
+  <!-- فونت وزیرمتن -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>" />
+</head>
+<body>
+  <!-- پس‌زمینه تزئینی -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="noise-overlay"></div>
+  </div>
+
+  <!-- پوسته اپلیکیشن -->
+  <div id="app" class="app-shell">
+    <!-- سایدبار -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="ناوبری اصلی"></aside>
+
+    <!-- ناحیه اصلی -->
+    <div class="main-area">
+      <header id="header" class="app-header"></header>
+      <main id="view" class="view-container" role="main"></main>
+      <footer class="app-footer">
+        <span>ساخته‌شده با ❤️ — <strong>کاغذ سفید</strong></span>
+        <span class="footer-sep">•</span>
+        <span id="footer-status" class="footer-status">آماده</span>
+      </footer>
+    </div>
+  </div>
+
+  <!-- کانتینرهای سراسری -->
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
