@@ -1,10 +1,146 @@
 {
-  "plans": [],
+  "plans": [
+    {
+      "id": "plan_mujrfnp8_dc2mj8l",
+      "horizon": "daily",
+      "title": "روزانه",
+      "description": "کارهای امروز — تمرکز بر یک قدم کوچک",
+      "icon": "☀️",
+      "color": "#f59e0b",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_5ar7jyv",
+      "horizon": "weekly",
+      "title": "هفتگی",
+      "description": "برنامه هفته — مرور و اولویت‌بندی",
+      "icon": "🗓️",
+      "color": "#10b981",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_2vu770h",
+      "horizon": "monthly",
+      "title": "ماهانه",
+      "description": "اهداف ماه — پیشرفت پایدار",
+      "icon": "📆",
+      "color": "#6366f1",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_hhhhg8q",
+      "horizon": "quarterly",
+      "title": "سه‌ماهه",
+      "description": "چشم‌انداز فصل — بازبینی مسیر",
+      "icon": "🍂",
+      "color": "#0ea5e9",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_g80k277",
+      "horizon": "half",
+      "title": "شش‌ماهه",
+      "description": "نیم‌سال — تنظیم دقیق اهداف",
+      "icon": "🌗",
+      "color": "#8b5cf6",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_ipdvpyd",
+      "horizon": "yearly",
+      "title": "سالانه",
+      "description": "اهداف سال — تصویر بزرگ",
+      "icon": "🎯",
+      "color": "#a855f7",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_50p49s7",
+      "horizon": "y3",
+      "title": "سه ساله",
+      "description": "افق سه‌ساله — ساخت پایه‌ها",
+      "icon": "🧭",
+      "color": "#ec4899",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_asa18sp",
+      "horizon": "y5",
+      "title": "پنج ساله",
+      "description": "افق پنج‌ساله — جهت‌گیری راهبردی",
+      "icon": "🚀",
+      "color": "#f43f5e",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_xcc7c94",
+      "horizon": "y10",
+      "title": "ده ساله",
+      "description": "افق ده‌ساله — چشم‌انداز زندگی",
+      "icon": "🌌",
+      "color": "#06b6d4",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    },
+    {
+      "id": "plan_mujrfnp8_kj8mh9o",
+      "horizon": "life",
+      "title": "عمر",
+      "description": "تمام زندگی — مأموریت و میراث",
+      "icon": "♾️",
+      "color": "#eab308",
+      "goals": [],
+      "createdAt": "2026-09-27T11:53:37.724Z",
+      "updatedAt": "2026-09-27T11:53:37.724Z",
+      "startDate": "2026-09-27T11:53:37.724Z",
+      "endDate": null
+    }
+  ],
   "settings": {
-    "lastSyncedAt": "2026-09-27T11:47:45.027Z"
+    "birthDate": "1995-01-01",
+    "lifeExpectancy": 85,
+    "userName": "",
+    "theme": "dark",
+    "lastSyncedAt": "2026-09-27T11:47:45.027Z",
+    "githubTokenSet": false
   },
   "meta": {
     "version": 1,
-    "updatedAt": "2026-09-27T11:47:47.352Z"
+    "updatedAt": "2026-09-27T11:53:37.724Z"
   }
 }
