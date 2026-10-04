@@ -866,6 +866,102 @@ a.icon-btn.call-btn {
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
 }
 
+
+/* personal records */
+.records-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: var(--glow);
+}
+.records-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+.records-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.record-chip {
+  border-radius: 14px;
+  border: 1px solid rgba(180, 100, 255, 0.28);
+  background: linear-gradient(145deg, rgba(180,76,255,0.1), rgba(0,240,255,0.06));
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform .15s ease, box-shadow .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.record-chip:active { transform: scale(0.97); }
+.record-chip:hover {
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+  border-color: rgba(0, 240, 255, 0.4);
+}
+.record-chip-icon { font-size: 16px; margin-bottom: 2px; }
+.record-chip-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.record-chip-value {
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #e8d6ff, #7ef9ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.record-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(5,6,10,0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: recFade .2s ease;
+}
+@keyframes recFade { from { opacity: 0; } to { opacity: 1; } }
+.record-modal {
+  width: 100%;
+  max-width: 340px;
+  border-radius: 18px;
+  border: 1px solid rgba(180,100,255,0.45);
+  background: linear-gradient(160deg, #141828, #0a0d16);
+  box-shadow: 0 0 32px rgba(180,76,255,0.35);
+  padding: 18px 16px 14px;
+  direction: rtl;
+}
+.record-modal-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, #b44cff, #00f0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.record-modal-body { font-size: 13px; color: var(--text); line-height: 1.7; }
+.record-modal-body b { color: #7ef9ff; }
+.record-modal-close {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card2, rgba(255,255,255,0.06));
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 </style>
 </head>
 <body>
@@ -933,6 +1029,33 @@ a.icon-btn.call-btn {
         <div id="scoreBar" class="score-bar-fill"></div>
       </div>
     </section>
+  </div>
+
+
+  <div class="records-card" id="recordsCard">
+    <div class="records-title">🏆 رکوردهای من</div>
+    <div class="records-grid">
+      <button type="button" class="record-chip" data-rec="maxKm">
+        <div class="record-chip-icon">🏃</div>
+        <div class="record-chip-label">بیشترین کیلومتر</div>
+        <div class="record-chip-value" id="recMaxKm">—</div>
+      </button>
+      <button type="button" class="record-chip" data-rec="maxPages">
+        <div class="record-chip-icon">📖</div>
+        <div class="record-chip-label">بیشترین صفحه</div>
+        <div class="record-chip-value" id="recMaxPages">—</div>
+      </button>
+      <button type="button" class="record-chip" data-rec="totalKm">
+        <div class="record-chip-icon">🛣️</div>
+        <div class="record-chip-label">مجموع کیلومتر</div>
+        <div class="record-chip-value" id="recTotalKm">—</div>
+      </button>
+      <button type="button" class="record-chip" data-rec="totalPages">
+        <div class="record-chip-icon">📚</div>
+        <div class="record-chip-label">مجموع صفحات</div>
+        <div class="record-chip-value" id="recTotalPages">—</div>
+      </button>
+    </div>
   </div>
 
   <!-- COMPACT COLLAPSIBLE CALENDAR -->
@@ -1605,6 +1728,7 @@ async function saveDailyLog(type,value,e){
   const discNew = disc && !old && isTimelyLog(selectedDate);
   updateScoreUI();
   renderItems();
+  if (type === "reading") { try { loadPersonalRecords(); } catch (_) {} }
   if(e) floatingScore(score-old,e.clientX,e.clientY);
   if(isTimelyLog(selectedDate) && todayLogs.has("discipline")) {
     showToast("ثبت شد ✓ · نظم +۱");
@@ -1628,6 +1752,7 @@ async function saveExercise(e){
   await ensureDisciplineBonus(selectedDate);
   updateScoreUI();
   renderItems();
+  try { loadPersonalRecords(); } catch (_) {}
   floatingScore(x.score-old,e.clientX,e.clientY);
   showToast(isTimelyLog(selectedDate) ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
 }
@@ -1751,6 +1876,98 @@ function setUserButtonAvatar(displayName) {
   img.src = src;
 }
 
+
+let personalRecords = {
+  maxKm: 0, maxKmDate: null,
+  maxPages: 0, maxPagesDate: null,
+  totalKm: 0, totalPages: 0
+};
+
+async function loadPersonalRecords() {
+  if (!currentUser) return;
+  try {
+    const [ex, rd] = await Promise.all([
+      db.from("exercise_logs").select("log_date, running_km, total_km")
+        .eq("user_id", currentUser.id),
+      db.from("daily_logs").select("log_date, value, score")
+        .eq("user_id", currentUser.id).eq("item_type", "reading")
+    ]);
+    let maxKm = 0, maxKmDate = null, totalKm = 0;
+    (ex.data || []).forEach(r => {
+      const km = Number(r.running_km) || 0;
+      totalKm += km;
+      if (km > maxKm) { maxKm = km; maxKmDate = r.log_date; }
+    });
+    let maxPages = 0, maxPagesDate = null, totalPages = 0;
+    (rd.data || []).forEach(r => {
+      const pg = Number(r.value) || 0;
+      totalPages += pg;
+      if (pg > maxPages) { maxPages = pg; maxPagesDate = r.log_date; }
+    });
+    personalRecords = { maxKm, maxKmDate, maxPages, maxPagesDate, totalKm, totalPages };
+    const fmt = (n, d=1) => {
+      const x = Number(n) || 0;
+      return fa(x % 1 === 0 ? String(Math.round(x)) : x.toFixed(d));
+    };
+    const el = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
+    el("recMaxKm", maxKm > 0 ? fmt(maxKm) + " km" : "—");
+    el("recMaxPages", maxPages > 0 ? fmt(maxPages, 0) : "—");
+    el("recTotalKm", totalKm > 0 ? fmt(totalKm) + " km" : "—");
+    el("recTotalPages", totalPages > 0 ? fmt(totalPages, 0) : "—");
+  } catch (e) {
+    console.warn("records", e);
+  }
+}
+
+function jalaliLabelISO(iso) {
+  if (!iso) return "—";
+  try {
+    const [y, m, d] = iso.split("-").map(Number);
+    const j = jalaali.toJalaali(y, m, d);
+    return fa(j.jd) + " " + J_MONTHS[j.jm - 1] + " " + fa(j.jy);
+  } catch (e) { return iso; }
+}
+
+function openRecordDetail(kind) {
+  const r = personalRecords;
+  let title = "", body = "";
+  if (kind === "maxKm") {
+    title = "🏃 بیشترین کیلومتر در یک روز";
+    body = r.maxKm > 0
+      ? `رکورد: <b>${fa(String(r.maxKm % 1 ? r.maxKm.toFixed(1) : r.maxKm))} km</b><br>تاریخ: <b>${jalaliLabelISO(r.maxKmDate)}</b>`
+      : "هنوز دویدنی ثبت نشده.";
+  } else if (kind === "maxPages") {
+    title = "📖 بیشترین صفحه در یک روز";
+    body = r.maxPages > 0
+      ? `رکورد: <b>${fa(String(r.maxPages))} صفحه</b><br>تاریخ: <b>${jalaliLabelISO(r.maxPagesDate)}</b>`
+      : "هنوز مطالعه‌ای ثبت نشده.";
+  } else if (kind === "totalKm") {
+    title = "🛣️ مجموع کیلومتر دویده‌شده";
+    body = `از ابتدا تا امروز: <b>${fa(String(r.totalKm % 1 ? r.totalKm.toFixed(1) : Math.round(r.totalKm * 10) / 10))} km</b>`;
+  } else if (kind === "totalPages") {
+    title = "📚 مجموع صفحات خوانده‌شده";
+    body = `از ابتدا تا امروز: <b>${fa(String(Math.round(r.totalPages)))} صفحه</b>`;
+  } else return;
+  document.querySelectorAll(".record-modal-overlay").forEach(e => e.remove());
+  const ov = document.createElement("div");
+  ov.className = "record-modal-overlay";
+  ov.innerHTML = `<div class="record-modal" role="dialog">
+    <div class="record-modal-title">${title}</div>
+    <div class="record-modal-body">${body}</div>
+    <button type="button" class="record-modal-close">بستن</button>
+  </div>`;
+  ov.addEventListener("click", e => { if (e.target === ov) ov.remove(); });
+  ov.querySelector(".record-modal-close").onclick = () => ov.remove();
+  document.body.appendChild(ov);
+}
+
+document.getElementById("recordsCard")?.addEventListener("click", e => {
+  const chip = e.target.closest && e.target.closest(".record-chip");
+  if (!chip) return;
+  openRecordDetail(chip.dataset.rec);
+});
+
+
 async function openApp(user) {
   if (!user) return;
   currentUser = user;
@@ -1778,6 +1995,7 @@ async function openApp(user) {
     setUserButtonAvatar(null);
   }
   try { await loadDayData(); } catch (e) { console.warn("loadDayData", e); }
+  try { await loadPersonalRecords(); } catch (e) { console.warn("records", e); }
   try {
   } catch (_) {}
 }
