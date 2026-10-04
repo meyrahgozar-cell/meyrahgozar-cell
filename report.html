@@ -3900,7 +3900,74 @@ const spawnSparks = (speed, fromLeft) => {
         }
 
 
-        async function loadReport() {
+        
+        async function loadGroupRecords() {
+            const fmt = (n, d = 1) => {
+                const x = Number(n) || 0;
+                if (!x) return "—";
+                return fa(x % 1 === 0 ? String(Math.round(x)) : Number(x.toFixed(d)));
+            };
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            try {
+                // ترجیح RPC (SECURITY DEFINER) برای عبور از RLS
+                const rpc = await db.rpc("get_group_records");
+                if (!rpc.error && rpc.data) {
+                    const d = typeof rpc.data === "string" ? JSON.parse(rpc.data) : rpc.data;
+                    const runner = d.top_runner || {};
+                    const reader = d.top_reader || {};
+                    set("grpRunnerName", runner.display_name || "—");
+                    set("grpRunnerKm", runner.total_km != null ? fmt(runner.total_km) + " km" : "—");
+                    set("grpReaderName", reader.display_name || "—");
+                    set("grpReaderPages", reader.total_pages != null ? fmt(reader.total_pages, 0) + " صفحه" : "—");
+                    set("grpAllKm", d.all_km != null ? fmt(d.all_km) + " km" : "—");
+                    set("grpAllPages", d.all_pages != null ? fmt(d.all_pages, 0) + " صفحه" : "—");
+                    return;
+                }
+            } catch (e) { console.warn("group records rpc", e); }
+
+            // fallback: تلاش با select مستقیم (اگر RLS اجازه دهد)
+            try {
+                const [ex, rd, pr] = await Promise.all([
+                    db.from("exercise_logs").select("user_id, running_km"),
+                    db.from("daily_logs").select("user_id, value").eq("item_type", "reading"),
+                    db.from("profiles").select("id, display_name")
+                ]);
+                const names = {};
+                (pr.data || []).forEach(p => { names[p.id] = p.display_name; });
+                const kmBy = {};
+                let allKm = 0;
+                (ex.data || []).forEach(r => {
+                    const k = Number(r.running_km) || 0;
+                    allKm += k;
+                    kmBy[r.user_id] = (kmBy[r.user_id] || 0) + k;
+                });
+                const pgBy = {};
+                let allPg = 0;
+                (rd.data || []).forEach(r => {
+                    const v = Number(r.value) || 0;
+                    allPg += v;
+                    pgBy[r.user_id] = (pgBy[r.user_id] || 0) + v;
+                });
+                let topR = null, topRv = -1;
+                Object.keys(kmBy).forEach(uid => {
+                    if (kmBy[uid] > topRv) { topRv = kmBy[uid]; topR = uid; }
+                });
+                let topP = null, topPv = -1;
+                Object.keys(pgBy).forEach(uid => {
+                    if (pgBy[uid] > topPv) { topPv = pgBy[uid]; topP = uid; }
+                });
+                set("grpRunnerName", topR ? (names[topR] || "کاربر") : "—");
+                set("grpRunnerKm", topRv > 0 ? fmt(topRv) + " km" : "—");
+                set("grpReaderName", topP ? (names[topP] || "کاربر") : "—");
+                set("grpReaderPages", topPv > 0 ? fmt(topPv, 0) + " صفحه" : "—");
+                set("grpAllKm", allKm > 0 ? fmt(allKm) + " km" : "—");
+                set("grpAllPages", allPg > 0 ? fmt(allPg, 0) + " صفحه" : "—");
+            } catch (e) {
+                console.warn("group records fallback", e);
+            }
+        }
+
+async function loadReport() {
             const seq = ++reportLoadSeq;
 
             if (typeof renderSkeleton === "function") {
@@ -4680,6 +4747,36 @@ const spawnSparks = (speed, fromLeft) => {
               </div>
 
               ${weightStripHtml}
+
+              <div class="card">
+                <div class="card-title">🏆 رکوردهای گروه</div>
+                <div class="card-sub">همهٔ زمان‌ها · همهٔ اعضا</div>
+                <div class="group-records" id="groupRecordsBox">
+                  <div class="group-rec-card">
+                    <div class="group-rec-icon">🏃</div>
+                    <div class="group-rec-label">دوندهٔ گروه</div>
+                    <div class="group-rec-value" id="grpRunnerName">—</div>
+                    <div class="group-rec-sub" id="grpRunnerKm">—</div>
+                  </div>
+                  <div class="group-rec-card">
+                    <div class="group-rec-icon">📖</div>
+                    <div class="group-rec-label">خوانندهٔ گروه</div>
+                    <div class="group-rec-value" id="grpReaderName">—</div>
+                    <div class="group-rec-sub" id="grpReaderPages">—</div>
+                  </div>
+                  <div class="group-rec-card">
+                    <div class="group-rec-icon">🛣️</div>
+                    <div class="group-rec-label">مجموع کیلومتر گروه</div>
+                    <div class="group-rec-value" id="grpAllKm">—</div>
+                  </div>
+                  <div class="group-rec-card">
+                    <div class="group-rec-icon">📚</div>
+                    <div class="group-rec-label">مجموع صفحات گروه</div>
+                    <div class="group-rec-value" id="grpAllPages">—</div>
+                  </div>
+                </div>
+              </div>
+
 <div class="card" id="rankCard">
                 <div class="card-title">جدول امتیازات</div>
                 <div class="rank-tabs">
@@ -4730,6 +4827,8 @@ const spawnSparks = (speed, fromLeft) => {
             if (myEl) myEl.textContent = scoreText(Math.round(myKm * 100) / 100);
             if (cEl) cEl.textContent = scoreText(Math.round(communityKm * 100) / 100);
             if (aEl) aEl.textContent = fa(activePeople);
+
+            try { loadGroupRecords(); } catch (_) {}
 
             const wStrip = content.querySelector(".weight-strip");
             if (wStrip) initWeightStrip(wStrip);
