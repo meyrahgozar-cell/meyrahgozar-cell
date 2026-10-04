@@ -4547,14 +4547,16 @@ const spawnSparks = (speed, fromLeft) => {
                             d4: `میانگین: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`
                         };
                     } else {
-                        denom = days * maxP;
+                        // روز بدون ثبت = صفر — مخرج = روزهای سپری‌شده × سقف
+                        denom = daysElapsed * maxP;
                         pct = denom > 0 ? (total / denom) * 100 : 0;
-                        formula = `${scoreText(total)} ÷ (${fa(days)} × ${scoreText(maxP)}) = <b>${scoreText(Math.round(Math.max(0, Math.min(100, pct)) * 10) / 10)}٪</b>`;
+                        const avgTrue = daysElapsed > 0 ? total / daysElapsed : 0;
+                        formula = `${scoreText(total)} ÷ (${fa(daysElapsed)} × ${scoreText(maxP)}) = <b>${scoreText(Math.round(Math.max(0, Math.min(100, pct)) * 10) / 10)}٪</b>`;
                         detailExtra = {
-                            d1: `روزهای ثبت‌شده: <b>${fa(days)}</b>`,
+                            d1: `روزهای ثبت‌شده: <b>${fa(days)}</b> از <b>${fa(daysElapsed)}</b>`,
                             d2: `سقف هر روز: <b>${scoreText(maxP)}</b>`,
                             d3: `مجموع امتیاز: <b>${scoreText(total)}</b>`,
-                            d4: `میانگین روزانه: <b>${scoreText(Math.round(avg * 100) / 100)}</b>`
+                            d4: `میانگین واقعی (با روزهای خالی): <b>${scoreText(Math.round(avgTrue * 100) / 100)}</b>`
                         };
                     }
                     if (pct < 0) pct = 0;
