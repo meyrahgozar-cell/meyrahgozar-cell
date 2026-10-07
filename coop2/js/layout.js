@@ -1,6 +1,6 @@
-import { getUser, logout } from './js_auth.js';
-import { initThemeToggle } from './js_theme.js';
-import { el } from './js_utils.js';
+import { getUser, logout } from './auth.js';
+import { initThemeToggle } from './theme.js';
+import { el } from './utils.js';
 
 const NAV = [
   { href: 'dashboard.html', label: 'داشبورد' },
@@ -20,7 +20,7 @@ export function renderLayout() {
     headerHost.appendChild(el('header', { class: 'app-header' },
       el('div', { class: 'inner' },
         el('a', { class: 'brand', href: user ? 'dashboard.html' : 'index.html' },
-          el('img', { src: 'assets_logo.svg', alt: '' }),
+          el('img', { src: 'assets/logo.svg', alt: '' }),
           el('span', {},
             el('span', {}, 'تعاونی مسکن مپنا هوایی'),
             el('small', {}, 'سامانه اعضا')
