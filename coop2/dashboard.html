@@ -3,22 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <script>
-(function(){
+(function () {
   try {
     var t = localStorage.getItem('mpna_theme') || 'dark';
     if (t !== 'dark' && t !== 'light') t = 'dark';
     document.documentElement.setAttribute('data-theme', t);
-  } catch(e) {
+  } catch (e) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }
-  window.__mpna = window.__mpna || { errors: [], moduleFlags: {}, start: Date.now() };
-  window.addEventListener('error', function(e){
-    window.__mpna.errors.push({ type:'error', message: e.message || String(e.error), source:(e.filename||'').split('/').pop(), line:e.lineno, time: Date.now()-window.__mpna.start });
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    var r = e.reason; var m = (r && (r.stack || r.message)) || String(r);
-    window.__mpna.errors.push({ type:'promise', message:m, time: Date.now()-window.__mpna.start });
-  });
+  /* Auth gate: اگر کاربر لاگین نکرده، برگرد به login */
+  try {
+    var u = sessionStorage.getItem('mpna_user') || localStorage.getItem('mpna_user');
+    if (!u) { location.replace('index.html'); }
+  } catch (e) { location.replace('index.html'); }
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -109,33 +106,313 @@
   <div id="appFooter"></div>
 
   <script>
-  (function(){
-    function wire(){
+  /* ================================================================
+     Dashboard — ES5, no modules, direct fetch to Supabase
+     ================================================================ */
+  (function () {
+    'use strict';
+
+    var SUPABASE_URL = 'https://ctzbbtvmhgdpfzonopis.supabase.co';
+    var SUPABASE_KEY = 'sb_publishable_OgRM4kqB9RLGdx6sFbAmbw_9VQWOZrH';
+
+    function $(id) { return document.getElementById(id); }
+
+    function faNum(n) {
+      if (n == null || n === '') return '—';
+      return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+    }
+
+    function fmtMoney(n) {
+      if (n == null || n === '') return '—';
+      var num = Number(n);
+      if (isNaN(num)) return '—';
+      return faNum(num.toLocaleString('en-US'));
+    }
+
+    function el(tag, attrs, children) {
+      var node = document.createElement(tag);
+      attrs = attrs || {};
+      for (var k in attrs) {
+        if (!attrs.hasOwnProperty(k)) continue;
+        if (k === 'class') node.className = attrs[k];
+        else if (k === 'html') node.innerHTML = attrs[k];
+        else node.setAttribute(k, attrs[k]);
+      }
+      (children || []).forEach(function (c) {
+        if (c == null || c === false) return;
+        node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      });
+      return node;
+    }
+
+    /* ---------- Jalali conversion ---------- */
+    var g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+    function div(a, b) { return Math.floor(a / b); }
+    function gregorianToJalali(gy, gm, gd) {
+      var jy = (gy <= 1600) ? 0 : 979;
+      gy -= (gy <= 1600) ? 621 : 1600;
+      var gy2 = (gm > 2) ? (gy + 1) : gy;
+      var days = (365 * gy) + div(gy2 + 3, 4) - div(gy2 + 99, 100) +
+                 div(gy2 + 399, 400) - 80 + gd + g_d_m[gm - 1];
+      jy += 33 * div(days, 12053); days %= 12053;
+      jy += 4 * div(days, 1461); days %= 1461;
+      if (days > 365) { jy += div(days - 1, 365); days = (days - 1) % 365; }
+      var jm = (days < 186) ? 1 + div(days, 31) : 7 + div(days - 186, 30);
+      var jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+      return [jy, jm, jd];
+    }
+
+    var FA_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور',
+                     'مهر','آبان','آذر','دی','بهمن','اسفند'];
+
+    function fmtJalali(input, longForm) {
+      if (!input) return '—';
+      var s = String(input).split('T')[0].split(' ')[0];
+      var parts = s.split('-');
+      if (parts.length !== 3) return s;
+      var y = parseInt(parts[0], 10);
+      var m = parseInt(parts[1], 10);
+      var d = parseInt(parts[2], 10);
+      if (isNaN(y) || isNaN(m) || isNaN(d)) return s;
+      var r = gregorianToJalali(y, m, d);
+      var jy = r[0], jm = r[1], jd = r[2];
+      var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+      var toFa = function (v) {
+        return String(v).replace(/\d/g, function (c) { return '۰۱۲۳۴۵۶۷۸۹'[c]; });
+      };
+      if (longForm) return toFa(jd) + ' ' + FA_MONTHS[jm - 1] + ' ' + toFa(jy);
+      return toFa(jy + '/' + pad(jm) + '/' + pad(jd));
+    }
+
+    /* ---------- Supabase fetchers ---------- */
+    function sbFetch(path) {
+      return fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Accept': 'application/json'
+        }
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+    }
+
+    /* ---------- Auth gate ---------- */
+    function getUser() {
+      try {
+        var s = sessionStorage.getItem('mpna_user') || localStorage.getItem('mpna_user');
+        return s ? JSON.parse(s) : null;
+      } catch (e) { return null; }
+    }
+
+    /* ---------- Render header / footer ---------- */
+    function renderChrome(user) {
+      var NAV = [
+        { href: 'dashboard.html', label: 'داشبورد' },
+        { href: 'invitations.html', label: 'دعوت‌نامه‌ها' },
+        { href: 'minutes.html', label: 'صورت‌جلسات' },
+        { href: 'suggestions.html', label: 'درخواست و پیشنهاد' },
+        { href: 'admin_import.html', label: 'ایمپورت اکسل' }
+      ];
+      var cur = location.pathname.split('/').pop() || 'index.html';
+
+      var header = document.getElementById('appHeader');
+      if (header && user) {
+        var inner = el('div', { class: 'inner' }, []);
+        var brand = el('a', { class: 'brand', href: 'dashboard.html' }, []);
+        brand.appendChild(el('img', { src: 'assets/logo.svg', alt: '' }));
+        brand.appendChild(el('span', {}, [
+          el('span', {}, 'تعاونی مسکن مپنا هوایی'),
+          el('small', {}, 'سامانه اعضا')
+        ]));
+        inner.appendChild(brand);
+
+        var nav = el('nav', { class: 'nav' }, []);
+        NAV.forEach(function (n) {
+          var a = el('a', { href: n.href, class: cur === n.href ? 'active' : '' }, [n.label]);
+          nav.appendChild(a);
+        });
+        inner.appendChild(nav);
+
+        var actions = el('div', { class: 'header-actions' }, []);
+        var tt = el('button', { class: 'theme-toggle', 'data-theme-toggle': '', 'aria-label': 'تغییر تم' }, []);
+        tt.appendChild(el('span', { class: 'theme-icon' }, []));
+        actions.appendChild(tt);
+
+        var chip = el('div', { class: 'user-chip' }, []);
+        chip.appendChild(el('span', { class: 'avatar' }, [(user.first_name || '?').charAt(0)]));
+        chip.appendChild(el('span', { class: 'name' }, [user.first_name + ' ' + user.last_name]));
+        actions.appendChild(chip);
+
+        var logoutBtn = el('button', { class: 'btn btn-ghost btn-sm' }, ['خروج']);
+        logoutBtn.addEventListener('click', function () {
+          try {
+            localStorage.removeItem('mpna_user');
+            sessionStorage.removeItem('mpna_user');
+          } catch (e) {}
+          location.href = 'index.html';
+        });
+        actions.appendChild(logoutBtn);
+
+        inner.appendChild(actions);
+        var h = el('header', { class: 'app-header' }, [inner]);
+        header.innerHTML = '';
+        header.appendChild(h);
+      }
+
+      var footer = document.getElementById('appFooter');
+      if (footer) {
+        footer.innerHTML = '';
+        var fInner = el('div', { class: 'inner' }, [
+          el('span', {}, ['© ' + faNum(new Date().getFullYear()) + ' تعاونی مسکن مپنا هوایی']),
+          el('span', { class: 'tiny' }, ['پشتیبانی: Mani.alir1990@gmail.com'])
+        ]);
+        footer.appendChild(el('footer', { class: 'app-footer' }, [fInner]));
+      }
+    }
+
+    /* ---------- Wire theme toggle (again, after render) ---------- */
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('mpna_theme', t); } catch (e) {}
+    }
+    function wireThemeBtns() {
       var btns = document.querySelectorAll('[data-theme-toggle]');
       for (var i = 0; i < btns.length; i++) {
-        (function(b){
-          if (b.__wired) return;
-          b.__wired = true;
-          b.addEventListener('click', function(ev){
+        (function (b) {
+          if (b.getAttribute('data-wired-theme') === '1') return;
+          b.setAttribute('data-wired-theme', '1');
+          b.addEventListener('click', function (ev) {
             ev.preventDefault();
-            var cur = document.documentElement.getAttribute('data-theme') || 'dark';
-            var next = cur === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            try { localStorage.setItem('mpna_theme', next); } catch(e){}
+            var c = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(c === 'dark' ? 'light' : 'dark');
           });
         })(btns[i]);
       }
     }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-    else wire();
-    var mo = new MutationObserver(wire);
-    document.addEventListener('DOMContentLoaded', function(){
-      mo.observe(document.body, { childList: true, subtree: true });
-    });
+
+    /* ---------- Load data ---------- */
+    function init() {
+      var user = getUser();
+      if (!user) return;
+
+      document.getElementById('userName').textContent = user.first_name + ' ' + user.last_name;
+      renderChrome(user);
+      wireThemeBtns();
+
+      /* Load payments, obligations, members in parallel */
+      var p1 = sbFetch('payments?member_id=eq.' + user.id + '&order=payment_date.desc');
+      var p2 = sbFetch('obligations?member_id=eq.' + user.id + '&order=due_date.asc');
+      var p3 = sbFetch('members?select=id,first_name,last_name,score,national_id&order=score.desc');
+      var p4 = sbFetch('members?id=eq.' + user.id + '&limit=1');
+
+      Promise.all([p1, p2, p3, p4]).then(function (res) {
+        var payments = res[0] || [];
+        var obligations = res[1] || [];
+        var members = res[2] || [];
+        var me = (res[3] && res[3][0]) || null;
+
+        if (me) {
+          document.getElementById('statPaid').textContent = fmtMoney(me.total_paid);
+          document.getElementById('statDebt').textContent = fmtMoney(me.debt);
+          document.getElementById('statScore').textContent = faNum(me.score);
+          var rank = 0;
+          for (var i = 0; i < members.length; i++) {
+            if (members[i].id === user.id) { rank = i + 1; break; }
+          }
+          document.getElementById('statRank').textContent = rank > 0 ? faNum(rank) : '—';
+        }
+
+        renderPayments(payments);
+        renderObligations(obligations);
+        renderScoreboard(members, user.id);
+      }).catch(function (err) {
+        console.error('Load error:', err);
+        document.querySelectorAll('.empty').forEach(function (el) {
+          el.textContent = 'خطا در بارگذاری: ' + (err.message || err);
+        });
+      });
+    }
+
+    function renderPayments(rows) {
+      var tbody = document.querySelector('#paymentsTable tbody');
+      document.getElementById('payCount').textContent = faNum(rows.length) + ' ردیف';
+      tbody.innerHTML = '';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">پرداختی ثبت نشده است.</td></tr>';
+        return;
+      }
+      rows.forEach(function (r, i) {
+        var tr = el('tr', {}, [
+          el('td', { class: 'num' }, [faNum(i + 1)]),
+          el('td', { class: 'num' }, [fmtMoney(r.amount)]),
+          el('td', {}, [fmtJalali(r.payment_date, true)]),
+          el('td', {}, [r.description || '—'])
+        ]);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderObligations(rows) {
+      var tbody = document.querySelector('#obligationsTable tbody');
+      document.getElementById('oblCount').textContent = faNum(rows.length) + ' ردیف';
+      tbody.innerHTML = '';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">تعهدی ثبت نشده است.</td></tr>';
+        return;
+      }
+      var today = new Date();
+      rows.forEach(function (r, i) {
+        var overdue = new Date(r.due_date) < today;
+        var pill = overdue
+          ? '<span class="pill pill-over">سررسید گذشته</span>'
+          : '<span class="pill pill-due">در انتظار پرداخت</span>';
+        var tr = el('tr', {}, [
+          el('td', { class: 'num' }, [faNum(i + 1)]),
+          el('td', { class: 'num' }, [fmtMoney(r.amount)]),
+          el('td', {}, [fmtJalali(r.due_date, true)]),
+          el('td', {}, [r.description || '—']),
+          el('td', { html: pill }, [])
+        ]);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderScoreboard(members, myId) {
+      var tbody = document.querySelector('#scoreboardTable tbody');
+      document.getElementById('membersCount').textContent = faNum(members.length) + ' عضو';
+      tbody.innerHTML = '';
+      if (!members.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">اطلاعاتی موجود نیست.</td></tr>';
+        return;
+      }
+      var myRow = null;
+      members.forEach(function (m, idx) {
+        var isMe = m.id === myId;
+        var tr = el('tr', { class: isMe ? 'is-me' : '' }, [
+          el('td', {}, [faNum(idx + 1)]),
+          el('td', {}, [m.first_name + ' ' + m.last_name]),
+          el('td', {}, [faNum(m.score)])
+        ]);
+        if (isMe) myRow = tr;
+        tbody.appendChild(tr);
+      });
+      if (myRow && myRow.scrollIntoView) {
+        setTimeout(function () {
+          myRow.scrollIntoView({ block: 'center', behavior: 'auto' });
+        }, 100);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   })();
   </script>
 
-  <script src="js/debug.js" defer></script>
-  <script type="module" src="js/dashboard.js"></script>
+  <script src="js/debug.js"></script>
 </body>
 </html>
