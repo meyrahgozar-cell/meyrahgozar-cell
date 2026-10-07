@@ -148,7 +148,6 @@ input:focus, textarea:focus, select:focus {
 .panel-title { display: flex; align-items: center; gap: .8rem; min-width: 0; }
 .panel-head h2, .panel-title h2 { margin: 0; }
 
-/* Icon tile — takes its colour from --c */
 .tile {
   --c: var(--brand-rgb);
   flex: none; display: grid; place-items: center;
@@ -203,7 +202,6 @@ input:focus, textarea:focus, select:focus {
 #obligationsTable th:first-child, #obligationsTable td:first-child { width: 1%; white-space: nowrap; }
 #paymentsTable td:nth-child(3), #obligationsTable td:nth-child(3) { white-space: nowrap; }
 
-/* "This is you" row */
 .table tbody tr.is-me {
   background: linear-gradient(to left, rgba(var(--brand-rgb), .20), rgba(var(--brand-rgb), .04) 70%, transparent);
 }
@@ -254,3 +252,99 @@ input:focus, textarea:focus, select:focus {
 .auth-msg.warn  { --c: var(--warning-rgb); }
 .auth-msg.error::before { -webkit-mask-image: var(--svg-alert-triangle); mask-image: var(--svg-alert-triangle); }
 .auth-msg.ok::before    { -webkit-mask-image: var(--svg-check-circle);   mask-image: var(--svg-check-circle); }
+
+/* ---------- Icon button ---------- */
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 38px; height: 38px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 10px;
+  background: var(--surface-2); color: var(--text-2); cursor: pointer;
+  transition: color var(--trans), background-color var(--trans), border-color var(--trans), transform var(--trans);
+}
+.icon-btn:hover { color: var(--brand); border-color: rgba(var(--brand-rgb), .55); transform: translateY(-1px); }
+.icon-btn .i { --s: 1.15rem; }
+.icon-btn.is-danger:hover { color: var(--danger); border-color: rgba(var(--danger-rgb), .55); }
+.icon-btn.is-sm { width: 32px; height: 32px; border-radius: 8px; }
+.icon-btn.is-sm .i { --s: 1rem; }
+
+/* ---------- Modal ---------- */
+.modal { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 1rem; }
+.modal[hidden] { display: none; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(6, 10, 22, .6); backdrop-filter: blur(4px); }
+.modal-panel {
+  position: relative;
+  width: min(640px, 100%); max-height: 90vh;
+  display: flex; flex-direction: column;
+  background: var(--panel-sheen), var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  animation: modal-in .22s cubic-bezier(.2, .7, .2, 1) both;
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 1rem 1.2rem; border-bottom: 1px solid var(--line);
+}
+.modal-head h2 { margin: 0; font-size: 1.05rem; }
+.modal-body { padding: 1.1rem 1.2rem; overflow-y: auto; }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: .6rem;
+  padding: .9rem 1.2rem; border-top: 1px solid var(--line);
+}
+
+/* ---------- Data table (db viewer) ---------- */
+.db-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
+.db-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  padding: .55rem .75rem; text-align: right; white-space: nowrap;
+  font-size: .74rem; font-weight: 700; letter-spacing: .02em; color: var(--muted);
+  background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+.db-table tbody td {
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;
+}
+.db-table tbody tr { transition: background-color var(--trans); cursor: pointer; }
+.db-table tbody tr:hover { background: var(--row-hover); }
+.db-table tbody tr.is-selected { background: rgba(var(--brand-rgb), .12); }
+.db-table .cell-actions { display: flex; gap: .3rem; }
+.db-table .role-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .05rem .55rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 700; line-height: 1.7;
+  background: rgba(var(--muted-rgb), .13);
+  border: 1px solid rgba(var(--muted-rgb), .3);
+  color: var(--muted);
+}
+.db-table .role-chip.is-admin { color: rgb(var(--warning-rgb)); background: rgba(var(--warning-rgb), .12); border-color: rgba(var(--warning-rgb), .35); }
+.db-table .role-chip.is-super { color: rgb(var(--gold-rgb)); background: rgba(var(--gold-rgb), .12); border-color: rgba(var(--gold-rgb), .38); }
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: .55rem; align-items: center;
+  margin-bottom: 1rem;
+}
+.toolbar .grow { flex: 1; }
+.search-box { position: relative; min-width: 180px; }
+.search-box input { padding-inline-start: 2.4rem; min-height: 40px; font-size: .9rem; }
+.search-box .i {
+  --s: 1rem; position: absolute; inset-inline-start: .8rem; top: 50%; translate: 0 -50%;
+  color: var(--muted); pointer-events: none;
+}
+
+/* ---------- Field grid ---------- */
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem 1rem; }
+.field-grid .field-full { grid-column: 1 / -1; }
+@media (max-width: 640px) { .field-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Compact chip ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .1rem .55rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 700; line-height: 1.7;
+  color: var(--muted); background: rgba(var(--muted-rgb), .1);
+  border: 1px solid rgba(var(--muted-rgb), .28);
+}
