@@ -1,5 +1,5 @@
 @media (max-width: 980px) {
-  .auth-shell { grid-template-columns: 1fr; max-width: 560px; }
+  .auth-shell { grid-template-columns: 1fr; max-width: 580px; }
   .auth-side { display: block; }
 }
 
@@ -9,25 +9,39 @@
 }
 
 @media (max-width: 640px) {
-  .page { padding: 1rem .75rem 1.5rem; }
-  .container { padding: 0 .75rem; }
-  .app-header .inner { gap: .5rem; padding: 0 .6rem; }
+  .page { padding: 1.15rem .8rem 1.75rem; }
+  .container { padding: 0 .8rem; }
+  .app-header .inner { gap: .5rem; padding: 0 .65rem; }
   .brand small { display: none; }
   .nav { display: none; }
   .header-actions { margin-right: auto; }
   .user-chip .name { display: none; }
   .stats { grid-template-columns: 1fr; }
   .quick-links { grid-template-columns: 1fr; }
-  .stat-card { padding: .85rem 1rem; }
-  .stat-value { font-size: 1.15rem; }
-  .panel { padding: 1rem; border-radius: var(--radius); }
-  .table thead th, .table tbody td { padding: .6rem .65rem; font-size: .85rem; }
-  .auth-card { padding: 1.5rem 1.2rem; }
-  .auth-logo { width: 60px; height: 60px; }
-  .pdf-item { padding: .8rem .85rem; gap: .7rem; }
+  .stat-card { padding: .9rem 1rem; }
+  .stat-value { font-size: 1.2rem; }
+  .panel { padding: 1.05rem; border-radius: var(--radius); }
+  .table thead th, .table tbody td { padding: .65rem .7rem; font-size: .85rem; }
+  .auth-card { padding: 1.65rem 1.25rem; border-radius: var(--radius-lg); }
+  .auth-logo { width: 62px; height: 62px; border-radius: 18px; }
+  .auth-logo img { width: 40px; height: 40px; }
+  .pdf-item { padding: .85rem .9rem; gap: .75rem; }
   .pdf-actions { flex-direction: column; }
   .form-actions { flex-direction: column-reverse; }
   .form-actions .btn { width: 100%; }
-  .auth-theme-toggle { top: .6rem; left: .6rem; }
+  .auth-theme-toggle { top: .65rem; left: .65rem; }
   .app-footer .inner { flex-direction: column; text-align: center; }
+  .page-icon { width: 52px; height: 52px; font-size: 1.6rem; }
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  body::before { animation: none; }
+  .auth-card::before { animation: none; }
+  .dropzone-icon { animation: none; }
 }
