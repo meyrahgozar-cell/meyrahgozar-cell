@@ -1,8 +1,8 @@
-import { requireAuth } from './js_auth.js';
-import { renderLayout } from './js_layout.js';
-import { CONFIG } from './js_config.js';
-import { saveSuggestion } from './js_supabase-client.js';
-import { $, faNum, setBtnLoading, showMsg, escapeHtml } from './js_utils.js';
+import { requireAuth } from './auth.js';
+import { renderLayout } from './layout.js';
+import { CONFIG } from './config.js';
+import { saveSuggestion } from './supabase-client.js';
+import { $, faNum, setBtnLoading, showMsg, escapeHtml } from './utils.js';
 
 const user = requireAuth();
 if (user) renderLayout();
