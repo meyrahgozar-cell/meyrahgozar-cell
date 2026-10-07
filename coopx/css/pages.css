@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Pages — login stage, dashboard, document lists, suggestions
+   Pages — login stage, dashboard, document lists, suggestions, admin tweaks
    ========================================================================== */
 
 /* ---------- Login ---------- */
@@ -7,7 +7,6 @@
 .auth-bg { position: fixed; inset: 0; z-index: -1; background: var(--bg-ambient); }
 .auth-theme-toggle { position: fixed; top: 1rem; inset-inline-start: 1rem; z-index: 10; }
 
-/* One luminous stage: form on the start side, showcase on the end side */
 .auth-shell {
   position: relative; overflow: hidden;
   width: 100%; max-width: 1040px;
@@ -17,8 +16,9 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-pop), 0 0 90px -24px rgba(var(--brand-rgb), calc(var(--bg2) * .9));
   animation: stage-in .7s cubic-bezier(.2, .7, .2, 1) both;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
-/* Gradient edge light */
 .auth-shell::before {
   content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
   border-radius: inherit; padding: 1px;
@@ -40,7 +40,6 @@
 .auth-foot { margin-top: 1.6rem; text-align: center; color: var(--muted); font-size: .82rem; }
 .auth-foot p { margin: .15rem 0; }
 
-/* Showcase side */
 .auth-side {
   position: relative; overflow: hidden;
   display: flex; align-items: center;
@@ -51,7 +50,6 @@
     radial-gradient(460px 380px at 12% 108%, rgba(var(--aqua-rgb), .12), transparent 66%),
     linear-gradient(180deg, rgba(var(--brand-rgb), .045), transparent);
 }
-/* Altimeter rings — quiet instrument texture */
 .auth-side::before {
   content: ""; position: absolute; width: 760px; height: 760px;
   inset-inline-end: -300px; bottom: -420px; border-radius: 50%; pointer-events: none;
@@ -76,6 +74,28 @@
 /* ---------- Dashboard ---------- */
 .welcome { margin-bottom: 1.6rem; }
 .welcome h1 { margin-bottom: .25rem; }
+.welcome-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+/* Role chips (dashboard + sidebar + admin pages) */
+.role-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .1rem .7rem; border-radius: 999px;
+  font-size: .74rem; font-weight: 700; line-height: 1.8;
+  color: var(--muted); background: rgba(var(--muted-rgb), .12);
+  border: 1px solid rgba(var(--muted-rgb), .3);
+}
+.role-chip .i { --s: .95rem; }
+.role-chip.is-admin {
+  color: rgb(var(--warning-rgb));
+  background: rgba(var(--warning-rgb), .12);
+  border-color: rgba(var(--warning-rgb), .38);
+}
+.role-chip.is-super {
+  color: rgb(var(--gold-rgb));
+  background: rgba(var(--gold-rgb), .12);
+  border-color: rgba(var(--gold-rgb), .40);
+  box-shadow: 0 0 18px -6px rgba(var(--gold-rgb), var(--bg1));
+}
 
 .stats {
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -94,8 +114,9 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
   transition: border-color var(--trans), box-shadow var(--trans), transform var(--trans);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
-/* Light along the top edge, in the card's own colour */
 .stat-card::before {
   content: ""; position: absolute; inset-inline: 14%; top: -1px; height: 2px; border-radius: 2px;
   background: linear-gradient(90deg, transparent, rgb(var(--c)), transparent);
@@ -129,7 +150,6 @@
   background: rgba(var(--c), .08); border: 1px solid rgba(var(--c), .22);
 }
 
-/* Readouts "power on" once data arrives */
 .stats:not(.is-ready) .stat-value { opacity: .3; text-shadow: none; }
 
 .quick-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
@@ -144,6 +164,8 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
   transition: transform var(--trans), border-color var(--trans), box-shadow var(--trans);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 .quick-card .tile { grid-area: tile; width: 46px; height: 46px; }
 .quick-title { grid-area: title; font-weight: 700; color: var(--text-strong); line-height: 1.5; }
@@ -152,10 +174,12 @@
 .quick-card:hover { transform: translateY(-3px); border-color: rgba(var(--c), .55); box-shadow: var(--shadow-panel), 0 0 44px -14px rgba(var(--c), var(--bg1)); text-shadow: none; }
 .quick-card:hover .quick-go { color: rgb(var(--c)); transform: translateX(-3px); }
 
+/* Admin-only quick card uses gold accents */
+.quick-card.is-admin-quick { --c: var(--gold-rgb); }
+
 .scoreboard-wrap { max-height: 460px; overflow-y: auto; position: relative; }
 .scoreboard td:first-child { width: 90px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .scoreboard td:last-child { width: 120px; font-variant-numeric: tabular-nums; font-weight: 600; }
-/* Podium */
 .scoreboard tbody tr:nth-child(-n+3) td:first-child { font-size: 1.05rem; font-weight: 800; }
 .scoreboard tbody tr:nth-child(1) td:first-child { color: rgb(var(--gold-rgb)); text-shadow: 0 0 .6em rgba(var(--gold-rgb), var(--tg1)); }
 .scoreboard tbody tr:nth-child(2) td:first-child { color: rgb(var(--silver-rgb)); text-shadow: 0 0 .6em rgba(var(--silver-rgb), calc(var(--tg1) * .8)); }
@@ -167,6 +191,7 @@
 .page-head .tile .i { --s: 1.7rem; }
 .page-head h1 { margin: 0 0 .1rem; }
 .page-head p { margin: 0; }
+.page-head .page-head-meta { margin-inline-start: auto; display: flex; gap: .4rem; align-items: center; }
 
 .pdf-list { display: grid; gap: .8rem; }
 .pdf-item {
@@ -179,6 +204,8 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-panel);
   transition: transform var(--trans), border-color var(--trans), box-shadow var(--trans);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 .pdf-item:hover { transform: translateX(3px); border-color: rgba(var(--brand-rgb), .5); box-shadow: var(--shadow-panel), 0 0 40px -16px rgba(var(--brand-rgb), var(--bg1)); text-shadow: none; }
 .pdf-icon {
@@ -204,3 +231,53 @@
 .form-panel { padding: 1.6rem; }
 .suggestion-textarea { min-height: 240px; padding: 1rem 1.1rem; font-size: 1.02rem; line-height: 1.95; resize: vertical; }
 .form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
+
+/* ---------- Admin pages ---------- */
+.page.admin { padding-top: 1.6rem; }
+.page.admin .page-head { margin-bottom: 1.1rem; }
+.page.admin .page-head h1 { font-size: clamp(1.25rem, 1rem + 1.1vw, 1.65rem); }
+
+.admin-stats {
+  display: grid; gap: .75rem; margin-bottom: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.admin-stat {
+  --c: var(--brand-rgb);
+  display: flex; flex-direction: column; gap: .35rem;
+  padding: .85rem 1rem;
+  background:
+    radial-gradient(180px 100px at 100% 0%, rgba(var(--c), .14), transparent 70%),
+    var(--panel-sheen), var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+.admin-stat .label { font-size: .78rem; color: var(--muted); font-weight: 600; }
+.admin-stat .value {
+  font-size: 1.35rem; font-weight: 800; line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--c));
+  text-shadow: 0 0 .24em rgba(var(--c), var(--tg1)), 0 0 .8em rgba(var(--c), var(--tg2));
+}
+.admin-stat.is-new     { --c: var(--success-rgb); }
+.admin-stat.is-changed { --c: var(--warning-rgb); }
+.admin-stat.is-missing { --c: var(--muted-rgb); }
+.admin-stat.is-error   { --c: var(--danger-rgb); }
+
+/* Admin table row compact override */
+.page.admin .table thead th { padding: .6rem .8rem; font-size: .75rem; }
+.page.admin .table tbody td { padding: .55rem .8rem; font-size: .84rem; }
+.page.admin .db-table thead th { padding: .5rem .7rem; font-size: .72rem; }
+.page.admin .db-table tbody td { padding: .48rem .7rem; font-size: .8rem; }
+
+/* Admin modal wrapper is used across admin pages */
+.page.admin .panel { padding: 1.15rem; }
+
+@media (max-width: 640px) {
+  .page.admin { padding-top: 1rem; }
+  .page.admin .panel { padding: 1rem; }
+  .admin-stat .value { font-size: 1.15rem; }
+  .page-head .page-head-meta { display: none; }
+}
