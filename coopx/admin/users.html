@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>کاربران و نقش‌ها | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+<link rel="stylesheet" href="../css/responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page">
+    <header class="page-head">
+      <span class="tile"><i class="i i-shield" aria-hidden="true"></i></span>
+      <div>
+        <h1>کاربران و نقش‌ها</h1>
+        <p class="muted">تعیین سطح دسترسی اعضا</p>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="search-box grow">
+          <i class="i i-search" aria-hidden="true"></i>
+          <input type="text" id="userSearch" placeholder="جستجو بر اساس نام یا کد ملی…" />
+        </div>
+        <select id="roleFilter" style="min-height:40px;max-width:180px">
+          <option value="">همه نقش‌ها</option>
+          <option value="member">عضو</option>
+          <option value="admin">مدیر</option>
+          <option value="superadmin">مدیر ارشد</option>
+        </select>
+        <button class="icon-btn" type="button" id="btnReload" aria-label="بازخوانی"><i class="i i-refresh" aria-hidden="true"></i></button>
+      </div>
+      <div id="userMsg" class="auth-msg"></div>
+      <div class="table-wrap" style="max-height:64vh;overflow:auto">
+        <table class="db-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>نام</th>
+              <th>کد ملی</th>
+              <th>تعاونی</th>
+              <th>وضعیت</th>
+              <th>نقش</th>
+              <th style="width:200px">عملیات</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" style="text-align:center;padding:1.5rem" class="muted">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="userCount" class="tiny muted" style="margin-top:.5rem"></div>
+    </section>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin-users.js"></script>
+</body>
+</html>
