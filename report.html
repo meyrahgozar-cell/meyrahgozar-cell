@@ -4134,6 +4134,240 @@ const spawnSparks = (speed, fromLeft) => {
             return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
         }
 
+        
+        async function loadReport() {
+            const seq = ++reportLoadSeq;
+            if (typeof renderSkeleton === "function") renderSkeleton();
+            else {
+                const c = document.getElementById("content");
+                if (c) c.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
+            }
+
+            const monthRange = jalaliRange(selectedYear, selectedMonth);
+            let range = monthRange;
+            let isWeek = rankMode === "week";
+            if (isWeek) {
+                try {
+                    const wr = selectedWeekRange();
+                    range = { start: wr.start, end: wr.endFull || wr.end || wr.endFri };
+                    if (wr.endCompleted) range.endCompleted = wr.endCompleted;
+                } catch (e) {
+                    console.warn("week range", e);
+                    isWeek = false;
+                    range = monthRange;
+                }
+            }
+
+            try {
+                if (!currentUser) throw new Error("ورود لازم است");
+
+                const endForBoard = range.endCompleted || range.end;
+
+                const [statsRes, boardRes, logsRes, exRes, mtRes, kmRes, calRes, wtRes] = await Promise.all([
+                    db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }).catch(e => ({ data: null, error: e })),
+                    db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: endForBoard }).catch(e => ({ data: null, error: e })),
+                    db.from("daily_logs")
+                        .select("item_type, score, log_date, value")
+                        .eq("user_id", currentUser.id)
+                        .gte("log_date", range.start)
+                        .lte("log_date", range.end),
+                    db.from("exercise_logs")
+                        .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
+                        .eq("user_id", currentUser.id)
+                        .gte("log_date", range.start)
+                        .lte("log_date", range.end),
+                    db.from("mountain_trips")
+                        .select("id, trip_date, user_id")
+                        .eq("user_id", currentUser.id)
+                        .gte("trip_date", monthRange.start)
+                        .lte("trip_date", monthRange.end),
+                    db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }).catch(e => ({ data: null, error: e })),
+                    db.rpc("get_month_user_calories", { p_start: range.start, p_end: endForBoard }).catch(e => ({ data: null, error: e })),
+                    db.from("user_weights")
+                        .select("log_date, weight_kg, weight, recorded_at")
+                        .eq("user_id", currentUser.id)
+                        .gte("log_date", monthRange.start)
+                        .lte("log_date", monthRange.end)
+                        .order("log_date", { ascending: true })
+                        .then(r => r)
+                        .catch(() => ({ data: null, error: true }))
+                ]);
+
+                if (seq !== reportLoadSeq) return;
+
+                // stats
+                let stats = statsRes && !statsRes.error ? (statsRes.data || null) : null;
+                if (!stats) {
+                    // ساخت از لاگ‌های خود کاربر
+                    const byDay = {};
+                    (logsRes.data || []).forEach(r => {
+                        byDay[r.log_date] = (byDay[r.log_date] || 0) + (Number(r.score) || 0);
+                    });
+                    (exRes.data || []).forEach(r => {
+                        byDay[r.log_date] = (byDay[r.log_date] || 0) + (Number(r.score) || 0);
+                    });
+                    const daily = Object.keys(byDay).sort().map(date => ({ date, score: byDay[date] }));
+                    let total = daily.reduce((s, d) => s + d.score, 0);
+                    let best = 0, best_day = null;
+                    daily.forEach(d => {
+                        if (d.score > best) { best = d.score; best_day = d.date; }
+                    });
+                    const active_days = daily.filter(d => d.score !== 0).length || daily.length;
+                    const avg = active_days ? total / active_days : 0;
+                    stats = { total_score: total, avg_score: avg, best_score: best, best_day, active_days, daily };
+                }
+                // normalize array form
+                if (Array.isArray(stats)) stats = stats[0] || {};
+
+                // habits
+                const habitMap = {};
+                (logsRes.data || []).forEach(r => {
+                    if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
+                    habitMap[r.item_type].count++;
+                    habitMap[r.item_type].total += Number(r.score) || 0;
+                });
+                if (exRes.data && exRes.data.length) {
+                    habitMap.exercise = {
+                        count: exRes.data.length,
+                        total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
+                    };
+                }
+                const mtList = mtRes.data || [];
+                habitMap.mountain = { count: mtList.length, total: mtList.length };
+                if (!habitMap.discipline) habitMap.discipline = { count: 0, total: 0 };
+
+                // leaderboard
+                let leaderboard = [];
+                if (boardRes && !boardRes.error && boardRes.data) {
+                    leaderboard = Array.isArray(boardRes.data) ? boardRes.data : [];
+                }
+                // attach calories if available
+                if (calRes && !calRes.error && calRes.data) {
+                    const calMap = {};
+                    (Array.isArray(calRes.data) ? calRes.data : []).forEach(r => {
+                        calMap[r.user_id] = Number(r.total_cal || r.month_cal || r.calories) || 0;
+                    });
+                    leaderboard = leaderboard.map(u => ({
+                        ...u,
+                        month_cal: calMap[u.user_id] != null ? calMap[u.user_id] : (u.month_cal || 0)
+                    }));
+                }
+                // normalize fields
+                leaderboard = leaderboard.map(u => ({
+                    ...u,
+                    display_name: u.display_name || u.name || "کاربر",
+                    avg: Number(u.avg != null ? u.avg : u.avg_score) || 0,
+                    totalScore: Number(u.totalScore != null ? u.totalScore : u.total_score) || 0,
+                    month_km: Number(u.month_km != null ? u.month_km : u.total_km) || 0,
+                    month_cal: Number(u.month_cal) || 0
+                }));
+
+                // km info
+                const myKm = (exRes.data || []).reduce((s, r) => s + (Number(r.total_km) || Number(r.running_km) || 0), 0);
+                const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
+                const kmObj = Array.isArray(kmStats) ? (kmStats[0] || {}) : kmStats;
+                const communityKm = Number(kmObj.total_km || kmObj.community_km) || 0;
+                const activePeople = Number(kmObj.active_users || kmObj.active_people) || 0;
+
+                // day status + dayDetailsCache
+                const dayStatus = {};
+                dayDetailsCache = {};
+                const daysInM = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                for (let d = 1; d <= daysInM; d++) {
+                    const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
+                    const iso = g.gy + "-" + String(g.gm).padStart(2, "0") + "-" + String(g.gd).padStart(2, "0");
+                    dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false };
+                    dayDetailsCache[iso] = { score: 0, items: [] };
+                }
+                const habitLabel = (type) => {
+                    const m = (typeof HABIT_LABELS !== "undefined" && HABIT_LABELS[type]) || null;
+                    return m ? ((m.icon ? m.icon + " " : "") + (m.title || type)) : type;
+                };
+                (logsRes.data || []).forEach(row => {
+                    const iso = row.log_date;
+                    if (!dayStatus[iso]) {
+                        dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false };
+                        dayDetailsCache[iso] = { score: 0, items: [] };
+                    }
+                    const sc = Number(row.score) || 0;
+                    dayStatus[iso].score += sc;
+                    if (row.item_type === "discipline") dayStatus[iso].hasDisc = true;
+                    else dayStatus[iso].hasOther = true;
+                    dayDetailsCache[iso].items.push({
+                        type: row.item_type,
+                        label: habitLabel(row.item_type),
+                        score: sc,
+                        value: row.value
+                    });
+                    dayDetailsCache[iso].score += sc;
+                });
+                (exRes.data || []).forEach(row => {
+                    const iso = row.log_date;
+                    if (!dayStatus[iso]) {
+                        dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false };
+                        dayDetailsCache[iso] = { score: 0, items: [] };
+                    }
+                    const sc = Number(row.score) || 0;
+                    dayStatus[iso].score += sc;
+                    dayStatus[iso].hasOther = true;
+                    dayDetailsCache[iso].items.push({
+                        type: "exercise",
+                        label: habitLabel("exercise"),
+                        score: sc
+                    });
+                    dayDetailsCache[iso].score += sc;
+                });
+                const todayIsoForStatus = isoDate(new Date());
+                Object.keys(dayStatus).forEach(iso => {
+                    const s = dayStatus[iso];
+                    if (iso > todayIsoForStatus) s.status = "future";
+                    else if (s.hasOther || s.hasDisc) s.status = s.hasDisc ? "timely" : "late";
+                    else s.status = "missed";
+                });
+
+                // weights by day
+                const weightByDay = {};
+                const wtRows = (wtRes && !wtRes.error && wtRes.data) ? wtRes.data : [];
+                wtRows.forEach(r => {
+                    const w = Number(r.weight_kg != null ? r.weight_kg : r.weight);
+                    if (w > 0 && r.log_date) weightByDay[r.log_date] = w;
+                });
+                // also from exercise
+                (exRes.data || []).forEach(r => {
+                    const w = Number(r.weight_kg);
+                    if (w > 0 && r.log_date && weightByDay[r.log_date] == null)
+                        weightByDay[r.log_date] = w;
+                });
+
+                if (seq !== reportLoadSeq) return;
+
+                renderReport(
+                    stats,
+                    habitMap,
+                    leaderboard,
+                    { myKm, communityKm, activePeople },
+                    dayStatus,
+                    weightByDay
+                );
+            } catch (err) {
+                if (seq !== reportLoadSeq) return;
+                console.error(err);
+                const content = document.getElementById("content");
+                if (content) {
+                    content.innerHTML = `
+                      <div class="empty error-box">
+                        <div class="empty-icon">⚠️</div>
+                        <div>خطا در دریافت گزارش</div>
+                        <small>${(err && err.message) ? String(err.message).replace(/</g, "") : ""}</small>
+                        <button class="retry-btn" id="retryBtn">تلاش دوباره</button>
+                      </div>`;
+                    const retryBtn = document.getElementById("retryBtn");
+                    if (retryBtn) retryBtn.onclick = () => loadReport();
+                }
+            }
+        }
+
+
         function renderReport(stats, habitMap, leaderboard, kmInfo = {}, dayStatus = {}, weightByDay = {}) {
             const content = document.getElementById("content");
 
