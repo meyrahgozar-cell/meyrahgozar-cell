@@ -1,12 +1,12 @@
-import { requireAuth } from './js_auth.js';
-import { renderLayout } from './js_layout.js';
-import { formatJalali } from './js_jalali.js';
-import { $, el } from './js_utils.js';
+import { requireAuth } from './auth.js';
+import { renderLayout } from './layout.js';
+import { formatJalali } from './jalali.js';
+import { $, el } from './utils.js';
 
 requireAuth();
 renderLayout();
 
-const BASE = 'assets_pdfs_invitations_';
+const BASE = 'assets/pdfs/invitations/';
 
 init().catch(err => {
   console.error(err);
@@ -14,7 +14,7 @@ init().catch(err => {
 });
 
 async function init() {
-  const res = await fetch('data_invitations.json', { cache: 'no-cache' });
+  const res = await fetch('data/invitations.json', { cache: 'no-cache' });
   const list = await res.json();
   list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   renderList(list);
