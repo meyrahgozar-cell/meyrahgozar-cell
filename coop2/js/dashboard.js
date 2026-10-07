@@ -1,8 +1,8 @@
-import { requireAuth } from './js_auth.js';
-import { renderLayout } from './js_layout.js';
-import { getPayments, getObligations, getAllMembersScores, getMemberById } from './js_supabase-client.js';
-import { formatJalali } from './js_jalali.js';
-import { $, faNum, formatMoney, el } from './js_utils.js';
+import { requireAuth } from './auth.js';
+import { renderLayout } from './layout.js';
+import { getPayments, getObligations, getAllMembersScores, getMemberById } from './supabase_client.js';
+import { formatJalali } from './jalali.js';
+import { $, faNum, formatMoney, el } from './utils.js';
 
 const user = requireAuth();
 if (user) {
