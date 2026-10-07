@@ -1,4 +1,4 @@
-import { requireAuth } from './auth.js';
+import { requireAuth, isAdmin, ROLE_LABELS } from './auth.js';
 import { renderLayout } from './layout.js';
 import { getPayments, getObligations, getAllMembersScores, getMemberById } from './supabase-client.js';
 import { formatJalali } from './jalali.js';
@@ -11,7 +11,25 @@ if (user) {
 }
 
 async function init() {
-  $('#userName').textContent = `${user.first_name} ${user.last_name}`;
+  const nameEl = $('#userName');
+  if (nameEl) nameEl.textContent = `${user.first_name} ${user.last_name}`;
+
+  const badgeHost = $('#roleBadge');
+  if (badgeHost) {
+    const role = user.role || 'member';
+    if (role !== 'member') {
+      const cls = role === 'superadmin' ? 'is-super' : 'is-admin';
+      badgeHost.appendChild(el('span', { class: 'role-chip ' + cls, title: 'سطح دسترسی' },
+        el('i', { class: 'i ' + (role === 'superadmin' ? 'i-crown' : 'i-shield'), 'aria-hidden': 'true' }),
+        ROLE_LABELS[role]
+      ));
+    }
+  }
+
+  if (isAdmin(user)) {
+    const adminCard = $('#adminQuickCard');
+    if (adminCard) adminCard.hidden = false;
+  }
 
   const [member, payments, obligations, members] = await Promise.all([
     getMemberById(user.id),
@@ -95,7 +113,6 @@ function renderScoreboard(members, myId) {
     tbody.appendChild(tr);
   });
   if (myRow) requestAnimationFrame(() => {
-    // centre my row inside the scoreboard only (scrollIntoView would also jump the whole page)
     const wrap = myRow.closest('.scoreboard-wrap');
     if (wrap) wrap.scrollTop = Math.max(0, myRow.offsetTop - (wrap.clientHeight - myRow.offsetHeight) / 2);
   });
