@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>درخواست و پیشنهاد | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="assets_logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" />
+<link rel="stylesheet" href="css_variables.css" />
+<link rel="stylesheet" href="css_base.css" />
+<link rel="stylesheet" href="css_components.css" />
+<link rel="stylesheet" href="css_layout.css" />
+<link rel="stylesheet" href="css_pages.css" />
+<link rel="stylesheet" href="css_responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page narrow">
+    <header class="page-head">
+      <span class="page-icon">✉️</span>
+      <div>
+        <h1>درخواست و پیشنهاد</h1>
+        <p class="muted">لطفا درخواست و پیشنهاد خود را ارسال فرمایید.</p>
+      </div>
+    </header>
+
+    <form id="suggestionForm" class="panel form-panel">
+      <label class="field" for="suggestionText">
+        <span>متن پیام</span>
+        <textarea id="suggestionText" class="suggestion-textarea"
+                  rows="10" maxlength="5000" placeholder="متن خود را اینجا بنویسید…" required></textarea>
+        <small class="hint"><span id="charCount">0</span> / ۵۰۰۰</small>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="sendBtn">
+          <span class="btn-text">ارسال</span>
+          <span class="spinner" hidden></span>
+        </button>
+        <button type="reset" class="btn btn-ghost">پاک کردن</button>
+      </div>
+
+      <div id="suggMsg" class="auth-msg" role="alert"></div>
+    </form>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="js_suggestions.js"></script>
+</body>
+</html>
