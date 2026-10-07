@@ -2412,6 +2412,16 @@
             color: rgba(126, 249, 255, 0.85);
         }
 
+
+        .group-rec-card.accent-sun {
+            border-color: rgba(255, 200, 60, 0.4);
+            box-shadow: 0 0 14px rgba(255, 180, 40, 0.18);
+        }
+        .group-rec-card.accent-sleep {
+            border-color: rgba(120, 140, 255, 0.4);
+            box-shadow: 0 0 14px rgba(100, 120, 255, 0.18);
+        }
+
 </style>
 </head>
 <body>
@@ -4072,6 +4082,8 @@ const spawnSparks = (speed, fromLeft) => {
                 const reader = d.top_reader || {};
                 const climber = d.top_climber || {};
                 const light = d.lightest || {};
+                const sun = d.top_sun || {};
+                const sleep = d.top_sleep || {};
                 setText("grpRunnerName", runner.display_name || "—");
                 setMetric("grpRunnerKm", runner.total_km != null ? fmtN(runner.total_km, 1) : null, "km");
                 setText("grpReaderName", reader.display_name || "—");
@@ -4079,7 +4091,16 @@ const spawnSparks = (speed, fromLeft) => {
                 setText("grpMtName", climber.display_name || "—");
                 setMetric("grpMtTrips", climber.trips != null ? fmtN(climber.trips, 0) : null, "صعود");
                 setText("grpBmiName", light.display_name || "—");
-                setMetric("grpBmiVal", light.bmi != null ? fmtN(light.bmi, 1) : null, "BMI");
+                // BMI: حتی اگر ۰ نباشد fmtN صفر را null می‌کند — جدا هندل کن
+                if (light.bmi != null && !Number.isNaN(Number(light.bmi))) {
+                    setMetric("grpBmiVal", fa(String(Number(Number(light.bmi).toFixed(1)))), "BMI");
+                } else {
+                    setText("grpBmiVal", "—");
+                }
+                setText("grpSunName", sun.display_name || "—");
+                setMetric("grpSunVal", sun.total_score != null ? fmtN(sun.total_score, 1) : null, "امتیاز");
+                setText("grpSleepName", sleep.display_name || "—");
+                setMetric("grpSleepVal", sleep.total_score != null ? fmtN(sleep.total_score, 1) : null, "امتیاز");
                 setMetric("grpAllKm", d.all_km != null ? fmtN(d.all_km, 1) : null, "km");
                 setMetric("grpAllPages", d.all_pages != null ? fmtN(d.all_pages, 0) : null, "صفحه");
             };
@@ -4094,28 +4115,58 @@ const spawnSparks = (speed, fromLeft) => {
             } catch (e) { console.warn("group records rpc", e); }
 
             try {
-                const [ex, rd, mt, pr] = await Promise.all([
-                    db.from("exercise_logs").select("user_id, running_km, total_km"),
-                    db.from("daily_logs").select("user_id, value").eq("item_type", "reading"),
+                const [ex, rd, mt, sun, sleep, pr] = await Promise.all([
+                    db.from("exercise_logs").select("user_id, running_km, total_km, weight_kg, log_date"),
+                    db.from("daily_logs").select("user_id, value, score, item_type"),
                     db.from("mountain_trips").select("user_id"),
+                    db.from("daily_logs").select("user_id, score").eq("item_type", "sun"),
+                    db.from("daily_logs").select("user_id, score").eq("item_type", "sleep"),
                     db.from("profiles").select("id, display_name, height_cm, bmi_public")
                 ]);
                 const names = {};
-                (pr.data || []).forEach(p => { names[p.id] = p.display_name; });
+                const heights = {};
+                (pr.data || []).forEach(p => {
+                    names[p.id] = p.display_name;
+                    names[String(p.id)] = p.display_name;
+                    if (p.height_cm && (p.bmi_public !== false)) heights[p.id] = Number(p.height_cm);
+                });
                 const kmBy = {}; let allKm = 0;
+                const latestW = {};
                 (ex.data || []).forEach(r => {
                     const k = Number(r.total_km) || Number(r.running_km) || 0;
                     allKm += k;
                     kmBy[r.user_id] = (kmBy[r.user_id] || 0) + k;
+                    const w = Number(r.weight_kg);
+                    if (w > 0) {
+                        const prev = latestW[r.user_id];
+                        if (!prev || (r.log_date && r.log_date >= prev.d))
+                            latestW[r.user_id] = { w, d: r.log_date || "" };
+                    }
                 });
                 const pgBy = {}; let allPg = 0;
                 (rd.data || []).forEach(r => {
-                    const v = Number(r.value) || 0;
-                    allPg += v;
-                    pgBy[r.user_id] = (pgBy[r.user_id] || 0) + v;
+                    if (r.item_type === "reading" || r.value != null) {
+                        const v = Number(r.value) || 0;
+                        if (v > 0) {
+                            allPg += v;
+                            pgBy[r.user_id] = (pgBy[r.user_id] || 0) + v;
+                        }
+                    }
                 });
+                // if reading filter was in query without item_type on second - rd might be all reading only
+                if (rd.data && rd.data.length && !pgBy[Object.keys(pgBy)[0]] && rd.data[0].value != null) {
+                    // already handled
+                }
                 const mtBy = {};
                 (mt.data || []).forEach(r => { mtBy[r.user_id] = (mtBy[r.user_id] || 0) + 1; });
+                const sunBy = {};
+                (sun.data || []).forEach(r => {
+                    sunBy[r.user_id] = (sunBy[r.user_id] || 0) + (Number(r.score) || 0);
+                });
+                const sleepBy = {};
+                (sleep.data || []).forEach(r => {
+                    sleepBy[r.user_id] = (sleepBy[r.user_id] || 0) + (Number(r.score) || 0);
+                });
 
                 const top = (map) => {
                     let id = null, v = -1;
@@ -4125,15 +4176,32 @@ const spawnSparks = (speed, fromLeft) => {
                     return { id, v };
                 };
                 const tr = top(kmBy), tp = top(pgBy), tm = top(mtBy);
+                const ts = top(sunBy), tsl = top(sleepBy);
 
-                // سبک‌بال: کمترین BMI عمومی (اگر داده وزن موجود باشد در RPC کامل‌تر است)
+                // سبک‌بال: کمترین BMI
                 let light = { display_name: null, bmi: null };
+                let bestBmi = Infinity;
+                Object.keys(heights).forEach(uid => {
+                    const h = heights[uid];
+                    const w = latestW[uid] && latestW[uid].w;
+                    if (!(h > 0) || !(w > 0)) return;
+                    const m = h / 100;
+                    const bmi = w / (m * m);
+                    if (bmi > 0 && bmi < bestBmi) {
+                        bestBmi = bmi;
+                        light = { display_name: names[uid] || "کاربر", bmi: Math.round(bmi * 10) / 10 };
+                    }
+                });
+                // اگر RPC سبک‌بال داشت ولی fallback هستیم
+                if (!(light.bmi > 0)) light = { display_name: null, bmi: null };
 
                 apply({
                     top_runner: { display_name: tr.id ? names[tr.id] : null, total_km: tr.v > 0 ? tr.v : null },
                     top_reader: { display_name: tp.id ? names[tp.id] : null, total_pages: tp.v > 0 ? tp.v : null },
                     top_climber: { display_name: tm.id ? names[tm.id] : null, trips: tm.v > 0 ? tm.v : null },
-                    lightest: light,
+                    lightest: light.bmi != null ? light : {},
+                    top_sun: { display_name: ts.id ? names[ts.id] : null, total_score: ts.v > 0 ? ts.v : null },
+                    top_sleep: { display_name: tsl.id ? names[tsl.id] : null, total_score: tsl.v > 0 ? tsl.v : null },
                     all_km: allKm,
                     all_pages: allPg
                 });
@@ -5055,6 +5123,18 @@ const spawnSparks = (speed, fromLeft) => {
                       <div class="group-rec-label">سبک‌بال گروه</div>
                       <div class="group-rec-value" id="grpBmiName">—</div>
                       <div class="group-rec-metric" id="grpBmiVal">—</div>
+                    </div>
+                    <div class="group-rec-card accent-sun">
+                      <div class="group-rec-icon">☀️</div>
+                      <div class="group-rec-label">آفتاب‌پرست گروه</div>
+                      <div class="group-rec-value" id="grpSunName">—</div>
+                      <div class="group-rec-metric" id="grpSunVal">—</div>
+                    </div>
+                    <div class="group-rec-card accent-sleep">
+                      <div class="group-rec-icon">😴</div>
+                      <div class="group-rec-label">خوش‌خواب گروه</div>
+                      <div class="group-rec-value" id="grpSleepName">—</div>
+                      <div class="group-rec-metric" id="grpSleepVal">—</div>
                     </div>
                     <div class="group-rec-card">
                       <div class="group-rec-icon">🛣️</div>
