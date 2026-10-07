@@ -38,17 +38,27 @@ body {
   font-weight: 400;
   line-height: 1.85;
   color: var(--text);
-  background: var(--bg);
+
+  /* Fixed grid pattern (themeable via tokens) */
+  background: var(--bg-pattern);
+  background-color: var(--pattern-bg);
+  background-position: var(--bg-pattern-position);
+  background-size: var(--bg-pattern-size);
+  background-attachment: fixed;
+
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   transition: background-color var(--trans), color var(--trans);
 }
 
-/* Ambient light behind everything */
+/* Ambient colour wash layered on top of the grid.
+   `screen` lifts the grid in dark mode; `multiply` deepens it in light mode. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: var(--bg-ambient);
+  mix-blend-mode: screen;
 }
+html[data-theme="light"] body::before { mix-blend-mode: multiply; }
 
 /* Links */
 a { color: var(--brand); text-decoration: none; transition: color var(--trans), text-shadow var(--trans); }
