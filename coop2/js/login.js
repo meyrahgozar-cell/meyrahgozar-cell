@@ -1,7 +1,7 @@
-import './js_theme.js';
-import { findMemberByCredentials } from './js_supabase-client.js';
-import { saveUser, getUser } from './js_auth.js';
-import { $, setBtnLoading, showMsg, faNum } from './js_utils.js';
+import './theme.js';
+import { findMemberByCredentials } from './supabase_client.js';
+import { saveUser, getUser } from './auth.js';
+import { $, setBtnLoading, showMsg, faNum } from './utils.js';
 
 if (getUser()) location.replace('dashboard.html');
 
