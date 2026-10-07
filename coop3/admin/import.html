@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>ایمپورت اکسل | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+<link rel="stylesheet" href="../css/import.css" />
+<link rel="stylesheet" href="../css/responsive.css" />
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page">
+    <header class="page-head">
+      <span class="tile"><i class="i i-upload" aria-hidden="true"></i></span>
+      <div>
+        <h1>ایمپورت هوشمند اکسل</h1>
+        <p class="muted">فایل اکسل خود را بارگذاری کنید؛ سیستم به‌طور خودکار با دیتابیس مقایسه و مغایرت‌ها را گزارش می‌کند.</p>
+      </div>
+    </header>
+
+    <!-- مرحله ۱: بارگذاری -->
+    <section class="panel import-step" id="stepUpload">
+      <header class="panel-head">
+        <h2>۱. بارگذاری فایل</h2>
+        <span class="badge">xlsx / xls</span>
+      </header>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="انتخاب فایل اکسل">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+        <div class="dropzone-inner">
+          <div class="dropzone-icon tile"><i class="i i-file-spreadsheet" aria-hidden="true"></i></div>
+          <div class="dropzone-title">فایل اکسل را اینجا رها کنید</div>
+          <div class="dropzone-sub">یا کلیک کنید تا انتخاب کنید</div>
+          <div class="dropzone-hint">شیت‌های موردنیاز: Members، Payments، Obligations</div>
+        </div>
+      </div>
+      <div id="uploadMsg" class="auth-msg"></div>
+    </section>
+
+    <!-- مرحله ۲: پیش‌نمایش و تحلیل -->
+    <section class="panel import-step" id="stepPreview" hidden>
+      <header class="panel-head">
+        <h2>۲. تحلیل و مقایسه</h2>
+        <span class="badge" id="previewBadge">—</span>
+      </header>
+
+      <div class="diff-summary" id="diffSummary"></div>
+
+      <nav class="tabs" id="diffTabs">
+        <button class="tab active" data-tab="members">اعضا</button>
+        <button class="tab" data-tab="payments">پرداخت‌ها</button>
+        <button class="tab" data-tab="obligations">تعهدات</button>
+      </nav>
+
+      <div class="tab-panels" id="diffPanels"></div>
+
+      <div class="form-actions import-actions">
+        <button class="btn btn-ghost" id="cancelImport">انصراف</button>
+        <button class="btn btn-primary" id="applyImport">
+          <span class="btn-text">اعمال تغییرات</span>
+          <span class="spinner" hidden></span>
+        </button>
+      </div>
+      <div id="applyMsg" class="auth-msg"></div>
+    </section>
+
+    <!-- مرحله ۳: نتیجه -->
+    <section class="panel import-step" id="stepResult" hidden>
+      <header class="panel-head"><h2>۳. نتیجه عملیات</h2></header>
+      <div id="resultBody"></div>
+    </section>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin-import.js"></script>
+</body>
+</html>

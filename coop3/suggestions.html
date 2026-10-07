@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>درخواست و پیشنهاد | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="css/variables.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/icons.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/pages.css" />
+<link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page narrow">
+    <header class="page-head">
+      <span class="tile"><i class="i i-send" aria-hidden="true"></i></span>
+      <div>
+        <h1>درخواست و پیشنهاد</h1>
+        <p class="muted">لطفا درخواست و پیشنهاد خود را ارسال فرمایید.</p>
+      </div>
+    </header>
+
+    <form id="suggestionForm" class="panel form-panel">
+      <label class="field" for="suggestionText">
+        <span>متن پیام</span>
+        <textarea id="suggestionText" class="suggestion-textarea"
+                  rows="10" maxlength="5000" placeholder="متن خود را اینجا بنویسید…" required></textarea>
+        <small class="hint"><span id="charCount">۰</span> / ۵۰۰۰</small>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="sendBtn">
+          <span class="btn-text">ارسال</span>
+          <span class="spinner" hidden></span>
+        </button>
+        <button type="reset" class="btn btn-ghost">پاک کردن</button>
+      </div>
+
+      <div id="suggMsg" class="auth-msg" role="alert"></div>
+    </form>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="js/suggestions.js"></script>
+</body>
+</html>
