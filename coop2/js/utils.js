@@ -61,5 +61,4 @@ export function toISODate(input) {
   return null;
 }
 
-function pad2(n) { return String(n).padStart(2, '0'); }
-export { pad2 };
+export function pad2(n) { return String(n).padStart(2, '0'); }
