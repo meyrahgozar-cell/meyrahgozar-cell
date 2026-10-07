@@ -1,0 +1,12 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/base.css"><title>پنل عضو</title><link rel="stylesheet" href="css/dash.css"><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script></head><body>
+<div class="topbar"><b>تعاونی مسکن مپنا هوایی</b><span>خوش آمدید، <b id="hello"></b> &nbsp; <a href="#" onclick="Sess.out()">خروج</a></span></div>
+<div class="wrap"><div class="msg er" id="err"></div><div class="grid">
+<div class="card"><h2>👤 مشخصات من</h2><div class="info" id="info"></div></div>
+<div class="card"><h2>🏆 رتبه‌بندی اعضا</h2><div class="tbl-wrap" ><div id="rank"></div></div></div>
+<div class="card"><h2>💰 واریزی‌ها</h2><div class="tbl-wrap" id="pay"></div></div>
+<div class="card"><h2>📅 تعهدات مالی</h2><div class="tbl-wrap" id="obl"></div></div></div>
+<div class="links"><a class="card" href="notices.html"><svg viewBox="0 0 24 24"><path d="M4 4h12l4 4v12H4zM8 12h8M8 16h8"/></svg>دعوت‌نامه‌ها و ابلاغیه‌ها</a><a class="card" href="minutes.html"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3"/></svg>صورت‌جلسات</a><a class="card" href="#" id="rq"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>درخواست و پیشنهاد</a></div></div>
+<div class="modal" id="mod"><div class="card"><h2>لطفا درخواست و پیشنهاد خود را ارسال فرمایید.</h2><textarea id="reqText"></textarea><button class="btn" id="send">ارسال</button><button class="btn ghost" id="cl">بستن</button><div class="msg" id="rm"></div></div></div>
+<script src="js/config.js"></script><script src="js/jalali.js"></script><script src="js/github.js"></script><script src="js/db.js"></script><script src="js/dashboard.js"></script><script src="js/request.js"></script>
+<script>initDash();rq.onclick=e=>{e.preventDefault();mod.classList.add('on')};cl.onclick=()=>mod.classList.remove('on');
+send.onclick=async()=>{const t=reqText.value.trim();if(!t)return;rm.className='msg';rm.textContent='در حال ارسال…';try{await sendRequest(hello.textContent,t);rm.className='msg ok';rm.textContent='ارسال شد. سپاسگزاریم.';reqText.value=''}catch(e){rm.className='msg er';rm.textContent=e.message}}</script></body></html>
