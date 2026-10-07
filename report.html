@@ -4662,6 +4662,17 @@ const spawnSparks = (speed, fromLeft) => {
                         weightByDay[r.log_date] = w;
                 });
 
+                // BMI برای جدول امتیازات (مثل قبل — بدون دستکاری DB اضافه)
+                try {
+                    await loadBmiDataForUsers(leaderboard.map(u => u.user_id));
+                    leaderboard.forEach(u => {
+                        const d = bmiDataByUser[String(u.user_id)] || {};
+                        u.bmi = calcBmi(d.weight_kg, d.height_cm);
+                    });
+                } catch (e) {
+                    console.warn("bmi attach", e);
+                }
+
                 if (seq !== reportLoadSeq) return;
 
                 renderReport(
