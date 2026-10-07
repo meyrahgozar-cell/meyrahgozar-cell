@@ -4163,34 +4163,58 @@ const spawnSparks = (speed, fromLeft) => {
 
                 const endForBoard = range.endCompleted || range.end;
 
+                // supabase-js rpc/from برمی‌گرداند thenable با {data,error} — نه Promise خالص با .catch
+                const safeRpc = async (name, args) => {
+                    try {
+                        const r = await db.rpc(name, args);
+                        return r || { data: null, error: null };
+                    } catch (e) {
+                        return { data: null, error: e };
+                    }
+                };
+                const safeFrom = async (builder) => {
+                    try {
+                        const r = await builder;
+                        return r || { data: null, error: null };
+                    } catch (e) {
+                        return { data: null, error: e };
+                    }
+                };
+
                 const [statsRes, boardRes, logsRes, exRes, mtRes, kmRes, calRes, wtRes] = await Promise.all([
-                    db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }).catch(e => ({ data: null, error: e })),
-                    db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: endForBoard }).catch(e => ({ data: null, error: e })),
-                    db.from("daily_logs")
-                        .select("item_type, score, log_date, value")
-                        .eq("user_id", currentUser.id)
-                        .gte("log_date", range.start)
-                        .lte("log_date", range.end),
-                    db.from("exercise_logs")
-                        .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
-                        .eq("user_id", currentUser.id)
-                        .gte("log_date", range.start)
-                        .lte("log_date", range.end),
-                    db.from("mountain_trips")
-                        .select("id, trip_date, user_id")
-                        .eq("user_id", currentUser.id)
-                        .gte("trip_date", monthRange.start)
-                        .lte("trip_date", monthRange.end),
-                    db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }).catch(e => ({ data: null, error: e })),
-                    db.rpc("get_month_user_calories", { p_start: range.start, p_end: endForBoard }).catch(e => ({ data: null, error: e })),
-                    db.from("user_weights")
-                        .select("log_date, weight_kg, weight, recorded_at")
-                        .eq("user_id", currentUser.id)
-                        .gte("log_date", monthRange.start)
-                        .lte("log_date", monthRange.end)
-                        .order("log_date", { ascending: true })
-                        .then(r => r)
-                        .catch(() => ({ data: null, error: true }))
+                    safeRpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
+                    safeRpc("get_monthly_leaderboard", { p_start: range.start, p_end: endForBoard }),
+                    safeFrom(
+                        db.from("daily_logs")
+                            .select("item_type, score, log_date, value")
+                            .eq("user_id", currentUser.id)
+                            .gte("log_date", range.start)
+                            .lte("log_date", range.end)
+                    ),
+                    safeFrom(
+                        db.from("exercise_logs")
+                            .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
+                            .eq("user_id", currentUser.id)
+                            .gte("log_date", range.start)
+                            .lte("log_date", range.end)
+                    ),
+                    safeFrom(
+                        db.from("mountain_trips")
+                            .select("id, trip_date, user_id")
+                            .eq("user_id", currentUser.id)
+                            .gte("trip_date", monthRange.start)
+                            .lte("trip_date", monthRange.end)
+                    ),
+                    safeRpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
+                    safeRpc("get_month_user_calories", { p_start: range.start, p_end: endForBoard }),
+                    safeFrom(
+                        db.from("user_weights")
+                            .select("log_date, weight_kg")
+                            .eq("user_id", currentUser.id)
+                            .gte("log_date", monthRange.start)
+                            .lte("log_date", monthRange.end)
+                            .order("log_date", { ascending: true })
+                    )
                 ]);
 
                 if (seq !== reportLoadSeq) return;
