@@ -93,17 +93,12 @@
   </main>
 
   <script>
-  /* ================================================================
-     Inline Self-Contained Logic — ES5, no modules, no imports
-     ================================================================ */
   (function () {
     'use strict';
 
-    /* ---------- Config ---------- */
     var SUPABASE_URL = 'https://ctzbbtvmhgdpfzonopis.supabase.co';
     var SUPABASE_KEY = 'sb_publishable_OgRM4kqB9RLGdx6sFbAmbw_9VQWOZrH';
 
-    /* ---------- Helpers ---------- */
     function $(id) { return document.getElementById(id); }
 
     function faNum(n) {
@@ -126,7 +121,6 @@
       if (spin) spin.hidden = !loading;
     }
 
-    /* ---------- Theme Toggle ---------- */
     function applyTheme(t) {
       document.documentElement.setAttribute('data-theme', t);
       try { localStorage.setItem('mpna_theme', t); } catch (e) {}
@@ -147,7 +141,6 @@
       }
     }
 
-    /* ---------- Password Toggle ---------- */
     function wirePassBtn() {
       var btn = $('passToggle');
       var inp = $('password');
@@ -157,12 +150,11 @@
       btn.addEventListener('click', function (ev) {
         ev.preventDefault();
         inp.type = (inp.type === 'password') ? 'text' : 'password';
-        btn.querySelector('.eye-open').textContent =
-          (inp.type === 'password') ? '👁' : '🙈';
+        var eye = btn.querySelector('.eye-open');
+        if (eye) eye.textContent = (inp.type === 'password') ? '👁' : '🙈';
       });
     }
 
-    /* ---------- Supabase REST login (no SDK) ---------- */
     function loginViaREST(nationalId, password) {
       var url = SUPABASE_URL +
         '/rest/v1/members?national_id=eq.' + encodeURIComponent(nationalId) +
@@ -183,7 +175,6 @@
       });
     }
 
-    /* ---------- Save user ---------- */
     function saveUser(member, remember) {
       var payload = {
         id: member.id,
@@ -191,7 +182,8 @@
         last_name: member.last_name,
         national_id: member.national_id,
         cooperative: member.cooperative,
-        membership_status: member.membership_status
+        membership_status: member.membership_status,
+        is_admin: !!member.is_admin
       };
       var s = JSON.stringify(payload);
       try {
@@ -205,17 +197,13 @@
       } catch (e) {}
     }
 
-    /* ---------- Boot ---------- */
     function boot() {
-      /* Year */
       var y = $('year');
       if (y) y.textContent = faNum(new Date().getFullYear());
 
-      /* Wire toggles */
       wireThemeBtns();
       wirePassBtn();
 
-      /* Only digits for nationalId */
       var ni = $('nationalId');
       if (ni) {
         ni.addEventListener('input', function () {
@@ -223,7 +211,6 @@
         });
       }
 
-      /* Login form */
       var form = $('loginForm');
       var btn = $('loginBtn');
       var msg = $('authMsg');
@@ -264,17 +251,12 @@
             .catch(function (err) {
               console.error(err);
               var m = (err && err.message) || String(err);
-              if (m.indexOf('Failed to fetch') >= 0 || m.indexOf('HTTP') >= 0) {
-                showMsg(msg, 'خطا در ارتباط با سرور: ' + m, 'error');
-              } else {
-                showMsg(msg, 'خطای نامشخص: ' + m, 'error');
-              }
+              showMsg(msg, 'خطا: ' + m, 'error');
               setBtnLoading(btn, false);
             });
         });
       }
 
-      /* MutationObserver for dynamically added theme buttons */
       if (window.MutationObserver) {
         var mo = new MutationObserver(function () { wireThemeBtns(); });
         mo.observe(document.body || document.documentElement, {
