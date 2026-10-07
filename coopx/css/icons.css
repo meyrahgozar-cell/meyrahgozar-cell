@@ -1,0 +1,68 @@
+/* Icon set — line icons rendered as CSS masks so they inherit currentColor.
+   Usage: <i class="i i-wallet" aria-hidden="true"></i>  (size via font-size or --s) */
+
+:root {
+  --svg-dashboard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7.5' height='9.5' rx='2'/%3E%3Crect x='13.5' y='3' width='7.5' height='5.5' rx='2'/%3E%3Crect x='13.5' y='12' width='7.5' height='9' rx='2'/%3E%3Crect x='3' y='16' width='7.5' height='5' rx='2'/%3E%3C/svg%3E");
+  --svg-mail: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='3'/%3E%3Cpath d='m3.8 7.6 7.2 5.2a1.7 1.7 0 0 0 2 0l7.2-5.2'/%3E%3C/svg%3E");
+  --svg-file-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z'/%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4'/%3E%3Cpath d='M9 13h6M9 16.8h6'/%3E%3C/svg%3E");
+  --svg-send: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.5 2.5 10.8 13.2'/%3E%3Cpath d='m21.5 2.5-6.6 19a.6.6 0 0 1-1.1.05l-3-8.35L2.45 10.2a.6.6 0 0 1 .05-1.1z'/%3E%3C/svg%3E");
+  --svg-upload: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15.5V4'/%3E%3Cpath d='m7.5 8.5 4.5-4.5 4.5 4.5'/%3E%3Cpath d='M4 15.5v3A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-3'/%3E%3C/svg%3E");
+  --svg-wallet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 7.5V6a2.5 2.5 0 0 0-2.5-2.5h-10A2.5 2.5 0 0 0 4 6v12a2.5 2.5 0 0 0 2.5 2.5h12A2.5 2.5 0 0 0 21 18v-8a2.5 2.5 0 0 0-2.5-2.5H6.2'/%3E%3Ccircle cx='16.3' cy='13.9' r='1.3'/%3E%3C/svg%3E");
+  --svg-receipt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 3.5h13v17.2a.4.4 0 0 1-.64.32L15.4 19l-2.5 2a.4.4 0 0 1-.5 0L9.9 19l-2.46 2.02a.4.4 0 0 1-.64-.32z'/%3E%3Cpath d='M9 8.5h6M9 12.5h6'/%3E%3C/svg%3E");
+  --svg-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3.2 2.65 5.55 6.05.85-4.4 4.25 1.07 6.05L12 17.1 6.63 19.9l1.07-6.05L3.3 9.6l6.05-.85z'/%3E%3C/svg%3E");
+  --svg-trophy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 4h8v5.2a4 4 0 0 1-8 0z'/%3E%3Cpath d='M8 6H5.2a.7.7 0 0 0-.7.75A4 4 0 0 0 8.3 10.6M16 6h2.8a.7.7 0 0 1 .7.75 4 4 0 0 1-3.8 3.85'/%3E%3Cpath d='M12 13.2V17M8.5 20.5h7M10 17h4'/%3E%3C/svg%3E");
+  --svg-calendar-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='3'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3Ccircle cx='15.2' cy='15' r='2.3'/%3E%3Cpath d='M15.2 14v1.1l.8.5'/%3E%3C/svg%3E");
+  --svg-chevron-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m14.5 5.5-6.5 6.5 6.5 6.5'/%3E%3C/svg%3E");
+  --svg-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4'/%3E%3C/svg%3E");
+  --svg-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.4 14.3A8.6 8.6 0 1 1 9.7 3.6a6.9 6.9 0 0 0 10.7 10.7z'/%3E%3C/svg%3E");
+  --svg-eye: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.3 12.3S5.6 5.5 12 5.5s9.7 6.8 9.7 6.8-3.3 6.2-9.7 6.2-9.7-6.2-9.7-6.2z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+  --svg-eye-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 3.5 20.5 20.5'/%3E%3Cpath d='M10.4 5.6A9.6 9.6 0 0 1 12 5.5c6.4 0 9.7 6.8 9.7 6.8a17.2 17.2 0 0 1-3.1 4M6.5 7.1C3.7 8.9 2.3 12.3 2.3 12.3s3.3 6.2 9.7 6.2c1.5 0 2.9-.35 4.1-.9'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3C/svg%3E");
+  --svg-log-out: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 20.5H6.5A2.5 2.5 0 0 1 4 18V6a2.5 2.5 0 0 1 2.5-2.5h3'/%3E%3Cpath d='m16 16.5 4.5-4.5L16 7.5M20.5 12H9.5'/%3E%3C/svg%3E");
+  --svg-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v11.5'/%3E%3Cpath d='m7.5 11 4.5 4.5 4.5-4.5'/%3E%3Cpath d='M4 16.5V18a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-1.5'/%3E%3C/svg%3E");
+  --svg-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.6 4.6 4.6L19 7.6'/%3E%3C/svg%3E");
+  --svg-check-circle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12.4 2.8 2.8 5.2-5.6'/%3E%3C/svg%3E");
+  --svg-alert-triangle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 16.9h.01'/%3E%3C/svg%3E");
+  --svg-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.2M12 7.8h.01'/%3E%3C/svg%3E");
+  --svg-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+  --svg-file-spreadsheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z'/%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4'/%3E%3Cpath d='M8.5 12.5h7M8.5 16.5h7M12 10.5v8'/%3E%3C/svg%3E");
+  --svg-id-card: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='3'/%3E%3Ccircle cx='8.7' cy='11' r='2'/%3E%3Cpath d='M5.9 16c.55-1.3 1.6-1.9 2.8-1.9s2.25.6 2.8 1.9M14.2 10h4M14.2 14h3'/%3E%3C/svg%3E");
+  --svg-lock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='10.5' width='15' height='10' rx='3'/%3E%3Cpath d='M8 10.5V8a4 4 0 0 1 8 0v2.5'/%3E%3C/svg%3E");
+  --svg-shield-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 4.5 6v5.6c0 4.4 3 7.7 7.5 9.4 4.5-1.7 7.5-5 7.5-9.4V6z'/%3E%3Cpath d='m8.8 12.2 2.3 2.3 4.2-4.6'/%3E%3C/svg%3E");
+}
+
+.i {
+  --s: 1.25em;
+  display: inline-block; flex: none;
+  width: var(--s); height: var(--s);
+  background-color: currentColor;
+  -webkit-mask: var(--i-img) center / contain no-repeat;
+          mask: var(--i-img) center / contain no-repeat;
+  vertical-align: -.22em;
+}
+
+.i-dashboard { --i-img: var(--svg-dashboard); }
+.i-mail { --i-img: var(--svg-mail); }
+.i-file-text { --i-img: var(--svg-file-text); }
+.i-send { --i-img: var(--svg-send); }
+.i-upload { --i-img: var(--svg-upload); }
+.i-wallet { --i-img: var(--svg-wallet); }
+.i-receipt { --i-img: var(--svg-receipt); }
+.i-star { --i-img: var(--svg-star); }
+.i-trophy { --i-img: var(--svg-trophy); }
+.i-calendar-clock { --i-img: var(--svg-calendar-clock); }
+.i-chevron-left { --i-img: var(--svg-chevron-left); }
+.i-sun { --i-img: var(--svg-sun); }
+.i-moon { --i-img: var(--svg-moon); }
+.i-eye { --i-img: var(--svg-eye); }
+.i-eye-off { --i-img: var(--svg-eye-off); }
+.i-log-out { --i-img: var(--svg-log-out); }
+.i-download { --i-img: var(--svg-download); }
+.i-check { --i-img: var(--svg-check); }
+.i-check-circle { --i-img: var(--svg-check-circle); }
+.i-alert-triangle { --i-img: var(--svg-alert-triangle); }
+.i-info { --i-img: var(--svg-info); }
+.i-x { --i-img: var(--svg-x); }
+.i-file-spreadsheet { --i-img: var(--svg-file-spreadsheet); }
+.i-id-card { --i-img: var(--svg-id-card); }
+.i-lock { --i-img: var(--svg-lock); }
+.i-shield-check { --i-img: var(--svg-shield-check); }
