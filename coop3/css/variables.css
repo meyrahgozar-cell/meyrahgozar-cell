@@ -1,7 +1,7 @@
 /* ==========================================================================
    Design tokens — "Night Flight · Glass"
    Dark is the default: lifted midnight slate (not black) with sky + aqua light.
-   Glass system: translucent surfaces + backdrop-blur over a fixed grid pattern.
+   Glass system: translucent surfaces + light backdrop-blur over a fixed grid.
    Glow system: every glow is built from an RGB triplet (--c) and per-theme
    intensities (--tg* for text, --bg* for boxes), so light theme can calm it down.
    ========================================================================== */
@@ -27,8 +27,8 @@ html[data-theme="dark"] {
 
   /* ---- Fixed background pattern (user-supplied grid) ---- */
   --pattern-bg: #121212;
-  --pattern-line: #222222;
-  --pattern-shadow: #181818;
+  --pattern-line: #232323;
+  --pattern-shadow: #191919;
   --bg-pattern:
     linear-gradient(163deg, transparent 0px, transparent 1px, var(--pattern-line) 1px, var(--pattern-line) 14px, transparent 14px),
     linear-gradient(161deg, transparent 0px, var(--pattern-shadow) 1px, var(--pattern-line) 2px, var(--pattern-line) 15px, transparent 15px),
@@ -39,18 +39,18 @@ html[data-theme="dark"] {
 
   --bg: var(--pattern-bg);
 
-  /* ---- Glass ---- */
-  --glass-blur: 22px;
-  --glass-sat: 165%;
+  /* ---- Glass (light blur — the pattern must survive underneath) ---- */
+  --glass-blur: 10px;
+  --glass-sat: 135%;
 
-  /* Surfaces — translucent so the pattern reads through every panel */
-  --surface:   rgba(38, 46, 72, .42);
-  --surface-2: rgba(48, 58, 88, .34);
-  --surface-3: rgba(60, 72, 108, .46);
-  --header-bg: rgba(18, 22, 36, .48);
+  /* Surfaces — very translucent so the grid reads through every panel */
+  --surface:   rgba(60, 74, 118, .20);
+  --surface-2: rgba(72, 88, 138, .14);
+  --surface-3: rgba(90, 108, 160, .26);
+  --header-bg: rgba(20, 26, 44, .38);
 
-  --line: rgba(165, 185, 240, .14);
-  --line-strong: rgba(165, 185, 240, .24);
+  --line: rgba(165, 185, 240, .16);
+  --line-strong: rgba(165, 185, 240, .26);
 
   /* Text */
   --text-strong: #f6f9ff;
@@ -76,16 +76,16 @@ html[data-theme="dark"] {
 
   /* Depth */
   --bg-ambient:
-    radial-gradient(900px 520px at 88% -14%, rgba(94, 184, 255, .16), transparent 66%),
-    radial-gradient(700px 440px at 4% 6%, rgba(54, 224, 214, .07), transparent 62%),
-    radial-gradient(1000px 480px at 50% 122%, rgba(255, 150, 90, .09), transparent 62%);
+    radial-gradient(900px 520px at 88% -14%, rgba(94, 184, 255, .13), transparent 66%),
+    radial-gradient(700px 440px at 4% 6%, rgba(54, 224, 214, .06), transparent 62%),
+    radial-gradient(1000px 480px at 50% 122%, rgba(255, 150, 90, .08), transparent 62%);
 
-  /* Top-edge sheen for glass panels */
-  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .02) 42px, transparent 90px);
+  /* Top-edge sheen — kept faint so the grid is not covered */
+  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .015) 40px, transparent 80px);
 
-  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .13), 0 18px 40px -28px rgba(0, 0, 0, .65);
-  --shadow-pop:   0 28px 64px -30px rgba(0, 0, 0, .75);
-  --field-bg: rgba(14, 20, 38, .38);
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .10), 0 16px 38px -28px rgba(0, 0, 0, .7);
+  --shadow-pop:   0 26px 60px -32px rgba(0, 0, 0, .8);
+  --field-bg: rgba(14, 20, 38, .22);
 
   /* Table / diff tints */
   --row-hover:   rgba(94, 184, 255, .07);
@@ -100,18 +100,18 @@ html[data-theme="light"] {
 
   /* Light variant of the same grid pattern */
   --pattern-bg: #eef1f7;
-  --pattern-line: #dbe2ee;
-  --pattern-shadow: #e4e9f3;
+  --pattern-line: #d8dfeb;
+  --pattern-shadow: #e2e7f2;
 
   --bg: var(--pattern-bg);
 
-  --glass-blur: 22px;
-  --glass-sat: 175%;
+  --glass-blur: 10px;
+  --glass-sat: 145%;
 
-  --surface:   rgba(255, 255, 255, .55);
-  --surface-2: rgba(255, 255, 255, .42);
-  --surface-3: rgba(255, 255, 255, .68);
-  --header-bg: rgba(238, 241, 247, .55);
+  --surface:   rgba(255, 255, 255, .34);
+  --surface-2: rgba(255, 255, 255, .24);
+  --surface-3: rgba(255, 255, 255, .48);
+  --header-bg: rgba(238, 241, 247, .48);
 
   --line: rgba(28, 52, 120, .12);
   --line-strong: rgba(28, 52, 120, .22);
@@ -136,14 +136,14 @@ html[data-theme="light"] {
   --bg1: .26;  --bg2: .12;
 
   --bg-ambient:
-    radial-gradient(900px 520px at 90% -12%, rgba(27, 98, 211, .10), transparent 66%),
-    radial-gradient(700px 440px at 2% 4%, rgba(11, 135, 176, .07), transparent 62%);
+    radial-gradient(900px 520px at 90% -12%, rgba(27, 98, 211, .09), transparent 66%),
+    radial-gradient(700px 440px at 2% 4%, rgba(11, 135, 176, .06), transparent 62%);
 
-  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .18) 42px, transparent 90px);
+  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .12) 40px, transparent 80px);
 
-  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .85), 0 14px 34px -24px rgba(23, 43, 99, .25);
-  --shadow-pop:   0 34px 64px -30px rgba(23, 43, 99, .30);
-  --field-bg: rgba(255, 255, 255, .55);
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .8), 0 12px 30px -22px rgba(23, 43, 99, .22);
+  --shadow-pop:   0 30px 60px -30px rgba(23, 43, 99, .26);
+  --field-bg: rgba(255, 255, 255, .42);
 
   --row-hover:   rgba(27, 98, 211, .06);
   --row-new:     rgba(12, 127, 88, .10);
