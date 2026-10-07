@@ -2,17 +2,28 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8" />
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('mpna_theme') || 'dark';
+    if (t !== 'dark' && t !== 'light') t = 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ایمپورت اکسل | تعاونی مسکن مپنا هوایی</title>
-<link rel="icon" href="assets_logo.svg" type="image/svg+xml" />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" />
-<link rel="stylesheet" href="css_variables.css" />
-<link rel="stylesheet" href="css_base.css" />
-<link rel="stylesheet" href="css_components.css" />
-<link rel="stylesheet" href="css_layout.css" />
-<link rel="stylesheet" href="css_pages.css" />
-<link rel="stylesheet" href="css_import.css" />
-<link rel="stylesheet" href="css_responsive.css" />
+<link rel="stylesheet" href="css/variables.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/pages.css" />
+<link rel="stylesheet" href="css/import.css" />
+<link rel="stylesheet" href="css/responsive.css" />
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -27,8 +38,7 @@
       </div>
     </header>
 
-    <!-- مرحله ۱: بارگذاری -->
-    <section class="panel import-step" id="stepUpload">
+    <section class="panel import-step" id="stepUpload" data-step="1">
       <header class="panel-head">
         <h2>۱. بارگذاری فایل</h2>
         <span class="badge">xlsx / xls</span>
@@ -45,8 +55,7 @@
       <div id="uploadMsg" class="auth-msg"></div>
     </section>
 
-    <!-- مرحله ۲: پیش‌نمایش و تحلیل -->
-    <section class="panel import-step" id="stepPreview" hidden>
+    <section class="panel import-step" id="stepPreview" data-step="2" hidden>
       <header class="panel-head">
         <h2>۲. تحلیل و مقایسه</h2>
         <span class="badge" id="previewBadge">—</span>
@@ -72,14 +81,14 @@
       <div id="applyMsg" class="auth-msg"></div>
     </section>
 
-    <!-- مرحله ۳: نتیجه -->
-    <section class="panel import-step" id="stepResult" hidden>
+    <section class="panel import-step" id="stepResult" data-step="3" hidden>
       <header class="panel-head"><h2>۳. نتیجه عملیات</h2></header>
       <div id="resultBody"></div>
     </section>
   </main>
 
   <div id="appFooter"></div>
-  <script type="module" src="js_admin-import.js"></script>
+  <script src="js/debug.js" defer></script>
+  <script type="module" src="js/admin-import.js"></script>
 </body>
 </html>
