@@ -11,6 +11,14 @@
   } catch(e) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }
+  window.__mpna = window.__mpna || { errors: [], moduleFlags: {}, start: Date.now() };
+  window.addEventListener('error', function(e){
+    window.__mpna.errors.push({ type:'error', message: e.message || String(e.error), source:(e.filename||'').split('/').pop(), line:e.lineno, time: Date.now()-window.__mpna.start });
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r = e.reason; var m = (r && (r.stack || r.message)) || String(r);
+    window.__mpna.errors.push({ type:'promise', message:m, time: Date.now()-window.__mpna.start });
+  });
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,6 +45,34 @@
     <div id="pdfList" class="pdf-list"></div>
   </main>
   <div id="appFooter"></div>
+
+  <script>
+  (function(){
+    function wire(){
+      var btns = document.querySelectorAll('[data-theme-toggle]');
+      for (var i = 0; i < btns.length; i++) {
+        (function(b){
+          if (b.__wired) return;
+          b.__wired = true;
+          b.addEventListener('click', function(ev){
+            ev.preventDefault();
+            var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+            var next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('mpna_theme', next); } catch(e){}
+          });
+        })(btns[i]);
+      }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+    var mo = new MutationObserver(wire);
+    document.addEventListener('DOMContentLoaded', function(){
+      mo.observe(document.body, { childList: true, subtree: true });
+    });
+  })();
+  </script>
+
   <script src="js/debug.js" defer></script>
   <script type="module" src="js/invitations.js"></script>
 </body>
