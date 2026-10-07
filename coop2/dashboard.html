@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>داشبورد | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="assets_logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" />
+<link rel="stylesheet" href="css_variables.css" />
+<link rel="stylesheet" href="css_base.css" />
+<link rel="stylesheet" href="css_components.css" />
+<link rel="stylesheet" href="css_layout.css" />
+<link rel="stylesheet" href="css_pages.css" />
+<link rel="stylesheet" href="css_responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+
+  <main class="container page">
+    <section class="welcome">
+      <h1>سلام، <span id="userName">—</span> 👋</h1>
+      <p class="muted">خلاصه وضعیت عضویت شما در تعاونی مسکن مپنا هوایی</p>
+    </section>
+
+    <section class="stats" id="statsGrid">
+      <div class="stat-card"><span class="stat-label">جمع پرداختی‌ها</span><strong class="stat-value" id="statPaid">—</strong><span class="stat-unit">ریال</span></div>
+      <div class="stat-card"><span class="stat-label">مانده بدهی</span><strong class="stat-value warn" id="statDebt">—</strong><span class="stat-unit">ریال</span></div>
+      <div class="stat-card"><span class="stat-label">امتیاز</span><strong class="stat-value" id="statScore">—</strong></div>
+      <div class="stat-card"><span class="stat-label">رتبه شما</span><strong class="stat-value" id="statRank">—</strong></div>
+    </section>
+
+    <section class="panel">
+      <header class="panel-head">
+        <h2>💰 پرداخت‌های من</h2>
+        <span class="badge" id="payCount">—</span>
+      </header>
+      <div class="table-wrap">
+        <table class="table" id="paymentsTable">
+          <thead><tr><th>#</th><th>مبلغ (ریال)</th><th>تاریخ واریز</th><th>توضیحات</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header class="panel-head">
+        <h2>📌 تعهدات مالی</h2>
+        <span class="badge" id="oblCount">—</span>
+      </header>
+      <div class="table-wrap">
+        <table class="table" id="obligationsTable">
+          <thead><tr><th>#</th><th>مبلغ (ریال)</th><th>سررسید</th><th>توضیحات</th><th>وضعیت</th></tr></thead>
+          <tbody><tr><td colspan="5" class="empty">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header class="panel-head">
+        <h2>🏆 جدول امتیاز اعضا</h2>
+        <span class="badge" id="membersCount">—</span>
+      </header>
+      <div class="table-wrap scoreboard-wrap">
+        <table class="table scoreboard" id="scoreboardTable">
+          <thead><tr><th>رتبه</th><th>نام و نام خانوادگی</th><th>امتیاز</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="quick-links">
+      <a class="quick-card" href="invitations.html">
+        <span class="quick-icon">📨</span>
+        <span class="quick-title">دعوت‌نامه‌ها و ابلاغیه‌ها</span>
+        <span class="quick-sub">مشاهده و دانلود</span>
+      </a>
+      <a class="quick-card" href="minutes.html">
+        <span class="quick-icon">📝</span>
+        <span class="quick-title">صورت‌جلسات</span>
+        <span class="quick-sub">مشاهده و دانلود</span>
+      </a>
+      <a class="quick-card" href="suggestions.html">
+        <span class="quick-icon">✉️</span>
+        <span class="quick-title">درخواست و پیشنهاد</span>
+        <span class="quick-sub">ارسال پیام به مدیریت</span>
+      </a>
+    </section>
+  </main>
+
+  <div id="appFooter"></div>
+  <script type="module" src="js_dashboard.js"></script>
+</body>
+</html>
