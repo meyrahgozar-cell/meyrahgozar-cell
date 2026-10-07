@@ -4283,31 +4283,148 @@ const spawnSparks = (speed, fromLeft) => {
                 habitMap.mountain = { count: mtList.length, total: mtList.length };
                 if (!habitMap.discipline) habitMap.discipline = { count: 0, total: 0 };
 
-                // leaderboard
-                let leaderboard = [];
-                if (boardRes && !boardRes.error && boardRes.data) {
-                    leaderboard = Array.isArray(boardRes.data) ? boardRes.data : [];
+                // --- leaderboard: میانگین تا دیروز + جایزه امروز ---
+                const nowLb = new Date();
+                const jNowLb = jalaali.toJalaali(nowLb.getFullYear(), nowLb.getMonth() + 1, nowLb.getDate());
+                const daysInMonthLb = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                const isCurrentMonth = selectedYear === jNowLb.jy && selectedMonth === jNowLb.jm;
+                const isFutureMonth = selectedYear > jNowLb.jy || (selectedYear === jNowLb.jy && selectedMonth > jNowLb.jm);
+                let completedDays;
+                if (isWeek) {
+                    try {
+                        const wr = selectedWeekRange();
+                        completedDays = Number(wr.completedDays) || 0;
+                    } catch (_) { completedDays = 0; }
+                } else if (isCurrentMonth) {
+                    completedDays = Math.max(0, jNowLb.jd - 1);
+                } else if (isFutureMonth) {
+                    completedDays = 0;
+                } else {
+                    completedDays = daysInMonthLb;
                 }
-                // attach calories if available
+
+                let boardData = [];
+                if (boardRes && !boardRes.error && boardRes.data) {
+                    boardData = Array.isArray(boardRes.data) ? boardRes.data : (boardRes.data.rows || boardRes.data.leaderboard || []);
+                    if (!Array.isArray(boardData)) boardData = [];
+                }
+
+                // برای ماه جاری: لیدربورد تا دیروز (اگر endForBoard درست نبود دوباره)
+                if (!isWeek && isCurrentMonth && completedDays > 0) {
+                    try {
+                        const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
+                        const endCompleted = g.gy + "-" + String(g.gm).padStart(2, "0") + "-" + String(g.gd).padStart(2, "0");
+                        const boardCompleted = await safeRpc("get_monthly_leaderboard", {
+                            p_start: monthRange.start,
+                            p_end: endCompleted
+                        });
+                        if (boardCompleted && !boardCompleted.error && boardCompleted.data) {
+                            const bd = Array.isArray(boardCompleted.data) ? boardCompleted.data : [];
+                            if (bd.length) boardData = bd;
+                        }
+                    } catch (e) { console.warn("board completed", e); }
+                } else if (!isWeek && isCurrentMonth && completedDays === 0) {
+                    boardData = [];
+                }
+
+                // جایزه فعالیت امروز
+                const todayISO = isoDate(nowLb);
+                const todayActive = new Set();
+                if (isCurrentMonth || isWeek) {
+                    try {
+                        const act = await safeRpc("get_today_active_users", { p_today: todayISO });
+                        if (act && !act.error && act.data) {
+                            const arr = typeof act.data === "string" ? JSON.parse(act.data) : act.data;
+                            (Array.isArray(arr) ? arr : []).forEach(id => todayActive.add(String(id)));
+                        }
+                    } catch (e) { /* optional */ }
+                }
+
+                let leaderboard = boardData.map(u => {
+                    const totalScore = Number(u.total_score != null ? u.total_score : u.totalScore) || 0;
+                    const uid = u.user_id;
+                    const bonus = (todayActive.has(String(uid))) ? 1 : 0;
+                    const baseAvg = completedDays > 0 ? totalScore / completedDays : 0;
+                    const avg = Math.round((baseAvg + bonus) * 100) / 100;
+                    return {
+                        ...u,
+                        user_id: uid,
+                        display_name: u.display_name || u.name || "کاربر",
+                        total_score: totalScore,
+                        totalScore,
+                        avg,
+                        bonus,
+                        completedDays,
+                        month_km: Number(u.month_km != null ? u.month_km : u.total_km) || 0,
+                        month_cal: Number(u.month_cal != null ? u.month_cal : u.total_cal) || 0
+                    };
+                });
+
+                // فقط امروز فعال
+                if (todayActive.size) {
+                    const onBoard = new Set(leaderboard.map(u => String(u.user_id)));
+                    const missing = [...todayActive].filter(id => !onBoard.has(String(id)));
+                    if (missing.length) {
+                        let nameMap = {};
+                        try {
+                            const pr = await db.from("profiles").select("id, display_name").in("id", missing);
+                            (pr.data || []).forEach(p => {
+                                nameMap[p.id] = p.display_name;
+                                nameMap[String(p.id)] = p.display_name;
+                            });
+                        } catch (_) {}
+                        missing.forEach(uid => {
+                            leaderboard.push({
+                                user_id: uid,
+                                display_name: nameMap[uid] || nameMap[String(uid)] || "کاربر",
+                                total_score: 0,
+                                totalScore: 0,
+                                avg: 1,
+                                bonus: 1,
+                                completedDays,
+                                month_km: 0,
+                                month_cal: 0
+                            });
+                        });
+                    }
+                }
+
+                // نام‌های خالی
+                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "کاربر");
+                if (needNames.length) {
+                    try {
+                        const ids = needNames.map(u => u.user_id);
+                        const pr = await db.from("profiles").select("id, display_name").in("id", ids);
+                        const map = {};
+                        (pr.data || []).forEach(p => {
+                            if (p.display_name) {
+                                map[p.id] = p.display_name;
+                                map[String(p.id)] = p.display_name;
+                            }
+                        });
+                        leaderboard.forEach(u => {
+                            const n = map[u.user_id] || map[String(u.user_id)];
+                            if (n) u.display_name = n;
+                        });
+                    } catch (_) {}
+                }
+
+                // کالری
                 if (calRes && !calRes.error && calRes.data) {
                     const calMap = {};
                     (Array.isArray(calRes.data) ? calRes.data : []).forEach(r => {
-                        calMap[r.user_id] = Number(r.total_cal || r.month_cal || r.calories) || 0;
+                        const id = r.user_id;
+                        calMap[id] = Number(r.total_cal || r.month_cal || r.calories) || 0;
+                        calMap[String(id)] = calMap[id];
                     });
-                    leaderboard = leaderboard.map(u => ({
-                        ...u,
-                        month_cal: calMap[u.user_id] != null ? calMap[u.user_id] : (u.month_cal || 0)
-                    }));
+                    leaderboard.forEach(u => {
+                        const c = calMap[u.user_id] != null ? calMap[u.user_id] : calMap[String(u.user_id)];
+                        if (c != null) u.month_cal = c;
+                    });
                 }
-                // normalize fields
-                leaderboard = leaderboard.map(u => ({
-                    ...u,
-                    display_name: u.display_name || u.name || "کاربر",
-                    avg: Number(u.avg != null ? u.avg : u.avg_score) || 0,
-                    totalScore: Number(u.totalScore != null ? u.totalScore : u.total_score) || 0,
-                    month_km: Number(u.month_km != null ? u.month_km : u.total_km) || 0,
-                    month_cal: Number(u.month_cal) || 0
-                }));
+
+                // مرتب‌سازی پیش‌فرض بر اساس امتیاز
+                leaderboard.sort((a, b) => (Number(b.avg) || 0) - (Number(a.avg) || 0));
 
                 // km info
                 const myKm = (exRes.data || []).reduce((s, r) => s + (Number(r.total_km) || Number(r.running_km) || 0), 0);
@@ -4507,8 +4624,14 @@ const spawnSparks = (speed, fromLeft) => {
                 ? scoreText(Math.round(metricAvg)) + " kcal"
                 : scoreText(Math.round(metricAvg * 100) / 100);
 
-            const top3 = leaderboard.slice(0, 3);
-            const rest = leaderboard.slice(3);
+            // مرتب‌سازی بر اساس معیار انتخاب‌شده
+            const sortedBoard = [...(leaderboard || [])].sort((a, b) => {
+                if (rankBy === "km") return (Number(b.month_km) || 0) - (Number(a.month_km) || 0);
+                if (rankBy === "cal") return (Number(b.month_cal) || 0) - (Number(a.month_cal) || 0);
+                return (Number(b.avg) || 0) - (Number(a.avg) || 0);
+            });
+            const top3 = sortedBoard.slice(0, 3);
+            const rest = sortedBoard.slice(3);
 
             let podiumHtml = "";
             if (top3.length === 0) {
@@ -4533,7 +4656,12 @@ const spawnSparks = (speed, fromLeft) => {
                     const place = placeMap[i];
                     const medal = medalMap[i];
                     const name = u.display_name || "کاربر";
-                    const sc = u.avg != null ? u.avg : 0;
+                    const sc = rankBy === "km" ? (Number(u.month_km) || 0)
+                        : rankBy === "cal" ? (Number(u.month_cal) || 0)
+                        : (u.avg != null ? u.avg : 0);
+                    const scLabel = rankBy === "km" ? (scoreText(Math.round(sc * 100) / 100) + " km")
+                        : rankBy === "cal" ? (scoreText(Math.round(sc)) + " kcal")
+                        : scoreText(sc);
                     const num = place === "first" ? "۱" : place === "second" ? "۲" : "۳";
                     const uid = u.user_id || "";
                     const adminBtn = isAdmin && uid ?
@@ -4557,7 +4685,7 @@ const spawnSparks = (speed, fromLeft) => {
                             : "—")
                         : scoreText(sc)}</div>
                       <div class="podium-km km-glow ${(Number(u.month_km)||0) > 0 || (Number(u.month_cal)||0) > 0 ? "" : "zero"}">${rankBy === "km"
-                        ? `امتیاز ${scoreText(sc)}`
+                        ? `امتیاز ${scLabel}`
                         : rankBy === "cal"
                         ? `امتیاز ${scoreText(sc)}`
                         : ((Number(u.month_km)||0) > 0
