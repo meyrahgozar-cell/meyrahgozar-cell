@@ -1,6 +1,5 @@
 /* ==========================================================================
-   Base — fonts, reset, typography
-   Estedad (SIL OFL 1.1), self-hosted: Persian/Arabic + Latin subsets.
+   Base — fonts, reset, typography, brick background, roaming seam light
    ========================================================================== */
 @font-face { font-family: 'Estedad'; font-style: normal; font-weight: 400; font-display: swap;
   src: url('../assets/fonts/estedad-arabic-400-normal.woff2') format('woff2');
@@ -27,35 +26,63 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  background-color: var(--brick-bg);
+  background-image: var(--brick-image);
+  background-position: 2px 1px, 23px 16px, 48px 15px, 21px 30px;
+  background-size: 48px 30px;
+  background-attachment: fixed;
+}
 html, body { margin: 0; padding: 0; min-height: 100%; }
 
 body {
   --c: var(--brand-rgb);
   display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
   font-family: var(--font-fa);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.85;
+  font-size: 1rem; font-weight: 400; line-height: 1.85;
   color: var(--text);
-  background: var(--bg);
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  transition: background-color var(--trans), color var(--trans);
+  transition: color var(--trans);
+  overflow-x: hidden;
 }
 
-/* Ambient light behind everything */
-body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: var(--bg-ambient);
+/* Roaming seam light */
+body::after {
+  content: "";
+  position: fixed; left: 0; top: 0;
+  width: 640px; height: 640px;
+  margin: -320px 0 0 -320px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(var(--brand-rgb), .30) 0%,
+    rgba(var(--aqua-rgb), .14) 35%,
+    transparent 72%);
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  will-change: transform;
+  animation: seamRoam 34s ease-in-out infinite;
+}
+@keyframes seamRoam {
+  0%   { transform: translate(10vw, 8vh); }
+  12%  { transform: translate(82vw, 22vh); }
+  24%  { transform: translate(58vw, 72vh); }
+  36%  { transform: translate(92vw, 92vh); }
+  48%  { transform: translate(34vw, 58vh); }
+  62%  { transform: translate(8vw, 88vh); }
+  75%  { transform: translate(68vw, 38vh); }
+  88%  { transform: translate(24vw, 18vh); }
+  100% { transform: translate(10vw, 8vh); }
 }
 
-/* Links */
 a { color: var(--brand); text-decoration: none; transition: color var(--trans), text-shadow var(--trans); }
 a:hover { text-shadow: 0 0 .7em rgba(var(--brand-rgb), calc(var(--tg1) * .8)); }
 img, svg { max-width: 100%; display: block; }
 
-/* Headings — page titles carry the glow */
 h1, h2, h3, h4 { margin: 0 0 .4em; line-height: 1.4; color: var(--text-strong); }
 h1 {
   font-size: clamp(1.55rem, 1.1rem + 1.6vw, 2.1rem);
@@ -79,12 +106,9 @@ strong, b { font-weight: 700; }
 }
 
 ::selection { background: rgba(var(--brand-rgb), .38); color: var(--text-strong); }
-
-/* Keyboard focus */
 :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 :focus:not(:focus-visible) { outline: none; }
 
-/* Scrollbars */
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -96,4 +120,5 @@ strong, b { font-weight: 700; }
     animation-duration: .01ms !important; animation-iteration-count: 1 !important;
     transition-duration: .01ms !important; scroll-behavior: auto !important;
   }
+  body::after { display: none; }
 }
