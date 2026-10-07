@@ -29,6 +29,25 @@
       </div>
     </header>
 
+    <!-- Config presets -->
+    <section class="panel">
+      <header class="panel-head">
+        <h2>تنظیمات ذخیره‌شده</h2>
+        <span class="badge" id="cfgBadge">—</span>
+      </header>
+      <div class="toolbar">
+        <select id="cfgSelect" style="min-height:38px;max-width:240px">
+          <option value="">— انتخاب تنظیمات —</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" type="button" id="cfgLoad">بارگذاری</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="cfgSave">
+          <i class="i i-save" aria-hidden="true"></i> ذخیره تنظیمات فعلی
+        </button>
+        <button class="btn btn-ghost btn-sm" type="button" id="cfgDelete">حذف</button>
+      </div>
+      <div class="hint">نام تنظیمات و نگاشت ستون‌ها برای استفاده‌های بعدی ذخیره می‌شود.</div>
+    </section>
+
     <!-- مرحله ۱: بارگذاری -->
     <section class="panel import-step" id="stepUpload">
       <header class="panel-head">
@@ -47,7 +66,7 @@
       <div id="uploadMsg" class="auth-msg"></div>
     </section>
 
-    <!-- مرحله ۲: پیش‌نمایش و تحلیل -->
+    <!-- مرحله ۲: تحلیل -->
     <section class="panel import-step" id="stepPreview" hidden>
       <header class="panel-head">
         <h2>۲. تحلیل و مقایسه</h2>
@@ -65,8 +84,8 @@
       <div class="tab-panels" id="diffPanels"></div>
 
       <div class="form-actions import-actions">
-        <button class="btn btn-ghost" id="cancelImport">انصراف</button>
-        <button class="btn btn-primary" id="applyImport">
+        <button class="btn btn-ghost" id="cancelImport" type="button">انصراف</button>
+        <button class="btn btn-primary" id="applyImport" type="button">
           <span class="btn-text">اعمال تغییرات</span>
           <span class="spinner" hidden></span>
         </button>
