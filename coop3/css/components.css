@@ -178,13 +178,14 @@ input:focus, textarea:focus, select:focus {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  background: rgba(var(--brand-rgb), .015);
 }
 .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .93rem; }
 .table thead th {
   position: sticky; top: 0; z-index: 1;
   padding: .8rem 1rem; text-align: right; white-space: nowrap;
   font-size: .8rem; font-weight: 700; color: var(--muted);
-  background: var(--surface-2);
+  background: color-mix(in oklab, var(--surface-2) 88%, transparent);
   border-bottom: 1px solid var(--line);
 }
 .table tbody td {
@@ -254,3 +255,40 @@ input:focus, textarea:focus, select:focus {
 .auth-msg.warn  { --c: var(--warning-rgb); }
 .auth-msg.error::before { -webkit-mask-image: var(--svg-alert-triangle); mask-image: var(--svg-alert-triangle); }
 .auth-msg.ok::before    { -webkit-mask-image: var(--svg-check-circle);   mask-image: var(--svg-check-circle); }
+
+/* ==========================================================================
+   Glass — single block that blurs every translucent surface across the app.
+   Backgrounds stay where they belong (panels → components.css, cards → pages.css,
+   dropzone → import.css, etc.); only the backdrop-filter lives here so the fixed
+   grid pattern reads through each layer without duplicating rules.
+   ========================================================================== */
+.panel,
+.tile,
+.table-wrap,
+.user-chip,
+.theme-toggle,
+.stat-card,
+.quick-card,
+.pdf-item,
+.auth-shell,
+.dropzone,
+.diff-card,
+.result-box,
+input[type="text"], input[type="password"], input[type="email"],
+input[type="tel"], input[type="number"], textarea, select {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+}
+
+/* Inputs get a lighter blur — heavy blur under a text box hurts readability. */
+input[type="text"], input[type="password"], input[type="email"],
+input[type="tel"], input[type="number"], textarea, select {
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+          backdrop-filter: blur(10px) saturate(150%);
+}
+
+/* Sticky table headers get their own blur layer so scrolling looks correct. */
+.table thead th {
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+          backdrop-filter: blur(12px) saturate(160%);
+}
