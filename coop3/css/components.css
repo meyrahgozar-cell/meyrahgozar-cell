@@ -185,7 +185,7 @@ input:focus, textarea:focus, select:focus {
   position: sticky; top: 0; z-index: 1;
   padding: .8rem 1rem; text-align: right; white-space: nowrap;
   font-size: .8rem; font-weight: 700; color: var(--muted);
-  background: color-mix(in oklab, var(--surface-2) 88%, transparent);
+  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
   border-bottom: 1px solid var(--line);
 }
 .table tbody td {
@@ -257,10 +257,11 @@ input:focus, textarea:focus, select:focus {
 .auth-msg.ok::before    { -webkit-mask-image: var(--svg-check-circle);   mask-image: var(--svg-check-circle); }
 
 /* ==========================================================================
-   Glass — single block that blurs every translucent surface across the app.
-   Backgrounds stay where they belong (panels → components.css, cards → pages.css,
-   dropzone → import.css, etc.); only the backdrop-filter lives here so the fixed
-   grid pattern reads through each layer without duplicating rules.
+   Glass — the ONLY place backdrop-filter lives.
+   Every translucent surface across the app gets the same treatment, driven by
+   --glass-blur / --glass-sat. Blur is intentionally small (10px) so the fixed
+   grid pattern stays visible *through* the panels rather than being smeared
+   into a flat colour.
    ========================================================================== */
 .panel,
 .tile,
@@ -273,22 +274,37 @@ input:focus, textarea:focus, select:focus {
 .auth-shell,
 .dropzone,
 .diff-card,
-.result-box,
-input[type="text"], input[type="password"], input[type="email"],
-input[type="tel"], input[type="number"], textarea, select {
+.result-box {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
           backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
 }
 
-/* Inputs get a lighter blur — heavy blur under a text box hurts readability. */
+/* Inputs and table headers sit on a *lighter* blur — heavy blur under text
+   hurts legibility and, more visibly here, wipes out the pattern behind. */
 input[type="text"], input[type="password"], input[type="email"],
 input[type="tel"], input[type="number"], textarea, select {
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-          backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(6px) saturate(130%);
+          backdrop-filter: blur(6px) saturate(130%);
+}
+.table thead th {
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+          backdrop-filter: blur(6px) saturate(140%);
 }
 
-/* Sticky table headers get their own blur layer so scrolling looks correct. */
-.table thead th {
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-          backdrop-filter: blur(12px) saturate(160%);
+/* A faint inner outline keeps glass panels readable over the grid without
+   needing an opaque background to do the work. */
+.panel,
+.stat-card,
+.quick-card,
+.pdf-item,
+.auth-shell {
+  outline: 1px solid rgba(255, 255, 255, .03);
+  outline-offset: -1px;
+}
+html[data-theme="light"] .panel,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .quick-card,
+html[data-theme="light"] .pdf-item,
+html[data-theme="light"] .auth-shell {
+  outline-color: rgba(0, 0, 0, .03);
 }
