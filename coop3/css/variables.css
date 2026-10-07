@@ -1,6 +1,7 @@
 /* ==========================================================================
-   Design tokens — "Night Flight"
+   Design tokens — "Night Flight · Glass"
    Dark is the default: lifted midnight slate (not black) with sky + aqua light.
+   Glass system: translucent surfaces + backdrop-blur over a fixed grid pattern.
    Glow system: every glow is built from an RGB triplet (--c) and per-theme
    intensities (--tg* for text, --bg* for boxes), so light theme can calm it down.
    ========================================================================== */
@@ -24,14 +25,32 @@
 html[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Surfaces */
-  --bg: #1b2236;
-  --surface: #232c47;
-  --surface-2: #2b3556;
-  --surface-3: #364270;
-  --header-bg: rgba(27, 34, 54, .74);
-  --line: rgba(165, 185, 240, .15);
-  --line-strong: rgba(165, 185, 240, .28);
+  /* ---- Fixed background pattern (user-supplied grid) ---- */
+  --pattern-bg: #121212;
+  --pattern-line: #222222;
+  --pattern-shadow: #181818;
+  --bg-pattern:
+    linear-gradient(163deg, transparent 0px, transparent 1px, var(--pattern-line) 1px, var(--pattern-line) 14px, transparent 14px),
+    linear-gradient(161deg, transparent 0px, var(--pattern-shadow) 1px, var(--pattern-line) 2px, var(--pattern-line) 15px, transparent 15px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, var(--pattern-line) 1px, var(--pattern-line) 14px, transparent 14px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, var(--pattern-line) 1px, var(--pattern-line) 14px, transparent 14px);
+  --bg-pattern-position: 2px 1px, 23px 16px, 48px 15px, 21px 30px;
+  --bg-pattern-size: 48px 30px;
+
+  --bg: var(--pattern-bg);
+
+  /* ---- Glass ---- */
+  --glass-blur: 22px;
+  --glass-sat: 165%;
+
+  /* Surfaces — translucent so the pattern reads through every panel */
+  --surface:   rgba(38, 46, 72, .42);
+  --surface-2: rgba(48, 58, 88, .34);
+  --surface-3: rgba(60, 72, 108, .46);
+  --header-bg: rgba(18, 22, 36, .48);
+
+  --line: rgba(165, 185, 240, .14);
+  --line-strong: rgba(165, 185, 240, .24);
 
   /* Text */
   --text-strong: #f6f9ff;
@@ -57,30 +76,43 @@ html[data-theme="dark"] {
 
   /* Depth */
   --bg-ambient:
-    radial-gradient(1000px 560px at 88% -14%, rgba(94, 184, 255, .17), transparent 64%),
-    radial-gradient(760px 480px at 4% 6%, rgba(54, 224, 214, .075), transparent 62%),
-    radial-gradient(1100px 520px at 50% 122%, rgba(255, 150, 90, .10), transparent 62%);
-  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, 0) 56px);
-  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .06), 0 24px 48px -30px rgba(3, 7, 20, .85);
-  --shadow-pop: 0 34px 70px -30px rgba(3, 7, 20, .9);
+    radial-gradient(900px 520px at 88% -14%, rgba(94, 184, 255, .16), transparent 66%),
+    radial-gradient(700px 440px at 4% 6%, rgba(54, 224, 214, .07), transparent 62%),
+    radial-gradient(1000px 480px at 50% 122%, rgba(255, 150, 90, .09), transparent 62%);
+
+  /* Top-edge sheen for glass panels */
+  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .02) 42px, transparent 90px);
+
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .13), 0 18px 40px -28px rgba(0, 0, 0, .65);
+  --shadow-pop:   0 28px 64px -30px rgba(0, 0, 0, .75);
   --field-bg: rgba(14, 20, 38, .38);
 
   /* Table / diff tints */
-  --row-hover: rgba(94, 184, 255, .06);
-  --row-new: rgba(70, 230, 164, .09);
-  --row-changed: rgba(255, 184, 77, .09);
-  --row-missing: rgba(143, 156, 192, .08);
-  --row-error: rgba(255, 107, 129, .09);
+  --row-hover:   rgba(94, 184, 255, .07);
+  --row-new:     rgba(70, 230, 164, .10);
+  --row-changed: rgba(255, 184, 77, .10);
+  --row-missing: rgba(143, 156, 192, .09);
+  --row-error:   rgba(255, 107, 129, .10);
 }
 
 html[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #edf1f9;
-  --surface: #ffffff;
-  --surface-2: #f2f5fc;
-  --surface-3: #e6ecf7;
-  --header-bg: rgba(237, 241, 249, .82);
+  /* Light variant of the same grid pattern */
+  --pattern-bg: #eef1f7;
+  --pattern-line: #dbe2ee;
+  --pattern-shadow: #e4e9f3;
+
+  --bg: var(--pattern-bg);
+
+  --glass-blur: 22px;
+  --glass-sat: 175%;
+
+  --surface:   rgba(255, 255, 255, .55);
+  --surface-2: rgba(255, 255, 255, .42);
+  --surface-3: rgba(255, 255, 255, .68);
+  --header-bg: rgba(238, 241, 247, .55);
+
   --line: rgba(28, 52, 120, .12);
   --line-strong: rgba(28, 52, 120, .22);
 
@@ -104,16 +136,18 @@ html[data-theme="light"] {
   --bg1: .26;  --bg2: .12;
 
   --bg-ambient:
-    radial-gradient(900px 520px at 90% -12%, rgba(27, 98, 211, .10), transparent 64%),
+    radial-gradient(900px 520px at 90% -12%, rgba(27, 98, 211, .10), transparent 66%),
     radial-gradient(700px 440px at 2% 4%, rgba(11, 135, 176, .07), transparent 62%);
-  --panel-sheen: none;
-  --shadow-panel: 0 1px 2px rgba(23, 43, 99, .06), 0 18px 36px -24px rgba(23, 43, 99, .30);
-  --shadow-pop: 0 34px 64px -30px rgba(23, 43, 99, .38);
-  --field-bg: #ffffff;
 
-  --row-hover: rgba(27, 98, 211, .05);
-  --row-new: rgba(12, 127, 88, .09);
-  --row-changed: rgba(154, 90, 0, .09);
-  --row-missing: rgba(92, 106, 142, .08);
-  --row-error: rgba(192, 35, 63, .08);
+  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .18) 42px, transparent 90px);
+
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, .85), 0 14px 34px -24px rgba(23, 43, 99, .25);
+  --shadow-pop:   0 34px 64px -30px rgba(23, 43, 99, .30);
+  --field-bg: rgba(255, 255, 255, .55);
+
+  --row-hover:   rgba(27, 98, 211, .06);
+  --row-new:     rgba(12, 127, 88, .10);
+  --row-changed: rgba(154, 90, 0, .10);
+  --row-missing: rgba(92, 106, 142, .09);
+  --row-error:   rgba(192, 35, 63, .09);
 }
