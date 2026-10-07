@@ -18,8 +18,9 @@
 }
 
 /* =========================================================
-   DARK — Aurora Dusk  (deep slate, NOT black)
+   DARK — Aurora Dusk  (پیش‌فرض، بدون JS هم کار می‌کند)
    ========================================================= */
+:root,
 html[data-theme="dark"] {
   --bg: #0f1117;
   --bg-elevated: #14161f;
@@ -83,7 +84,7 @@ html[data-theme="dark"] {
 }
 
 /* =========================================================
-   LIGHT — Warm Linen  (warm, rich, readable)
+   LIGHT — Warm Linen
    ========================================================= */
 html[data-theme="light"] {
   --bg: #f5f2ec;
