@@ -908,12 +908,31 @@ a.icon-btn.call-btn {
 .record-chip-value {
   font-size: 18px;
   font-weight: 800;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.record-chip-value .m-num {
+  direction: ltr;
+  unicode-bidi: isolate;
   background: linear-gradient(90deg, #e8d6ff, #7ef9ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  direction: ltr;
-  unicode-bidi: isolate;
+  font-weight: 800;
+}
+.record-chip-value .m-unit {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(126, 249, 255, 0.85);
+}
+.record-chip-value .m-empty {
+  background: linear-gradient(90deg, #e8d6ff, #7ef9ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .record-modal-overlay {
   position: fixed;
@@ -1923,13 +1942,23 @@ async function loadPersonalRecords() {
     personalRecords = { maxKm, maxKmDate, maxPages, maxPagesDate, totalKm, totalPages };
     const fmt = (n, d=1) => {
       const x = Number(n) || 0;
-      return fa(x % 1 === 0 ? String(Math.round(x)) : x.toFixed(d));
+      if (d === 0) return fa(String(Math.round(x)));
+      const fixed = Number(x.toFixed(d));
+      return fa(fixed % 1 === 0 ? String(Math.round(fixed)) : String(fixed));
     };
-    const el = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
-    el("recMaxKm", maxKm > 0 ? fmt(maxKm) + " km" : "—");
-    el("recMaxPages", maxPages > 0 ? fmt(maxPages, 0) : "—");
-    el("recTotalKm", totalKm > 0 ? fmt(totalKm) + " km" : "—");
-    el("recTotalPages", totalPages > 0 ? fmt(totalPages, 0) : "—");
+    const setMetric = (id, num, unit) => {
+      const n = document.getElementById(id);
+      if (!n) return;
+      if (!(Number(num) > 0)) {
+        n.innerHTML = '<span class="m-empty">—</span>';
+        return;
+      }
+      n.innerHTML = `<span class="m-num">${fmt(num, unit === "صفحه" ? 0 : 1)}</span><span class="m-unit">${unit}</span>`;
+    };
+    setMetric("recMaxKm", maxKm, "km");
+    setMetric("recMaxPages", maxPages, "صفحه");
+    setMetric("recTotalKm", totalKm, "km");
+    setMetric("recTotalPages", totalPages, "صفحه");
   } catch (e) {
     console.warn("records", e);
   }
