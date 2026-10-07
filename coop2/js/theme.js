@@ -1,4 +1,4 @@
-import { CONFIG } from './js_config.js';
+import { CONFIG } from './config.js';
 const KEY = CONFIG.storageKeys.theme;
 
 export function getStoredTheme() {
