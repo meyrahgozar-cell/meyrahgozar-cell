@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ورود | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="assets_logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" />
+<link rel="stylesheet" href="css_variables.css" />
+<link rel="stylesheet" href="css_base.css" />
+<link rel="stylesheet" href="css_components.css" />
+<link rel="stylesheet" href="css_layout.css" />
+<link rel="stylesheet" href="css_pages.css" />
+<link rel="stylesheet" href="css_responsive.css" />
+</head>
+<body class="auth-body">
+  <div class="auth-bg"></div>
+  <button class="theme-toggle auth-theme-toggle" data-theme-toggle aria-label="تغییر تم">
+    <span class="theme-icon"></span>
+  </button>
+
+  <main class="auth-shell">
+    <section class="auth-card" role="main">
+      <header class="auth-head">
+        <div class="auth-logo"><img src="assets_logo.svg" alt="لوگو" /></div>
+        <h1>تعاونی مسکن مپنا هوایی</h1>
+        <p class="auth-sub">ورود به سامانه اعضا</p>
+      </header>
+
+      <form id="loginForm" class="auth-form" autocomplete="on" novalidate>
+        <div class="field">
+          <label for="nationalId">کد ملی</label>
+          <div class="input-wrap">
+            <input id="nationalId" name="nationalId" type="text" inputmode="numeric"
+                   pattern="\d{10}" maxlength="10" placeholder="۱۰ رقم کد ملی" required />
+            <span class="input-icon">#</span>
+          </div>
+          <small class="hint">کد ملی ۱۰ رقمی خود را وارد کنید</small>
+        </div>
+
+        <div class="field">
+          <label for="password">رمز عبور</label>
+          <div class="input-wrap">
+            <input id="password" name="password" type="password" placeholder="رمز عبور اولیه" required />
+            <button type="button" class="pass-toggle" id="passToggle" aria-label="نمایش/مخفی">
+              <span class="eye-open">👁</span>
+            </button>
+          </div>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" id="remember" />
+          <span>مرا به خاطر بسپار</span>
+        </label>
+
+        <div id="authMsg" class="auth-msg" role="alert"></div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+          <span class="btn-text">ورود</span>
+          <span class="spinner" hidden></span>
+        </button>
+      </form>
+
+      <footer class="auth-foot">
+        <p>© <span id="year"></span> تعاونی مسکن مپنا هوایی</p>
+        <p class="tiny">پشتیبانی: <a href="mailto:Mani.alir1990@gmail.com">Mani.alir1990@gmail.com</a></p>
+      </footer>
+    </section>
+
+    <aside class="auth-side" aria-hidden="true">
+      <div class="auth-side-inner">
+        <h2>خوش آمدید</h2>
+        <p>با ورود به سامانه می‌توانید اطلاعات پرداخت‌ها، تعهدات، رتبه امتیاز و ابلاغیه‌ها را مشاهده کنید.</p>
+        <ul class="auth-features">
+          <li>مشاهده پرداخت‌ها و مانده بدهی</li>
+          <li>جدول تعهدات و سررسیدها</li>
+          <li>رتبه‌بندی امتیاز اعضا</li>
+          <li>دعوت‌نامه‌ها و صورت‌جلسات</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="js_login.js"></script>
+</body>
+</html>
