@@ -1,48 +1,52 @@
-import { requireAuth } from './auth.js';
+import { requireAdmin } from './auth.js';
 import { renderLayout } from './layout.js';
 import { parseExcel } from './excel-parser.js';
 import { compareWithDatabase, applyChanges } from './importer.js';
+import {
+  listImportConfigs, upsertImportConfig, logAudit
+} from './supabase-client.js';
 import { $, el, faNum, formatMoney, setBtnLoading, showMsg, escapeHtml } from './utils.js';
 import { formatJalali } from './jalali.js';
 
-const user = requireAuth();
+const user = requireAdmin();
 if (user) renderLayout();
 
 const state = {
   parsed: null,
   report: null,
-  activeTab: 'members'
+  activeTab: 'members',
+  configs: [],
+  currentConfigId: null
 };
 
-const stepUpload = $('#stepUpload');
-const stepPreview = $('#stepPreview');
-const stepResult = $('#stepResult');
-stepUpload.dataset.step = '1';
-stepPreview.dataset.step = '2';
-stepResult.dataset.step = '3';
-
-const dropzone = $('#dropzone');
-const fileInput = $('#fileInput');
-const uploadMsg = $('#uploadMsg');
-const previewBadge = $('#previewBadge');
-const diffSummary = $('#diffSummary');
-const diffPanels = $('#diffPanels');
-const applyBtn = $('#applyImport');
-const cancelBtn = $('#cancelImport');
-const applyMsg = $('#applyMsg');
-const resultBody = $('#resultBody');
+const stepUpload     = $('#stepUpload');
+const stepPreview    = $('#stepPreview');
+const stepResult     = $('#stepResult');
+const dropzone       = $('#dropzone');
+const fileInput      = $('#fileInput');
+const uploadMsg      = $('#uploadMsg');
+const previewBadge   = $('#previewBadge');
+const diffSummary    = $('#diffSummary');
+const diffPanels     = $('#diffPanels');
+const applyBtn       = $('#applyImport');
+const cancelBtn      = $('#cancelImport');
+const applyMsg       = $('#applyMsg');
+const resultBody     = $('#resultBody');
+const cfgSelect      = $('#cfgSelect');
+const cfgBadge       = $('#cfgBadge');
+const cfgLoadBtn     = $('#cfgLoad');
+const cfgSaveBtn     = $('#cfgSave');
+const cfgDeleteBtn   = $('#cfgDelete');
 
 /* ---------- Dropzone ---------- */
 dropzone.addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
 });
-['dragenter', 'dragover'].forEach(ev => {
-  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('is-drag'); });
-});
-['dragleave', 'drop'].forEach(ev => {
-  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('is-drag'); });
-});
+['dragenter', 'dragover'].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('is-drag'); }));
+['dragleave', 'drop'].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('is-drag'); }));
 dropzone.addEventListener('drop', (e) => {
   const f = e.dataTransfer.files?.[0];
   if (f) handleFile(f);
@@ -75,7 +79,96 @@ document.addEventListener('click', (e) => {
   btn.textContent = isOpen ? 'مشاهده جزئیات' : 'بستن جزئیات';
 });
 
-/* ---------- Handlers ---------- */
+/* ---------- Configs ---------- */
+async function loadConfigs() {
+  try {
+    state.configs = await listImportConfigs();
+    renderConfigOptions();
+  } catch (err) {
+    console.warn('configs load failed:', err);
+  }
+}
+
+function renderConfigOptions() {
+  cfgSelect.innerHTML = '<option value="">— انتخاب تنظیمات —</option>';
+  state.configs.forEach(c => {
+    cfgSelect.appendChild(el('option', { value: String(c.id) }, c.name));
+  });
+  cfgBadge.textContent = faNum(state.configs.length) + ' تنظیم';
+}
+
+cfgLoadBtn.addEventListener('click', () => {
+  const id = Number(cfgSelect.value);
+  if (!id) { showMsg(uploadMsg, 'تنظیماتی انتخاب نشده است.', 'warn'); return; }
+  const cfg = state.configs.find(c => c.id === id);
+  if (!cfg) return;
+  state.currentConfigId = cfg.id;
+  applyConfig(cfg);
+  showMsg(uploadMsg, `تنظیمات «${cfg.name}» بارگذاری شد.`, 'ok');
+});
+
+cfgSaveBtn.addEventListener('click', async () => {
+  const name = prompt('نام تنظیمات:', `تنظیمات ${new Date().toLocaleDateString('fa-IR')}`);
+  if (!name) return;
+  const payload = {
+    name,
+    table_name: 'workbook',
+    mapping: {
+      members: { key: 'national_id' },
+      payments: { key: 'national_id' },
+      obligations: { key: 'national_id' }
+    },
+    options: {
+      saveFileStructure: false,
+      tabs: ['members', 'payments', 'obligations']
+    }
+  };
+  try {
+    const row = await upsertImportConfig(payload);
+    await logAudit({
+      actor_id: user.id, actor_name: `${user.first_name} ${user.last_name}`,
+      action: 'save-import-config', target_table: 'import_configs',
+      details: { name }
+    });
+    state.configs = await listImportConfigs();
+    renderConfigOptions();
+    if (row) cfgSelect.value = String(row.id);
+    showMsg(uploadMsg, 'تنظیمات ذخیره شد.', 'ok');
+  } catch (err) {
+    showMsg(uploadMsg, 'خطا در ذخیره: ' + err.message, 'error');
+  }
+});
+
+cfgDeleteBtn.addEventListener('click', async () => {
+  const id = Number(cfgSelect.value);
+  if (!id) { showMsg(uploadMsg, 'تنظیماتی انتخاب نشده است.', 'warn'); return; }
+  if (!confirm('این تنظیمات حذف شود؟')) return;
+  try {
+    const cfg = state.configs.find(c => c.id === id);
+    if (cfg) {
+      const { supabase } = await import('./supabase-client.js');
+      await supabase.from('import_configs').delete().eq('id', id);
+      state.configs = await listImportConfigs();
+      renderConfigOptions();
+      showMsg(uploadMsg, 'تنظیمات حذف شد.', 'ok');
+    }
+  } catch (err) {
+    showMsg(uploadMsg, 'خطا در حذف: ' + err.message, 'error');
+  }
+});
+
+function applyConfig(cfg) {
+  const opts = cfg.options || {};
+  if (Array.isArray(opts.tabs) && opts.tabs.length) {
+    // reorder / restrict tabs
+    const wanted = new Set(opts.tabs);
+    document.querySelectorAll('#diffTabs .tab').forEach(t => {
+      t.style.display = wanted.has(t.dataset.tab) ? '' : 'none';
+    });
+  }
+}
+
+/* ---------- Handle file ---------- */
 async function handleFile(file) {
   showMsg(uploadMsg, '');
   if (!/\.(xlsx|xls)$/i.test(file.name)) {
@@ -97,7 +190,6 @@ async function handleFile(file) {
     const report = await compareWithDatabase(parsed);
     state.report = report;
 
-    stepUpload.hidden = false;
     stepPreview.hidden = false;
     stepResult.hidden = true;
     renderReport(report);
@@ -110,14 +202,14 @@ async function handleFile(file) {
   }
 }
 
+/* ---------- Render report ---------- */
 function renderReport(report) {
-  // Summary
   diffSummary.innerHTML = '';
   const cards = [
-    { key: 'new',     label: 'رکورد جدید',         count: report.members.new.length + report.payments.new.length + report.obligations.new.length },
+    { key: 'new',     label: 'رکورد جدید',        count: report.members.new.length + report.payments.new.length + report.obligations.new.length },
     { key: 'changed', label: 'رکورد تغییر یافته',  count: report.members.changed.length },
     { key: 'missing', label: 'غایب در اکسل',        count: report.members.missing.length },
-    { key: 'error',   label: 'خطا / نیاز به اصلاح', count:
+    { key: 'error',   label: 'خطا / تکراری',        count:
       report.members.errors.length + report.payments.errors.length + report.obligations.errors.length +
       report.payments.duplicates.length + report.obligations.duplicates.length }
   ];
@@ -128,13 +220,11 @@ function renderReport(report) {
     ));
   });
 
-  // Panels
   diffPanels.innerHTML = '';
   diffPanels.appendChild(panelMembers(report.members));
   diffPanels.appendChild(panelPayments(report.payments));
   diffPanels.appendChild(panelObligations(report.obligations));
 
-  // Active tab
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === state.activeTab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === state.activeTab));
 }
@@ -142,7 +232,6 @@ function renderReport(report) {
 function panelShell(name, active, content) {
   return el('div', { class: 'tab-panel' + (active ? ' active' : ''), 'data-panel': name }, content);
 }
-
 function section(title, emptyText, node) {
   return el('div', { style: 'margin-bottom:1.25rem' },
     el('h3', { style: 'font-size:1rem;margin:.25rem 0 .6rem' }, title),
@@ -150,47 +239,41 @@ function section(title, emptyText, node) {
   );
 }
 
-/* ---------- Members panel ---------- */
+/* ---------- Members ---------- */
 function panelMembers(rep) {
   const wrap = el('div', {});
-
-  // new
   wrap.appendChild(section(`اعضای جدید (${faNum(rep.new.length)})`, 'موردی نیست.', rep.new.length ? tableMembersNew(rep.new) : null));
-  // changed
   wrap.appendChild(section(`اعضای تغییر یافته (${faNum(rep.changed.length)})`, 'موردی نیست.', rep.changed.length ? tableMembersChanged(rep.changed) : null));
-  // missing
   wrap.appendChild(section(`در دیتابیس موجود ولی در اکسل غایب (${faNum(rep.missing.length)})`, 'موردی نیست.', rep.missing.length ? tableMembersMissing(rep.missing) : null));
-  // errors
   wrap.appendChild(section(`خطاها (${faNum(rep.errors.length)})`, 'موردی نیست.', rep.errors.length ? tableErrors(rep.errors, ['first_name','last_name','national_id']) : null));
-
   return panelShell('members', state.activeTab === 'members', wrap);
 }
 
 function tableMembersNew(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, 'ردیف'), el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
-      el('th', {}, 'کد ملی'), el('th', {}, 'موبایل'), el('th', {}, 'تعاونی'),
-      el('th', {}, 'وضعیت'), el('th', {}, 'امتیاز')
-    )),
-    el('tbody', {}, ...rows.map(x => el('tr', { class: 'row-new' },
-      el('td', { class: 'num' }, faNum(x.sourceRow)),
-      el('td', {}, x.row.first_name || '—'),
-      el('td', {}, x.row.last_name || '—'),
-      el('td', { class: 'num' }, faNum(x.row.national_id)),
-      el('td', { class: 'num' }, faNum(x.row.mobile || '—')),
-      el('td', { class: 'num' }, faNum(x.row.cooperative)),
-      el('td', {}, x.row.membership_status || '—'),
-      el('td', { class: 'num' }, faNum(x.row.score))
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, 'ردیف'), el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
+        el('th', {}, 'کد ملی'), el('th', {}, 'موبایل'), el('th', {}, 'تعاونی'),
+        el('th', {}, 'وضعیت'), el('th', {}, 'امتیاز')
+      )),
+      el('tbody', {}, ...rows.map(x => el('tr', { class: 'row-new' },
+        el('td', { class: 'num' }, faNum(x.sourceRow)),
+        el('td', {}, x.row.first_name || '—'),
+        el('td', {}, x.row.last_name || '—'),
+        el('td', { class: 'num' }, faNum(x.row.national_id)),
+        el('td', { class: 'num' }, faNum(x.row.mobile || '—')),
+        el('td', { class: 'num' }, faNum(x.row.cooperative)),
+        el('td', {}, x.row.membership_status || '—'),
+        el('td', { class: 'num' }, faNum(x.row.score))
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 function tableMembersChanged(rows) {
   const tbody = el('tbody', {});
   rows.forEach(x => {
-    const id = 'mem-' + x.before.id;
     const mainRow = el('tr', { class: 'row-changed' },
       el('td', { class: 'num' }, faNum(x.sourceRow)),
       el('td', {}, x.after.first_name || x.before.first_name || '—'),
@@ -217,34 +300,36 @@ function tableMembersChanged(rows) {
     tbody.appendChild(detailRow);
   });
 
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, 'ردیف'), el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
-      el('th', {}, 'کد ملی'), el('th', {}, 'تغییرات'), el('th', {}, '')
-    )),
-    tbody
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, 'ردیف'), el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
+        el('th', {}, 'کد ملی'), el('th', {}, 'تغییرات'), el('th', {}, '')
+      )),
+      tbody
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 function tableMembersMissing(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
-      el('th', {}, 'کد ملی'), el('th', {}, 'وضعیت'), el('th', {}, 'امتیاز')
-    )),
-    el('tbody', {}, ...rows.map(m => el('tr', { class: 'row-missing' },
-      el('td', {}, m.first_name || '—'),
-      el('td', {}, m.last_name || '—'),
-      el('td', { class: 'num' }, faNum(m.national_id)),
-      el('td', {}, m.membership_status || '—'),
-      el('td', { class: 'num' }, faNum(m.score))
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, 'نام'), el('th', {}, 'نام خانوادگی'),
+        el('th', {}, 'کد ملی'), el('th', {}, 'وضعیت'), el('th', {}, 'امتیاز')
+      )),
+      el('tbody', {}, ...rows.map(m => el('tr', { class: 'row-missing' },
+        el('td', {}, m.first_name || '—'),
+        el('td', {}, m.last_name || '—'),
+        el('td', { class: 'num' }, faNum(m.national_id)),
+        el('td', {}, m.membership_status || '—'),
+        el('td', { class: 'num' }, faNum(m.score))
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
-/* ---------- Payments panel ---------- */
+/* ---------- Payments ---------- */
 function panelPayments(rep) {
   const wrap = el('div', {});
   wrap.appendChild(section(`پرداخت‌های جدید (${faNum(rep.new.length)})`, 'موردی نیست.', rep.new.length ? tablePaymentsNew(rep.new) : null));
@@ -254,40 +339,42 @@ function panelPayments(rep) {
 }
 
 function tablePaymentsNew(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
-      el('th', {}, 'تاریخ واریز'), el('th', {}, 'توضیحات')
-    )),
-    el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-new' },
-      el('td', { class: 'num' }, faNum(i + 1)),
-      el('td', { class: 'num' }, faNum(p.national_id)),
-      el('td', { class: 'num' }, formatMoney(p.amount)),
-      el('td', {}, formatJalali(p.payment_date, { long: true })),
-      el('td', {}, p.description || '—')
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
+        el('th', {}, 'تاریخ واریز'), el('th', {}, 'توضیحات')
+      )),
+      el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-new' },
+        el('td', { class: 'num' }, faNum(i + 1)),
+        el('td', { class: 'num' }, faNum(p.row.national_id)),
+        el('td', { class: 'num' }, formatMoney(p.row.amount)),
+        el('td', {}, formatJalali(p.row.payment_date, { long: true })),
+        el('td', {}, p.row.description || '—')
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 function tablePaymentsDup(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
-      el('th', {}, 'تاریخ'), el('th', {}, 'وضعیت')
-    )),
-    el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-error' },
-      el('td', { class: 'num' }, faNum(i + 1)),
-      el('td', { class: 'num' }, faNum(p.national_id)),
-      el('td', { class: 'num' }, formatMoney(p.amount)),
-      el('td', {}, formatJalali(p.payment_date, { long: true })),
-      el('td', {}, el('span', { class: 'status-chip error' }, 'تکراری — نادیده گرفته می‌شود'))
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
+        el('th', {}, 'تاریخ'), el('th', {}, 'وضعیت')
+      )),
+      el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-error' },
+        el('td', { class: 'num' }, faNum(i + 1)),
+        el('td', { class: 'num' }, faNum(p.national_id)),
+        el('td', { class: 'num' }, formatMoney(p.amount)),
+        el('td', {}, formatJalali(p.payment_date, { long: true })),
+        el('td', {}, el('span', { class: 'status-chip error' }, 'تکراری — نادیده گرفته می‌شود'))
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
-/* ---------- Obligations panel ---------- */
+/* ---------- Obligations ---------- */
 function panelObligations(rep) {
   const wrap = el('div', {});
   wrap.appendChild(section(`تعهدات جدید (${faNum(rep.new.length)})`, 'موردی نیست.', rep.new.length ? tableOblNew(rep.new) : null));
@@ -297,53 +384,56 @@ function panelObligations(rep) {
 }
 
 function tableOblNew(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
-      el('th', {}, 'سررسید'), el('th', {}, 'توضیحات')
-    )),
-    el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-new' },
-      el('td', { class: 'num' }, faNum(i + 1)),
-      el('td', { class: 'num' }, faNum(p.national_id)),
-      el('td', { class: 'num' }, formatMoney(p.amount)),
-      el('td', {}, formatJalali(p.due_date, { long: true })),
-      el('td', {}, p.description || '—')
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
+        el('th', {}, 'سررسید'), el('th', {}, 'توضیحات')
+      )),
+      el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-new' },
+        el('td', { class: 'num' }, faNum(i + 1)),
+        el('td', { class: 'num' }, faNum(p.row.national_id)),
+        el('td', { class: 'num' }, formatMoney(p.row.amount)),
+        el('td', {}, formatJalali(p.row.due_date, { long: true })),
+        el('td', {}, p.row.description || '—')
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 function tableOblDup(rows) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
-      el('th', {}, 'سررسید'), el('th', {}, 'وضعیت')
-    )),
-    el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-error' },
-      el('td', { class: 'num' }, faNum(i + 1)),
-      el('td', { class: 'num' }, faNum(p.national_id)),
-      el('td', { class: 'num' }, formatMoney(p.amount)),
-      el('td', {}, formatJalali(p.due_date, { long: true })),
-      el('td', {}, el('span', { class: 'status-chip error' }, 'تکراری — نادیده گرفته می‌شود'))
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, '#'), el('th', {}, 'کد ملی'), el('th', {}, 'مبلغ'),
+        el('th', {}, 'سررسید'), el('th', {}, 'وضعیت')
+      )),
+      el('tbody', {}, ...rows.map((p, i) => el('tr', { class: 'row-error' },
+        el('td', { class: 'num' }, faNum(i + 1)),
+        el('td', { class: 'num' }, faNum(p.national_id)),
+        el('td', { class: 'num' }, formatMoney(p.amount)),
+        el('td', {}, formatJalali(p.due_date, { long: true })),
+        el('td', {}, el('span', { class: 'status-chip error' }, 'تکراری — نادیده گرفته می‌شود'))
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 /* ---------- Errors ---------- */
 function tableErrors(rows, fields) {
-  const tbl = el('table', { class: 'table diff-table' },
-    el('thead', {}, el('tr', {},
-      el('th', {}, 'ردیف'), el('th', {}, 'علت'),
-      ...fields.map(f => el('th', {}, fieldLabel(f)))
-    )),
-    el('tbody', {}, ...rows.map(x => el('tr', { class: 'row-error' },
-      el('td', { class: 'num' }, faNum(x.row)),
-      el('td', {}, x.reason),
-      ...fields.map(f => el('td', {}, String(x.data?.[f] ?? '—')))
-    )))
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'table diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, 'ردیف'), el('th', {}, 'علت'),
+        ...fields.map(f => el('th', {}, fieldLabel(f)))
+      )),
+      el('tbody', {}, ...rows.map(x => el('tr', { class: 'row-error' },
+        el('td', { class: 'num' }, faNum(x.row)),
+        el('td', {}, x.reason),
+        ...fields.map(f => el('td', {}, String(x.data?.[f] ?? '—')))
+      )))
+    )
   );
-  return el('div', { class: 'table-wrap' }, tbl);
 }
 
 /* ---------- Helpers ---------- */
@@ -357,7 +447,6 @@ function fieldLabel(f) {
   };
   return labels[f] || f;
 }
-
 function displayVal(field, v) {
   if (v == null || v === '') return '—';
   if (field === 'total_paid' || field === 'debt' || field === 'amount') return formatMoney(v);
@@ -381,6 +470,11 @@ applyBtn.addEventListener('click', async () => {
   setBtnLoading(applyBtn, true);
   try {
     const res = await applyChanges(state.report);
+    await logAudit({
+      actor_id: user.id, actor_name: `${user.first_name} ${user.last_name}`,
+      action: 'import-workbook', target_table: 'members,payments,obligations',
+      details: res
+    });
     renderResult(res);
     stepResult.hidden = false;
     setTimeout(() => stepResult.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
@@ -396,8 +490,7 @@ applyBtn.addEventListener('click', async () => {
 function renderResult(res) {
   resultBody.innerHTML = '';
   const ok = (res.errors || []).length === 0;
-
-  const box = el('div', { class: 'result-box ' + (ok ? 'ok' : 'error') },
+  resultBody.appendChild(el('div', { class: 'result-box ' + (ok ? 'ok' : 'error') },
     el('h3', {}, ok ? 'همه تغییرات با موفقیت اعمال شد' : 'عملیات با خطا مواجه شد'),
     el('ul', { class: 'result-list' },
       el('li', {}, `اعضای جدید: ${faNum(res.members?.inserted || 0)}`),
@@ -405,9 +498,7 @@ function renderResult(res) {
       el('li', {}, `پرداخت‌های جدید: ${faNum(res.payments?.inserted || 0)}`),
       el('li', {}, `تعهدات جدید: ${faNum(res.obligations?.inserted || 0)}`)
     )
-  );
-  resultBody.appendChild(box);
-
+  ));
   if ((res.errors || []).length) {
     resultBody.appendChild(el('div', { class: 'result-box error' },
       el('h3', {}, 'خطاها'),
@@ -416,8 +507,10 @@ function renderResult(res) {
       )
     ));
   }
-
   resultBody.appendChild(el('div', { style: 'margin-top:1rem' },
     el('button', { class: 'btn btn-ghost', onclick: () => location.reload() }, 'شروع مجدد')
   ));
 }
+
+/* ---------- Init ---------- */
+loadConfigs().catch(console.error);
