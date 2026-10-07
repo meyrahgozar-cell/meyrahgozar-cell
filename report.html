@@ -2393,10 +2393,23 @@
             margin-top: 4px;
             font-size: 12px;
             font-weight: 800;
-            direction: ltr;
-            unicode-bidi: isolate;
             color: #7ef9ff;
             text-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .group-rec-metric .m-num {
+            direction: ltr;
+            unicode-bidi: isolate;
+            font-weight: 800;
+        }
+        .group-rec-metric .m-unit {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(126, 249, 255, 0.85);
         }
 
 </style>
@@ -4019,19 +4032,29 @@ const spawnSparks = (speed, fromLeft) => {
 
         
         async function loadGroupRecords() {
-            const fmtKm = (n) => {
-                const x = Number(n) || 0;
-                if (!x) return "—";
-                const s = x % 1 === 0 ? String(Math.round(x)) : String(Number(x.toFixed(1)));
-                return fa(s) + " km";
-            };
             const fmtN = (n, d = 0) => {
-                const x = Number(n) || 0;
-                if (!x) return "—";
-                const s = d === 0 ? String(Math.round(x)) : String(Number(x.toFixed(d)));
+                const x = Number(n);
+                if (x == null || Number.isNaN(x) || x === 0) return null;
+                let s;
+                if (d === 0) s = String(Math.round(x));
+                else {
+                    const fixed = Number(x.toFixed(d));
+                    s = fixed % 1 === 0 ? String(Math.round(fixed)) : String(fixed);
+                }
                 return fa(s);
             };
-            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            const setMetric = (id, numStr, unit) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!numStr || numStr === "—") { el.textContent = "—"; return; }
+                // BMI: پیشوند انگلیسی داخل LTR — بقیه: عدد + واحد
+                if (unit === "BMI") {
+                    el.innerHTML = `<span class="m-num">BMI ${numStr}</span>`;
+                    return;
+                }
+                el.innerHTML = `<span class="m-num">${numStr}</span><span class="m-unit">${unit}</span>`;
+            };
 
             // toggle once
             const wrap = document.getElementById("groupRecWrap");
@@ -4049,16 +4072,16 @@ const spawnSparks = (speed, fromLeft) => {
                 const reader = d.top_reader || {};
                 const climber = d.top_climber || {};
                 const light = d.lightest || {};
-                set("grpRunnerName", runner.display_name || "—");
-                set("grpRunnerKm", runner.total_km != null ? fmtKm(runner.total_km) : "—");
-                set("grpReaderName", reader.display_name || "—");
-                set("grpReaderPages", reader.total_pages != null ? (fmtN(reader.total_pages, 0) + " صفحه") : "—");
-                set("grpMtName", climber.display_name || "—");
-                set("grpMtTrips", climber.trips != null ? (fmtN(climber.trips, 0) + " صعود") : "—");
-                set("grpBmiName", light.display_name || "—");
-                set("grpBmiVal", light.bmi != null ? ("BMI " + fmtN(light.bmi, 1)) : "—");
-                set("grpAllKm", d.all_km != null ? fmtKm(d.all_km) : "—");
-                set("grpAllPages", d.all_pages != null ? (fmtN(d.all_pages, 0) + " صفحه") : "—");
+                setText("grpRunnerName", runner.display_name || "—");
+                setMetric("grpRunnerKm", runner.total_km != null ? fmtN(runner.total_km, 1) : null, "km");
+                setText("grpReaderName", reader.display_name || "—");
+                setMetric("grpReaderPages", reader.total_pages != null ? fmtN(reader.total_pages, 0) : null, "صفحه");
+                setText("grpMtName", climber.display_name || "—");
+                setMetric("grpMtTrips", climber.trips != null ? fmtN(climber.trips, 0) : null, "صعود");
+                setText("grpBmiName", light.display_name || "—");
+                setMetric("grpBmiVal", light.bmi != null ? fmtN(light.bmi, 1) : null, "BMI");
+                setMetric("grpAllKm", d.all_km != null ? fmtN(d.all_km, 1) : null, "km");
+                setMetric("grpAllPages", d.all_pages != null ? fmtN(d.all_pages, 0) : null, "صفحه");
             };
 
             try {
