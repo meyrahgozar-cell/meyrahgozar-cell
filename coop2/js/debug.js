@@ -1,13 +1,17 @@
 /* =========================================================
-   Debug Console Overlay
+   Debug Console Overlay v2
+   - تشخیص شکست بارگذاری ماژول‌ها
+   - دریافت خطاها از window.__mpna.errors (inline trap)
    ========================================================= */
 (function () {
   'use strict';
 
-  var MAX_LOGS = 250;
+  var MAX_LOGS = 300;
   var logs = [];
   var unread = 0;
   var panel, list, badge, fab;
+  var opened = false;
+
   var original = {
     log: console.log.bind(console),
     warn: console.warn.bind(console),
@@ -79,7 +83,7 @@
     .dbg-info .dbg-theme-dot {
       display: inline-block; width: 10px; height: 10px;
       border-radius: 50%; margin-left: 4px; vertical-align: middle;
-      background: #8b5cf6; box-shadow: 0 0 8px currentColor;
+      box-shadow: 0 0 8px currentColor;
     }
 
     .dbg-list {
@@ -112,9 +116,11 @@
   `;
 
   function injectStyle() {
+    if (document.getElementById('dbgStyle')) return;
     var s = document.createElement('style');
+    s.id = 'dbgStyle';
     s.textContent = css;
-    document.head.appendChild(s);
+    (document.head || document.documentElement).appendChild(s);
   }
 
   function stringify(a) {
@@ -130,26 +136,38 @@
     var msg = args.map(stringify).join(' ');
     logs.push({ level: level, msg: msg, time: new Date() });
     if (logs.length > MAX_LOGS) logs.shift();
-    if (level === 'error' || level === 'warn') {
-      if (!panel || !panel.classList.contains('open')) {
-        unread++;
-        updateBadge();
-      }
+    if ((level === 'error' || level === 'warn') && !opened) {
+      unread++;
+      updateBadge();
     }
-    render();
+    if (list) render();
   }
 
+  /* Override console methods to capture */
   ['log','warn','error','info'].forEach(function (k) {
     console[k] = function () {
       var args = Array.prototype.slice.call(arguments);
-      original[k].apply(console, args);
+      try { original[k].apply(console, args); } catch (e) {}
       push(k, args);
     };
   });
 
+  /* Pick up errors collected by inline trap */
+  function drainInlineErrors() {
+    if (window.__mpna && Array.isArray(window.__mpna.errors)) {
+      window.__mpna.errors.forEach(function (err) {
+        push('error', [
+          '[' + err.type + '] ' + (err.message || '') +
+          (err.source ? ' @ ' + err.source + (err.line ? ':' + err.line : '') : '') +
+          (typeof err.time === 'number' ? ' (' + err.time + 'ms)' : '')
+        ]);
+      });
+      window.__mpna.errors.length = 0;
+    }
+  }
+
   window.addEventListener('error', function (e) {
-    var loc = '';
-    if (e.filename) loc = ' @ ' + e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno;
+    var loc = e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno : '';
     push('error', ['[Uncaught] ' + (e.message || e.error || 'Unknown') + loc]);
   });
 
@@ -159,8 +177,39 @@
     push('error', ['[Unhandled Promise] ' + msg]);
   });
 
+  /* Detect module load failure via global marker */
+  function checkModuleMarkers() {
+    var have = window.__mpna && window.__mpna.moduleFlags || {};
+    var isLoginPage = /(^|\/)(index\.html)?$/.test(location.pathname) ||
+                      /index\.html$/.test(location.pathname) ||
+                      location.pathname.endsWith('/');
+    var isDash = location.pathname.endsWith('dashboard.html');
+    var isInv = location.pathname.endsWith('invitations.html');
+    var isMin = location.pathname.endsWith('minutes.html');
+    var isSug = location.pathname.endsWith('suggestions.html');
+    var isImp = location.pathname.endsWith('admin_import.html') ||
+                location.pathname.endsWith('admin-import.html');
+
+    var expected = null;
+    if (isDash) expected = 'dashboard';
+    else if (isInv) expected = 'invitations';
+    else if (isMin) expected = 'minutes';
+    else if (isSug) expected = 'suggestions';
+    else if (isImp) expected = 'admin_import';
+    else if (isLoginPage) expected = 'login';
+
+    if (expected && !have[expected]) {
+      push('error', [
+        'ماژول ' + expected + ' بارگذاری نشد. ' +
+        'احتمالاً خطای import یا ۴۰۴ یکی از فایل‌های js/. ' +
+        'مسیر: ' + location.pathname
+      ]);
+    }
+  }
+
   function ensureUI() {
     if (fab) return;
+    injectStyle();
 
     fab = document.createElement('button');
     fab.id = 'dbgFab';
@@ -168,7 +217,7 @@
     fab.setAttribute('aria-label', 'Debug Console');
     fab.innerHTML = '🐞<span class="dbg-badge"></span>';
     fab.addEventListener('click', toggle);
-    document.body.appendChild(fab);
+    (document.body || document.documentElement).appendChild(fab);
     badge = fab.querySelector('.dbg-badge');
 
     panel = document.createElement('div');
@@ -188,10 +237,11 @@
         '<div>تم: <b id="dbgThemeVal">-</b> <span class="dbg-theme-dot" id="dbgThemeDot"></span></div>' +
         '<div>مسیر: <b id="dbgUrlVal">-</b></div>' +
         '<div>اندازه: <b id="dbgSizeVal">-</b></div>' +
+        '<div>ماژول: <b id="dbgModVal">-</b></div>' +
         '<div>خطا: <b id="dbgErrCount">0</b></div>' +
       '</div>' +
       '<div class="dbg-list" id="dbgList"></div>';
-    document.body.appendChild(panel);
+    (document.body || document.documentElement).appendChild(panel);
     list = panel.querySelector('#dbgList');
 
     panel.addEventListener('click', function (e) {
@@ -232,6 +282,12 @@
     if (urlEl) urlEl.textContent = location.pathname + location.search;
     var sizeEl = panel.querySelector('#dbgSizeVal');
     if (sizeEl) sizeEl.textContent = window.innerWidth + '×' + window.innerHeight;
+    var modEl = panel.querySelector('#dbgModVal');
+    if (modEl) {
+      var have = (window.__mpna && window.__mpna.moduleFlags) || {};
+      var keys = Object.keys(have);
+      modEl.textContent = keys.length ? keys.join(', ') : 'هیچ';
+    }
     var ec = panel.querySelector('#dbgErrCount');
     if (ec) ec.textContent = String(logs.filter(function(l){ return l.level === 'error'; }).length);
   }
@@ -243,7 +299,7 @@
   }
 
   function render() {
-    ensureUI();
+    if (!list) return;
     list.innerHTML = '';
     if (!logs.length) {
       var empty = document.createElement('div');
@@ -281,10 +337,12 @@
 
   function toggle() {
     ensureUI();
-    panel.classList.toggle('open');
-    if (panel.classList.contains('open')) {
+    opened = !opened;
+    panel.classList.toggle('open', opened);
+    if (opened) {
       unread = 0;
       updateBadge();
+      drainInlineErrors();
       updateInfo();
       render();
       var btn = panel.querySelector('[data-dbg="noanim"]');
@@ -300,13 +358,17 @@
       return '[' + l.time.toLocaleTimeString('fa-IR') + '] [' + l.level.toUpperCase() + '] ' + l.msg;
     }).join('\n');
     if (!text) text = '(empty)';
+
+    var have = (window.__mpna && window.__mpna.moduleFlags) || {};
     var info =
       '=== DEBUG INFO ===\n' +
       'Theme: ' + (document.documentElement.getAttribute('data-theme') || 'none') + '\n' +
       'No-Anim: ' + document.documentElement.classList.contains('no-anim') + '\n' +
       'URL: ' + location.href + '\n' +
+      'Protocol: ' + location.protocol + '\n' +
       'Viewport: ' + window.innerWidth + 'x' + window.innerHeight + '\n' +
       'DPR: ' + (window.devicePixelRatio || 1) + '\n' +
+      'Modules loaded: ' + (Object.keys(have).join(', ') || 'NONE') + '\n' +
       'UA: ' + navigator.userAgent + '\n' +
       'Time: ' + new Date().toISOString() + '\n' +
       '==================\n\n';
@@ -361,13 +423,15 @@
         document.documentElement.classList.add('no-anim');
       }
     } catch (e) {}
-    injectStyle();
     ensureUI();
     push('info', [
       'Debug ready | theme=' +
       (document.documentElement.getAttribute('data-theme') || 'none') +
-      ' | vp=' + window.innerWidth + 'x' + window.innerHeight
+      ' | vp=' + window.innerWidth + 'x' + window.innerHeight +
+      ' | proto=' + location.protocol
     ]);
+    /* چند ثانیه بعد بررسی کن که ماژول اصلی بارگذاری شده یا نه */
+    setTimeout(checkModuleMarkers, 1800);
   }
 
   if (document.readyState === 'loading') {
