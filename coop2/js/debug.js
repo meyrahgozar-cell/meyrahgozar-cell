@@ -1,8 +1,5 @@
 /* =========================================================
    Debug Console Overlay
-   - خطاها و logهای console را زنده نمایش می‌دهد
-   - دکمه‌ی «کپی همه» برای اشتراک‌گذاری آسان
-   - روی موبایل هم کار می‌کند
    ========================================================= */
 (function () {
   'use strict';
@@ -18,7 +15,6 @@
     info: console.info.bind(console)
   };
 
-  /* ---------- استایل‌ها (inline) ---------- */
   var css = `
     #dbgFab {
       position: fixed; bottom: 16px; left: 16px; z-index: 2147483646;
@@ -67,6 +63,9 @@
     .dbg-btn.primary {
       background: linear-gradient(135deg, #8b5cf6, #22d3ee);
       border-color: transparent; color: #fff; font-weight: 700;
+    }
+    .dbg-btn.active {
+      background: #fbbf24; border-color: #fbbf24; color: #1c1a17; font-weight: 700;
     }
 
     .dbg-info {
@@ -118,7 +117,6 @@
     document.head.appendChild(s);
   }
 
-  /* ---------- گرفتن console ---------- */
   function stringify(a) {
     if (a instanceof Error) return (a.stack || a.message || String(a));
     if (typeof a === 'object' && a !== null) {
@@ -133,9 +131,7 @@
     logs.push({ level: level, msg: msg, time: new Date() });
     if (logs.length > MAX_LOGS) logs.shift();
     if (level === 'error' || level === 'warn') {
-      if (panel && panel.classList.contains('open')) {
-        // visible
-      } else {
+      if (!panel || !panel.classList.contains('open')) {
         unread++;
         updateBadge();
       }
@@ -163,7 +159,6 @@
     push('error', ['[Unhandled Promise] ' + msg]);
   });
 
-  /* ---------- UI ---------- */
   function ensureUI() {
     if (fab) return;
 
@@ -183,15 +178,17 @@
         '<span class="dbg-title">🐞 کنسول دیباگ</span>' +
         '<div class="dbg-actions">' +
           '<button class="dbg-btn primary" data-dbg="copy">کپی همه</button>' +
+          '<button class="dbg-btn" data-dbg="noanim">بی‌انیمیشن</button>' +
           '<button class="dbg-btn" data-dbg="clear">پاک کردن</button>' +
           '<button class="dbg-btn" data-dbg="reload">رفرش</button>' +
           '<button class="dbg-btn" data-dbg="close">✕</button>' +
         '</div>' +
       '</div>' +
       '<div class="dbg-info">' +
-        '<div>تم فعلی: <b id="dbgThemeVal">-</b> <span class="dbg-theme-dot" id="dbgThemeDot"></span></div>' +
+        '<div>تم: <b id="dbgThemeVal">-</b> <span class="dbg-theme-dot" id="dbgThemeDot"></span></div>' +
         '<div>مسیر: <b id="dbgUrlVal">-</b></div>' +
-        '<div>تعداد خطا: <b id="dbgErrCount">0</b></div>' +
+        '<div>اندازه: <b id="dbgSizeVal">-</b></div>' +
+        '<div>خطا: <b id="dbgErrCount">0</b></div>' +
       '</div>' +
       '<div class="dbg-list" id="dbgList"></div>';
     document.body.appendChild(panel);
@@ -205,10 +202,19 @@
       else if (act === 'clear') { logs.length = 0; unread = 0; updateBadge(); render(); }
       else if (act === 'close') toggle();
       else if (act === 'reload') location.reload();
+      else if (act === 'noanim') toggleNoAnim(t);
     });
 
     updateInfo();
     render();
+  }
+
+  function toggleNoAnim(btn) {
+    var root = document.documentElement;
+    var isOff = root.classList.toggle('no-anim');
+    try { localStorage.setItem('mpna_noanim', isOff ? '1' : '0'); } catch (e) {}
+    btn.classList.toggle('active', isOff);
+    push('info', ['no-anim = ' + isOff]);
   }
 
   function updateInfo() {
@@ -224,6 +230,8 @@
     }
     var urlEl = panel.querySelector('#dbgUrlVal');
     if (urlEl) urlEl.textContent = location.pathname + location.search;
+    var sizeEl = panel.querySelector('#dbgSizeVal');
+    if (sizeEl) sizeEl.textContent = window.innerWidth + '×' + window.innerHeight;
     var ec = panel.querySelector('#dbgErrCount');
     if (ec) ec.textContent = String(logs.filter(function(l){ return l.level === 'error'; }).length);
   }
@@ -279,6 +287,11 @@
       updateBadge();
       updateInfo();
       render();
+      var btn = panel.querySelector('[data-dbg="noanim"]');
+      if (btn) {
+        var isOff = document.documentElement.classList.contains('no-anim');
+        btn.classList.toggle('active', isOff);
+      }
     }
   }
 
@@ -290,7 +303,10 @@
     var info =
       '=== DEBUG INFO ===\n' +
       'Theme: ' + (document.documentElement.getAttribute('data-theme') || 'none') + '\n' +
+      'No-Anim: ' + document.documentElement.classList.contains('no-anim') + '\n' +
       'URL: ' + location.href + '\n' +
+      'Viewport: ' + window.innerWidth + 'x' + window.innerHeight + '\n' +
+      'DPR: ' + (window.devicePixelRatio || 1) + '\n' +
       'UA: ' + navigator.userAgent + '\n' +
       'Time: ' + new Date().toISOString() + '\n' +
       '==================\n\n';
@@ -329,10 +345,9 @@
     try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
     ta.remove();
     if (ok && cb) cb();
-    else push('warn', ['کپی خودکار ممکن نبود؛ متن را دستی انتخاب کنید.']);
+    else push('warn', ['کپی خودکار ممکن نبود.']);
   }
 
-  /* ---------- init ---------- */
   window.__dbg = {
     logs: logs,
     toggle: toggle,
@@ -341,11 +356,17 @@
   };
 
   function init() {
+    try {
+      if (localStorage.getItem('mpna_noanim') === '1') {
+        document.documentElement.classList.add('no-anim');
+      }
+    } catch (e) {}
     injectStyle();
     ensureUI();
     push('info', [
-      'Debug console ready | theme=' +
-      (document.documentElement.getAttribute('data-theme') || 'none')
+      'Debug ready | theme=' +
+      (document.documentElement.getAttribute('data-theme') || 'none') +
+      ' | vp=' + window.innerWidth + 'x' + window.innerHeight
     ]);
   }
 
