@@ -20,7 +20,10 @@
   <div id="appHeader"></div>
   <main class="container page">
     <section class="welcome">
-      <h1>سلام، <span id="userName">—</span></h1>
+      <div class="welcome-head">
+        <h1>سلام، <span id="userName">—</span></h1>
+        <span id="roleBadge"></span>
+      </div>
       <p class="muted">خلاصه وضعیت عضویت شما در تعاونی مسکن مپنا هوایی</p>
     </section>
 
@@ -83,6 +86,12 @@
     </section>
 
     <section class="quick-links">
+      <a class="quick-card is-admin-quick" href="admin/index.html" id="adminQuickCard" hidden>
+        <span class="tile is-warning"><i class="i i-shield" aria-hidden="true"></i></span>
+        <span class="quick-title">پنل مدیریت</span>
+        <span class="quick-sub">پایگاه داده، ایمپورت اکسل و کاربران</span>
+        <i class="i i-chevron-left quick-go" aria-hidden="true"></i>
+      </a>
       <a class="quick-card" href="invitations.html">
         <span class="tile"><i class="i i-mail" aria-hidden="true"></i></span>
         <span class="quick-title">دعوت‌نامه‌ها و ابلاغیه‌ها</span>
