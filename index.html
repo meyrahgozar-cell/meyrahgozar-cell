@@ -1037,7 +1037,7 @@ a.icon-btn.call-btn {
     <div class="records-grid">
       <button type="button" class="record-chip" data-rec="maxKm">
         <div class="record-chip-icon">🏃</div>
-        <div class="record-chip-label">بیشترین کیلومتر</div>
+        <div class="record-chip-label">بیشترین کمِ معادل</div>
         <div class="record-chip-value" id="recMaxKm">—</div>
       </button>
       <button type="button" class="record-chip" data-rec="maxPages">
@@ -1047,7 +1047,7 @@ a.icon-btn.call-btn {
       </button>
       <button type="button" class="record-chip" data-rec="totalKm">
         <div class="record-chip-icon">🛣️</div>
-        <div class="record-chip-label">مجموع کیلومتر</div>
+        <div class="record-chip-label">مجموع کمِ معادل</div>
         <div class="record-chip-value" id="recTotalKm">—</div>
       </button>
       <button type="button" class="record-chip" data-rec="totalPages">
@@ -1748,7 +1748,22 @@ async function saveExercise(e){
     p_log_date:selectedDate, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
   });
   if(q.error) return showToast("خطا: "+q.error.message);
-  exerciseLog=q.data;
+  // امتیاز با ضریب جنسیت روی کلاینت — سرور ممکن است بدون ضریب ذخیره کند
+  exerciseLog = q.data || {};
+  if (Number(exerciseLog.score) !== x.score || exerciseLog.score == null) {
+    try {
+      const id = exerciseLog.id;
+      if (id) {
+        const up = await db.from("exercise_logs").update({ score: x.score }).eq("id", id).select("*").maybeSingle();
+        if (up.data) exerciseLog = up.data;
+        else exerciseLog = { ...exerciseLog, score: x.score };
+      } else {
+        exerciseLog = { ...exerciseLog, score: x.score };
+      }
+    } catch (_) {
+      exerciseLog = { ...exerciseLog, score: x.score };
+    }
+  }
   await ensureDisciplineBonus(selectedDate);
   updateScoreUI();
   renderItems();
@@ -1894,7 +1909,8 @@ async function loadPersonalRecords() {
     ]);
     let maxKm = 0, maxKmDate = null, totalKm = 0;
     (ex.data || []).forEach(r => {
-      const km = Number(r.running_km) || 0;
+      // کیلومتر معادل (total_km) وگرنه دویدن
+      const km = Number(r.total_km) || Number(r.running_km) || 0;
       totalKm += km;
       if (km > maxKm) { maxKm = km; maxKmDate = r.log_date; }
     });
@@ -1932,7 +1948,7 @@ function openRecordDetail(kind) {
   const r = personalRecords;
   let title = "", body = "";
   if (kind === "maxKm") {
-    title = "🏃 بیشترین کیلومتر در یک روز";
+    title = "🏃 بیشترین کیلومتر معادل در یک روز";
     body = r.maxKm > 0
       ? `رکورد: <b>${fa(String(r.maxKm % 1 ? r.maxKm.toFixed(1) : r.maxKm))} km</b><br>تاریخ: <b>${jalaliLabelISO(r.maxKmDate)}</b>`
       : "هنوز دویدنی ثبت نشده.";
@@ -1942,7 +1958,7 @@ function openRecordDetail(kind) {
       ? `رکورد: <b>${fa(String(r.maxPages))} صفحه</b><br>تاریخ: <b>${jalaliLabelISO(r.maxPagesDate)}</b>`
       : "هنوز مطالعه‌ای ثبت نشده.";
   } else if (kind === "totalKm") {
-    title = "🛣️ مجموع کیلومتر دویده‌شده";
+    title = "🛣️ مجموع کیلومتر معادل";
     body = `از ابتدا تا امروز: <b>${fa(String(r.totalKm % 1 ? r.totalKm.toFixed(1) : Math.round(r.totalKm * 10) / 10))} km</b>`;
   } else if (kind === "totalPages") {
     title = "📚 مجموع صفحات خوانده‌شده";

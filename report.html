@@ -2282,6 +2282,123 @@
 
         }
 
+
+        /* group records — compact + glow */
+        .group-rec-wrap {
+            margin-bottom: 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 200, 0.28);
+            background: linear-gradient(160deg, rgba(12, 18, 32, 0.95), rgba(20, 12, 36, 0.9));
+            box-shadow:
+              0 0 20px rgba(0, 240, 200, 0.12),
+              0 0 28px rgba(180, 76, 255, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+        .group-rec-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 14px;
+            background: transparent;
+            border: 0;
+            color: var(--text);
+            cursor: pointer;
+            text-align: right;
+        }
+        .group-rec-toggle-title {
+            font-size: 13px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #7ef9ff, #c9a0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .group-rec-toggle-sub {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .group-rec-chevron {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 240, 200, 0.25);
+            display: grid;
+            place-items: center;
+            color: #7ef9ff;
+            font-size: 12px;
+            transition: transform .2s ease;
+        }
+        .group-rec-wrap.open .group-rec-chevron {
+            transform: rotate(-90deg);
+        }
+        .group-rec-body {
+            display: none;
+            padding: 0 12px 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .group-rec-wrap.open .group-rec-body {
+            display: block;
+            padding-top: 10px;
+        }
+        .group-records {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .group-rec-card {
+            border-radius: 12px;
+            border: 1px solid rgba(180, 100, 255, 0.22);
+            background: linear-gradient(150deg, rgba(0, 240, 255, 0.07), rgba(180, 76, 255, 0.08));
+            padding: 10px 8px 8px;
+            text-align: center;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.08);
+        }
+        .group-rec-card.accent-run {
+            border-color: rgba(0, 240, 200, 0.35);
+            box-shadow: 0 0 14px rgba(0, 240, 200, 0.15);
+        }
+        .group-rec-card.accent-read {
+            border-color: rgba(180, 120, 255, 0.4);
+            box-shadow: 0 0 14px rgba(180, 76, 255, 0.18);
+        }
+        .group-rec-card.accent-mt {
+            border-color: rgba(255, 180, 80, 0.35);
+            box-shadow: 0 0 14px rgba(255, 160, 60, 0.15);
+        }
+        .group-rec-card.accent-bmi {
+            border-color: rgba(0, 255, 180, 0.35);
+            box-shadow: 0 0 14px rgba(0, 255, 157, 0.12);
+        }
+        .group-rec-icon { font-size: 15px; line-height: 1; }
+        .group-rec-label {
+            font-size: 9px;
+            color: var(--muted);
+            margin: 4px 0 5px;
+            font-weight: 700;
+        }
+        .group-rec-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: #e8f4ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+            line-height: 1.35;
+            word-break: break-word;
+        }
+        .group-rec-metric {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            direction: ltr;
+            unicode-bidi: isolate;
+            color: #7ef9ff;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+        }
+
 </style>
 </head>
 <body>
@@ -3902,450 +4019,107 @@ const spawnSparks = (speed, fromLeft) => {
 
         
         async function loadGroupRecords() {
-            const fmt = (n, d = 1) => {
+            const fmtKm = (n) => {
                 const x = Number(n) || 0;
                 if (!x) return "—";
-                return fa(x % 1 === 0 ? String(Math.round(x)) : Number(x.toFixed(d)));
+                const s = x % 1 === 0 ? String(Math.round(x)) : String(Number(x.toFixed(1)));
+                return fa(s) + " km";
+            };
+            const fmtN = (n, d = 0) => {
+                const x = Number(n) || 0;
+                if (!x) return "—";
+                const s = d === 0 ? String(Math.round(x)) : String(Number(x.toFixed(d)));
+                return fa(s);
             };
             const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+            // toggle once
+            const wrap = document.getElementById("groupRecWrap");
+            const btn = document.getElementById("groupRecToggle");
+            if (btn && !btn.dataset.bound) {
+                btn.dataset.bound = "1";
+                btn.onclick = () => {
+                    const open = wrap.classList.toggle("open");
+                    btn.setAttribute("aria-expanded", open ? "true" : "false");
+                };
+            }
+
+            const apply = (d) => {
+                const runner = d.top_runner || {};
+                const reader = d.top_reader || {};
+                const climber = d.top_climber || {};
+                const light = d.lightest || {};
+                set("grpRunnerName", runner.display_name || "—");
+                set("grpRunnerKm", runner.total_km != null ? fmtKm(runner.total_km) : "—");
+                set("grpReaderName", reader.display_name || "—");
+                set("grpReaderPages", reader.total_pages != null ? (fmtN(reader.total_pages, 0) + " صفحه") : "—");
+                set("grpMtName", climber.display_name || "—");
+                set("grpMtTrips", climber.trips != null ? (fmtN(climber.trips, 0) + " صعود") : "—");
+                set("grpBmiName", light.display_name || "—");
+                set("grpBmiVal", light.bmi != null ? ("BMI " + fmtN(light.bmi, 1)) : "—");
+                set("grpAllKm", d.all_km != null ? fmtKm(d.all_km) : "—");
+                set("grpAllPages", d.all_pages != null ? (fmtN(d.all_pages, 0) + " صفحه") : "—");
+            };
+
             try {
-                // ترجیح RPC (SECURITY DEFINER) برای عبور از RLS
                 const rpc = await db.rpc("get_group_records");
                 if (!rpc.error && rpc.data) {
                     const d = typeof rpc.data === "string" ? JSON.parse(rpc.data) : rpc.data;
-                    const runner = d.top_runner || {};
-                    const reader = d.top_reader || {};
-                    set("grpRunnerName", runner.display_name || "—");
-                    set("grpRunnerKm", runner.total_km != null ? fmt(runner.total_km) + " km" : "—");
-                    set("grpReaderName", reader.display_name || "—");
-                    set("grpReaderPages", reader.total_pages != null ? fmt(reader.total_pages, 0) + " صفحه" : "—");
-                    set("grpAllKm", d.all_km != null ? fmt(d.all_km) + " km" : "—");
-                    set("grpAllPages", d.all_pages != null ? fmt(d.all_pages, 0) + " صفحه" : "—");
+                    apply(d);
                     return;
                 }
             } catch (e) { console.warn("group records rpc", e); }
 
-            // fallback: تلاش با select مستقیم (اگر RLS اجازه دهد)
             try {
-                const [ex, rd, pr] = await Promise.all([
-                    db.from("exercise_logs").select("user_id, running_km"),
+                const [ex, rd, mt, pr] = await Promise.all([
+                    db.from("exercise_logs").select("user_id, running_km, total_km"),
                     db.from("daily_logs").select("user_id, value").eq("item_type", "reading"),
-                    db.from("profiles").select("id, display_name")
+                    db.from("mountain_trips").select("user_id"),
+                    db.from("profiles").select("id, display_name, height_cm, bmi_public")
                 ]);
                 const names = {};
                 (pr.data || []).forEach(p => { names[p.id] = p.display_name; });
-                const kmBy = {};
-                let allKm = 0;
+                const kmBy = {}; let allKm = 0;
                 (ex.data || []).forEach(r => {
-                    const k = Number(r.running_km) || 0;
+                    const k = Number(r.total_km) || Number(r.running_km) || 0;
                     allKm += k;
                     kmBy[r.user_id] = (kmBy[r.user_id] || 0) + k;
                 });
-                const pgBy = {};
-                let allPg = 0;
+                const pgBy = {}; let allPg = 0;
                 (rd.data || []).forEach(r => {
                     const v = Number(r.value) || 0;
                     allPg += v;
                     pgBy[r.user_id] = (pgBy[r.user_id] || 0) + v;
                 });
-                let topR = null, topRv = -1;
-                Object.keys(kmBy).forEach(uid => {
-                    if (kmBy[uid] > topRv) { topRv = kmBy[uid]; topR = uid; }
+                const mtBy = {};
+                (mt.data || []).forEach(r => { mtBy[r.user_id] = (mtBy[r.user_id] || 0) + 1; });
+
+                const top = (map) => {
+                    let id = null, v = -1;
+                    Object.keys(map).forEach(uid => {
+                        if (map[uid] > v) { v = map[uid]; id = uid; }
+                    });
+                    return { id, v };
+                };
+                const tr = top(kmBy), tp = top(pgBy), tm = top(mtBy);
+
+                // سبک‌بال: کمترین BMI عمومی (اگر داده وزن موجود باشد در RPC کامل‌تر است)
+                let light = { display_name: null, bmi: null };
+
+                apply({
+                    top_runner: { display_name: tr.id ? names[tr.id] : null, total_km: tr.v > 0 ? tr.v : null },
+                    top_reader: { display_name: tp.id ? names[tp.id] : null, total_pages: tp.v > 0 ? tp.v : null },
+                    top_climber: { display_name: tm.id ? names[tm.id] : null, trips: tm.v > 0 ? tm.v : null },
+                    lightest: light,
+                    all_km: allKm,
+                    all_pages: allPg
                 });
-                let topP = null, topPv = -1;
-                Object.keys(pgBy).forEach(uid => {
-                    if (pgBy[uid] > topPv) { topPv = pgBy[uid]; topP = uid; }
-                });
-                set("grpRunnerName", topR ? (names[topR] || "کاربر") : "—");
-                set("grpRunnerKm", topRv > 0 ? fmt(topRv) + " km" : "—");
-                set("grpReaderName", topP ? (names[topP] || "کاربر") : "—");
-                set("grpReaderPages", topPv > 0 ? fmt(topPv, 0) + " صفحه" : "—");
-                set("grpAllKm", allKm > 0 ? fmt(allKm) + " km" : "—");
-                set("grpAllPages", allPg > 0 ? fmt(allPg, 0) + " صفحه" : "—");
             } catch (e) {
                 console.warn("group records fallback", e);
             }
         }
 
-async function loadReport() {
-            const seq = ++reportLoadSeq;
-
-            if (typeof renderSkeleton === "function") {
-                renderSkeleton();
-            } else {
-                const c = document.getElementById("content");
-                if (c) c.innerHTML = `<div class="loading">در حال بارگذاری...</div>`;
-            }
-
-            const range = jalaliRange(selectedYear, selectedMonth);
-
-            try {
-                const [statsRes, boardRes, logsRes, exRes, kmRes, userKmRes, mtRes] = await Promise.all([
-                    db.rpc("get_my_month_report", { p_start: range.start, p_end: range.end }),
-                    db.rpc("get_monthly_leaderboard", { p_start: range.start, p_end: range.end }),
-                    db.from("daily_logs")
-                    .select("item_type, score, log_date")
-                    .eq("user_id", currentUser.id)
-                    .gte("log_date", range.start)
-                    .lte("log_date", range.end),
-                    db.from("exercise_logs")
-                    .select("score, log_date, total_km, aerobic_equivalent_km, running_km, weight_kg")
-                    .eq("user_id", currentUser.id)
-                    .gte("log_date", range.start)
-                    .lte("log_date", range.end),
-                    db.rpc("get_month_km_stats", { p_start: range.start, p_end: range.end }),
-                    db.rpc("get_month_user_km", { p_start: range.start, p_end: range.end }),
-                    db.from("mountain_trips")
-                    .select("trip_date")
-                    .eq("user_id", currentUser.id)
-                    .gte("trip_date", range.start)
-                    .lte("trip_date", range.end)
-                ]);
-
-                if (statsRes.error) throw statsRes.error;
-
-                const stats = statsRes.data || {
-                    total_score: 0,
-                    avg_score: 0,
-                    best_day: null,
-                    best_score: 0,
-                    active_days: 0,
-                    daily: []
-                };
-
-                const now = new Date();
-                const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-                const daysInMonth = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
-                const isCurrentMonth = selectedYear === jNow.jy && selectedMonth === jNow.jm;
-                const isFutureMonth = selectedYear > jNow.jy || (selectedYear === jNow.jy && selectedMonth > jNow.jm);
-
-                let completedDays;
-                if (isCurrentMonth) {
-                    completedDays = Math.max(0, jNow.jd - 1);
-                } else if (isFutureMonth) {
-                    completedDays = 0;
-                } else {
-                    completedDays = daysInMonth;
-                }
-
-                let boardData = boardRes.data || [];
-                let rankCompletedDays = completedDays;
-
-                if (rankMode === "week") {
-                    ensureSelectedWeek();
-                    const wr = selectedWeekRange();
-                    rankCompletedDays = wr.completedDays;
-                    if (rankCompletedDays <= 0) {
-                        boardData = [];
-                    } else {
-                        const boardWeek = await db.rpc("get_monthly_leaderboard", {
-                            p_start: wr.start,
-                            p_end: wr.endCompleted
-                        });
-                        if (!boardWeek.error) boardData = boardWeek.data || [];
-                        else boardData = [];
-                    }
-                } else if (isCurrentMonth && completedDays > 0) {
-                    const endCompleted = (() => {
-                        const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
-                        return isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
-                    })();
-                    const boardCompleted = await db.rpc("get_monthly_leaderboard", {
-                        p_start: range.start,
-                        p_end: endCompleted
-                    });
-                    if (!boardCompleted.error) boardData = boardCompleted.data || [];
-                } else if (isCurrentMonth && completedDays === 0) {
-                    boardData = [];
-                }
-
-                const todayISO = isoDate(now);
-                let todayActive = new Set();
-                let weekIncludesToday = false;
-                if (rankMode === "week") {
-                    const wrNow = selectedWeekRange();
-                    weekIncludesToday = todayISO >= wrNow.start && todayISO <= wrNow.endFri;
-                }
-                if ((rankMode === "month" && isCurrentMonth) || (rankMode === "week" && weekIncludesToday)) {
-                    try {
-                        const act = await db.rpc("get_today_active_users", { p_today: todayISO });
-                        if (!act.error && Array.isArray(act.data)) {
-                            act.data.forEach(id => todayActive.add(id));
-                        } else if (!act.error && act.data) {
-                            const arr = typeof act.data === "string" ? JSON.parse(act.data) : act.data;
-                            (arr || []).forEach(id => todayActive.add(id));
-                        }
-                    } catch (e) {}
-                }
-
-                // فرمول یکسان ماه و هفته: avg = (sum scores in range / completedDays) + todayBonus
-                let leaderboard = boardData.map(u => {
-                    const totalScore = Number(u.total_score) || 0;
-                    const bonus = (todayActive.has(u.user_id) || todayActive.has(String(u.user_id))) ? 1 : 0;
-                    const daysDiv = (typeof rankCompletedDays === "number" ? rankCompletedDays : completedDays);
-                    const baseAvg = daysDiv > 0 ? (totalScore / daysDiv) : 0;
-                    const avg = Math.round((baseAvg + bonus) * 100) / 100;
-                    return { ...u, avg, bonus, completedDays: daysDiv, totalScore };
-                });
-
-                if (isCurrentMonth && todayActive.size) {
-                    const onBoard = new Set(leaderboard.map(u => String(u.user_id)));
-                    const missing = [...todayActive].filter(id => !onBoard.has(String(id)));
-                    if (missing.length) {
-                        let nameMap = {};
-                        try {
-                            const pr = await db.from("profiles").select("id, display_name").in("id", missing);
-                            (pr.data || []).forEach(p => {
-                                nameMap[p.id] = p.display_name;
-                                nameMap[String(p.id)] = p.display_name;
-                            });
-                        } catch (e) {}
-                        missing.forEach(uid => {
-                            leaderboard.push({
-                                user_id: uid,
-                                display_name: nameMap[uid] || nameMap[String(uid)] || "کاربر",
-                                total_score: 0,
-                                totalScore: 0,
-                                avg: 1,
-                                bonus: 1,
-                                completedDays
-                            });
-                        });
-                    }
-                }
-
-                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "کاربر");
-                if (needNames.length) {
-                    try {
-                        const ids = needNames.map(u => u.user_id);
-                        const pr = await db.from("profiles").select("id, display_name").in("id", ids);
-                        const map = {};
-                        (pr.data || []).forEach(p => {
-                            if (p.display_name) {
-                                map[p.id] = p.display_name;
-                                map[String(p.id)] = p.display_name;
-                            }
-                        });
-                        leaderboard.forEach(u => {
-                            const n = map[u.user_id] || map[String(u.user_id)];
-                            if (n) u.display_name = n;
-                        });
-                    } catch (e) {}
-                }
-                leaderboard.sort((a, b) => b.avg - a.avg);
-
-                // بازه کیلومتر: در حالت هفته فقط از شنبه تا امروز (نه کل ماه)
-                let kmStart = range.start;
-                let kmEnd = range.end;
-                if (rankMode === "week") {
-                    const wrKm = selectedWeekRange();
-                    kmStart = wrKm.start;
-                    kmEnd = wrKm.end;
-                }
-
-                try {
-                    const kmUsersRes = await db.rpc("get_month_user_km", {
-                        p_start: kmStart,
-                        p_end: kmEnd
-                    });
-                    if (!kmUsersRes.error && kmUsersRes.data) {
-                        const kmMap = {};
-                        (Array.isArray(kmUsersRes.data) ? kmUsersRes.data : []).forEach(row => {
-                            const id = row.user_id;
-                            kmMap[id] = Number(row.total_km) || 0;
-                            kmMap[String(id)] = Number(row.total_km) || 0;
-                        });
-                        leaderboard.forEach(u => {
-                            u.km = kmMap[u.user_id] || kmMap[String(u.user_id)] || 0;
-                        });
-                    }
-                } catch (e) {}
-
-                try {
-                    const calUsersRes = await db.rpc("get_month_user_calories", {
-                        p_start: kmStart,
-                        p_end: kmEnd
-                    });
-                    if (!calUsersRes.error && calUsersRes.data) {
-                        const calMap = {};
-                        (Array.isArray(calUsersRes.data) ? calUsersRes.data : []).forEach(row => {
-                            const id = row.user_id;
-                            const v = Number(row.total_calories) || 0;
-                            calMap[id] = v;
-                            calMap[String(id)] = v;
-                        });
-                        leaderboard.forEach(u => {
-                            u.cal = calMap[u.user_id] || calMap[String(u.user_id)] || 0;
-                        });
-                    }
-                } catch (e) {}
-
-                const habitMap = {};
-                (logsRes.data || []).forEach(r => {
-                    if (!habitMap[r.item_type]) habitMap[r.item_type] = { count: 0, total: 0 };
-                    habitMap[r.item_type].count++;
-                    habitMap[r.item_type].total += Number(r.score) || 0;
-                });
-
-                if (exRes.data && exRes.data.length) {
-                    habitMap.exercise = {
-                        count: exRes.data.length,
-                        total: exRes.data.reduce((s, r) => s + (Number(r.score) || 0), 0)
-                    };
-                }
-
-                const mtList = (mtRes && !mtRes.error && mtRes.data) ? mtRes.data : [];
-                habitMap.mountain = {
-                    count: mtList.length,
-                    total: mtList.length
-                };
-                if (!habitMap.discipline) {
-                    habitMap.discipline = { count: 0, total: 0 };
-                }
-
-                // کیلومتر من و جامعه: فیلتر به همان بازه (هفته یا ماه)
-                const exInRange = (exRes.data || []).filter(r => {
-                    const d = r.log_date;
-                    return d >= kmStart && d <= kmEnd;
-                });
-                const myKm = exInRange.reduce((s, r) => s + (Number(r.total_km) || 0), 0);
-
-                let communityKm = 0;
-                let activePeople = 0;
-                try {
-                    const kmStatsRes = (rankMode === "week")
-                        ? await db.rpc("get_month_km_stats", { p_start: kmStart, p_end: kmEnd })
-                        : kmRes;
-                    const kmStats = kmStatsRes && !kmStatsRes.error ? (kmStatsRes.data || {}) : {};
-                    communityKm = Number(kmStats.total_km) || 0;
-                    activePeople = Number(kmStats.active_users) || 0;
-                } catch (e) {
-                    const kmStats = kmRes && !kmRes.error ? (kmRes.data || {}) : {};
-                    communityKm = Number(kmStats.total_km) || 0;
-                    activePeople = Number(kmStats.active_users) || 0;
-                }
-
-                const kmByUser = {};
-                if (userKmRes && !userKmRes.error && Array.isArray(userKmRes.data)) {
-                    userKmRes.data.forEach(row => {
-                        kmByUser[row.user_id] = Number(row.total_km) || 0;
-                        kmByUser[String(row.user_id)] = Number(row.total_km) || 0;
-                    });
-                }
-                leaderboard.forEach(u => {
-                    if (u.km != null && !Number.isNaN(Number(u.km))) {
-                        u.month_km = Number(u.km) || 0;
-                    } else {
-                        u.month_km = kmByUser[u.user_id] || kmByUser[String(u.user_id)] || 0;
-                    }
-                    u.month_cal = Number(u.cal) || 0;
-                });
-
-                if (rankBy === "km") {
-                    leaderboard.sort((a, b) => (Number(b.month_km) || 0) - (Number(a.month_km) || 0));
-                } else if (rankBy === "cal") {
-                    leaderboard.sort((a, b) => (Number(b.month_cal) || 0) - (Number(a.month_cal) || 0));
-                } else {
-                    leaderboard.sort((a, b) => (Number(b.avg) || 0) - (Number(a.avg) || 0));
-                }
-
-                try {
-                    const ids = leaderboard.map(u => u.user_id).filter(Boolean);
-                    if (currentUser && currentUser.id) ids.push(currentUser.id);
-                    await loadBmiDataForUsers(ids);
-                    leaderboard.forEach(u => {
-                        const b = bmiDataByUser[String(u.user_id)] || {};
-                        const isSelf = currentUser && String(u.user_id) === String(currentUser.id);
-                        const visible = isSelf || b.bmi_public !== false;
-                        u.bmi_public = b.bmi_public !== false;
-                        if (visible) {
-                            u.height_cm = b.height_cm;
-                            u.age_years = b.age_years;
-                            u.weight_kg = b.weight_kg;
-                            u.bmi = calcBmi(b.weight_kg, b.height_cm);
-                        } else {
-                            u.height_cm = null;
-                            u.age_years = null;
-                            u.weight_kg = null;
-                            u.bmi = null;
-                        }
-                    });
-                } catch (e) {}
-
-                const weightByDay = {};
-                (exRes.data || []).forEach(e => {
-                    if (e.log_date && e.weight_kg != null) {
-                        weightByDay[e.log_date] = Number(e.weight_kg);
-                    }
-                });
-
-                const dayStatus = {};
-                dayDetailsCache = {};
-                const daysInM = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
-                for (let d = 1; d <= daysInM; d++) {
-                    const g = jalaali.toGregorian(selectedYear, selectedMonth, d);
-                    const iso = isoDate(new Date(Date.UTC(g.gy, g.gm - 1, g.gd)));
-                    dayStatus[iso] = { score: 0, hasDisc: false, hasOther: false, items: [] };
-                }
-                const habitLabel = (type) => {
-                    const m = HABIT_LABELS[type];
-                    return m ? ((m.icon ? m.icon + " " : "") + (m.title || type)) : type;
-                };
-                (logsRes.data || []).forEach(row => {
-                    if (!dayStatus[row.log_date]) return;
-                    const sc = Number(row.score) || 0;
-                    dayStatus[row.log_date].score += sc;
-                    if (!dayStatus[row.log_date].items) dayStatus[row.log_date].items = [];
-                    dayStatus[row.log_date].items.push({
-                        type: row.item_type,
-                        label: habitLabel(row.item_type),
-                        score: sc
-                    });
-                    if (row.item_type === "discipline") dayStatus[row.log_date].hasDisc = true;
-                    else dayStatus[row.log_date].hasOther = true;
-                });
-                (exRes.data || []).forEach(row => {
-                    if (!dayStatus[row.log_date]) return;
-                    const sc = Number(row.score) || 0;
-                    dayStatus[row.log_date].score += sc;
-                    if (!dayStatus[row.log_date].items) dayStatus[row.log_date].items = [];
-                    dayStatus[row.log_date].items.push({
-                        type: "exercise",
-                        label: habitLabel("exercise"),
-                        score: sc
-                    });
-                    dayStatus[row.log_date].hasOther = true;
-                });
-                Object.keys(dayStatus).forEach(iso => {
-                    dayDetailsCache[iso] = {
-                        date: iso,
-                        score: dayStatus[iso].score,
-                        items: dayStatus[iso].items || []
-                    };
-                });
-                const todayIsoForStatus = isoDate(new Date());
-                Object.keys(dayStatus).forEach(iso => {
-                    const s = dayStatus[iso];
-                    if (iso > todayIsoForStatus) s.status = "future";
-                    else if (s.hasOther || s.hasDisc) s.status = s.hasDisc ? "timely" : "late";
-                    else s.status = "missed";
-                });
-                if (seq !== reportLoadSeq) return;
-                renderReport(stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus, weightByDay);
-            } catch (err) {
-                const content = document.getElementById("content");
-                content.innerHTML = `
-              <div class="empty error-box">
-                <div class="empty-icon">⚠️</div>
-                <div>خطا در دریافت گزارش</div>
-                <small>${(err && err.message) ? err.message : ""}</small>
-                <button class="retry-btn" id="retryBtn">تلاش دوباره</button>
-              </div>`;
-                const retryBtn = document.getElementById("retryBtn");
-                if (retryBtn) retryBtn.onclick = loadReport;
-            }
-        }
-
+        
         function avatarSrc(name) {
             if (!name) return null;
             return "images/" + encodeURIComponent(String(name).trim()) + ".png";
@@ -4748,31 +4522,50 @@ async function loadReport() {
 
               ${weightStripHtml}
 
-              <div class="card">
-                <div class="card-title">🏆 رکوردهای گروه</div>
-                <div class="card-sub">همهٔ زمان‌ها · همهٔ اعضا</div>
-                <div class="group-records" id="groupRecordsBox">
-                  <div class="group-rec-card">
-                    <div class="group-rec-icon">🏃</div>
-                    <div class="group-rec-label">دوندهٔ گروه</div>
-                    <div class="group-rec-value" id="grpRunnerName">—</div>
-                    <div class="group-rec-sub" id="grpRunnerKm">—</div>
+              <div class="group-rec-wrap" id="groupRecWrap">
+                <button type="button" class="group-rec-toggle" id="groupRecToggle" aria-expanded="false">
+                  <div>
+                    <div class="group-rec-toggle-title">🏆 رکوردهای گروه</div>
+                    <div class="group-rec-toggle-sub">همهٔ زمان‌ها · کمِ معادل · جمع‌وجور</div>
                   </div>
-                  <div class="group-rec-card">
-                    <div class="group-rec-icon">📖</div>
-                    <div class="group-rec-label">خوانندهٔ گروه</div>
-                    <div class="group-rec-value" id="grpReaderName">—</div>
-                    <div class="group-rec-sub" id="grpReaderPages">—</div>
-                  </div>
-                  <div class="group-rec-card">
-                    <div class="group-rec-icon">🛣️</div>
-                    <div class="group-rec-label">مجموع کیلومتر گروه</div>
-                    <div class="group-rec-value" id="grpAllKm">—</div>
-                  </div>
-                  <div class="group-rec-card">
-                    <div class="group-rec-icon">📚</div>
-                    <div class="group-rec-label">مجموع صفحات گروه</div>
-                    <div class="group-rec-value" id="grpAllPages">—</div>
+                  <span class="group-rec-chevron">‹</span>
+                </button>
+                <div class="group-rec-body" id="groupRecordsBox">
+                  <div class="group-records">
+                    <div class="group-rec-card accent-run">
+                      <div class="group-rec-icon">🏃</div>
+                      <div class="group-rec-label">دوندهٔ گروه</div>
+                      <div class="group-rec-value" id="grpRunnerName">—</div>
+                      <div class="group-rec-metric" id="grpRunnerKm">—</div>
+                    </div>
+                    <div class="group-rec-card accent-read">
+                      <div class="group-rec-icon">📖</div>
+                      <div class="group-rec-label">خوانندهٔ گروه</div>
+                      <div class="group-rec-value" id="grpReaderName">—</div>
+                      <div class="group-rec-metric" id="grpReaderPages">—</div>
+                    </div>
+                    <div class="group-rec-card accent-mt">
+                      <div class="group-rec-icon">⛰️</div>
+                      <div class="group-rec-label">کوه‌نورد گروه</div>
+                      <div class="group-rec-value" id="grpMtName">—</div>
+                      <div class="group-rec-metric" id="grpMtTrips">—</div>
+                    </div>
+                    <div class="group-rec-card accent-bmi">
+                      <div class="group-rec-icon">🪶</div>
+                      <div class="group-rec-label">سبک‌بال گروه</div>
+                      <div class="group-rec-value" id="grpBmiName">—</div>
+                      <div class="group-rec-metric" id="grpBmiVal">—</div>
+                    </div>
+                    <div class="group-rec-card">
+                      <div class="group-rec-icon">🛣️</div>
+                      <div class="group-rec-label">مجموع کمِ معادل</div>
+                      <div class="group-rec-metric" id="grpAllKm">—</div>
+                    </div>
+                    <div class="group-rec-card">
+                      <div class="group-rec-icon">📚</div>
+                      <div class="group-rec-label">مجموع صفحات</div>
+                      <div class="group-rec-metric" id="grpAllPages">—</div>
+                    </div>
                   </div>
                 </div>
               </div>
