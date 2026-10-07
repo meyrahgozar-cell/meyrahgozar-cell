@@ -5,7 +5,14 @@ import { $, setBtnLoading, showMsg, faNum } from './utils.js';
 
 initThemeToggle();
 
-if (getUser()) location.replace('dashboard.html');
+if (getUser()) {
+  const u = getUser();
+  location.replace(
+    (u.role === 'admin' || u.role === 'superadmin')
+      ? 'admin/index.html'
+      : 'dashboard.html'
+  );
+}
 
 const form = $('#loginForm');
 const btn = $('#loginBtn');
@@ -47,7 +54,11 @@ form.addEventListener('submit', async (e) => {
     }
     saveUser(member, $('#remember').checked);
     showMsg(msg, 'ورود موفق. در حال انتقال…', 'ok');
-    setTimeout(() => location.href = 'dashboard.html', 400);
+
+    const dest = (member.role === 'admin' || member.role === 'superadmin')
+      ? 'admin/index.html'
+      : 'dashboard.html';
+    setTimeout(() => location.href = dest, 400);
   } catch (err) {
     console.error(err);
     showMsg(msg, 'خطا در ارتباط با سرور.', 'error');
