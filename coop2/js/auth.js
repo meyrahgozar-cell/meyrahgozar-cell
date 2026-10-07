@@ -1,4 +1,4 @@
-import { CONFIG } from './js_config.js';
+import { CONFIG } from './config.js';
 const UKEY = CONFIG.storageKeys.user;
 
 export function saveUser(member, remember) {
