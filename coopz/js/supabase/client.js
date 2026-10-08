@@ -91,3 +91,21 @@ export async function bulkInsertObligations(rows) {
   if (error) throw error;
   return data || [];
 }
+export async function changePassword(memberId, currentPassword, newPassword) {
+  const { data: member, error: fetchErr } = await supabase
+    .from('members')
+    .select('id, password_initial')
+    .eq('id', memberId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!member) throw new Error('کاربر یافت نشد');
+  if (member.password_initial !== currentPassword) {
+    throw new Error('رمز فعلی نادرست است');
+  }
+  const { error } = await supabase
+    .from('members')
+    .update({ password_initial: newPassword })
+    .eq('id', memberId);
+  if (error) throw error;
+  return true;
+}

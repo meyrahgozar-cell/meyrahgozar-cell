@@ -8,7 +8,8 @@ const MEMBER_NAV = [
   { href: 'dashboard.html',    label: 'داشبورد',          icon: 'dashboard' },
   { href: 'invitations.html',  label: 'دعوت‌نامه‌ها',      icon: 'mail' },
   { href: 'minutes.html',      label: 'صورت‌جلسات',       icon: 'file-text' },
-  { href: 'suggestions.html',  label: 'درخواست و پیشنهاد', icon: 'send' }
+  { href: 'suggestions.html',  label: 'درخواست و پیشنهاد', icon: 'send' },
+  { href: 'password.html',     label: 'تغییر رمز عبور',   icon: 'lock' }
 ];
 
 const ADMIN_NAV = [
