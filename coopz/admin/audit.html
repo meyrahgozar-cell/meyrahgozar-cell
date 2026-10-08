@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>گزارش فعالیت | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+<link rel="stylesheet" href="../css/admin-db.css" />
+<link rel="stylesheet" href="../css/responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page admin-page">
+    <header class="page-head">
+      <span class="tile"><i class="i i-activity" aria-hidden="true"></i></span>
+      <div>
+        <h1>گزارش فعالیت</h1>
+        <p class="muted">سابقه عملیات ادمین‌ها و سوپرادمین</p>
+      </div>
+    </header>
+
+    <div class="db-toolbar panel">
+      <div class="db-toolbar-row">
+        <label class="field-inline search-field">
+          <span>جستجو</span>
+          <input type="text" id="searchInput" placeholder="عامل، عملیات، جدول…" />
+        </label>
+        <div class="db-actions">
+          <button class="btn btn-sm btn-ghost" id="btnRefresh" type="button">
+            <i class="i i-refresh" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="db-meta">
+        <span id="rowCount" class="badge">—</span>
+        <span id="pageMsg" class="auth-msg"></span>
+      </div>
+    </div>
+
+    <section class="panel db-table-panel">
+      <div class="table-wrap db-scroll">
+        <table class="table db-table" id="auditTable">
+          <thead>
+            <tr>
+              <th>زمان</th>
+              <th>عامل</th>
+              <th>عملیات</th>
+              <th>جدول</th>
+              <th>جزئیات</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="5" class="empty">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin-audit.js"></script>
+</body>
+</html>

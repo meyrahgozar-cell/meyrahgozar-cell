@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>مدیریت کاربران | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+<link rel="stylesheet" href="../css/admin-db.css" />
+<link rel="stylesheet" href="../css/responsive.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page admin-page">
+    <header class="page-head">
+      <span class="tile"><i class="i i-users" aria-hidden="true"></i></span>
+      <div>
+        <h1>مدیریت کاربران و نقش‌ها</h1>
+        <p class="muted">تعیین نقش عضو، ادمین و سوپرادمین</p>
+      </div>
+    </header>
+
+    <div class="db-toolbar panel">
+      <div class="db-toolbar-row">
+        <label class="field-inline search-field">
+          <span>جستجو</span>
+          <input type="text" id="searchInput" placeholder="نام، کد ملی، نقش…" />
+        </label>
+        <label class="field-inline">
+          <span>نقش</span>
+          <select id="roleFilter">
+            <option value="">همه</option>
+            <option value="member">عضو</option>
+            <option value="admin">ادمین</option>
+            <option value="superadmin">سوپرادمین</option>
+          </select>
+        </label>
+        <div class="db-actions">
+          <button class="btn btn-sm btn-ghost" id="btnRefresh" type="button">
+            <i class="i i-refresh" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="db-meta">
+        <span id="rowCount" class="badge">—</span>
+        <span id="pageMsg" class="auth-msg"></span>
+      </div>
+    </div>
+
+    <section class="panel db-table-panel">
+      <div class="table-wrap db-scroll">
+        <table class="table db-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>کد ملی</th>
+              <th>موبایل</th>
+              <th>وضعیت</th>
+              <th>نقش</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="6" class="empty">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin-users.js"></script>
+</body>
+</html>

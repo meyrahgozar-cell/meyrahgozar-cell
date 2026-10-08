@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1b2236" />
+<title>مدیریت دیتابیس | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+<link rel="stylesheet" href="../css/admin-db.css" />
+<link rel="stylesheet" href="../css/responsive.css" />
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page admin-page">
+    <header class="page-head">
+      <span class="tile"><i class="i i-database" aria-hidden="true"></i></span>
+      <div>
+        <h1>مدیریت دیتابیس</h1>
+        <p class="muted">نمایش، ویرایش، مقایسه و خروجی اکسل</p>
+      </div>
+    </header>
+
+    <div class="db-toolbar panel">
+      <div class="db-toolbar-row">
+        <label class="field-inline">
+          <span>جدول</span>
+          <select id="tableSelect">
+            <option value="members">اعضا (members)</option>
+            <option value="payments">پرداخت‌ها (payments)</option>
+            <option value="obligations">تعهدات (obligations)</option>
+            <option value="suggestions">پیشنهادات (suggestions)</option>
+            <option value="import_configs">تنظیمات ایمپورت</option>
+            <option value="audit_log">گزارش فعالیت</option>
+          </select>
+        </label>
+        <label class="field-inline search-field">
+          <span>جستجو</span>
+          <input type="text" id="searchInput" placeholder="جستجو در ردیف‌ها…" />
+        </label>
+        <div class="db-actions">
+          <button class="btn btn-sm btn-ghost" id="btnRefresh" type="button" title="بارگذاری مجدد">
+            <i class="i i-refresh" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-sm btn-ghost" id="btnExport" type="button" title="خروجی اکسل">
+            <i class="i i-download" aria-hidden="true"></i>
+            <span class="btn-label">اکسل</span>
+          </button>
+          <button class="btn btn-sm btn-primary" id="btnAdd" type="button">
+            <i class="i i-plus" aria-hidden="true"></i>
+            <span class="btn-label">جدید</span>
+          </button>
+        </div>
+      </div>
+      <div class="db-meta">
+        <span id="rowCount" class="badge">—</span>
+        <span id="dbMsg" class="auth-msg"></span>
+      </div>
+    </div>
+
+    <section class="panel db-table-panel">
+      <div class="table-wrap db-scroll" id="tableWrap">
+        <table class="table db-table" id="dataTable">
+          <thead></thead>
+          <tbody><tr><td class="empty">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Compare / Import from Excel -->
+    <section class="panel">
+      <header class="panel-head">
+        <div class="panel-title">
+          <span class="tile"><i class="i i-file-spreadsheet" aria-hidden="true"></i></span>
+          <h2>مقایسه و به‌روزرسانی از اکسل</h2>
+        </div>
+      </header>
+      <div class="compare-zone">
+        <div class="dropzone dropzone-sm" id="compareDrop" tabindex="0" role="button">
+          <input type="file" id="compareFile" accept=".xlsx,.xls" hidden />
+          <div class="dropzone-inner">
+            <div class="dropzone-icon tile"><i class="i i-upload" aria-hidden="true"></i></div>
+            <div class="dropzone-title">فایل اکسل برای مقایسه</div>
+            <div class="dropzone-sub">ستون‌ها باید با نام فیلدهای جدول مطابقت داشته باشند</div>
+          </div>
+        </div>
+        <div id="compareResult" class="compare-result" hidden></div>
+        <div class="form-actions" id="compareActions" hidden>
+          <button class="btn btn-ghost" id="compareCancel" type="button">انصراف</button>
+          <button class="btn btn-primary" id="compareApply" type="button">
+            <span class="btn-text">اعمال تغییرات</span>
+            <span class="spinner" hidden></span>
+          </button>
+        </div>
+        <div id="compareMsg" class="auth-msg"></div>
+      </div>
+    </section>
+
+    <!-- Save export config -->
+    <section class="panel">
+      <header class="panel-head">
+        <div class="panel-title">
+          <span class="tile"><i class="i i-save" aria-hidden="true"></i></span>
+          <h2>پیکربندی خروجی اکسل</h2>
+        </div>
+      </header>
+      <div class="config-form">
+        <label class="field">
+          <span>نام پیکربندی</span>
+          <input type="text" id="cfgName" placeholder="مثلاً: خروجی اعضا" />
+        </label>
+        <label class="field">
+          <span>ستون‌های خروجی (با کاما جدا کنید)</span>
+          <input type="text" id="cfgCols" placeholder="id, first_name, last_name, …" />
+        </label>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" id="btnSaveCfg" type="button">
+            <span class="btn-text">ذخیره در دیتابیس</span>
+            <span class="spinner" hidden></span>
+          </button>
+        </div>
+        <div id="cfgMsg" class="auth-msg"></div>
+        <div id="cfgList" class="cfg-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay" id="editModal" hidden>
+    <div class="modal panel">
+      <header class="panel-head">
+        <h2 id="modalTitle">ویرایش</h2>
+        <button class="side-close" type="button" id="modalClose" aria-label="بستن">
+          <i class="i i-x" aria-hidden="true"></i>
+        </button>
+      </header>
+      <form id="editForm" class="modal-body"></form>
+      <div class="form-actions modal-actions">
+        <button class="btn btn-ghost" type="button" id="modalCancel">انصراف</button>
+        <button class="btn btn-primary" type="submit" form="editForm" id="modalSave">
+          <span class="btn-text">ذخیره</span>
+          <span class="spinner" hidden></span>
+        </button>
+      </div>
+      <div id="modalMsg" class="auth-msg"></div>
+    </div>
+  </div>
+
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin-database.js"></script>
+</body>
+</html>

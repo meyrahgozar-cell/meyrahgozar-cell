@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Base — fonts, reset, typography
+   Estedad (SIL OFL 1.1), self-hosted: Persian/Arabic + Latin subsets.
+   ========================================================================== */
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../assets/fonts/estedad-arabic-400-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('../assets/fonts/estedad-arabic-500-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../assets/fonts/estedad-arabic-700-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('../assets/fonts/estedad-arabic-800-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../assets/fonts/estedad-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('../assets/fonts/estedad-latin-500-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Estedad'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../assets/fonts/estedad-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+
+body {
+  --c: var(--brand-rgb);
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
+  font-family: var(--font-fa);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.85;
+  color: var(--text);
+  background-color: #121212;
+  background-image:
+    linear-gradient(163deg, transparent 0px, transparent 1px, #222 1px, #222 14px, transparent 14px),
+    linear-gradient(161deg, transparent 0px, #181818 1px, #222 2px, #222 15px, transparent 15px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, #222 1px, #222 14px, transparent 14px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, #222 1px, #222 14px, transparent 14px);
+  background-position: 2px 1px, 23px 16px, 48px 15px, 21px 30px;
+  background-size: 48px 30px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--trans), color var(--trans);
+}
+
+html[data-theme="light"] body {
+  background-color: #e8ecf4;
+  background-image:
+    linear-gradient(163deg, transparent 0px, transparent 1px, #d0d6e4 1px, #d0d6e4 14px, transparent 14px),
+    linear-gradient(161deg, transparent 0px, #d8dde8 1px, #d0d6e4 2px, #d0d6e4 15px, transparent 15px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, #d0d6e4 1px, #d0d6e4 14px, transparent 14px),
+    linear-gradient(343deg, transparent 0px, transparent 1px, #d0d6e4 1px, #d0d6e4 14px, transparent 14px);
+}
+
+/* Ambient light behind everything */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--bg-ambient);
+}
+
+/* Trailing light along brick gaps */
+.brick-trail {
+  position: fixed;
+  width: 120px;
+  height: 60px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(94, 184, 255, .45) 0%,
+    rgba(54, 224, 214, .18) 35%,
+    transparent 70%);
+  filter: blur(8px);
+  animation: brick-trail-move 22s ease-in-out infinite;
+  opacity: .9;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+html[data-theme="light"] .brick-trail {
+  background: radial-gradient(ellipse,
+    rgba(27, 98, 211, .28) 0%,
+    rgba(10, 126, 164, .1) 35%,
+    transparent 70%);
+  mix-blend-mode: multiply;
+  opacity: .75;
+}
+@keyframes brick-trail-move {
+  0%   { transform: translate(5vw, 8vh); }
+  12%  { transform: translate(38vw, 22vh); }
+  25%  { transform: translate(72vw, 14vh); }
+  38%  { transform: translate(85vw, 48vh); }
+  50%  { transform: translate(55vw, 70vh); }
+  62%  { transform: translate(18vw, 78vh); }
+  75%  { transform: translate(8vw, 45vh); }
+  88%  { transform: translate(48vw, 28vh); }
+  100% { transform: translate(5vw, 8vh); }
+}
+
+/* Links */
+a { color: var(--brand); text-decoration: none; transition: color var(--trans), text-shadow var(--trans); }
+a:hover { text-shadow: 0 0 .7em rgba(var(--brand-rgb), calc(var(--tg1) * .8)); }
+img, svg { max-width: 100%; display: block; }
+
+/* Headings — page titles carry the glow */
+h1, h2, h3, h4 { margin: 0 0 .4em; line-height: 1.4; color: var(--text-strong); }
+h1 {
+  font-size: clamp(1.55rem, 1.1rem + 1.6vw, 2.1rem);
+  font-weight: 800;
+  text-shadow:
+    0 0 .3em rgba(var(--brand-rgb), var(--tg1)),
+    0 0 1.05em rgba(var(--brand-rgb), var(--tg2));
+}
+h2 { font-size: clamp(1.08rem, 1rem + .4vw, 1.25rem); font-weight: 700; }
+h1, h2, h3, .welcome p, .page-head p, .auth-sub { text-wrap: balance; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0 0 .6em; }
+small { font-size: .8rem; }
+strong, b { font-weight: 700; }
+
+.muted { color: var(--muted); }
+.tiny  { font-size: .78rem; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+::selection { background: rgba(var(--brand-rgb), .38); color: var(--text-strong); }
+
+/* Keyboard focus */
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+:focus:not(:focus-visible) { outline: none; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--brand-rgb), .6); background-clip: content-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}

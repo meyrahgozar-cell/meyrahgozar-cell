@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Responsive — tablet, phone (bottom navigation bar on phones)
+   ========================================================================== */
+
+@media (max-width: 1080px) {
+  .stat-card, .stat-card.is-paid, .stat-card.is-debt { grid-column: span 6; }
+}
+
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: minmax(0, 1fr); max-width: 520px; }
+  .auth-side { border-inline-start: 0; border-top: 1px solid var(--line); padding: 1.8rem 1.6rem; }
+  .auth-side h2 { font-size: 1.35rem; }
+  .quick-links { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 720px) {
+  :root { --header-h: 60px; }
+
+  .app-header .inner { gap: .5rem; padding: 0 .75rem; }
+  .brand { gap: .6rem; }
+  .brand img { width: 34px; height: 34px; }
+  .brand-name { font-size: .92rem; }
+  .brand small { display: none; }
+  .user-chip { padding: .24rem; }
+  .user-chip .name { display: none; }
+  .btn-logout .btn-label { display: none; }
+  .btn-logout { min-width: 36px; padding-inline: .55rem; }
+
+  .app-footer .inner { flex-direction: column; text-align: center; }
+}
+
+@media (max-width: 640px) {
+  .container { padding: 0 .85rem; }
+  .page { padding: 1.25rem .85rem 1.5rem; }
+
+  .auth-side { display: none; }
+  .auth-body { padding: 1rem .75rem; }
+  .auth-card { padding: 1.9rem 1.3rem 1.5rem; }
+  .auth-logo { width: 60px; height: 60px; }
+  .auth-head h1 { font-size: 1.35rem; }
+  .auth-theme-toggle { top: .7rem; inset-inline-start: .7rem; }
+
+  .stats { gap: .75rem; }
+  .stat-card, .stat-card.is-paid, .stat-card.is-debt { grid-column: span 12; }
+  .stat-card.is-score, .stat-card.is-rank { grid-column: span 6; }
+  .stat-card { padding: 1rem 1.05rem; gap: .7rem; }
+  .stat-value { font-size: 1.5rem; }
+  .is-paid .stat-value, .is-debt .stat-value { font-size: 2.1rem; }
+  .stat-top .tile { width: 34px; height: 34px; }
+  .stat-label { font-size: .86rem; }
+
+  .panel { padding: 1.05rem; border-radius: var(--radius); }
+  .table thead th, .table tbody td { padding: .65rem .7rem; font-size: .86rem; }
+  #paymentsTable th:first-child, #paymentsTable td:first-child,
+  #obligationsTable th:first-child, #obligationsTable td:first-child { display: none; }
+  .scoreboard td:first-child { width: 64px; }
+  .scoreboard td:last-child { width: 84px; }
+
+  .page-head { gap: .8rem; margin-bottom: 1.25rem; }
+  .page-head .tile { width: 48px; height: 48px; border-radius: 14px; }
+  .page-head .tile .i { --s: 1.45rem; }
+
+  .pdf-item { padding: .85rem .9rem; gap: .75rem; }
+  .pdf-icon { width: 42px; height: 42px; }
+
+  .form-panel { padding: 1.1rem; }
+  .suggestion-textarea { min-height: 0; height: 15rem; }
+  .form-actions { flex-direction: column-reverse; }
+  .form-actions .btn { width: 100%; }
+}
