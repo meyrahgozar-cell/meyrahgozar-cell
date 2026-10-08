@@ -168,10 +168,26 @@
   .admin-page .panel { padding: .85rem; }
 }
 
-.template-bar {
+
+.dropzone {
   display: flex;
-  justify-content: flex-end;
-  margin-top: .65rem;
-  gap: .5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: .85rem;
 }
-.template-bar .btn .i { --s: 1.05rem; }
+.dropzone-sm { padding: 1.15rem 1rem 1rem; }
+.dropzone-template {
+  position: relative;
+  z-index: 2;
+  min-height: 32px;
+  padding: .3rem .8rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-color: var(--line);
+}
+.dropzone-template:hover {
+  color: var(--brand);
+  border-color: rgba(var(--brand-rgb), .45);
+}
+.dropzone-template .i { --s: .9rem; }

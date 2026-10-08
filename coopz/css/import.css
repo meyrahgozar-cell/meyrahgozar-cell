@@ -140,10 +140,28 @@
   .dropzone { padding: 1.6rem .9rem; }
 }
 
-.template-bar {
+
+/* Template action sits inside dropzone, not a separate strip */
+.dropzone {
   display: flex;
-  justify-content: flex-end;
-  margin-top: .75rem;
-  gap: .5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.75rem 1.25rem 1.15rem;
 }
-.template-bar .btn .i { --s: 1.05rem; }
+.dropzone-template {
+  position: relative;
+  z-index: 2;
+  min-height: 34px;
+  padding: .35rem .9rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-color: var(--line);
+}
+.dropzone-template:hover {
+  color: var(--brand);
+  border-color: rgba(var(--brand-rgb), .45);
+}
+.dropzone-template .i { --s: .95rem; }
+.dropzone-hint { margin-top: .15rem; }
