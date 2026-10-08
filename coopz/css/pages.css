@@ -204,3 +204,14 @@
 .form-panel { padding: 1.6rem; }
 .suggestion-textarea { min-height: 240px; padding: 1rem 1.1rem; font-size: 1.02rem; line-height: 1.95; resize: vertical; }
 .form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
+
+.auth-forgot {
+  margin: .85rem 0 0;
+  text-align: center;
+  font-size: .88rem;
+}
+.auth-forgot a {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.auth-forgot a:hover { color: var(--brand); }

@@ -112,3 +112,34 @@ export async function changePassword(memberId, currentPassword, newPassword) {
   if (error) throw error;
   return true;
 }
+/** Forgot password: national_id + mobile must match, then set new password_initial */
+export async function resetPasswordByIdentity(nationalId, mobile, newPassword) {
+  const normalizedMobile = String(mobile).replace(/\D/g, '');
+  const { data: member, error: fetchErr } = await supabase
+    .from('members')
+    .select('id, mobile, membership_status')
+    .eq('national_id', nationalId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!member) throw new Error('عضوی با این کد ملی یافت نشد.');
+  if (member.membership_status === 'انصرافی اولیه') {
+    throw new Error('عضویت لغو شده است. با پشتیبانی تماس بگیرید.');
+  }
+  const dbMobile = String(member.mobile || '').replace(/\D/g, '');
+  if (!dbMobile) {
+    throw new Error('موبایل در پرونده ثبت نشده. با پشتیبانی تماس بگیرید.');
+  }
+  // match full number or last 10 digits
+  const ok =
+    dbMobile === normalizedMobile ||
+    dbMobile.slice(-10) === normalizedMobile.slice(-10);
+  if (!ok) {
+    throw new Error('کد ملی و موبایل مطابقت ندارند.');
+  }
+  const { error } = await supabase
+    .from('members')
+    .update({ password_initial: newPassword })
+    .eq('id', member.id);
+  if (error) throw error;
+  return true;
+}
