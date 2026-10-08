@@ -2,6 +2,7 @@ import { requireAdmin, getUser } from './auth.js';
 import { renderLayout } from './layout.js';
 import { supabase } from './supabase/client.js';
 import { $, el, faNum, formatMoney, setBtnLoading, showMsg, escapeHtml } from './utils.js';
+import { downloadTableTemplate } from './excel-parser.js';
 
 const user = requireAdmin();
 if (user) renderLayout();
@@ -561,4 +562,17 @@ $('#compareCancel').addEventListener('click', () => {
 $('#compareApply').addEventListener('click', applyCompare);
 $('#btnSaveCfg').addEventListener('click', saveConfig);
 setupCompare();
+
+$('#btnCompareTemplate')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const meta = TABLES[state.table];
+  const headers = meta.columns.map(c => meta.labels[c] || c);
+  try {
+    downloadTableTemplate(headers, meta.label, `template-${state.table}.xlsx`);
+  } catch (err) {
+    showMsg(compareMsg, err.message || 'خطا در ساخت قالب', 'error');
+  }
+});
+
 loadTable();

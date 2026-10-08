@@ -167,3 +167,11 @@
   .db-table tbody td { max-width: 120px; padding: .4rem .45rem; }
   .admin-page .panel { padding: .85rem; }
 }
+
+.template-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: .65rem;
+  gap: .5rem;
+}
+.template-bar .btn .i { --s: 1.05rem; }

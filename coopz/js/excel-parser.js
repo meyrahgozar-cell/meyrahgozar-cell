@@ -166,3 +166,51 @@ function pickSheet(wb, names) {
   // حساس نباشیم؛ اولین شیت را برمی‌گردانیم اگر هیچ‌کدام پیدا نشد
   return null;
 }
+/** Build & download empty Excel templates (JS-generated, no static file) */
+export function downloadImportTemplate() {
+  if (typeof XLSX === 'undefined') throw new Error('XLSX not loaded');
+
+  const membersHeaders = [
+    'نام', 'نام خانوادگی', 'کد ملی', 'شماره موبایل', 'ایمیل فردی',
+    'پسورد اولیه', 'شرکت مادر', 'وضعیت عضویت', 'تعاونی',
+    'جمع پرداختی‌ها', 'میزان بدهی', 'امتیاز'
+  ];
+  const paymentsHeaders = ['کد ملی', 'مبلغ', 'تاریخ واریز', 'توضیحات'];
+  const obligationsHeaders = ['کد ملی', 'مبلغ', 'سررسید', 'توضیحات'];
+
+  const wb = XLSX.utils.book_new();
+
+  const wsM = XLSX.utils.aoa_to_sheet([
+    membersHeaders,
+    ['علی', 'محمدی', '0012345678', '09121234567', 'ali@example.com', '1234', 'مپنا', 'فعال', 1, 0, 0, 0]
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsM, 'Members');
+
+  const wsP = XLSX.utils.aoa_to_sheet([
+    paymentsHeaders,
+    ['0012345678', 5000000, '2024-01-15', 'قسط اول']
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsP, 'Payments');
+
+  const wsO = XLSX.utils.aoa_to_sheet([
+    obligationsHeaders,
+    ['0012345678', 5000000, '2024-06-01', 'تعهد قسط']
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsO, 'Obligations');
+
+  XLSX.writeFile(wb, 'template-import.xlsx');
+}
+
+/**
+ * Template for a single DB table (Persian labels preferred).
+ * @param {string[]} headers - column header labels
+ * @param {string} sheetName
+ * @param {string} [filename]
+ */
+export function downloadTableTemplate(headers, sheetName = 'Sheet1', filename = 'template.xlsx') {
+  if (typeof XLSX === 'undefined') throw new Error('XLSX not loaded');
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers]);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+  XLSX.writeFile(wb, filename);
+}

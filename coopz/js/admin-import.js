@@ -1,12 +1,20 @@
 import { requireAdmin } from './auth.js';
 import { renderLayout } from './layout.js';
-import { parseExcel } from './excel-parser.js';
+import { parseExcel, downloadImportTemplate } from './excel-parser.js';
 import { compareWithDatabase, applyChanges } from './importer.js';
 import { $, el, faNum, formatMoney, setBtnLoading, showMsg, escapeHtml } from './utils.js';
 import { formatJalali } from './jalali.js';
 
 const user = requireAdmin();
 if (user) renderLayout();
+
+$('#btnDownloadTemplate')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try { downloadImportTemplate(); }
+  catch (err) { showMsg($('#uploadMsg'), err.message || 'خطا در ساخت قالب', 'error'); }
+});
+
 
 const state = {
   parsed: null,
