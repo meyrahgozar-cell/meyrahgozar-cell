@@ -209,7 +209,7 @@
 .form-panel .field { margin-bottom: .9rem; }
 .form-panel .field > label,
 .form-panel .field > span { margin-bottom: .35rem; font-size: .88rem; }
-.form-panel input { min-height: 44px; padding: .65rem .9rem; font-size: .92rem; }
+.form-panel input { min-height: 44px; padding-block: .65rem; padding-inline: .9rem 3.1rem; font-size: .92rem; }
 .form-panel .form-actions { margin-top: .35rem; }
 .form-panel .auth-msg { margin-top: .75rem; font-size: .86rem; }
 .suggestion-textarea { min-height: 240px; padding: 1rem 1.1rem; font-size: 1.02rem; line-height: 1.95; resize: vertical; }

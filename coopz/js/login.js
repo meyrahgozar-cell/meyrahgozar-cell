@@ -1,7 +1,7 @@
 import { initThemeToggle } from './theme.js';
 import { findMemberByCredentials } from './supabase-client.js';
 import { saveUser, getUser } from './auth.js';
-import { $, setBtnLoading, showMsg, faNum } from './utils.js';
+import { $, setBtnLoading, showMsg, faNum, bindPassToggles } from './utils.js';
 
 initThemeToggle();
 
@@ -18,10 +18,10 @@ if (yearEl) yearEl.textContent = faNum(new Date().getFullYear());
 const ni = $('#nationalId');
 ni.addEventListener('input', () => { ni.value = ni.value.replace(/\D/g, '').slice(0, 10); });
 
-passToggle?.addEventListener('click', () => {
-  passInput.type = passInput.type === 'password' ? 'text' : 'password';
-  passToggle.classList.toggle('is-shown', passInput.type === 'text');
-});
+if (passToggle && !passToggle.getAttribute('data-toggle-for')) {
+  passToggle.setAttribute('data-toggle-for', 'password');
+}
+bindPassToggles();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();

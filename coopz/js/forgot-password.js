@@ -1,8 +1,9 @@
 import { initThemeToggle } from './theme.js';
 import { resetPasswordByIdentity } from './supabase-client.js';
-import { $, setBtnLoading, showMsg } from './utils.js';
+import { $, setBtnLoading, showMsg, bindPassToggles } from './utils.js';
 
 initThemeToggle();
+bindPassToggles();
 
 const form = $('#fpForm');
 const btn = $('#fpBtn');
@@ -12,17 +13,6 @@ const emailEl = $('#fpEmail');
 
 ni?.addEventListener('input', () => {
   ni.value = ni.value.replace(/\D/g, '').slice(0, 10);
-});
-
-document.querySelectorAll('.pass-toggle').forEach(toggle => {
-  toggle.addEventListener('click', () => {
-    const id = toggle.getAttribute('data-toggle-for');
-    const input = id ? document.getElementById(id) : toggle.closest('.input-wrap')?.querySelector('input');
-    if (!input) return;
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    toggle.classList.toggle('is-shown', show);
-  });
 });
 
 form?.addEventListener('submit', async (e) => {
@@ -38,7 +28,7 @@ form?.addEventListener('submit', async (e) => {
     showMsg(msg, 'کد ملی باید ۱۰ رقم باشد.', 'error');
     return;
   }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !/[^\s@]+@[^\s@]+\.[^\s@]+/.test(email)) {
     showMsg(msg, 'ایمیل معتبر وارد کنید.', 'error');
     return;
   }

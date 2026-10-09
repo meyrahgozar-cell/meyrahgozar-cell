@@ -80,24 +80,26 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(var(--brand-rgb), .18), 0 0 24px -4px rgba(var(--brand-rgb), var(--bg1));
 }
-.input-wrap input { padding-inline-end: 3.1rem; }
+.input-wrap input { padding-inline-end: 3.1rem !important; }
 
 .input-icon {
   --s: 1.2rem;
-  position: absolute; inset-inline-end: 1rem; top: 50%; translate: 0 -50%;
+  position: absolute; inset-inline-end: 1rem; top: 50%; transform: translateY(-50%);
   color: var(--muted); pointer-events: none; transition: color var(--trans);
+  z-index: 1;
 }
 .input-wrap:focus-within .input-icon { color: var(--brand); }
 
 .pass-toggle {
-  position: absolute; inset-inline-end: .45rem; top: 50%; translate: 0 -50%;
-  display: grid; place-items: center; width: 38px; height: 38px;
+  position: absolute; inset-inline-end: .35rem; top: 50%; transform: translateY(-50%);
+  z-index: 2;
+  display: grid; place-items: center; width: 40px; height: 40px; padding: 0;
   background: transparent; border: 0; border-radius: 10px;
   color: var(--muted); cursor: pointer;
   transition: color var(--trans), background-color var(--trans);
 }
 .pass-toggle:hover { color: var(--text-strong); background: rgba(var(--brand-rgb), .12); }
-.pass-toggle .i { --s: 1.2rem; }
+.pass-toggle .i { --s: 1.2rem; pointer-events: none; }
 .pass-toggle .i-eye-off { display: none; }
 .pass-toggle.is-shown .i-eye { display: none; }
 .pass-toggle.is-shown .i-eye-off { display: inline-block; }

@@ -62,3 +62,28 @@ export function toISODate(input) {
 }
 
 export function pad2(n) { return String(n).padStart(2, '0'); }
+
+/** Wire all .pass-toggle buttons (data-toggle-for = input id) */
+export function bindPassToggles(root = document) {
+  root.querySelectorAll('.pass-toggle').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    // Ensure eye icons exist
+    if (!btn.querySelector('.i-eye')) {
+      btn.innerHTML = '<i class="i i-eye" aria-hidden="true"></i><i class="i i-eye-off" aria-hidden="true"></i>';
+    }
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute('data-toggle-for');
+      const input = id
+        ? document.getElementById(id)
+        : btn.closest('.input-wrap')?.querySelector('input');
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.classList.toggle('is-shown', show);
+      btn.setAttribute('aria-label', show ? 'مخفی کردن رمز' : 'نمایش رمز');
+    });
+  });
+}
