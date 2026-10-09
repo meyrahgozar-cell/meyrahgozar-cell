@@ -2,7 +2,7 @@ import { requireAdmin, getUser } from './auth.js';
 import { renderLayout } from './layout.js';
 import { supabase } from './supabase/client.js';
 import { $, el, faNum, formatMoney, setBtnLoading, showMsg, escapeHtml } from './utils.js';
-import { downloadTableTemplate } from './excel-parser.js';
+import { downloadTableTemplate, isChangeMarked, applyChangeColumnFilter } from './excel-parser.js';
 
 const user = requireAdmin();
 if (user) renderLayout();
@@ -320,14 +320,24 @@ async function handleCompareFile(file) {
     const labelToCol = {};
     Object.entries(meta.labels).forEach(([k, v]) => { labelToCol[v] = k; labelToCol[k] = k; });
 
-    const excelRows = raw.map(r => {
+    labelToCol['تغییر'] = '_change';
+    labelToCol['change'] = '_change';
+    labelToCol['Change'] = '_change';
+
+    let excelRows = raw.map(r => {
       const out = {};
       for (const [k, v] of Object.entries(r)) {
         const key = labelToCol[String(k).trim()] || String(k).trim();
-        if (meta.columns.includes(key) || meta.editable.includes(key)) out[key] = v;
+        if (meta.columns.includes(key) || meta.editable.includes(key) || key === '_change') out[key] = v;
       }
       return out;
     });
+    const beforeCount = excelRows.length;
+    const selective = excelRows.some(r => isChangeMarked(r._change));
+    excelRows = applyChangeColumnFilter(excelRows.map(r => ({ ...r, _change: r._change })));
+    if (selective) {
+      showMsg(compareMsg, `ستون تغییر فعال — ${faNum(excelRows.length)} از ${faNum(beforeCount)} ردیف`, 'warn');
+    }
 
     // Fetch current DB rows
     const { data: dbRows, error } = await supabase.from(state.table).select('*');

@@ -4,8 +4,10 @@ import {
   fetchAllObligations,
   bulkUpsertMembers,
   bulkInsertPayments,
-  bulkInsertObligations
+  bulkInsertObligations,
+  supabase
 } from './supabase-client.js';
+import { getUser } from './auth.js';
 
 const MEMBER_FIELDS = [
   'first_name', 'last_name', 'national_id', 'mobile', 'email',
@@ -26,6 +28,21 @@ function eq(a, b) {
   return String(a) === String(b);
 }
 
+async function writeAudit(action, target_table, details) {
+  try {
+    const u = getUser();
+    await supabase.from('audit_log').insert({
+      actor_id: u?.id || null,
+      actor_name: u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : null,
+      action,
+      target_table,
+      details
+    });
+  } catch (e) {
+    console.warn('audit_log failed', e);
+  }
+}
+
 export async function compareWithDatabase(parsed) {
   const [dbMembers, dbPayments, dbObligations] = await Promise.all([
     fetchAllMembersFull(),
@@ -36,8 +53,7 @@ export async function compareWithDatabase(parsed) {
   const memberByNid = new Map();
   dbMembers.forEach(m => memberByNid.set(String(m.national_id), m));
 
-  /* ---- Members ---- */
-  const members = { new: [], changed: [], missing: [], errors: [] };
+  const members = { new: [], changed: [], missing: [], errors: [], skipped: 0 };
   const excelNids = new Set();
 
   parsed.members.forEach((row, i) => {
@@ -69,13 +85,16 @@ export async function compareWithDatabase(parsed) {
     }
   });
 
-  dbMembers.forEach(m => {
-    if (!excelNids.has(String(m.national_id))) {
-      members.missing.push(m);
-    }
-  });
+  // missing only meaningful when full file (no selective change marks)
+  const selective = parsed.meta?.changeFilter?.members?.selective;
+  if (!selective) {
+    dbMembers.forEach(m => {
+      if (!excelNids.has(String(m.national_id))) {
+        members.missing.push(m);
+      }
+    });
+  }
 
-  /* ---- Payments ---- */
   const payKey = p => `${p.member_id}|${p.amount}|${p.payment_date}`;
   const existingPay = new Set(dbPayments.map(payKey));
   const payments = { new: [], duplicates: [], errors: [] };
@@ -87,7 +106,6 @@ export async function compareWithDatabase(parsed) {
       continue;
     }
     const mem = memberByNid.get(p.national_id);
-    // also check newly added
     const memberId = mem?.id;
     if (!memberId && !parsed.members.some(m => m.national_id === p.national_id)) {
       payments.errors.push({ row: '—', reason: 'عضو یافت نشد: ' + p.national_id, data: p });
@@ -102,7 +120,6 @@ export async function compareWithDatabase(parsed) {
     payments.new.push({ ...p, member_id: memberId });
   }
 
-  /* ---- Obligations ---- */
   const oblKey = o => `${o.member_id}|${o.amount}|${o.due_date}`;
   const existingObl = new Set(dbObligations.map(oblKey));
   const obligations = { new: [], duplicates: [], errors: [] };
@@ -128,7 +145,7 @@ export async function compareWithDatabase(parsed) {
     obligations.new.push({ ...o, member_id: memberId });
   }
 
-  return { members, payments, obligations, memberByNid };
+  return { members, payments, obligations, memberByNid, changeFilter: parsed.meta?.changeFilter || {} };
 }
 
 export async function applyChanges(report) {
@@ -136,27 +153,26 @@ export async function applyChanges(report) {
     members: { inserted: 0, updated: 0 },
     payments: { inserted: 0 },
     obligations: { inserted: 0 },
-    errors: []
+    errors: [],
+    log: []
   };
 
   try {
-    // New members
     if (report.members.new.length) {
-      const rows = report.members.new.map(x => ({
-        ...x.row,
-        role: 'member'
-      }));
+      const rows = report.members.new.map(x => {
+        const { _change, ...rest } = x.row;
+        return { ...rest, role: 'member' };
+      });
       const inserted = await bulkUpsertMembers(rows);
       result.members.inserted = inserted.length;
-      // refresh map
       inserted.forEach(m => report.memberByNid.set(String(m.national_id), m));
+      result.log.push({ type: 'insert', table: 'members', count: inserted.length, ids: inserted.map(m => m.id) });
     }
   } catch (e) {
     result.errors.push({ section: 'اعضا (جدید)', message: e.message });
   }
 
   try {
-    // Changed members
     if (report.members.changed.length) {
       const rows = report.members.changed.map(x => ({
         national_id: x.after.national_id,
@@ -164,12 +180,20 @@ export async function applyChanges(report) {
       }));
       const updated = await bulkUpsertMembers(rows);
       result.members.updated = updated.length;
+      result.log.push({
+        type: 'update',
+        table: 'members',
+        count: updated.length,
+        changes: report.members.changed.map(x => ({
+          national_id: x.after.national_id,
+          diffs: x.diffs
+        }))
+      });
     }
   } catch (e) {
     result.errors.push({ section: 'اعضا (بروزرسانی)', message: e.message });
   }
 
-  // Resolve member_ids for payments/obligations that were new
   const resolveId = (nid) => report.memberByNid.get(String(nid))?.id;
 
   try {
@@ -184,6 +208,7 @@ export async function applyChanges(report) {
     if (payRows.length) {
       const ins = await bulkInsertPayments(payRows);
       result.payments.inserted = ins.length;
+      result.log.push({ type: 'insert', table: 'payments', count: ins.length });
     }
   } catch (e) {
     result.errors.push({ section: 'پرداخت‌ها', message: e.message });
@@ -201,10 +226,21 @@ export async function applyChanges(report) {
     if (oblRows.length) {
       const ins = await bulkInsertObligations(oblRows);
       result.obligations.inserted = ins.length;
+      result.log.push({ type: 'insert', table: 'obligations', count: ins.length });
     }
   } catch (e) {
     result.errors.push({ section: 'تعهدات', message: e.message });
   }
+
+  await writeAudit('excel_import', 'members', {
+    inserted_members: result.members.inserted,
+    updated_members: result.members.updated,
+    inserted_payments: result.payments.inserted,
+    inserted_obligations: result.obligations.inserted,
+    change_filter: report.changeFilter || null,
+    log: result.log,
+    errors: result.errors
+  });
 
   return result;
 }

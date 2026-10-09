@@ -24,7 +24,12 @@ const HEADER_MAP = {
     'جمع پرداختی': 'total_paid',
     'میزان بدهی': 'debt',
     'بدهی': 'debt',
-    'امتیاز': 'score'
+    'امتیاز': 'score',
+    'تغییر': '_change',
+    'change': '_change',
+    'Change': '_change',
+    'MARK': '_change',
+    'mark': '_change'
   },
   payments: {
     'کد ملی': 'national_id',
@@ -33,7 +38,12 @@ const HEADER_MAP = {
     'تاریخ واریز': 'payment_date',
     'تاریخ': 'payment_date',
     'توضیحات': 'description',
-    'شرح': 'description'
+    'شرح': 'description',
+    'تغییر': '_change',
+    'change': '_change',
+    'Change': '_change',
+    'MARK': '_change',
+    'mark': '_change'
   },
   obligations: {
     'کد ملی': 'national_id',
@@ -43,9 +53,38 @@ const HEADER_MAP = {
     'تاریخ سررسید': 'due_date',
     'تاریخ': 'due_date',
     'توضیحات': 'description',
-    'شرح': 'description'
+    'شرح': 'description',
+    'تغییر': '_change',
+    'change': '_change',
+    'Change': '_change',
+    'MARK': '_change',
+    'mark': '_change'
   }
 };
+
+const CHANGE_TRUTHY = new Set([
+  '1', 'true', 'yes', 'y', 'x', '*', '✓', '✔', 'v',
+  'بله', 'آره', 'تغییر', 'change', 'ok'
+]);
+
+export function isChangeMarked(v) {
+  if (v == null || v === '') return false;
+  if (v === true || v === 1) return true;
+  const s = String(v).trim().toLowerCase()
+    .replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+  return CHANGE_TRUTHY.has(s);
+}
+
+/**
+ * If every row has empty تغییر → process all.
+ * If any row is marked → process only marked rows.
+ */
+export function applyChangeColumnFilter(rows) {
+  if (!rows || !rows.length) return rows || [];
+  const anyMarked = rows.some(r => isChangeMarked(r._change));
+  if (!anyMarked) return rows;
+  return rows.filter(r => isChangeMarked(r._change));
+}
 
 function normalizeKey(k) {
   return String(k ?? '').trim().replace(/\s+/g, ' ').replace(/\u200c/g, '\u200c');
@@ -82,6 +121,7 @@ function toDate(v) {
 
 /**
  * خواندن فایل اکسل و تبدیل به داده نرمال‌شده
+ * ستون «تغییر»: اگر همه خالی → همه ردیف‌ها؛ اگر حداقل یکی پر باشد → فقط علامت‌خورده‌ها
  */
 export function parseExcel(file) {
   return new Promise((resolve, reject) => {
@@ -95,14 +135,13 @@ export function parseExcel(file) {
           members: [],
           payments: [],
           obligations: [],
-          meta: { sheets: wb.SheetNames }
+          meta: { sheets: wb.SheetNames, changeFilter: {} }
         };
 
-        // Members
         const mSheet = pickSheet(wb, ['Members', 'اعضا', 'اعضأ', 'Sheet1']);
         if (mSheet) {
           const rows = XLSX.utils.sheet_to_json(mSheet, { defval: '' });
-          result.members = rows.map(r => {
+          const mapped = rows.map(r => {
             const o = mapRow(r, 'members');
             return {
               first_name: toStr(o.first_name),
@@ -116,39 +155,61 @@ export function parseExcel(file) {
               cooperative: toNumber(o.cooperative) || 1,
               total_paid: toNumber(o.total_paid),
               debt: toNumber(o.debt),
-              score: toNumber(o.score)
+              score: toNumber(o.score),
+              _change: o._change
             };
           }).filter(m => m.national_id);
+          const before = mapped.length;
+          result.members = applyChangeColumnFilter(mapped);
+          result.meta.changeFilter.members = {
+            total: before,
+            selected: result.members.length,
+            selective: mapped.some(r => isChangeMarked(r._change))
+          };
         }
 
-        // Payments
         const pSheet = pickSheet(wb, ['Payments', 'پرداخت‌ها', 'پرداخت', 'واریزها']);
         if (pSheet) {
           const rows = XLSX.utils.sheet_to_json(pSheet, { defval: '' });
-          result.payments = rows.map(r => {
+          const mapped = rows.map(r => {
             const o = mapRow(r, 'payments');
             return {
               national_id: toStr(o.national_id).replace(/\D/g, '').slice(0, 10),
               amount: toNumber(o.amount),
               payment_date: toDate(o.payment_date),
-              description: toStr(o.description)
+              description: toStr(o.description),
+              _change: o._change
             };
           }).filter(p => p.national_id && p.amount && p.payment_date);
+          const before = mapped.length;
+          result.payments = applyChangeColumnFilter(mapped);
+          result.meta.changeFilter.payments = {
+            total: before,
+            selected: result.payments.length,
+            selective: mapped.some(r => isChangeMarked(r._change))
+          };
         }
 
-        // Obligations
         const oSheet = pickSheet(wb, ['Obligations', 'تعهدات', 'تعهد', 'سررسیدها']);
         if (oSheet) {
           const rows = XLSX.utils.sheet_to_json(oSheet, { defval: '' });
-          result.obligations = rows.map(r => {
+          const mapped = rows.map(r => {
             const o = mapRow(r, 'obligations');
             return {
               national_id: toStr(o.national_id).replace(/\D/g, '').slice(0, 10),
               amount: toNumber(o.amount),
               due_date: toDate(o.due_date),
-              description: toStr(o.description)
+              description: toStr(o.description),
+              _change: o._change
             };
           }).filter(p => p.national_id && p.amount && p.due_date);
+          const before = mapped.length;
+          result.obligations = applyChangeColumnFilter(mapped);
+          result.meta.changeFilter.obligations = {
+            total: before,
+            selected: result.obligations.length,
+            selective: mapped.some(r => isChangeMarked(r._change))
+          };
         }
 
         resolve(result);
@@ -163,54 +224,52 @@ function pickSheet(wb, names) {
   for (const n of names) {
     if (wb.Sheets[n]) return wb.Sheets[n];
   }
-  // حساس نباشیم؛ اولین شیت را برمی‌گردانیم اگر هیچ‌کدام پیدا نشد
   return null;
 }
-/** Build & download empty Excel templates (JS-generated, no static file) */
+
+/** قالب ایمپورت — ستون «تغییر» در ابتدا */
 export function downloadImportTemplate() {
   if (typeof XLSX === 'undefined') throw new Error('XLSX not loaded');
 
   const membersHeaders = [
-    'نام', 'نام خانوادگی', 'کد ملی', 'شماره موبایل', 'ایمیل فردی',
+    'تغییر', 'نام', 'نام خانوادگی', 'کد ملی', 'شماره موبایل', 'ایمیل فردی',
     'پسورد اولیه', 'شرکت مادر', 'وضعیت عضویت', 'تعاونی',
     'جمع پرداختی‌ها', 'میزان بدهی', 'امتیاز'
   ];
-  const paymentsHeaders = ['کد ملی', 'مبلغ', 'تاریخ واریز', 'توضیحات'];
-  const obligationsHeaders = ['کد ملی', 'مبلغ', 'سررسید', 'توضیحات'];
+  const paymentsHeaders = ['تغییر', 'کد ملی', 'مبلغ', 'تاریخ واریز', 'توضیحات'];
+  const obligationsHeaders = ['تغییر', 'کد ملی', 'مبلغ', 'سررسید', 'توضیحات'];
 
   const wb = XLSX.utils.book_new();
 
-  const wsM = XLSX.utils.aoa_to_sheet([
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     membersHeaders,
-    ['علی', 'محمدی', '0012345678', '09121234567', 'ali@example.com', '1234', 'مپنا', 'فعال', 1, 0, 0, 0]
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsM, 'Members');
+    ['1', 'علی', 'محمدی', '0012345678', '09121234567', 'ali@example.com', '1234', 'مپنا', 'فعال', 1, 0, 0, 0],
+    ['', 'سارا', 'احمدی', '0012345679', '09129876543', 'sara@example.com', '1234', 'مپنا', 'فعال', 1, 0, 0, 0]
+  ]), 'Members');
 
-  const wsP = XLSX.utils.aoa_to_sheet([
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     paymentsHeaders,
-    ['0012345678', 5000000, '2024-01-15', 'قسط اول']
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsP, 'Payments');
+    ['1', '0012345678', 5000000, '2024-01-15', 'قسط اول'],
+    ['', '0012345678', 3000000, '2024-02-15', 'قسط دوم']
+  ]), 'Payments');
 
-  const wsO = XLSX.utils.aoa_to_sheet([
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     obligationsHeaders,
-    ['0012345678', 5000000, '2024-06-01', 'تعهد قسط']
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsO, 'Obligations');
+    ['1', '0012345678', 5000000, '2024-06-01', 'تعهد قسط'],
+    ['', '0012345678', 2000000, '2024-07-01', 'تعهد دیگر']
+  ]), 'Obligations');
 
   XLSX.writeFile(wb, 'template-import.xlsx');
 }
 
 /**
- * Template for a single DB table (Persian labels preferred).
- * @param {string[]} headers - column header labels
- * @param {string} sheetName
- * @param {string} [filename]
+ * قالب تک‌جدول — همیشه ستون تغییر را اضافه می‌کند
  */
 export function downloadTableTemplate(headers, sheetName = 'Sheet1', filename = 'template.xlsx') {
   if (typeof XLSX === 'undefined') throw new Error('XLSX not loaded');
+  const cols = headers.includes('تغییر') ? headers : ['تغییر', ...headers];
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([headers]);
+  const ws = XLSX.utils.aoa_to_sheet([cols]);
   XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
   XLSX.writeFile(wb, filename);
 }

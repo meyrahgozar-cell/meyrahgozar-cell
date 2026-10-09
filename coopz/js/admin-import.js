@@ -98,7 +98,13 @@ async function handleFile(file) {
       return;
     }
     state.parsed = parsed;
-    const readMsg = `فایل خوانده شد — ${faNum(parsed.members.length)} عضو، ${faNum(parsed.payments.length)} پرداخت، ${faNum(parsed.obligations.length)} تعهد.`;
+    const cf = parsed.meta?.changeFilter || {};
+    const parts = [];
+    if (cf.members?.selective) parts.push(`اعضا: ${faNum(cf.members.selected)} از ${faNum(cf.members.total)} (ستون تغییر)`);
+    if (cf.payments?.selective) parts.push(`پرداخت: ${faNum(cf.payments.selected)} از ${faNum(cf.payments.total)}`);
+    if (cf.obligations?.selective) parts.push(`تعهد: ${faNum(cf.obligations.selected)} از ${faNum(cf.obligations.total)}`);
+    const filterNote = parts.length ? ' — ' + parts.join(' · ') : '';
+    const readMsg = `فایل خوانده شد — ${faNum(parsed.members.length)} عضو، ${faNum(parsed.payments.length)} پرداخت، ${faNum(parsed.obligations.length)} تعهد${filterNote}.`;
     showMsg(uploadMsg, readMsg, 'ok');
 
     showMsg(uploadMsg, 'در حال مقایسه با دیتابیس…', 'warn');
