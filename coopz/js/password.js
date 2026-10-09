@@ -10,6 +10,17 @@ const form = $('#passForm');
 const btn = $('#passBtn');
 const msg = $('#passMsg');
 
+document.querySelectorAll('.pass-toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    const id = toggle.getAttribute('data-toggle-for');
+    const input = id ? document.getElementById(id) : toggle.closest('.input-wrap')?.querySelector('input');
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    toggle.classList.toggle('is-shown', show);
+  });
+});
+
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
   showMsg(msg, '');
@@ -40,6 +51,11 @@ form?.addEventListener('submit', async (e) => {
     await changePassword(user.id, current, next);
     showMsg(msg, 'رمز با موفقیت تغییر کرد. از این پس با رمز جدید وارد شوید.', 'ok');
     form.reset();
+    document.querySelectorAll('.pass-toggle').forEach(t => t.classList.remove('is-shown'));
+    ['currentPass', 'newPass', 'confirmPass'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.type = 'password';
+    });
   } catch (err) {
     showMsg(msg, err.message || 'خطا در تغییر رمز', 'error');
   } finally {

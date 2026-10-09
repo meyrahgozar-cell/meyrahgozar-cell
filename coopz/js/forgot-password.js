@@ -1,6 +1,6 @@
 import { initThemeToggle } from './theme.js';
 import { resetPasswordByIdentity } from './supabase-client.js';
-import { $, setBtnLoading, showMsg, faNum } from './utils.js';
+import { $, setBtnLoading, showMsg } from './utils.js';
 
 initThemeToggle();
 
@@ -8,13 +8,21 @@ const form = $('#fpForm');
 const btn = $('#fpBtn');
 const msg = $('#fpMsg');
 const ni = $('#fpNationalId');
-const mob = $('#fpMobile');
+const emailEl = $('#fpEmail');
 
 ni?.addEventListener('input', () => {
   ni.value = ni.value.replace(/\D/g, '').slice(0, 10);
 });
-mob?.addEventListener('input', () => {
-  mob.value = mob.value.replace(/\D/g, '').slice(0, 11);
+
+document.querySelectorAll('.pass-toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    const id = toggle.getAttribute('data-toggle-for');
+    const input = id ? document.getElementById(id) : toggle.closest('.input-wrap')?.querySelector('input');
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    toggle.classList.toggle('is-shown', show);
+  });
 });
 
 form?.addEventListener('submit', async (e) => {
@@ -22,7 +30,7 @@ form?.addEventListener('submit', async (e) => {
   showMsg(msg, '');
 
   const nationalId = ni.value.trim();
-  const mobile = mob.value.trim();
+  const email = (emailEl.value || '').trim().toLowerCase();
   const next = $('#fpNewPass').value;
   const confirm = $('#fpConfirm').value;
 
@@ -30,8 +38,8 @@ form?.addEventListener('submit', async (e) => {
     showMsg(msg, 'کد ملی باید ۱۰ رقم باشد.', 'error');
     return;
   }
-  if (mobile.length < 10) {
-    showMsg(msg, 'شماره موبایل را کامل وارد کنید.', 'error');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showMsg(msg, 'ایمیل معتبر وارد کنید.', 'error');
     return;
   }
   if (next.length < 4) {
@@ -45,7 +53,7 @@ form?.addEventListener('submit', async (e) => {
 
   setBtnLoading(btn, true);
   try {
-    await resetPasswordByIdentity(nationalId, mobile, next);
+    await resetPasswordByIdentity(nationalId, email, next);
     showMsg(msg, 'رمز با موفقیت تغییر کرد. در حال انتقال به صفحه ورود…', 'ok');
     setTimeout(() => { location.href = 'index.html'; }, 1200);
   } catch (err) {
