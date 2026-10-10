@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark" class="admin">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#121212" />
+<meta name="robots" content="noindex" />
+<title>نمای کلی | تعاونی مسکن مپنا هوایی</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+<script>try{var t=localStorage.getItem('mpna_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/icons.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <main class="container page">
+    <header class="adm-head">
+      <div class="adm-title"><span class="tile"><i class="i i-activity" aria-hidden="true"></i></span><h1>نمای کلی</h1></div>
+    </header>
+    <div class="tiles" id="tiles"></div>
+    <div class="adm-cols">
+      <section class="panel">
+        <header class="panel-head"><h2>آخرین پیشنهادها</h2></header>
+        <div class="alist" id="sugList"></div>
+      </section>
+      <section class="panel" id="auditPanel" hidden>
+        <header class="panel-head"><h2>آخرین تغییرات</h2></header>
+        <div class="alist" id="auditList"></div>
+      </section>
+    </div>
+    <div class="qgrid">
+      <a class="qlink" href="members.html"><i class="i i-users" aria-hidden="true"></i>اعضا</a>
+      <a class="qlink" href="payments.html"><i class="i i-wallet" aria-hidden="true"></i>پرداخت‌ها</a>
+      <a class="qlink" href="obligations.html"><i class="i i-calendar-clock" aria-hidden="true"></i>تعهدات</a>
+      <a class="qlink" href="suggestions.html"><i class="i i-inbox" aria-hidden="true"></i>پیشنهادها</a>
+      <a class="qlink" href="data.html"><i class="i i-table" aria-hidden="true"></i>داده‌ها</a>
+      <a class="qlink" href="data.html?t=members&amp;tab=import"><i class="i i-upload" aria-hidden="true"></i>ورود از فایل</a>
+    </div>
+  </main>
+  <div id="appFooter"></div>
+  <script type="module" src="../js/admin/overview.js"></script>
+</body>
+</html>
