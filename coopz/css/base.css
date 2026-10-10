@@ -66,43 +66,21 @@ body::before {
   background: var(--bg-ambient);
 }
 
-/* Trailing light along brick gaps */
-.brick-trail {
+/* Comet light along brick mortar seams (canvas .fx-comets) */
+.fx-comets {
   position: fixed;
-  width: 120px;
-  height: 60px;
-  z-index: -1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(ellipse,
-    rgba(94, 184, 255, .45) 0%,
-    rgba(54, 224, 214, .18) 35%,
-    transparent 70%);
-  filter: blur(8px);
-  animation: brick-trail-move 22s ease-in-out infinite;
-  opacity: .9;
-  mix-blend-mode: screen;
-  will-change: transform;
+  z-index: 1;
 }
-html[data-theme="light"] .brick-trail {
-  background: radial-gradient(ellipse,
-    rgba(27, 98, 211, .28) 0%,
-    rgba(10, 126, 164, .1) 35%,
-    transparent 70%);
-  mix-blend-mode: multiply;
-  opacity: .75;
+#appHeader, #appFooter, main, .side-drawer, .side-overlay, .modal-overlay, .auth-shell, .auth-theme-toggle {
+  position: relative;
+  z-index: 2;
 }
-@keyframes brick-trail-move {
-  0%   { transform: translate(5vw, 8vh); }
-  12%  { transform: translate(38vw, 22vh); }
-  25%  { transform: translate(72vw, 14vh); }
-  38%  { transform: translate(85vw, 48vh); }
-  50%  { transform: translate(55vw, 70vh); }
-  62%  { transform: translate(18vw, 78vh); }
-  75%  { transform: translate(8vw, 45vh); }
-  88%  { transform: translate(48vw, 28vh); }
-  100% { transform: translate(5vw, 8vh); }
-}
+#appHeader { z-index: 40; } /* sticky header stays on top */
+.side-drawer, .side-overlay, .modal-overlay { z-index: 70; }
 
 /* Links */
 a { color: var(--brand); text-decoration: none; transition: color var(--trans), text-shadow var(--trans); }

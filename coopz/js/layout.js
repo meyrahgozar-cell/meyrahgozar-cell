@@ -186,14 +186,5 @@ export function renderLayout() {
   }
 
   initThemeToggle();
-  initBrickTrail();
 }
 
-/* ---- Trailing light on brick gaps ---- */
-function initBrickTrail() {
-  if (document.getElementById('brickTrail')) return;
-  const trail = document.createElement('div');
-  trail.id = 'brickTrail';
-  trail.className = 'brick-trail';
-  document.body.appendChild(trail);
-}

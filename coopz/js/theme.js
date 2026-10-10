@@ -1,3 +1,4 @@
+import { startBrickComets } from './fx.js';
 import { CONFIG } from './config.js';
 const KEY = CONFIG.storageKeys.theme;
 const BROWSER_CHROME = { dark: '#1b2236', light: '#edf1f9' };
@@ -24,5 +25,12 @@ export function initThemeToggle(selector = '[data-theme-toggle]') {
   document.querySelectorAll(selector).forEach(btn => {
     btn.addEventListener('click', toggleTheme);
   });
+  startBrickComets();
 }
 applyTheme(getPreferredTheme());
+// pages that only import theme for applyTheme still get comets once DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => startBrickComets());
+} else {
+  startBrickComets();
+}
