@@ -1134,8 +1134,10 @@
                 gap: 10px;
                 padding: 12px 8px;
             }
-            .editor-modal { height: 100dvh; max-height: 100dvh; border-radius: 0; }
-            .editor-overlay { padding: 0; height: 100dvh; }
+            
+            /* Mobile Editor Fix: using dvh ensures it respects the dynamic keyboard height */
+            .editor-overlay { padding: 0; height: 100vh; height: 100dvh; }
+            .editor-modal { height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
             .editor-header .file-path { max-width: 80px; }
 
             .card .del,
@@ -1185,7 +1187,7 @@
 
     <header>
         <form id="auth" autocomplete="off">
-            <input id="repo" type="text" value="meyrahgozar-cel/meyrahgozar-cel.github.io" placeholder="owner/repo" />
+            <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" />
             <input id="token" type="password" placeholder="GitHub Token (repo scope)" autocomplete="new-password" />
             <button type="button" id="connectBtn">Connect</button>
         </form>
@@ -1339,8 +1341,8 @@
         //  STATE
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const state = {
-            owner: 'meyrahgozar-cel',
-            repo: 'meyrahgozar-cel.github.io',
+            owner: 'meyrahgozar-cell',
+            repo: 'meyrahgozar-cell',
             token: '',
             path: '',
             branch: 'master',
