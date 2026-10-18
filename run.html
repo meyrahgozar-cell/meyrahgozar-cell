@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Run Result OCR · Gemini Vision</title>
+  <title>Run Result OCR · Supabase + Gemini</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -51,7 +51,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ── */
     .brand {
       display: flex; align-items: center; gap: 12px;
       margin-bottom: 8px; user-select: none;
@@ -69,34 +68,6 @@
       text-align: center; max-width: 560px; line-height: 1.6;
     }
 
-    /* ── Key bar ── */
-    .key-bar {
-      width: 100%; max-width: 760px;
-      display: flex; align-items: center; gap: 10px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 6px 6px 6px 16px;
-      margin-bottom: 18px;
-      transition: border-color var(--transition), box-shadow var(--transition);
-    }
-    .key-bar:focus-within {
-      border-color: rgba(91, 140, 255, 0.5); box-shadow: var(--accent-glow);
-    }
-    .key-bar .lock { color: var(--text-muted); font-size: 15px; flex-shrink: 0; }
-    .key-bar input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: var(--text); font-family: var(--font); font-size: 0.9rem;
-      padding: 8px 0; min-width: 0;
-    }
-    .key-bar input::placeholder { color: #5a6172; }
-    .key-bar button {
-      flex-shrink: 0; background: var(--accent-soft); color: var(--accent);
-      border: none; border-radius: 9px; padding: 9px 14px;
-      font-family: var(--font); font-size: 0.8rem; font-weight: 500;
-      cursor: pointer; transition: background var(--transition);
-    }
-    .key-bar button:hover { background: rgba(91, 140, 255, 0.22); }
-
-    /* ── Main card ── */
     .card {
       width: 100%; max-width: 760px;
       background: var(--surface); border: 1px solid var(--border);
@@ -109,7 +80,6 @@
       to { opacity: 1; transform: none; }
     }
 
-    /* ── Dropzone ── */
     .dropzone {
       position: relative; margin: 20px 20px 0;
       border: 2px dashed #2b3140; border-radius: var(--radius-sm);
@@ -157,59 +127,6 @@
     }
     .remove-img:hover { background: #e5484d; transform: scale(1.06); }
 
-    /* ── Prompt preview ── */
-    .prompt-preview {
-      margin: 16px 20px 0;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-    }
-    .prompt-preview summary {
-      list-style: none;
-      padding: 12px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      user-select: none;
-      transition: color var(--transition);
-    }
-    .prompt-preview summary::-webkit-details-marker { display: none; }
-    .prompt-preview summary:hover { color: var(--text); }
-    .prompt-preview summary .pp-left {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .prompt-preview summary .pp-badge {
-      font-size: 0.65rem;
-      padding: 2px 7px;
-      border-radius: 6px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    .prompt-preview summary .chev {
-      transition: transform var(--transition);
-      font-size: 11px;
-    }
-    .prompt-preview[open] summary .chev { transform: rotate(90deg); }
-    .prompt-preview pre {
-      margin: 0;
-      padding: 4px 16px 16px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: var(--mono);
-      font-size: 0.74rem;
-      line-height: 1.65;
-      color: #a9b4c8;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    /* ── Actions ── */
     .actions {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 16px 20px 20px;
@@ -248,7 +165,6 @@
     .btn-primary.loading .btn-label { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Results ── */
     .result-card {
       width: 100%; max-width: 760px; margin-top: 22px;
       background: var(--surface); border: 1px solid var(--border);
@@ -349,7 +265,6 @@
     .notes-line.visible { display: block; }
     .notes-line b { color: #c2cbdd; font-weight: 600; }
 
-    /* ── JSON block ── */
     .json-section {
       margin: 18px 22px 22px;
       border: 1px solid var(--border);
@@ -406,7 +321,6 @@
       white-space: pre;
     }
 
-    /* ── Error card ── */
     .result-card.error-mode .result-hero,
     .result-card.error-mode .result-meta,
     .result-card.error-mode .notes-line,
@@ -422,7 +336,6 @@
     }
     .result-card.error-mode .error-block { display: block; }
 
-    /* ── Toast ── */
     .toast {
       position: fixed; bottom: 28px; left: 50%;
       transform: translate(-50%, 20px);
@@ -434,7 +347,6 @@
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-    /* ── Responsive ── */
     @media (max-width: 640px) {
       body { padding: 28px 12px 60px; }
       .brand h1 { font-size: 1.15rem; }
@@ -442,7 +354,6 @@
       .actions { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
       .hint { justify-content: center; }
       .btn-primary { justify-content: center; padding: 13px 24px; }
-      .key-bar { margin-bottom: 16px; }
       .result-hero {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -457,32 +368,16 @@
 </head>
 <body>
 
-  <!-- Header -->
   <div class="brand">
     <div class="brand-mark">🏃</div>
     <h1>Run Result <span>OCR</span></h1>
   </div>
   <p class="tagline">
-    Upload a screenshot of your run (Strava, Garmin, Nike Run Club, Apple Fitness, Coros, …).
-    Gemini will extract the <b>distance</b> and <b>pace</b> in a fixed JSON schema ready to use in your code.
+    Upload a screenshot of your run. The Supabase Edge Function reads it with Gemini and returns
+    <b>distance</b> and <b>pace</b> in a fixed JSON schema — your Gemini key stays on the server.
   </p>
 
-  <!-- API key -->
-  <div class="key-bar">
-    <span class="lock">🔑</span>
-    <input
-      id="apiKeyInput"
-      type="password"
-      placeholder="Paste your Gemini API key (AI Studio → Get API key)"
-      autocomplete="off"
-      spellcheck="false"
-    />
-    <button id="toggleKeyBtn" type="button">Show</button>
-  </div>
-
-  <!-- Main card -->
   <div class="card">
-    <!-- Dropzone -->
     <div class="dropzone" id="dropzone">
       <div class="dz-icon">🖼️</div>
       <div class="dz-title">Drop a run-result screenshot here</div>
@@ -494,19 +389,6 @@
       </div>
     </div>
 
-    <!-- Fixed prompt preview -->
-    <details class="prompt-preview">
-      <summary>
-        <span class="pp-left">
-          <span class="pp-badge">FIXED PROMPT</span>
-          <span>Extraction prompt sent to Gemini (read-only)</span>
-        </span>
-        <span class="chev">▶</span>
-      </summary>
-      <pre id="promptPreview"></pre>
-    </details>
-
-    <!-- Actions -->
     <div class="actions">
       <span class="hint">
         <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to extract
@@ -518,7 +400,6 @@
     </div>
   </div>
 
-  <!-- Result card -->
   <div class="result-card" id="resultCard">
     <div class="result-hero">
       <div class="stat">
@@ -565,99 +446,54 @@
     <div class="error-block" id="errorBlock"></div>
   </div>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     (() => {
       "use strict";
 
-      // ═══════════════════════════════════════════════════════════
-      // FIXED EXTRACTION PROMPT
-      // The model is required to answer ONLY with this exact JSON.
-      // This is what makes the output stable enough to be consumed
-      // by downstream code.
-      // ═══════════════════════════════════════════════════════════
-      const EXTRACTION_PROMPT = `You are a precise OCR + data extraction engine for running and workout results.
+      // ── Supabase config (publishable key — safe in client code) ──
+      const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
 
-Analyze the uploaded screenshot from any running app or watch (Strava, Garmin, Coros, Nike Run Club, Apple Fitness, Adidas Running, Polar, Suunto, Huawei Health, or any other) and extract the run's distance and pace.
-
-Return ONLY a single valid JSON object. No prose, no markdown, no code fences.
-
-Schema (all keys required; use null when a value cannot be read):
-{
-  "distance_km": number,
-  "distance_display": string,
-  "duration_display": string,
-  "duration_seconds": number,
-  "pace_per_km": string,
-  "pace_per_km_seconds": number,
-  "pace_display": string,
-  "activity_type": "run" | "trail_run" | "treadmill" | "walk" | "ride" | "other",
-  "confidence": "high" | "medium" | "low",
-  "notes": string
-}
-
-Rules:
-- "distance_km": total distance in kilometers, rounded to 2 decimals. If the app shows miles, convert (1 mi = 1.609344 km) and keep the converted value here.
-- "distance_display": the distance exactly as shown in the image, including unit.
-- "duration_display": the duration as shown (e.g. "29:48", "1:02:15", "1h 2m 15s").
-- "duration_seconds": total duration in seconds (integer).
-- "pace_per_km": pace per kilometer as "M:SS". If the image shows pace per mile, convert to per-km. If pace is not shown, compute it from duration_seconds / distance_km and round to the nearest second.
-- "pace_per_km_seconds": pace per km in total seconds (integer).
-- "pace_display": the pace exactly as shown in the image, including unit.
-- "confidence": "high" if all key values were clearly legible; "medium" if some inference was required; "low" if significant ambiguity.
-- "notes": one short sentence describing any inference or ambiguity. Use an empty string if none.
-- Never invent numbers. If a value cannot be determined, use null.
-
-Return the JSON now.`;
+      const supabase = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
 
       // ── DOM refs ──
-      const apiKeyInput    = document.getElementById("apiKeyInput");
-      const toggleKeyBtn   = document.getElementById("toggleKeyBtn");
-      const dropzone       = document.getElementById("dropzone");
-      const fileInput      = document.getElementById("fileInput");
-      const previewImg     = document.getElementById("previewImg");
-      const removeImgBtn   = document.getElementById("removeImgBtn");
-      const promptPreview  = document.getElementById("promptPreview");
-      const sendBtn        = document.getElementById("sendBtn");
-      const resultCard     = document.getElementById("resultCard");
-      const statDistance   = document.getElementById("statDistance");
-      const statDistanceSub= document.getElementById("statDistanceSub");
-      const statPace       = document.getElementById("statPace");
-      const statPaceSub    = document.getElementById("statPaceSub");
-      const statDuration   = document.getElementById("statDuration");
-      const statDurationSub= document.getElementById("statDurationSub");
-      const metaActivity   = document.getElementById("metaActivity");
-      const metaConfidence = document.getElementById("metaConfidence");
-      const metaConfChip   = document.getElementById("metaConfidenceChip");
-      const notesLine      = document.getElementById("notesLine");
-      const notesText      = document.getElementById("notesText");
-      const jsonOutput     = document.getElementById("jsonOutput");
-      const copyJsonBtn    = document.getElementById("copyJsonBtn");
-      const errorBlock     = document.getElementById("errorBlock");
-      const toastEl        = document.getElementById("toast");
-
-      // Show the fixed prompt in the UI
-      promptPreview.textContent = EXTRACTION_PROMPT;
+      const dropzone        = document.getElementById("dropzone");
+      const fileInput       = document.getElementById("fileInput");
+      const previewImg      = document.getElementById("previewImg");
+      const removeImgBtn    = document.getElementById("removeImgBtn");
+      const sendBtn         = document.getElementById("sendBtn");
+      const resultCard      = document.getElementById("resultCard");
+      const statDistance    = document.getElementById("statDistance");
+      const statDistanceSub = document.getElementById("statDistanceSub");
+      const statPace        = document.getElementById("statPace");
+      const statPaceSub     = document.getElementById("statPaceSub");
+      const statDuration    = document.getElementById("statDuration");
+      const statDurationSub = document.getElementById("statDurationSub");
+      const metaActivity    = document.getElementById("metaActivity");
+      const metaConfidence  = document.getElementById("metaConfidence");
+      const metaConfChip    = document.getElementById("metaConfidenceChip");
+      const notesLine       = document.getElementById("notesLine");
+      const notesText       = document.getElementById("notesText");
+      const jsonOutput      = document.getElementById("jsonOutput");
+      const copyJsonBtn     = document.getElementById("copyJsonBtn");
+      const errorBlock      = document.getElementById("errorBlock");
+      const toastEl         = document.getElementById("toast");
 
       // ── State ──
       let imageBase64 = null;
       let imageMime   = null;
       let toastTimer  = null;
 
-      // ── Constants ──
-      // If the model name is rejected, try "gemini-3-flash" or "gemini-2.5-flash".
-      const MODEL = "gemini-3.8-flash";
-      const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
       const MAX_INLINE_BYTES = 7 * 1024 * 1024;
 
-      // Public handle so downstream code can read the result
-      window.RunOCR = {
-        last: null,        // parsed JSON object (fixed schema)
-        raw: null,         // raw model text
-        onResult: null,    // optional callback(data)
-      };
+      // Expose result for downstream code
+      window.RunOCR = { last: null, raw: null, onResult: null };
 
       // ── Helpers ──
       function showToast(msg) {
@@ -668,9 +504,7 @@ Return the JSON now.`;
       }
 
       function updateSendState() {
-        const hasKey   = apiKeyInput.value.trim().length > 0;
-        const hasImage = !!imageBase64;
-        sendBtn.disabled = !(hasKey && hasImage);
+        sendBtn.disabled = !imageBase64;
       }
 
       function resetImage() {
@@ -706,33 +540,9 @@ Return the JSON now.`;
         reader.readAsDataURL(file);
       }
 
-      // ── Robust JSON extraction from model text ──
-      function extractJson(text) {
-        if (!text || typeof text !== "string") return null;
-        const trimmed = text.trim();
-
-        // 1) direct parse
-        try { return JSON.parse(trimmed); } catch (_) {}
-
-        // 2) fenced code block
-        const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-        if (fence) {
-          try { return JSON.parse(fence[1].trim()); } catch (_) {}
-        }
-
-        // 3) first { ... last }
-        const start = trimmed.indexOf("{");
-        const end   = trimmed.lastIndexOf("}");
-        if (start !== -1 && end > start) {
-          try { return JSON.parse(trimmed.slice(start, end + 1)); } catch (_) {}
-        }
-        return null;
-      }
-
-      // ── Number / string formatters ──
       function fmtKm(v) {
         if (typeof v !== "number" || !isFinite(v)) return null;
-        return v.toFixed(2).replace(/\.?0+$/, "") ; // trim trailing zeros
+        return v.toFixed(2).replace(/\.?0+$/, "");
       }
       function fmtSecsAsClock(secs) {
         if (typeof secs !== "number" || !isFinite(secs) || secs < 0) return null;
@@ -761,52 +571,31 @@ Return the JSON now.`;
         if (subEl) subEl.textContent = sub || "";
       }
 
-      // ── Render parsed result ──
       function renderResult(data, rawText) {
         resultCard.classList.remove("error-mode");
         resultCard.classList.add("visible");
 
-        // Distance
         const distKm = fmtKm(data.distance_km);
-        setStat(
-          statDistance,
-          distKm,
-          distKm ? "km" : "",
-          statDistanceSub,
-          data.distance_display || ""
-        );
+        setStat(statDistance, distKm, distKm ? "km" : "", statDistanceSub, data.distance_display || "");
 
-        // Pace
         const paceStr = data.pace_per_km || fmtSecsAsClock(data.pace_per_km_seconds);
-        setStat(
-          statPace,
-          paceStr || null,
-          paceStr ? "/km" : "",
-          statPaceSub,
-          data.pace_display || ""
-        );
+        setStat(statPace, paceStr || null, paceStr ? "/km" : "", statPaceSub, data.pace_display || "");
 
-        // Duration
         const durStr = data.duration_display || fmtSecsAsClock(data.duration_seconds);
         setStat(
           statDuration,
           durStr || null,
           "",
           statDurationSub,
-          (typeof data.duration_seconds === "number")
-            ? `${data.duration_seconds} s`
-            : ""
+          typeof data.duration_seconds === "number" ? `${data.duration_seconds} s` : ""
         );
 
-        // Meta
         metaActivity.textContent = data.activity_type || "—";
-
         const conf = (data.confidence || "low").toLowerCase();
         metaConfidence.textContent = conf;
         metaConfChip.classList.remove("conf-high", "conf-medium", "conf-low");
         metaConfChip.classList.add(`conf-${conf}`);
 
-        // Notes
         if (data.notes && String(data.notes).trim()) {
           notesText.textContent = data.notes;
           notesLine.classList.add("visible");
@@ -814,10 +603,8 @@ Return the JSON now.`;
           notesLine.classList.remove("visible");
         }
 
-        // JSON
         jsonOutput.textContent = JSON.stringify(data, null, 2);
 
-        // Expose to downstream code
         window.RunOCR.last = data;
         window.RunOCR.raw  = rawText;
         if (typeof window.RunOCR.onResult === "function") {
@@ -828,21 +615,12 @@ Return the JSON now.`;
       }
 
       function renderError(message, rawText) {
-        resultCard.classList.add("visible");
-        resultCard.classList.add("error-mode");
+        resultCard.classList.add("visible", "error-mode");
         errorBlock.textContent = "⚠️ " + message;
         window.RunOCR.last = null;
         window.RunOCR.raw  = rawText || null;
         resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-
-      // ── API key toggle ──
-      toggleKeyBtn.addEventListener("click", () => {
-        const isPwd = apiKeyInput.type === "password";
-        apiKeyInput.type = isPwd ? "text" : "password";
-        toggleKeyBtn.textContent = isPwd ? "Hide" : "Show";
-      });
-      apiKeyInput.addEventListener("input", updateSendState);
 
       // ── Drag & drop ──
       dropzone.addEventListener("click", (e) => {
@@ -870,7 +648,7 @@ Return the JSON now.`;
         resetImage();
       });
 
-      // ── Ctrl/Cmd + Enter shortcut ──
+      // ── Ctrl/Cmd + Enter ──
       document.addEventListener("keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           if (!sendBtn.disabled && !sendBtn.classList.contains("loading")) {
@@ -883,9 +661,8 @@ Return the JSON now.`;
       // ── Copy JSON ──
       copyJsonBtn.addEventListener("click", async () => {
         if (!window.RunOCR.last) return;
-        const text = JSON.stringify(window.RunOCR.last, null, 2);
         try {
-          await navigator.clipboard.writeText(text);
+          await navigator.clipboard.writeText(JSON.stringify(window.RunOCR.last, null, 2));
           copyJsonBtn.textContent = "Copied ✓";
           setTimeout(() => (copyJsonBtn.textContent = "Copy JSON"), 1600);
         } catch {
@@ -893,11 +670,10 @@ Return the JSON now.`;
         }
       });
 
-      // ── Send request ──
+      // ── Send to Supabase Edge Function ──
       sendBtn.addEventListener("click", async () => {
-        const key = apiKeyInput.value.trim();
-        if (!key || !imageBase64) {
-          showToast("Please provide an API key and an image.");
+        if (!imageBase64) {
+          showToast("Please select an image first.");
           return;
         }
 
@@ -905,64 +681,33 @@ Return the JSON now.`;
         sendBtn.disabled = true;
         resultCard.classList.remove("visible", "error-mode");
 
-        const payload = {
-          model: MODEL,
-          input: [
-            { type: "image", mime_type: imageMime, data: imageBase64 },
-            { type: "text",  text: EXTRACTION_PROMPT },
-          ],
-          generation_config: { thinking_level: "low" },
-        };
-
         try {
-          const res = await fetch(ENDPOINT, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": key,
-            },
-            body: JSON.stringify(payload),
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            throw new Error(
-              data?.error?.message || `Request failed with status ${res.status}`
-            );
-          }
-
-          // Pull the text out of the response
-          let text = "";
-          if (Array.isArray(data.steps)) {
-            const out = data.steps.find((s) => s.type === "model_output");
-            if (out?.content) {
-              text = out.content
-                .filter((c) => c.type === "text" && typeof c.text === "string")
-                .map((c) => c.text)
-                .join("\n");
+          const { data, error } = await supabase.functions.invoke(
+            "extract-run-result",
+            {
+              body: { imageBase64, imageMime },
             }
-          }
-          if (!text && typeof data.output_text === "string") text = data.output_text;
-          if (!text && Array.isArray(data.candidates)) {
-            text = (data.candidates[0]?.content?.parts || [])
-              .filter((p) => typeof p.text === "string")
-              .map((p) => p.text)
-              .join("\n");
+          );
+
+          if (error) {
+            let msg = error.message || "Edge Function call failed";
+            try {
+              if (error.context && typeof error.context.json === "function") {
+                const body = await error.context.json();
+                if (body && body.error) msg = body.error;
+              }
+            } catch (_) { /* keep original message */ }
+            throw new Error(msg);
           }
 
-          if (!text) throw new Error("The model returned an empty response.");
-
-          const parsed = extractJson(text);
-          if (!parsed) {
-            // Could not parse — show the raw text so the user can see why
-            renderError(
-              "The model returned text that is not valid JSON. Raw output below:\n\n" + text,
-              text
+          if (!data || !data.data) {
+            throw new Error(
+              (data && data.error) ||
+                "The Edge Function did not return structured data."
             );
-          } else {
-            renderResult(parsed, text);
           }
+
+          renderResult(data.data, data.raw || "");
         } catch (err) {
           renderError(err.message || String(err), null);
         } finally {
