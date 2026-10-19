@@ -112,7 +112,7 @@
     .focus-hud {
       position: absolute;
       left: 50%;
-      top: 52px;
+      top: 8px;
       transform: translateX(-50%);
       z-index: 3;
       pointer-events: none;
@@ -147,6 +147,66 @@
       color: var(--muted);
       font-weight: 700;
       margin-top: 2px;
+    }
+    .elev-chart-wrap {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      z-index: 3;
+      pointer-events: auto;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      backdrop-filter: blur(10px);
+      padding: 8px 10px 6px;
+    }
+    .elev-chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .elev-chart-vals {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      direction: ltr;
+      unicode-bidi: isolate;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .elev-chart-vals span { opacity: 0.85; }
+    .elev-chart-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .elev-chart-scroll::-webkit-scrollbar { display: none; }
+    .elev-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 48px;
+      min-width: 100%;
+    }
+    .elev-bar {
+      flex: 0 0 8px;
+      width: 8px;
+      border-radius: 4px 4px 2px 2px;
+      background: linear-gradient(180deg, #0891b2, #7c3aed);
+      min-height: 2px;
+      opacity: 0.85;
+    }
+    .elev-bar.latest {
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(8,145,178,0.45);
     }
     .map-overlay {
       position: absolute;
@@ -498,6 +558,20 @@
         <div class="focus-hud-value" id="focusValue">0.00</div>
         <div class="focus-hud-unit" id="focusUnit">km</div>
       </div>
+      <div class="elev-chart-wrap" id="elevChartWrap">
+        <div class="elev-chart-head">
+          <span>ارتفاع (m)</span>
+          <span id="elevRangeLabel">—</span>
+        </div>
+        <div class="elev-chart-vals" id="elevVals">
+          <span id="elevNow">اکنون: —</span>
+          <span id="elevMin">کم: —</span>
+          <span id="elevMax">بیش: —</span>
+        </div>
+        <div class="elev-chart-scroll" id="elevScroll">
+          <div class="elev-chart" id="elevChart"></div>
+        </div>
+      </div>
     </div>
 
     <footer class="dock">
@@ -746,6 +820,9 @@
   let nextSplitKm = 1;
   let pendingSession = null;
   let focusMetric = "dist"; // dist | time | pace
+  let elevSamples = []; // meters, sampled along track
+  const ELEV_MAX_BARS = 80;
+
 
   function vibratePaceSplit() {
     try {
@@ -763,6 +840,44 @@
       el.classList.toggle("selected", el.getAttribute("data-focus") === key);
     });
     updateFocusHud();
+  }
+
+
+  function updateElevChart() {
+    const chart = $("elevChart");
+    const scroll = $("elevScroll");
+    if (!chart) return;
+    const samples = elevSamples;
+    if (!samples.length) {
+      chart.innerHTML = "";
+      if ($("elevNow")) $("elevNow").textContent = "اکنون: —";
+      if ($("elevMin")) $("elevMin").textContent = "کم: —";
+      if ($("elevMax")) $("elevMax").textContent = "بیش: —";
+      if ($("elevRangeLabel")) $("elevRangeLabel").textContent = "—";
+      return;
+    }
+    const min = Math.min(...samples);
+    const max = Math.max(...samples);
+    const now = samples[samples.length - 1];
+    const span = Math.max(1, max - min);
+    if ($("elevNow")) $("elevNow").textContent = "اکنون: " + fa(String(Math.round(now)));
+    if ($("elevMin")) $("elevMin").textContent = "کم: " + fa(String(Math.round(min)));
+    if ($("elevMax")) $("elevMax").textContent = "بیش: " + fa(String(Math.round(max)));
+    if ($("elevRangeLabel")) $("elevRangeLabel").textContent = fa(String(samples.length)) + " نقطه";
+
+    chart.innerHTML = samples
+      .map((v, i) => {
+        const h = 4 + ((v - min) / span) * 44;
+        const latest = i === samples.length - 1 ? " latest" : "";
+        return '<div class="elev-bar' + latest + '" style="height:' + h.toFixed(1) + 'px"></div>';
+      })
+      .join("");
+    // scroll to end so latest bars visible; older scroll left
+    if (scroll) {
+      requestAnimationFrame(() => {
+        scroll.scrollLeft = scroll.scrollWidth;
+      });
+    }
   }
 
   function updateFocusHud() {
@@ -983,7 +1098,13 @@
           const up = pt.alt - lastAlt;
           if (up > 0.8) elevGain += up;
         }
-        if (pt.alt != null) lastAlt = pt.alt;
+        if (pt.alt != null) {
+          lastAlt = pt.alt;
+          // sample elevation for bar chart (every ~point that moved)
+          elevSamples.push(pt.alt);
+          if (elevSamples.length > ELEV_MAX_BARS) elevSamples.shift();
+          updateElevChart();
+        }
 
         // km splits
         while (distanceM / 1000 >= nextSplitKm) {
@@ -1078,7 +1199,9 @@
     lastPoint = null;
     splits = [];
     nextSplitKm = 1;
+    elevSamples = [];
     pendingSession = null;
+    updateElevChart();
     updateRouteLine();
     renderStats();
   }
