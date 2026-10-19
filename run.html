@@ -112,101 +112,99 @@
     .focus-hud {
       position: absolute;
       left: 50%;
-      top: 8px;
+      top: 6px;
       transform: translateX(-50%);
       z-index: 3;
       pointer-events: none;
-      text-align: center;
-      padding: 10px 22px 8px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(8,145,178,0.25);
-      box-shadow: 0 8px 28px rgba(0,0,0,0.1);
-      backdrop-filter: blur(10px);
-      min-width: 140px;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
     }
     .focus-hud-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
-    .focus-hud-value {
-      font-size: 34px;
-      font-weight: 800;
-      direction: ltr;
-      unicode-bidi: isolate;
-      background: linear-gradient(90deg, #7c3aed, #0891b2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.15;
-    }
-    .focus-hud-unit {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 700;
-      margin-top: 2px;
-    }
-    .elev-chart-wrap {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      z-index: 3;
-      pointer-events: auto;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 14px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-      backdrop-filter: blur(10px);
-      padding: 8px 10px 6px;
-    }
-    .elev-chart-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
       font-size: 10px;
       font-weight: 700;
       color: var(--muted);
     }
-    .elev-chart-vals {
-      display: flex;
-      gap: 8px;
-      font-size: 11px;
+    .focus-hud-value {
+      font-size: 17px;
       font-weight: 800;
       direction: ltr;
       unicode-bidi: isolate;
-      color: var(--text);
-      margin-bottom: 4px;
+      color: #0f766e;
+      line-height: 1;
+    }
+    .focus-hud-unit {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
     }
     .elev-chart-vals span { opacity: 0.85; }
-    .elev-chart-scroll {
+    .elev-chart-scroll::-webkit-scrollbar { display: none; }
+    .elev-bar.latest {
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(8,145,178,0.45);
+    }
+    .pace-strip {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      z-index: 3;
+      height: 48px;
+      display: none;
+      align-items: flex-end;
+      gap: 3px;
+      padding: 3px 5px 2px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      backdrop-filter: blur(8px);
       overflow-x: auto;
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      direction: ltr;
     }
-    .elev-chart-scroll::-webkit-scrollbar { display: none; }
-    .elev-chart {
+    .pace-strip::-webkit-scrollbar { display: none; }
+    .pace-bar-wrap {
+      flex: 0 0 36px;
+      height: 100%;
       display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 48px;
-      min-width: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 2px;
     }
-    .elev-bar {
-      flex: 0 0 8px;
-      width: 8px;
-      border-radius: 4px 4px 2px 2px;
+    .pace-bar {
+      width: 14px;
+      border-radius: 6px 6px 3px 3px;
       background: linear-gradient(180deg, #0891b2, #7c3aed);
-      min-height: 2px;
-      opacity: 0.85;
+      min-height: 4px;
+      transition: height .25s ease;
     }
-    .elev-bar.latest {
-      opacity: 1;
-      box-shadow: 0 0 8px rgba(8,145,178,0.45);
+    .pace-bar-wrap.latest .pace-bar {
+      background: linear-gradient(180deg, #0d9488, #7c3aed);
+      box-shadow: 0 0 8px rgba(8,145,178,0.35);
+    }
+    .pace-bar-label {
+      font-size: 8px;
+      font-weight: 800;
+      color: var(--muted);
+      direction: ltr;
+      line-height: 1;
+    }
+    .pace-bar-km {
+      font-size: 7px;
+      color: #9ca3af;
+      font-weight: 700;
     }
     .map-overlay {
       position: absolute;
@@ -351,17 +349,47 @@
     }
     .btn:active { transform: scale(0.96); }
     .btn-main {
-      min-width: 140px;
-      padding: 14px 22px;
-      font-size: 15px;
+      min-width: 148px;
+      padding: 16px 26px 14px;
+      font-size: 16px;
+      letter-spacing: 0.02em;
       color: #fff;
-      background: linear-gradient(135deg, #0891b2, #7c3aed);
-      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+      background: linear-gradient(180deg, #2dd4bf 0%, #0891b2 42%, #6d28d9 100%);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-bottom: 0;
+      border-radius: 18px;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.45) inset,
+        0 -3px 0 rgba(0,0,0,0.18) inset,
+        0 8px 0 #4c1d95,
+        0 12px 24px rgba(76, 29, 149, 0.35);
+      text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+      transform: translateY(0);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    .btn-main:active {
+      transform: translateY(5px);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.35) inset,
+        0 -2px 0 rgba(0,0,0,0.15) inset,
+        0 3px 0 #4c1d95,
+        0 6px 12px rgba(76, 29, 149, 0.3);
     }
     .btn-main.stop {
-      background: linear-gradient(135deg, #e11d48, #f97316);
-      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.28);
-      color: #fff;
+      background: linear-gradient(180deg, #fb7185 0%, #e11d48 45%, #c2410c 100%);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.4) inset,
+        0 -3px 0 rgba(0,0,0,0.18) inset,
+        0 8px 0 #9f1239,
+        0 12px 24px rgba(159, 18, 57, 0.35);
+    }
+    .btn-main.stop:active {
+      transform: translateY(5px);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 -2px 0 rgba(0,0,0,0.15) inset,
+        0 3px 0 #9f1239,
+        0 6px 12px rgba(159, 18, 57, 0.3);
     }
     .btn-side {
       width: 52px; height: 52px;
@@ -554,24 +582,11 @@
         <div class="gps-chip" id="gpsChip">GPS …</div>
       </div>
       <div class="focus-hud" id="focusHud">
-        <div class="focus-hud-label" id="focusLabel">مسافت</div>
-        <div class="focus-hud-value" id="focusValue">0.00</div>
-        <div class="focus-hud-unit" id="focusUnit">km</div>
+        <span class="focus-hud-label" id="focusLabel">مسافت</span>
+        <span class="focus-hud-value" id="focusValue">0.00</span>
+        <span class="focus-hud-unit" id="focusUnit">km</span>
       </div>
-      <div class="elev-chart-wrap" id="elevChartWrap">
-        <div class="elev-chart-head">
-          <span>ارتفاع (m)</span>
-          <span id="elevRangeLabel">—</span>
-        </div>
-        <div class="elev-chart-vals" id="elevVals">
-          <span id="elevNow">اکنون: —</span>
-          <span id="elevMin">کم: —</span>
-          <span id="elevMax">بیش: —</span>
-        </div>
-        <div class="elev-chart-scroll" id="elevScroll">
-          <div class="elev-chart" id="elevChart"></div>
-        </div>
-      </div>
+      <div class="pace-strip" id="paceStrip" aria-label="پیس کیلومترها"></div>
     </div>
 
     <footer class="dock">
@@ -880,6 +895,46 @@
     }
   }
 
+
+  function renderPaceStrip() {
+    const el = $("paceStrip");
+    if (!el) return;
+    if (!splits.length) {
+      el.innerHTML = "";
+      el.style.display = "none";
+      return;
+    }
+    el.style.display = "flex";
+    // per-km pace: difference between cumulative
+    const rows = splits.map((s, i) => {
+      const prevT = i === 0 ? 0 : splits[i - 1].timeMs;
+      const segSec = (s.timeMs - prevT) / 1000;
+      return { km: s.km, paceSec: segSec };
+    });
+    // show all, scroll; highlight last 3 visually taller context
+    const maxP = Math.max(...rows.map((r) => r.paceSec), 1);
+    const minP = Math.min(...rows.map((r) => r.paceSec));
+    const span = Math.max(maxP - minP, 30);
+    el.innerHTML = rows
+      .map((r, i) => {
+        const latest = i >= rows.length - 3;
+        // faster = taller bar (invert: lower pace sec = higher bar)
+        const inv = maxP - r.paceSec;
+        const h = 8 + Math.round((inv / span) * 28);
+        const cls = latest ? "pace-bar-wrap latest" : "pace-bar-wrap";
+        return `<div class="${cls}" title="km ${r.km}">
+          <div class="pace-bar-label">${fa(formatPace(r.paceSec))}</div>
+          <div class="pace-bar" style="height:${h}px"></div>
+          <div class="pace-bar-km">${fa(String(r.km))}</div>
+        </div>`;
+      })
+      .join("");
+    // scroll to end so last 3 visible
+    requestAnimationFrame(() => {
+      el.scrollLeft = el.scrollWidth;
+    });
+  }
+
   function updateFocusHud() {
     const labelEl = $("focusLabel");
     const valueEl = $("focusValue");
@@ -1113,6 +1168,7 @@
           splits.push({ km: nextSplitKm, timeMs: ms, pace });
           nextSplitKm += 1;
           vibratePaceSplit();
+          renderPaceStrip();
           toast("اسپلیت " + fa(String(nextSplitKm - 1)) + " km · " + fa(formatPace(pace)));
         }
 
