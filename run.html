@@ -413,6 +413,19 @@
       direction: ltr;
     }
     .split-row span:first-child { color: var(--muted); }
+    .report-preview {
+      margin: 12px 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      background: #fff;
+    }
+    .report-preview canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
   </style>
 </head>
 <body>
@@ -548,12 +561,16 @@
         <div class="s2"><div class="s2-l">↑ ارتفاع</div><div class="s2-v" id="sumGain">0</div></div>
       </div>
       <div id="sumSplits" style="margin:10px 0 4px"></div>
+      <div class="report-preview">
+        <canvas id="reportCanvas" width="720" height="960"></canvas>
+      </div>
       <div class="row-btns">
         <button type="button" class="btn-ghost" id="btnDiscard">حذف</button>
         <button type="button" class="btn-solid" id="btnSaveRun">ذخیره</button>
       </div>
       <div class="row-btns" style="margin-top:8px">
         <button type="button" class="btn-ghost" id="btnExportGpx">خروجی GPX</button>
+        <button type="button" class="btn-solid" id="btnExportImg">دانلود تصویر گزارش</button>
       </div>
     </div>
   </div>
@@ -1077,6 +1094,7 @@
       sp.innerHTML = "";
     }
     openSheet("sheetSummary");
+    requestAnimationFrame(() => drawReportCard(pendingSession));
   }
 
   function savePending() {
@@ -1095,6 +1113,160 @@
     closeSheets();
     resetSession();
     toast("حذف شد");
+  }
+
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawReportCard(session) {
+    const s = session || pendingSession;
+    const canvas = $("reportCanvas");
+    if (!canvas || !s) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, "#f8fafc");
+    grad.addColorStop(0.45, "#eef2ff");
+    grad.addColorStop(1, "#ecfeff");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    const bar = ctx.createLinearGradient(0, 0, W, 0);
+    bar.addColorStop(0, "#7c3aed");
+    bar.addColorStop(1, "#0891b2");
+    ctx.fillStyle = bar;
+    ctx.fillRect(0, 0, W, 12);
+
+    ctx.fillStyle = "#1a1d2e";
+    ctx.font = "800 42px Vazirmatn, Tahoma, sans-serif";
+    ctx.textAlign = "center";
+    const modeLabel = s.mode === "run" ? "دویدن" : "پیاده‌روی";
+    ctx.fillText("HQL · " + modeLabel, W / 2, 70);
+
+    ctx.fillStyle = "#6b728a";
+    ctx.font = "600 24px Vazirmatn, Tahoma, sans-serif";
+    let when = "";
+    try { when = new Date(s.startedAt).toLocaleString("fa-IR"); } catch (_) {}
+    ctx.fillText(when, W / 2, 110);
+
+    const pad = 48;
+    const mapY = 140;
+    const mapH = 320;
+    ctx.fillStyle = "#ffffff";
+    roundRect(ctx, pad, mapY, W - pad * 2, mapH, 24);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const path = s.path || [];
+    if (path.length > 1) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      path.forEach((c) => {
+        minX = Math.min(minX, c[0]); maxX = Math.max(maxX, c[0]);
+        minY = Math.min(minY, c[1]); maxY = Math.max(maxY, c[1]);
+      });
+      const dx = maxX - minX || 0.001;
+      const dy = maxY - minY || 0.001;
+      const inner = 28;
+      const mw = W - pad * 2 - inner * 2;
+      const mh = mapH - inner * 2;
+      const scale = Math.min(mw / dx, mh / dy) * 0.88;
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const ox = pad + inner + mw / 2;
+      const oy = mapY + inner + mh / 2;
+
+      ctx.beginPath();
+      path.forEach((c, i) => {
+        const x = ox + (c[0] - cx) * scale;
+        const y = oy - (c[1] - cy) * scale;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = s.mode === "run" ? "#0891b2" : "#7c3aed";
+      ctx.lineWidth = 5;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      const s0 = path[0], s1 = path[path.length - 1];
+      ctx.fillStyle = "#059669";
+      ctx.beginPath();
+      ctx.arc(ox + (s0[0] - cx) * scale, oy - (s0[1] - cy) * scale, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#e11d48";
+      ctx.beginPath();
+      ctx.arc(ox + (s1[0] - cx) * scale, oy - (s1[1] - cy) * scale, 8, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "600 22px Vazirmatn, Tahoma, sans-serif";
+      ctx.fillText("بدون مسیر کافی", W / 2, mapY + mapH / 2);
+    }
+
+    const distKm = (s.distanceM / 1000).toFixed(2);
+    const stats = [
+      { label: "مسافت", value: distKm + " km" },
+      { label: "زمان", value: formatTime(s.durationMs) },
+      { label: "پیس", value: formatPace(s.paceSec) + " /km" },
+      { label: "کالری", value: String(s.calories || 0) + " kcal" },
+      { label: "میانگین", value: (s.avgSpeedKmh || 0).toFixed(1) + " km/h" },
+      { label: "بیشینه", value: (s.maxSpeedKmh || 0).toFixed(1) + " km/h" },
+      { label: "ارتفاع+", value: Math.round(s.elevGain || 0) + " m" },
+      { label: "اسپلیت", value: String((s.splits && s.splits.length) || 0) }
+    ];
+
+    const gridY = mapY + mapH + 36;
+    const cols = 2;
+    const cellW = (W - pad * 2 - 16) / cols;
+    const cellH = 88;
+    stats.forEach((st, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = pad + col * (cellW + 16);
+      const y = gridY + row * (cellH + 12);
+      ctx.fillStyle = "#ffffff";
+      roundRect(ctx, x, y, cellW, cellH, 18);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.05)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = "#6b728a";
+      ctx.font = "700 20px Vazirmatn, Tahoma, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(st.label, x + cellW / 2, y + 32);
+      ctx.fillStyle = "#1a1d2e";
+      ctx.font = "800 28px Vazirmatn, Tahoma, sans-serif";
+      ctx.fillText(st.value, x + cellW / 2, y + 68);
+    });
+
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "600 20px Vazirmatn, Tahoma, sans-serif";
+    ctx.fillText("HQL Run", W / 2, H - 36);
+  }
+
+  function downloadReportImage() {
+    const canvas = $("reportCanvas");
+    if (!canvas) return;
+    try {
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "hql-run-" + ((pendingSession && pendingSession.id) || Date.now()) + ".png";
+      a.click();
+      toast("تصویر گزارش ذخیره شد");
+    } catch (e) {
+      toast("دانلود تصویر ممکن نشد");
+    }
   }
 
   function exportGpx(session) {
@@ -1233,6 +1405,7 @@ ${trk}
   $("btnSaveRun").onclick = savePending;
   $("btnDiscard").onclick = discardPending;
   $("btnExportGpx").onclick = () => exportGpx();
+  $("btnExportImg").onclick = downloadReportImage;
 
   document.querySelectorAll(".mode-pill").forEach((btn) => {
     btn.onclick = () => {
