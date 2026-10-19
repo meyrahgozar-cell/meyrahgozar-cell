@@ -561,6 +561,35 @@
       text-align: center; color: var(--muted);
       font-size: 12px; font-weight: 700; padding: 8px;
     }
+    .ocr-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1.45;
+    }
+    .ocr-opt input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      accent-color: #0e7490;
+    }
+    .ocr-opt small { color: var(--muted); font-weight: 600; }
+    .ocr-route-note {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 6px;
+    }
     .ocr-result {
       display: none; margin-bottom: 12px; padding: 12px;
       border-radius: 14px; background: #f1f5f9;
@@ -794,6 +823,10 @@
         <img id="ocrPreview" alt="" />
         <input type="file" id="ocrFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" />
       </div>
+      <label class="ocr-opt" id="ocrRouteOptLabel">
+        <input type="checkbox" id="ocrExtractRoute" />
+        <span>تشخیص مسیر و نمایش روی نقشه <small>(اختیاری)</small></span>
+      </label>
       <div class="ocr-result" id="ocrResult">
         <div class="ocr-result-grid">
           <div class="ocr-stat"><div class="ocr-stat-l">مسافت</div><div class="ocr-stat-v" id="ocrDist">—</div></div>
@@ -801,6 +834,7 @@
           <div class="ocr-stat"><div class="ocr-stat-l">زمان</div><div class="ocr-stat-v" id="ocrDur">—</div></div>
         </div>
         <div style="font-size:11px;color:var(--muted);text-align:center" id="ocrMeta"></div>
+        <div class="ocr-route-note" id="ocrRouteNote"></div>
       </div>
       <div class="row-btns">
         <button type="button" class="btn-ghost" id="btnOcrClose">بستن</button>
@@ -1977,7 +2011,11 @@ ${trk}
           apikey: SUPABASE_KEY,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ imageBase64: ocrImageB64, imageMime: ocrImageMime })
+        body: JSON.stringify({
+          imageBase64: ocrImageB64,
+          imageMime: ocrImageMime,
+          extractRoute: !!( $("ocrExtractRoute") && $("ocrExtractRoute").checked )
+        })
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || ("خطا " + res.status));
@@ -1992,6 +2030,18 @@ ${trk}
       $("ocrDur").textContent = fa(String(dur));
       $("ocrMeta").textContent =
         (data.activity_type || "") + (data.confidence ? " · اطمینان: " + data.confidence : "");
+      const rn = $("ocrRouteNote");
+      if (rn) {
+        const coords = data.route_coordinates;
+        const n = Array.isArray(coords) ? coords.length : 0;
+        if (n >= 2) {
+          rn.textContent = "مسیر آماده است · " + fa(String(n)) + " نقطه برای نقشه";
+        } else if ($("ocrExtractRoute") && $("ocrExtractRoute").checked) {
+          rn.textContent = "مسیر روی تصویر تشخیص داده نشد (آمار همچنان قابل استفاده است)";
+        } else {
+          rn.textContent = "";
+        }
+      }
       $("ocrResult").classList.add("show");
       $("ocrApplyRow").style.display = "flex";
       try {
@@ -2018,6 +2068,11 @@ ${trk}
         : distM > 0 && durSec > 0
         ? durSec / (distM / 1000)
         : 0;
+    const routeCoords = Array.isArray(d.route_coordinates)
+      ? d.route_coordinates.filter(
+          (c) => Array.isArray(c) && c.length >= 2 && isFinite(c[0]) && isFinite(c[1])
+        ).map((c) => [Number(c[0]), Number(c[1])])
+      : [];
     pendingSession = {
       id: "ocr-" + Date.now().toString(36),
       mode: d.activity_type === "walk" ? "walk" : "run",
@@ -2030,11 +2085,32 @@ ${trk}
       elevGain: 0,
       calories: 0,
       splits: [],
-      path: [],
-      points: [],
+      path: routeCoords,
+      points: routeCoords.map((c, i) => ({
+        lng: c[0],
+        lat: c[1],
+        t: Date.now() + i * 1000,
+        alt: null
+      })),
       source: "ocr",
       ocr: d
     };
+    // نمایش مسیر روی نقشه مثل ردیابی واقعی
+    if (routeCoords.length >= 2) {
+      pathCoords = routeCoords.slice();
+      updateRouteLine();
+      if (map) {
+        try {
+          const bounds = routeCoords.reduce(
+            (b, c) => b.extend(c),
+            new mapboxgl.LngLatBounds(routeCoords[0], routeCoords[0])
+          );
+          map.fitBounds(bounds, { padding: 48, duration: 900 });
+        } catch (_) {}
+        const last = routeCoords[routeCoords.length - 1];
+        setMarker(last[0], last[1]);
+      }
+    }
     $("sumSub").textContent = "از اسکرین‌شات · " + fa(new Date().toLocaleDateString("fa-IR"));
     $("sumDist").textContent = fa((distM / 1000).toFixed(2));
     $("sumTime").textContent = fa(formatTime(durSec * 1000));
