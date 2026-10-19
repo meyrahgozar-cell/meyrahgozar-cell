@@ -526,14 +526,16 @@
       font-size: 13px;
     }
     .btn-ocr {
-      width: 52px; height: 52px;
-      border-radius: 16px;
+      width: 40px; height: 52px;
+      min-width: 40px;
+      border-radius: 14px;
       border: 1px solid var(--border);
       background: var(--card2);
       color: var(--text);
-      font-size: 18px;
+      font-size: 16px;
       display: grid; place-items: center;
       cursor: pointer;
+      flex-shrink: 0;
     }
     .ocr-drop {
       border: 2px dashed rgba(8,145,178,0.35);
@@ -696,10 +698,10 @@
         </div>
       </div>
       <div class="controls">
+        <button type="button" class="btn btn-side btn-ocr" id="btnOcr" title="از اسکرین‌شات">🖼️</button>
         <button type="button" class="btn btn-main" id="btnPrimary">شروع</button>
         <div class="controls-left">
           <button type="button" class="btn btn-side" id="btnPause" disabled title="توقف موقت">⏸</button>
-          <button type="button" class="btn btn-side btn-ocr" id="btnOcr" title="از اسکرین‌شات">🖼️</button>
           <button type="button" class="btn btn-side" id="btnLocate" title="موقعیت من">📍</button>
         </div>
       </div>
