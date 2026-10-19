@@ -740,7 +740,7 @@
       </div>
       <div class="pace-strip" id="paceStrip" aria-label="پیس کیلومترها"></div>
       <div class="ocr-select-banner" id="ocrSelectBanner">
-        <span>مستطیل محدوده را روی نقشه بکش</span>
+        <span id="ocrSelectBannerText">گوشهٔ اول محدوده را روی نقشه لمس کن</span>
         <button type="button" id="btnOcrSelectCancel">انصراف</button>
       </div>
     </div>
@@ -889,7 +889,7 @@
           <input type="checkbox" id="ocrUseMapRegion" />
           <span>استفاده از محدودهٔ انتخاب‌شده روی نقشه <small>(اختیاری)</small></span>
         </label>
-        <p class="ocr-map-hint">روی نقشه یک مستطیل بکش (انگشت/ماوس) تا ناحیه دقیق مشخص شود. در صورت تمایل می‌توانی فقط نمای فعلی را هم ثبت کنی.</p>
+        <p class="ocr-map-hint">نقشه را به محدودهٔ موردنظر ببر، «انتخاب روی نقشه» را بزن و دو گوشهٔ ناحیه را لمس کن. اسکرول نقشه آزاد است.</p>
         <div class="row-btns" style="margin-bottom:8px">
           <button type="button" class="btn-solid" id="btnOcrDrawBounds" style="flex:1">انتخاب روی نقشه</button>
           <button type="button" class="btn-ghost" id="btnOcrCaptureBounds" style="flex:1">نمای فعلی</button>
@@ -2114,32 +2114,26 @@ ${trk}
   }
 
   let ocrDrawActive = false;
-  let ocrDrawStart = null;
+  let ocrDrawStart = null; // first corner LngLat
 
-  function onOcrDrawDown(e) {
+  function onOcrMapClick(e) {
     if (!ocrDrawActive || !map) return;
-    e.preventDefault();
-    ocrDrawStart = e.lngLat;
-    drawOcrBoundsRect({
-      west: e.lngLat.lng, east: e.lngLat.lng,
-      south: e.lngLat.lat, north: e.lngLat.lat
-    });
-  }
-  function onOcrDrawMove(e) {
-    if (!ocrDrawActive || !ocrDrawStart || !map) return;
-    const a = ocrDrawStart;
-    const c = e.lngLat;
-    drawOcrBoundsRect({
-      west: Math.min(a.lng, c.lng),
-      east: Math.max(a.lng, c.lng),
-      south: Math.min(a.lat, c.lat),
-      north: Math.max(a.lat, c.lat)
-    });
-  }
-  function onOcrDrawUp(e) {
-    if (!ocrDrawActive || !ocrDrawStart || !map) return;
-    const end = e.lngLat || ocrDrawStart;
-    applyOcrBoundsFromCorners(ocrDrawStart, end);
+    // ignore if user was panning heavily — map click still fires after short tap
+    if (!ocrDrawStart) {
+      ocrDrawStart = e.lngLat;
+      // small preview point-box
+      drawOcrBoundsRect({
+        west: e.lngLat.lng - 0.0003,
+        east: e.lngLat.lng + 0.0003,
+        south: e.lngLat.lat - 0.0003,
+        north: e.lngLat.lat + 0.0003
+      });
+      const tx = $("ocrSelectBannerText");
+      if (tx) tx.textContent = "حالا گوشهٔ مقابل را لمس کن (می‌توانی نقشه را جابه‌جا کنی)";
+      toast("گوشهٔ اول ثبت شد — نقشه را حرکت بده اگر لازم است");
+      return;
+    }
+    applyOcrBoundsFromCorners(ocrDrawStart, e.lngLat);
     stopOcrDrawMode(true);
   }
 
@@ -2151,17 +2145,14 @@ ${trk}
     closeSheets();
     ocrDrawActive = true;
     ocrDrawStart = null;
-    map.dragPan.disable();
+    // اسکرول/زوم آزاد — فقط با لمس نقطه انتخاب می‌شود
     map.getCanvas().style.cursor = "crosshair";
-    map.on("mousedown", onOcrDrawDown);
-    map.on("mousemove", onOcrDrawMove);
-    map.on("mouseup", onOcrDrawUp);
-    map.on("touchstart", onOcrDrawDown);
-    map.on("touchmove", onOcrDrawMove);
-    map.on("touchend", onOcrDrawUp);
+    map.on("click", onOcrMapClick);
     const ban = $("ocrSelectBanner");
     if (ban) ban.classList.add("show");
-    toast("روی نقشه بکش تا محدوده مشخص شود");
+    const tx = $("ocrSelectBannerText");
+    if (tx) tx.textContent = "گوشهٔ اول محدوده را روی نقشه لمس کن";
+    toast("نقشه را آزادانه حرکت بده، بعد دو گوشه را لمس کن");
   }
 
   function stopOcrDrawMode(reopen) {
@@ -2169,14 +2160,8 @@ ${trk}
     ocrDrawStart = null;
     if (map) {
       try {
-        map.dragPan.enable();
         map.getCanvas().style.cursor = "";
-        map.off("mousedown", onOcrDrawDown);
-        map.off("mousemove", onOcrDrawMove);
-        map.off("mouseup", onOcrDrawUp);
-        map.off("touchstart", onOcrDrawDown);
-        map.off("touchmove", onOcrDrawMove);
-        map.off("touchend", onOcrDrawUp);
+        map.off("click", onOcrMapClick);
       } catch (_) {}
     }
     const ban = $("ocrSelectBanner");
@@ -2184,7 +2169,7 @@ ${trk}
     if (reopen) {
       openSheet("sheetOcr");
       updateOcrRouteUi();
-      if (ocrCapturedBounds) toast("محدوده از روی نقشه انتخاب شد");
+      if (ocrCapturedBounds) toast("محدوده روی نقشه علامت خورد");
     }
   }
 
