@@ -342,14 +342,13 @@
     .controls {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 10px;
-      direction: rtl;
+      direction: ltr;
     }
-    .controls-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .controls .btn-main {
+      flex: 1 1 auto;
+      max-width: 220px;
     }
     .btn {
       border: 0;
@@ -361,10 +360,9 @@
     }
     .btn:active { transform: scale(0.96); }
     .btn-main {
-      min-width: 96px;
-      width: 96px;
+      min-width: 140px;
       height: 56px;
-      padding: 0 12px;
+      padding: 0 28px;
       font-size: 15px;
       font-weight: 800;
       letter-spacing: 0.02em;
@@ -698,12 +696,10 @@
         </div>
       </div>
       <div class="controls">
-        <button type="button" class="btn btn-side btn-ocr" id="btnOcr" title="از اسکرین‌شات">🖼️</button>
+        <button type="button" class="btn btn-side" id="btnPause" disabled title="توقف موقت">⏸</button>
         <button type="button" class="btn btn-main" id="btnPrimary">شروع</button>
-        <div class="controls-left">
-          <button type="button" class="btn btn-side" id="btnPause" disabled title="توقف موقت">⏸</button>
-          <button type="button" class="btn btn-side" id="btnLocate" title="موقعیت من">📍</button>
-        </div>
+        <button type="button" class="btn btn-side" id="btnLocate" title="موقعیت من">📍</button>
+        <button type="button" class="btn btn-side btn-ocr" id="btnOcr" title="از اسکرین‌شات">🖼️</button>
       </div>
     </footer>
   </div>
