@@ -109,6 +109,45 @@
       height: 100%;
       background: #e8eef5;
     }
+    .focus-hud {
+      position: absolute;
+      left: 50%;
+      top: 52px;
+      transform: translateX(-50%);
+      z-index: 3;
+      pointer-events: none;
+      text-align: center;
+      padding: 10px 22px 8px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(8,145,178,0.25);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      min-width: 140px;
+    }
+    .focus-hud-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .focus-hud-value {
+      font-size: 34px;
+      font-weight: 800;
+      direction: ltr;
+      unicode-bidi: isolate;
+      background: linear-gradient(90deg, #7c3aed, #0891b2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+    }
+    .focus-hud-unit {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 2px;
+    }
     .map-overlay {
       position: absolute;
       left: 10px; right: 10px; top: 10px;
@@ -176,11 +215,23 @@
       padding: 10px 6px 8px;
       border-radius: 14px;
       background: var(--card);
-      border: 1px solid rgba(255,255,255,0.07);
+      border: 1px solid rgba(0,0,0,0.07);
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .12s;
+      -webkit-user-select: none;
+      user-select: none;
     }
-    .stat.main {
-      border-color: rgba(8,145,178,0.35);
-      box-shadow: 0 4px 16px rgba(8,145,178,0.12);
+    .stat:active { transform: scale(0.97); }
+    .stat.selected {
+      border-color: rgba(8,145,178,0.45);
+      box-shadow: 0 4px 16px rgba(8,145,178,0.14);
+    }
+    .stat.selected .stat-value {
+      font-size: 26px;
+      background: linear-gradient(90deg, #7c3aed, #0891b2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .stat-label {
       font-size: 10px;
@@ -195,13 +246,7 @@
       direction: ltr;
       unicode-bidi: isolate;
       line-height: 1.15;
-    }
-    .stat.main .stat-value {
-      font-size: 28px;
-      background: linear-gradient(90deg, #7c3aed, #0891b2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--text);
     }
     .stat-unit {
       font-size: 10px;
@@ -448,21 +493,26 @@
         <div class="live-badge" id="liveBadge"><span class="live-dot"></span> زنده</div>
         <div class="gps-chip" id="gpsChip">GPS …</div>
       </div>
+      <div class="focus-hud" id="focusHud">
+        <div class="focus-hud-label" id="focusLabel">مسافت</div>
+        <div class="focus-hud-value" id="focusValue">0.00</div>
+        <div class="focus-hud-unit" id="focusUnit">km</div>
+      </div>
     </div>
 
     <footer class="dock">
-      <div class="primary-stats">
-        <div class="stat main">
+      <div class="primary-stats" id="primaryStats">
+        <div class="stat selected" data-focus="dist" role="button" tabindex="0">
           <div class="stat-label">مسافت</div>
           <div class="stat-value" id="vDist">0.00</div>
           <div class="stat-unit">km</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-focus="time" role="button" tabindex="0">
           <div class="stat-label">زمان</div>
           <div class="stat-value" id="vTime">00:00</div>
           <div class="stat-unit">hh:mm:ss</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-focus="pace" role="button" tabindex="0">
           <div class="stat-label">پیس</div>
           <div class="stat-value" id="vPace">—</div>
           <div class="stat-unit">min/km</div>
@@ -695,6 +745,49 @@
   let splits = []; // {km, timeMs, pace}
   let nextSplitKm = 1;
   let pendingSession = null;
+  let focusMetric = "dist"; // dist | time | pace
+
+  function vibratePaceSplit() {
+    try {
+      if (navigator.vibrate) {
+        // سه ضربه قوی
+        navigator.vibrate([180, 80, 180, 80, 220]);
+      }
+    } catch (_) {}
+  }
+
+  function setFocusMetric(key) {
+    if (!key || !["dist", "time", "pace"].includes(key)) return;
+    focusMetric = key;
+    document.querySelectorAll("#primaryStats .stat").forEach((el) => {
+      el.classList.toggle("selected", el.getAttribute("data-focus") === key);
+    });
+    updateFocusHud();
+  }
+
+  function updateFocusHud() {
+    const labelEl = $("focusLabel");
+    const valueEl = $("focusValue");
+    const unitEl = $("focusUnit");
+    if (!labelEl || !valueEl) return;
+    const distKm = distanceM / 1000;
+    const ms = movingMs();
+    const paceSec = distKm > 0.01 ? ms / 1000 / distKm : 0;
+    if (focusMetric === "dist") {
+      labelEl.textContent = "مسافت";
+      valueEl.textContent = fa(distKm.toFixed(2));
+      unitEl.textContent = "km";
+    } else if (focusMetric === "time") {
+      labelEl.textContent = "زمان";
+      valueEl.textContent = fa(formatTime(ms));
+      unitEl.textContent = "hh:mm:ss";
+    } else {
+      labelEl.textContent = "پیس";
+      valueEl.textContent = fa(formatPace(paceSec));
+      unitEl.textContent = "min/km";
+    }
+  }
+
 
   function getToken() {
     return (localStorage.getItem(STORAGE.token) || "").trim();
@@ -824,6 +917,7 @@
     // نمایش صعود تجمعی (جمع افزایش ارتفاع در مسیر)
     $("vElev").textContent = fa(String(Math.round(elevGain))) + " m";
     $("vSplit").textContent = fa(String(Math.floor(distKm)));
+    updateFocusHud();
   }
 
   function onTick() {
@@ -897,6 +991,7 @@
           const pace = ms / 1000 / nextSplitKm;
           splits.push({ km: nextSplitKm, timeMs: ms, pace });
           nextSplitKm += 1;
+          vibratePaceSplit();
           toast("اسپلیت " + fa(String(nextSplitKm - 1)) + " km · " + fa(formatPace(pace)));
         }
 
@@ -1454,6 +1549,9 @@ ${trk}
     if (status === "idle") startRun();
     else stopRun();
   };
+  document.querySelectorAll("#primaryStats .stat").forEach((el) => {
+    el.addEventListener("click", () => setFocusMetric(el.getAttribute("data-focus")));
+  });
   $("btnPause").onclick = pauseRun;
   $("btnLocate").onclick = () => {
     startWatch();
