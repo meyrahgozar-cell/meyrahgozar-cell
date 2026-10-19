@@ -486,8 +486,8 @@
       <div class="sheet-title">تنظیمات</div>
       <div class="sheet-sub">صفحه کاملاً مستقل است · داده فقط روی همین دستگاه</div>
       <div class="field">
-        <label for="inpToken">Mapbox Public Token</label>
-        <input id="inpToken" type="text" placeholder="pk.eyJ..." autocomplete="off" spellcheck="false" />
+        <label for="inpToken">Mapbox Public Token (pk…)</label>
+        <input id="inpToken" type="text" placeholder="توکن عمومی Mapbox" autocomplete="off" spellcheck="false" />
       </div>
       <div class="field">
         <label for="inpWeight">وزن (kg) برای تخمین کالری</label>
@@ -498,10 +498,8 @@
         <input id="inpMinAcc" type="number" min="5" max="100" step="1" value="25" />
       </div>
       <p class="note">
-        توکن Mapbox به‌صورت خودکار از edge function
-        <b>run-record</b>
-        (secret: MAPBOX_KEY_V) خوانده می‌شود.
-        در صورت نیاز می‌توانی دستی هم وارد کنی. موقعیت فقط روی دستگاه پردازش می‌شود.
+        توکن به‌صورت خودکار از Supabase (function: <b>run-record</b>، secret: <b>MAPBOX_KEY_V</b>) خوانده می‌شود.
+        فیلد زیر فقط برای آزمایش دستی است. توکن sk را وارد نکن.
       </p>
       <div class="row-btns">
         <button type="button" class="btn-ghost" id="btnCloseSettings">بستن</button>
@@ -565,6 +563,12 @@
 (function () {
   "use strict";
 
+  // توکن Mapbox از Supabase Edge Function (secret: MAPBOX_KEY_V)
+  // داخل فایل/گیت نیست → Secret scanning گیت‌هاب گیر نمی‌دهد
+  const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+  const RUN_FN = SUPABASE_URL + "/functions/v1/run-record";
+
   const STORAGE = {
     token: "hql_run_mapbox_token",
     weight: "hql_run_weight_kg",
@@ -572,14 +576,8 @@
     history: "hql_run_history_v1"
   };
 
-  const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
-  const RUN_FN = SUPABASE_URL + "/functions/v1/run-record";
-
   async function fetchMapboxToken() {
-    // 1) cache
     const cached = (localStorage.getItem(STORAGE.token) || "").trim();
-    // 2) edge function secret MAPBOX_KEY_V
     try {
       const res = await fetch(RUN_FN, {
         method: "GET",
@@ -590,7 +588,9 @@
       });
       if (res.ok) {
         const data = await res.json();
-        const tok = (data && (data.token || data.mapbox || data.MAPBOX_KEY_V) || "").trim();
+        const tok = String(
+          (data && (data.token || data.mapbox || data.MAPBOX_KEY_V)) || ""
+        ).trim();
         if (tok) {
           localStorage.setItem(STORAGE.token, tok);
           return tok;
@@ -971,11 +971,10 @@
 
   async function startRun() {
     if (!getToken()) {
-      $("gpsChip").textContent = "توکن…";
       const tok = await fetchMapboxToken();
       if (!tok) {
-        openSheet("sheetSettings");
         toast("توکن Mapbox در دسترس نیست");
+        openSheet("sheetSettings");
         return;
       }
     }
@@ -1209,15 +1208,19 @@ ${trk}
   };
   $("btnCloseSettings").onclick = closeSheets;
   $("btnSaveSettings").onclick = () => {
-    localStorage.setItem(STORAGE.token, $("inpToken").value.trim());
+    const tok = ($("inpToken").value || "").trim();
+    if (tok) localStorage.setItem(STORAGE.token, tok);
     localStorage.setItem(STORAGE.weight, String(Number($("inpWeight").value) || 70));
     localStorage.setItem(STORAGE.minAcc, String(Number($("inpMinAcc").value) || 25));
     if (map) {
-      map.remove();
+      try { map.remove(); } catch (_) {}
       map = null;
       marker = null;
     }
-    initMap();
+    if (getToken()) {
+      initMap();
+      startWatch();
+    }
     closeSheets();
     toast("ذخیره شد");
   };
@@ -1248,7 +1251,7 @@ ${trk}
     });
   });
 
-  // boot
+  // boot — توکن از edge function
   renderStats();
   $("gpsChip").textContent = "توکن…";
   (async () => {
@@ -1261,7 +1264,7 @@ ${trk}
     } else {
       $("gpsChip").textContent = "توکن نیست";
       $("gpsChip").className = "gps-chip bad";
-      toast("edge function run-record یا توکن Mapbox را تنظیم کن");
+      toast("function run-record یا secret MAPBOX_KEY_V را چک کن");
     }
   })();
 
