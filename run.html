@@ -607,6 +607,36 @@
       unicode-bidi: isolate;
     }
     .ocr-bounds-status.ok { color: #0f766e; }
+    .ocr-select-banner {
+      position: absolute;
+      left: 50%;
+      top: 56px;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.88);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      white-space: nowrap;
+    }
+    .ocr-select-banner.show { display: flex; }
+    .ocr-select-banner button {
+      border: 0;
+      background: #fff;
+      color: #0f172a;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
     .ocr-route-note {
       font-size: 11px;
       color: var(--muted);
@@ -709,6 +739,10 @@
         <span class="focus-hud-unit" id="focusUnit">km</span>
       </div>
       <div class="pace-strip" id="paceStrip" aria-label="پیس کیلومترها"></div>
+      <div class="ocr-select-banner" id="ocrSelectBanner">
+        <span>مستطیل محدوده را روی نقشه بکش</span>
+        <button type="button" id="btnOcrSelectCancel">انصراف</button>
+      </div>
     </div>
 
     <footer class="dock">
@@ -853,11 +887,14 @@
       <div class="ocr-map-region" id="ocrMapRegionBox" hidden>
         <label class="ocr-opt" style="margin-bottom:8px">
           <input type="checkbox" id="ocrUseMapRegion" />
-          <span>محدوده را روی نقشه مشخص کرده‌ام <small>(اختیاری)</small></span>
+          <span>استفاده از محدودهٔ انتخاب‌شده روی نقشه <small>(اختیاری)</small></span>
         </label>
-        <p class="ocr-map-hint">نقشه را روی همان محله/مسیر ببر، سپس «ثبت محدوده» را بزن.</p>
-        <button type="button" class="btn-ghost" id="btnOcrCaptureBounds" style="width:100%;margin-bottom:4px">ثبت محدودهٔ فعلی نقشه</button>
-        <div class="ocr-bounds-status" id="ocrBoundsStatus">محدوده ثبت نشده</div>
+        <p class="ocr-map-hint">روی نقشه یک مستطیل بکش (انگشت/ماوس) تا ناحیه دقیق مشخص شود. در صورت تمایل می‌توانی فقط نمای فعلی را هم ثبت کنی.</p>
+        <div class="row-btns" style="margin-bottom:8px">
+          <button type="button" class="btn-solid" id="btnOcrDrawBounds" style="flex:1">انتخاب روی نقشه</button>
+          <button type="button" class="btn-ghost" id="btnOcrCaptureBounds" style="flex:1">نمای فعلی</button>
+        </div>
+        <div class="ocr-bounds-status" id="ocrBoundsStatus">محدوده انتخاب نشده</div>
       </div>
       <div class="ocr-result" id="ocrResult">
         <div class="ocr-result-grid">
@@ -1907,6 +1944,12 @@ ${trk}
   if ($("btnOcrCaptureBounds")) {
     $("btnOcrCaptureBounds").onclick = captureMapBoundsForOcr;
   }
+  if ($("btnOcrDrawBounds")) {
+    $("btnOcrDrawBounds").onclick = startOcrDrawMode;
+  }
+  if ($("btnOcrSelectCancel")) {
+    $("btnOcrSelectCancel").onclick = () => stopOcrDrawMode(true);
+  }
   $("btnOcrClose").onclick = closeSheets;
   $("btnOcrExtract").onclick = runOcrExtract;
   $("btnOcrApply").onclick = applyOcrToPending;
@@ -1998,6 +2041,153 @@ ${trk}
     }
   }
 
+  function setOcrBoundsStatus(b) {
+    const st = $("ocrBoundsStatus");
+    if (!st || !b) return;
+    st.classList.add("ok");
+    st.textContent =
+      b.west.toFixed(4) + "," + b.south.toFixed(4) + " → " +
+      b.east.toFixed(4) + "," + b.north.toFixed(4);
+    const u = $("ocrUseMapRegion");
+    if (u) u.checked = true;
+  }
+
+  function applyOcrBoundsFromCorners(a, c) {
+    const west = Math.min(a.lng, c.lng);
+    const east = Math.max(a.lng, c.lng);
+    const south = Math.min(a.lat, c.lat);
+    const north = Math.max(a.lat, c.lat);
+    if (Math.abs(east - west) < 1e-6 || Math.abs(north - south) < 1e-6) {
+      toast("محدوده خیلی کوچک است");
+      return null;
+    }
+    ocrCapturedBounds = {
+      west, south, east, north,
+      center: [(west + east) / 2, (south + north) / 2],
+      zoom: map ? map.getZoom() : undefined
+    };
+    setOcrBoundsStatus(ocrCapturedBounds);
+    drawOcrBoundsRect(ocrCapturedBounds);
+    return ocrCapturedBounds;
+  }
+
+  function drawOcrBoundsRect(b) {
+    if (!map || !b) return;
+    const ring = [
+      [b.west, b.south],
+      [b.east, b.south],
+      [b.east, b.north],
+      [b.west, b.north],
+      [b.west, b.south]
+    ];
+    const data = {
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [ring] },
+      properties: {}
+    };
+    if (map.getSource("ocr-bounds")) {
+      map.getSource("ocr-bounds").setData(data);
+    } else {
+      map.addSource("ocr-bounds", { type: "geojson", data: data });
+      map.addLayer({
+        id: "ocr-bounds-fill",
+        type: "fill",
+        source: "ocr-bounds",
+        paint: { "fill-color": "#0891b2", "fill-opacity": 0.15 }
+      });
+      map.addLayer({
+        id: "ocr-bounds-line",
+        type: "line",
+        source: "ocr-bounds",
+        paint: { "line-color": "#0e7490", "line-width": 2, "line-dasharray": [2, 1] }
+      });
+    }
+  }
+
+  function clearOcrBoundsRect() {
+    if (!map) return;
+    try {
+      if (map.getLayer("ocr-bounds-fill")) map.removeLayer("ocr-bounds-fill");
+      if (map.getLayer("ocr-bounds-line")) map.removeLayer("ocr-bounds-line");
+      if (map.getSource("ocr-bounds")) map.removeSource("ocr-bounds");
+    } catch (_) {}
+  }
+
+  let ocrDrawActive = false;
+  let ocrDrawStart = null;
+
+  function onOcrDrawDown(e) {
+    if (!ocrDrawActive || !map) return;
+    e.preventDefault();
+    ocrDrawStart = e.lngLat;
+    drawOcrBoundsRect({
+      west: e.lngLat.lng, east: e.lngLat.lng,
+      south: e.lngLat.lat, north: e.lngLat.lat
+    });
+  }
+  function onOcrDrawMove(e) {
+    if (!ocrDrawActive || !ocrDrawStart || !map) return;
+    const a = ocrDrawStart;
+    const c = e.lngLat;
+    drawOcrBoundsRect({
+      west: Math.min(a.lng, c.lng),
+      east: Math.max(a.lng, c.lng),
+      south: Math.min(a.lat, c.lat),
+      north: Math.max(a.lat, c.lat)
+    });
+  }
+  function onOcrDrawUp(e) {
+    if (!ocrDrawActive || !ocrDrawStart || !map) return;
+    const end = e.lngLat || ocrDrawStart;
+    applyOcrBoundsFromCorners(ocrDrawStart, end);
+    stopOcrDrawMode(true);
+  }
+
+  function startOcrDrawMode() {
+    if (!map) {
+      toast("نقشه هنوز آماده نیست");
+      return;
+    }
+    closeSheets();
+    ocrDrawActive = true;
+    ocrDrawStart = null;
+    map.dragPan.disable();
+    map.getCanvas().style.cursor = "crosshair";
+    map.on("mousedown", onOcrDrawDown);
+    map.on("mousemove", onOcrDrawMove);
+    map.on("mouseup", onOcrDrawUp);
+    map.on("touchstart", onOcrDrawDown);
+    map.on("touchmove", onOcrDrawMove);
+    map.on("touchend", onOcrDrawUp);
+    const ban = $("ocrSelectBanner");
+    if (ban) ban.classList.add("show");
+    toast("روی نقشه بکش تا محدوده مشخص شود");
+  }
+
+  function stopOcrDrawMode(reopen) {
+    ocrDrawActive = false;
+    ocrDrawStart = null;
+    if (map) {
+      try {
+        map.dragPan.enable();
+        map.getCanvas().style.cursor = "";
+        map.off("mousedown", onOcrDrawDown);
+        map.off("mousemove", onOcrDrawMove);
+        map.off("mouseup", onOcrDrawUp);
+        map.off("touchstart", onOcrDrawDown);
+        map.off("touchmove", onOcrDrawMove);
+        map.off("touchend", onOcrDrawUp);
+      } catch (_) {}
+    }
+    const ban = $("ocrSelectBanner");
+    if (ban) ban.classList.remove("show");
+    if (reopen) {
+      openSheet("sheetOcr");
+      updateOcrRouteUi();
+      if (ocrCapturedBounds) toast("محدوده از روی نقشه انتخاب شد");
+    }
+  }
+
   function captureMapBoundsForOcr() {
     if (!map) {
       toast("نقشه هنوز آماده نیست");
@@ -2014,25 +2204,14 @@ ${trk}
         center: [c.lng, c.lat],
         zoom: map.getZoom()
       };
-      const st = $("ocrBoundsStatus");
-      if (st) {
-        st.classList.add("ok");
-        st.textContent =
-          ocrCapturedBounds.west.toFixed(4) +
-          "," +
-          ocrCapturedBounds.south.toFixed(4) +
-          " → " +
-          ocrCapturedBounds.east.toFixed(4) +
-          "," +
-          ocrCapturedBounds.north.toFixed(4);
-      }
-      const u = $("ocrUseMapRegion");
-      if (u) u.checked = true;
-      toast("محدوده ثبت شد");
+      setOcrBoundsStatus(ocrCapturedBounds);
+      drawOcrBoundsRect(ocrCapturedBounds);
+      toast("نمای فعلی ثبت شد");
     } catch (e) {
       toast("ثبت محدوده ممکن نشد");
     }
   }
+
 
   function openOcrSheet() {
     openSheet("sheetOcr");
@@ -2043,10 +2222,11 @@ ${trk}
     ocrImageMime = null;
     ocrLastData = null;
     ocrCapturedBounds = null;
+    clearOcrBoundsRect();
     const st = $("ocrBoundsStatus");
     if (st) {
       st.classList.remove("ok");
-      st.textContent = "محدوده ثبت نشده";
+      st.textContent = "محدوده انتخاب نشده";
     }
     const u = $("ocrUseMapRegion");
     if (u) u.checked = false;
