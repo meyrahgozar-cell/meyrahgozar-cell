@@ -478,7 +478,7 @@
           <div class="s2-v" id="vCal">0</div>
         </div>
         <div class="s2">
-          <div class="s2-l">ارتفاع</div>
+          <div class="s2-l">صعود</div>
           <div class="s2-v" id="vElev">—</div>
         </div>
         <div class="s2">
@@ -557,8 +557,8 @@
       <div class="secondary-stats">
         <div class="s2"><div class="s2-l">کالری</div><div class="s2-v" id="sumCal">0</div></div>
         <div class="s2"><div class="s2-l">سرعت میانگین</div><div class="s2-v" id="sumAvgSp">0</div></div>
-        <div class="s2"><div class="s2-l">بیشینه</div><div class="s2-v" id="sumMaxSp">0</div></div>
-        <div class="s2"><div class="s2-l">↑ ارتفاع</div><div class="s2-v" id="sumGain">0</div></div>
+        <div class="s2"><div class="s2-l">سرعت بیشینه</div><div class="s2-v" id="sumMaxSp">0</div></div>
+        <div class="s2"><div class="s2-l">صعود</div><div class="s2-v" id="sumGain">0</div></div>
       </div>
       <div id="sumSplits" style="margin:10px 0 4px"></div>
       <div class="report-preview">
@@ -821,8 +821,8 @@
     $("vPace").textContent = fa(formatPace(paceSec));
     $("vSpeed").textContent = fa(speedKmh.toFixed(1)) + " km/h";
     $("vCal").textContent = fa(String(caloriesKcal()));
-    const alt = lastAlt != null ? Math.round(lastAlt) + " m" : "—";
-    $("vElev").textContent = alt === "—" ? "—" : fa(alt);
+    // نمایش صعود تجمعی (جمع افزایش ارتفاع در مسیر)
+    $("vElev").textContent = fa(String(Math.round(elevGain))) + " m";
     $("vSplit").textContent = fa(String(Math.floor(distKm)));
   }
 
@@ -883,7 +883,8 @@
         points.push(pt);
         lastPoint = pt;
 
-        if (pt.speed != null) maxSpeed = Math.max(maxSpeed, pt.speed);
+        if (pt.speed != null && pt.speed > 0) maxSpeed = Math.max(maxSpeed, pt.speed);
+        else if (d > 0.8) maxSpeed = Math.max(maxSpeed, instSpeed);
         if (pt.alt != null && lastAlt != null) {
           const up = pt.alt - lastAlt;
           if (up > 0.8) elevGain += up;
@@ -1053,7 +1054,7 @@
       distanceM,
       paceSec,
       avgSpeedKmh: avgSpeed,
-      maxSpeedKmh: maxSpeed * 3.6,
+      maxSpeedKmh: Math.max(maxSpeed * 3.6, avgSpeed),
       elevGain,
       calories: caloriesKcal(),
       splits: splits.slice(),
@@ -1074,8 +1075,9 @@
     $("sumTime").textContent = fa(formatTime(elapsedMs));
     $("sumPace").textContent = fa(formatPace(paceSec));
     $("sumCal").textContent = fa(String(pendingSession.calories));
+    const maxKmhShow = Math.max(maxSpeed * 3.6, avgSpeed);
     $("sumAvgSp").textContent = fa(avgSpeed.toFixed(1)) + " km/h";
-    $("sumMaxSp").textContent = fa((maxSpeed * 3.6).toFixed(1)) + " km/h";
+    $("sumMaxSp").textContent = fa(maxKmhShow.toFixed(1)) + " km/h";
     $("sumGain").textContent = fa(String(Math.round(elevGain))) + " m";
 
     const sp = $("sumSplits");
@@ -1094,7 +1096,7 @@
       sp.innerHTML = "";
     }
     openSheet("sheetSummary");
-    requestAnimationFrame(() => drawReportCard(pendingSession));
+    requestAnimationFrame(() => { drawReportCard(pendingSession); });
   }
 
   function savePending() {
@@ -1126,14 +1128,49 @@
     ctx.closePath();
   }
 
-  function drawReportCard(session) {
+  function encodePolyline(coords) {
+    // coords: [[lng,lat], ...] — Google/Mapbox polyline
+    let lastLat = 0, lastLng = 0, result = "";
+    const encode = (x) => {
+      x = x < 0 ? ~(x << 1) : x << 1;
+      let s = "";
+      while (x >= 0x20) {
+        s += String.fromCharCode((0x20 | (x & 0x1f)) + 63);
+        x >>= 5;
+      }
+      s += String.fromCharCode(x + 63);
+      return s;
+    };
+    for (let i = 0; i < coords.length; i++) {
+      const lat = Math.round(coords[i][1] * 1e5);
+      const lng = Math.round(coords[i][0] * 1e5);
+      result += encode(lat - lastLat) + encode(lng - lastLng);
+      lastLat = lat;
+      lastLng = lng;
+    }
+    return result;
+  }
+
+  function simplifyPath(coords, maxPts) {
+    if (coords.length <= maxPts) return coords;
+    const out = [];
+    const step = (coords.length - 1) / (maxPts - 1);
+    for (let i = 0; i < maxPts; i++) {
+      out.push(coords[Math.round(i * step)]);
+    }
+    return out;
+  }
+
+  async function drawReportCard(session) {
     const s = session || pendingSession;
     const canvas = $("reportCanvas");
     if (!canvas || !s) return;
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
     const H = canvas.height;
+    const path = s.path || [];
 
+    // background
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, "#f8fafc");
     grad.addColorStop(0.45, "#eef2ff");
@@ -1161,35 +1198,77 @@
 
     const pad = 48;
     const mapY = 140;
-    const mapH = 320;
-    ctx.fillStyle = "#ffffff";
-    roundRect(ctx, pad, mapY, W - pad * 2, mapH, 24);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.06)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    const mapH = 340;
+    const mapX = pad;
+    const mapW = W - pad * 2;
 
-    const path = s.path || [];
-    if (path.length > 1) {
+    // map area background
+    ctx.fillStyle = "#e8eef5";
+    roundRect(ctx, mapX, mapY, mapW, mapH, 24);
+    ctx.fill();
+
+    // Load Mapbox static map centered on route (north-up, bounds fit path)
+    let mapDrawn = false;
+    if (path.length > 1 && getToken()) {
+      try {
+        const simplified = simplifyPath(path, 80);
+        const poly = encodePolyline(simplified);
+        const color = s.mode === "run" ? "0891b2" : "7c3aed";
+        // stroke width 5, opacity 1 — path on streets map, auto bbox
+        const overlay = "path-5+" + color + "-1.0(" + encodeURIComponent(poly) + ")";
+        const url =
+          "https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/" +
+          overlay +
+          "/auto/" +
+          Math.round(mapW) +
+          "x" +
+          Math.round(mapH) +
+          "@2x?padding=40&access_token=" +
+          encodeURIComponent(getToken());
+
+        const img = await new Promise((resolve, reject) => {
+          const im = new Image();
+          im.crossOrigin = "anonymous";
+          im.onload = () => resolve(im);
+          im.onerror = reject;
+          im.src = url;
+        });
+
+        ctx.save();
+        roundRect(ctx, mapX, mapY, mapW, mapH, 24);
+        ctx.clip();
+        ctx.drawImage(img, mapX, mapY, mapW, mapH);
+        ctx.restore();
+        mapDrawn = true;
+      } catch (e) {
+        console.warn("static map", e);
+      }
+    }
+
+    // fallback: draw path only if static map failed
+    if (!mapDrawn && path.length > 1) {
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       path.forEach((c) => {
         minX = Math.min(minX, c[0]); maxX = Math.max(maxX, c[0]);
         minY = Math.min(minY, c[1]); maxY = Math.max(maxY, c[1]);
       });
+      // keep aspect in lon/lat degrees approx
       const dx = maxX - minX || 0.001;
       const dy = maxY - minY || 0.001;
+      const midLat = ((minY + maxY) / 2) * Math.PI / 180;
+      const dxM = dx * Math.cos(midLat);
       const inner = 28;
-      const mw = W - pad * 2 - inner * 2;
+      const mw = mapW - inner * 2;
       const mh = mapH - inner * 2;
-      const scale = Math.min(mw / dx, mh / dy) * 0.88;
+      const scale = Math.min(mw / dxM, mh / dy) * 0.88;
       const cx = (minX + maxX) / 2;
       const cy = (minY + maxY) / 2;
-      const ox = pad + inner + mw / 2;
+      const ox = mapX + inner + mw / 2;
       const oy = mapY + inner + mh / 2;
 
       ctx.beginPath();
       path.forEach((c, i) => {
-        const x = ox + (c[0] - cx) * scale;
+        const x = ox + (c[0] - cx) * Math.cos(midLat) * scale;
         const y = oy - (c[1] - cy) * scale;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
@@ -1198,35 +1277,42 @@
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       ctx.stroke();
-
-      const s0 = path[0], s1 = path[path.length - 1];
-      ctx.fillStyle = "#059669";
-      ctx.beginPath();
-      ctx.arc(ox + (s0[0] - cx) * scale, oy - (s0[1] - cy) * scale, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#e11d48";
-      ctx.beginPath();
-      ctx.arc(ox + (s1[0] - cx) * scale, oy - (s1[1] - cy) * scale, 8, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "600 22px Vazirmatn, Tahoma, sans-serif";
-      ctx.fillText("بدون مسیر کافی", W / 2, mapY + mapH / 2);
     }
 
+    // border over map
+    ctx.strokeStyle = "rgba(0,0,0,0.08)";
+    ctx.lineWidth = 2;
+    roundRect(ctx, mapX, mapY, mapW, mapH, 24);
+    ctx.stroke();
+
+    // north indicator (maps are always north-up)
+    ctx.fillStyle = "rgba(26,29,46,0.75)";
+    ctx.font = "700 16px Vazirmatn, Tahoma, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("N ↑", mapX + 16, mapY + 28);
+
     const distKm = (s.distanceM / 1000).toFixed(2);
+    // ensure avg/max not swapped: avg = distance/time, max = peak speed
+    let avgKmh = Number(s.avgSpeedKmh) || 0;
+    let maxKmh = Number(s.maxSpeedKmh) || 0;
+    if (avgKmh > 0 && maxKmh > 0 && maxKmh < avgKmh) {
+      // safety: peak cannot be below average
+      const tmp = avgKmh; avgKmh = maxKmh; maxKmh = tmp;
+    }
+    if (!maxKmh && avgKmh) maxKmh = avgKmh;
+
     const stats = [
       { label: "مسافت", value: distKm + " km" },
       { label: "زمان", value: formatTime(s.durationMs) },
-      { label: "پیس", value: formatPace(s.paceSec) + " /km" },
+      { label: "پیس میانگین", value: formatPace(s.paceSec) + " /km" },
       { label: "کالری", value: String(s.calories || 0) + " kcal" },
-      { label: "میانگین", value: (s.avgSpeedKmh || 0).toFixed(1) + " km/h" },
-      { label: "بیشینه", value: (s.maxSpeedKmh || 0).toFixed(1) + " km/h" },
-      { label: "ارتفاع+", value: Math.round(s.elevGain || 0) + " m" },
-      { label: "اسپلیت", value: String((s.splits && s.splits.length) || 0) }
+      { label: "سرعت میانگین", value: avgKmh.toFixed(1) + " km/h" },
+      { label: "سرعت بیشینه", value: maxKmh.toFixed(1) + " km/h" },
+      { label: "صعود تجمعی", value: Math.round(s.elevGain || 0) + " m" },
+      { label: "اسپلیت (km)", value: String((s.splits && s.splits.length) || 0) }
     ];
 
-    const gridY = mapY + mapH + 36;
+    const gridY = mapY + mapH + 28;
     const cols = 2;
     const cellW = (W - pad * 2 - 16) / cols;
     const cellH = 88;
@@ -1242,17 +1328,18 @@
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.fillStyle = "#6b728a";
-      ctx.font = "700 20px Vazirmatn, Tahoma, sans-serif";
+      ctx.font = "700 18px Vazirmatn, Tahoma, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(st.label, x + cellW / 2, y + 32);
+      ctx.fillText(st.label, x + cellW / 2, y + 30);
       ctx.fillStyle = "#1a1d2e";
-      ctx.font = "800 28px Vazirmatn, Tahoma, sans-serif";
-      ctx.fillText(st.value, x + cellW / 2, y + 68);
+      ctx.font = "800 26px Vazirmatn, Tahoma, sans-serif";
+      ctx.fillText(st.value, x + cellW / 2, y + 66);
     });
 
     ctx.fillStyle = "#9ca3af";
-    ctx.font = "600 20px Vazirmatn, Tahoma, sans-serif";
-    ctx.fillText("HQL Run", W / 2, H - 36);
+    ctx.font = "600 18px Vazirmatn, Tahoma, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("HQL Run · نقشه شمال‌بالا روی مسیر", W / 2, H - 28);
   }
 
   function downloadReportImage() {
