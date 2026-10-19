@@ -1308,6 +1308,125 @@
             color: #03040a;
         }
 
+        /* ══════════════════════════════════════════════════════════════
+           TOASTS  (separate notification system — pinned to the top)
+           ══════════════════════════════════════════════════════════════ */
+        .toasts {
+            position: fixed;
+            top: max(14px, env(safe-area-inset-top, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            width: min(430px, calc(100vw - 24px));
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 11px 10px 12px 14px;
+            border-radius: 14px;
+            background: var(--menu);
+            border: 1px solid var(--glass-edge);
+            box-shadow: 0 16px 44px rgba(0,0,0,.5),
+                        0 0 26px rgba(var(--accent-rgb), .06),
+                        inset 0 1px 0 rgba(255,255,255,.16);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            backdrop-filter: blur(16px) saturate(160%);
+            color: var(--text);
+            font-size: 13px;
+            overflow: hidden;
+            animation: toastIn .3s cubic-bezier(.2,.9,.3,1.08);
+            --tone: var(--accent);
+            --tone-rgb: var(--accent-rgb);
+        }
+        .toast.out { animation: toastOut .22s ease-in forwards; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-14px) scale(.97); }
+            to   { opacity: 1; transform: none; }
+        }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateY(-10px) scale(.97); }
+        }
+        .toast::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--tone);
+            box-shadow: 0 0 14px var(--tone);
+        }
+        .toast[data-type="success"] { --tone: var(--ok);     --tone-rgb: 0, 255, 159; }
+        .toast[data-type="error"]   { --tone: var(--danger); --tone-rgb: 255, 77, 109; }
+        .toast[data-type="warning"] { --tone: var(--warn);   --tone-rgb: 255, 217, 61; }
+        .toast[data-type="info"]    { --tone: var(--accent); --tone-rgb: 0, 240, 255; }
+
+        .toast .t-ico {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--tone);
+            background: rgba(var(--tone-rgb), .13);
+            border: 1px solid rgba(var(--tone-rgb), .35);
+            margin-top: 1px;
+        }
+        .toast .t-msg {
+            flex: 1;
+            min-width: 0;
+            line-height: 1.5;
+            padding-top: 1px;
+            word-break: break-word;
+        }
+        .toast .t-close {
+            flex-shrink: 0;
+            background: none;
+            border: 1px solid transparent;
+            color: var(--dim);
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            font-size: 11px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color .15s, background .15s;
+            margin-top: 1px;
+        }
+        .toast .t-close:hover {
+            color: var(--danger);
+            background: rgba(255,77,109,.16);
+        }
+        .toast .t-bar {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 2px;
+            width: 100%;
+            background: var(--tone);
+            opacity: .6;
+            transform-origin: left;
+            animation: toastBar var(--dur, 3200ms) linear forwards;
+        }
+        @keyframes toastBar {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
+        }
+
         @media (max-width: 640px) {
             header { margin: 8px 8px 0; }
             .path, .toolbar, .upload-area { margin-left: 8px; margin-right: 8px; }
@@ -1354,6 +1473,14 @@
             }
             .selection-bar .sel-count { font-size: 12px; padding-right: 2px; }
             .selection-bar button { padding: 6px 11px; font-size: 12px; }
+
+            /* Toasts: full-width, tighter */
+            .toasts {
+                top: max(8px, env(safe-area-inset-top, 0px));
+                width: calc(100vw - 16px);
+                gap: 6px;
+            }
+            .toast { padding: 10px 8px 11px 12px; border-radius: 12px; font-size: 12.5px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1364,12 +1491,17 @@
             .up-item[data-status="committing"] .up-track i { animation: none; }
             .selection-bar, .selection-bar.show { transition: none; }
             .brand-mark, .msg .emoji { animation: none; }
+            .toast, .toast.out { animation: none; }
+            .toast .t-bar { animation: none; opacity: .3; }
         }
     </style>
 </head>
 <body>
 
     <div class="bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><div class="halo a"></div><div class="halo b"></div><div class="grain"></div></div>
+
+    <!-- Toast stack: separate notification system, always pinned to the top -->
+    <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
     <header>
         <div class="brand">
@@ -1622,6 +1754,8 @@
         const selCopy      = $('selCopy');
         const selCut       = $('selCut');
         const selClear     = $('selClear');
+
+        const toastsEl = $('toasts');
 
         const savedToken = localStorage.getItem('fm_token');
         if (savedToken) tokenInput.value = savedToken;
@@ -3708,6 +3842,75 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TOAST NOTIFICATIONS  (separate from the header status pill)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const TOAST_ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+        const TOAST_MAX = 4;
+
+        function dismissToast(el) {
+            if (!el || el._tClosed) return;
+            el._tClosed = true;
+            clearTimeout(el._tTimer);
+            el.classList.add('out');
+            setTimeout(() => el.remove(), 240);
+        }
+
+        function notify(text, type = 'info', ms = 3200) {
+            if (!toastsEl) return null;
+            const kind = ({
+                ok: 'success', success: 'success',
+                err: 'error', error: 'error',
+                warn: 'warning', warning: 'warning',
+                loading: 'info', info: 'info',
+            })[type] || 'info';
+
+            // Cap the visible stack; retire the oldest first.
+            const live = [...toastsEl.children].filter(el => !el.classList.contains('out'));
+            while (live.length >= TOAST_MAX) dismissToast(live.shift());
+
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.dataset.type = kind;
+            el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+            el.innerHTML = `
+                <span class="t-ico" aria-hidden="true">${TOAST_ICONS[kind]}</span>
+                <span class="t-msg"></span>
+                <button type="button" class="t-close" aria-label="Dismiss notification" title="Dismiss">✕</button>
+                <span class="t-bar" aria-hidden="true"></span>
+            `;
+            el.querySelector('.t-msg').textContent = text;
+            toastsEl.appendChild(el);
+
+            const bar = el.querySelector('.t-bar');
+            const total = Math.max(1200, ms);
+            bar.style.animationDuration = total + 'ms';
+
+            // Auto-dismiss, pausing the countdown while hovered.
+            let remaining = total;
+            let startedAt = performance.now();
+            const arm = () => {
+                startedAt = performance.now();
+                el._tTimer = setTimeout(() => dismissToast(el), remaining);
+            };
+            arm();
+
+            el.addEventListener('mouseenter', () => {
+                if (el._tClosed) return;
+                clearTimeout(el._tTimer);
+                remaining = Math.max(500, remaining - (performance.now() - startedAt));
+                bar.style.animationPlayState = 'paused';
+            });
+            el.addEventListener('mouseleave', () => {
+                if (el._tClosed) return;
+                bar.style.animationPlayState = 'running';
+                arm();
+            });
+
+            el.querySelector('.t-close').addEventListener('click', () => dismissToast(el));
+            return el;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  HELPERS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function setStatus(text, type) {
@@ -3717,11 +3920,23 @@
 
         let flashTimer = null;
         function flashStatus(text, type, ms = 2500) {
-            setStatus(text, type);
+            // Completion feedback goes to the toast stack (always pinned to the
+            // top, has its own close button)…
+            notify(
+                text,
+                type === 'err' ? 'error' : type === 'ok' ? 'success' : 'info',
+                Math.max(ms, 2600)
+            );
+
+            // …while the header pill just snaps back to the connection state.
             clearTimeout(flashTimer);
-            flashTimer = setTimeout(() => {
-                if (state.connected && !pumping) setStatus(`✓ Connected: ${state.owner}/${state.repo}`, 'ok');
-            }, ms);
+            const resetPill = () => {
+                if (state.connected && !pumping) {
+                    setStatus(`✓ Connected: ${state.owner}/${state.repo}`, 'ok');
+                }
+            };
+            resetPill();
+            flashTimer = setTimeout(resetPill, ms);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
