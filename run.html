@@ -1,724 +1,1293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Run Result OCR · Supabase + Gemini</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#07080f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>HQL | دو و پیاده‌روی</title>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
   <style>
     :root {
-      --bg: #0b0d12;
-      --surface: #12151c;
-      --surface-2: #181c25;
-      --surface-3: #0a0c10;
-      --border: #232834;
-      --border-strong: #2f3745;
-      --text: #e7eaf0;
-      --text-muted: #8b93a5;
-      --accent: #5b8cff;
-      --accent-2: #7a6bff;
-      --accent-soft: rgba(91, 140, 255, 0.12);
-      --accent-glow: 0 0 0 1px rgba(91, 140, 255, 0.35),
-        0 8px 32px rgba(91, 140, 255, 0.18);
-      --green: #3ddc97;
-      --amber: #f5b955;
-      --red: #ff7b7b;
-      --radius: 18px;
-      --radius-sm: 12px;
-      --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-      --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      --bg: #07080f;
+      --card: rgba(18, 22, 38, 0.92);
+      --card2: rgba(28, 34, 56, 0.95);
+      --border: rgba(180, 100, 255, 0.28);
+      --text: #e8ecff;
+      --muted: #8b93b8;
+      --neon: #b44cff;
+      --neon2: #00f0ff;
+      --green: #00ff9d;
+      --amber: #ffb84d;
+      --red: #ff4d6d;
+      --glow: 0 0 24px rgba(180, 76, 255, 0.25);
+      --safe-b: env(safe-area-inset-bottom, 0px);
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: var(--font);
-      background:
-        radial-gradient(ellipse 70% 50% at 50% -10%, rgba(91, 140, 255, 0.14), transparent),
-        var(--bg);
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%;
+      background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 20px 80px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .brand {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 8px; user-select: none;
-    }
-    .brand-mark {
-      width: 38px; height: 38px; border-radius: 12px;
-      background: linear-gradient(135deg, #5b8cff, #a06bff);
-      display: grid; place-items: center; font-size: 20px;
-      box-shadow: 0 6px 20px rgba(91, 140, 255, 0.35);
-    }
-    .brand h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; }
-    .brand h1 span { color: var(--accent); }
-    .tagline {
-      color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px;
-      text-align: center; max-width: 560px; line-height: 1.6;
-    }
-
-    .card {
-      width: 100%; max-width: 760px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-      animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(14px) scale(0.985); }
-      to { opacity: 1; transform: none; }
-    }
-
-    .dropzone {
-      position: relative; margin: 20px 20px 0;
-      border: 2px dashed #2b3140; border-radius: var(--radius-sm);
-      background: var(--surface-2); min-height: 210px;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 10px; cursor: pointer;
-      transition: border-color var(--transition), background var(--transition);
+      font-family: "Vazirmatn", system-ui, sans-serif;
       overflow: hidden;
     }
-    .dropzone:hover, .dropzone.dragover {
-      border-color: var(--accent); background: rgba(91, 140, 255, 0.06);
-    }
-    .dropzone .dz-icon {
-      width: 52px; height: 52px; border-radius: 16px;
-      background: var(--accent-soft); display: grid; place-items: center;
-      font-size: 24px; color: var(--accent);
-      transition: transform var(--transition);
-    }
-    .dropzone:hover .dz-icon { transform: translateY(-3px) scale(1.04); }
-    .dropzone .dz-title { font-size: 0.95rem; font-weight: 500; }
-    .dropzone .dz-sub { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0 16px; }
-    .dropzone input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer;
-    }
-    .dropzone.has-image {
-      border-style: solid; border-color: transparent;
-      background: var(--surface-3); padding: 0;
-    }
-    .dropzone.has-image .dz-icon,
-    .dropzone.has-image .dz-title,
-    .dropzone.has-image .dz-sub { display: none; }
-    .preview-wrap { display: none; width: 100%; height: 100%; position: relative; }
-    .dropzone.has-image .preview-wrap { display: block; }
-    .preview-wrap img {
-      width: 100%; height: 100%; object-fit: contain;
-      max-height: 320px; display: block;
-    }
-    .remove-img {
-      position: absolute; top: 10px; right: 10px;
-      width: 32px; height: 32px; border-radius: 50%; border: none;
-      background: rgba(10, 12, 16, 0.75); color: #fff; font-size: 16px;
-      cursor: pointer; display: grid; place-items: center;
-      backdrop-filter: blur(6px);
-      transition: background var(--transition), transform var(--transition);
-    }
-    .remove-img:hover { background: #e5484d; transform: scale(1.06); }
-
-    .actions {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 16px 20px 20px;
-    }
-    .hint {
-      font-size: 0.75rem; color: var(--text-muted);
-      display: flex; align-items: center; gap: 6px; min-width: 0;
-    }
-    .hint kbd {
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 5px; padding: 1px 6px;
-      font-family: var(--font); font-size: 0.7rem; color: #aeb6c7;
-    }
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, #5b8cff, #7a6bff);
-      color: #fff; border: none; border-radius: var(--radius-sm);
-      padding: 11px 24px; font-family: var(--font); font-size: 0.88rem;
-      font-weight: 600; letter-spacing: 0.01em; cursor: pointer;
-      transition: transform var(--transition), box-shadow var(--transition),
-        opacity var(--transition);
-      box-shadow: 0 6px 22px rgba(91, 140, 255, 0.35); flex-shrink: 0;
-    }
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 30px rgba(91, 140, 255, 0.45);
-    }
-    .btn-primary:active:not(:disabled) { transform: translateY(0); }
-    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-    .btn-primary .spinner {
-      width: 15px; height: 15px;
-      border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: #fff;
-      border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
-    }
-    .btn-primary.loading .spinner { display: block; }
-    .btn-primary.loading .btn-label { display: none; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .result-card {
-      width: 100%; max-width: 760px; margin-top: 22px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden; display: none;
-      animation: cardIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    .result-card.visible { display: block; }
-
-    .result-hero {
-      padding: 24px 22px 6px;
+    .app {
       display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr;
-      gap: 14px;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      height: 100dvh;
+    }
+
+    /* header */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px 8px;
+      background: linear-gradient(180deg, rgba(7,8,15,0.98), rgba(7,8,15,0.85));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      z-index: 5;
+    }
+    .brand {
+      font-weight: 800;
+      font-size: 15px;
+      background: linear-gradient(90deg, #b44cff, #00f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .top-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      display: grid; place-items: center;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .mode-pills {
+      display: flex;
+      gap: 4px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 12px;
+      padding: 3px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .mode-pill {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .mode-pill.on {
+      background: linear-gradient(135deg, rgba(180,76,255,0.35), rgba(0,240,255,0.2));
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0,240,255,0.2);
+    }
+
+    /* map */
+    .map-wrap {
+      position: relative;
+      min-height: 0;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #0a0d18;
+    }
+    .map-overlay {
+      position: absolute;
+      left: 10px; right: 10px; top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .live-badge {
+      pointer-events: auto;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(8,10,18,0.82);
+      border: 1px solid rgba(255,77,109,0.45);
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 0 14px rgba(255,77,109,0.25);
+    }
+    .live-badge.on { display: inline-flex; }
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red);
+      animation: pulse 1.2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    .gps-chip {
+      pointer-events: auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(8,10,18,0.82);
+      border: 1px solid rgba(0,240,255,0.3);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--neon2);
+    }
+    .gps-chip.bad { border-color: rgba(255,77,109,0.4); color: var(--red); }
+    .gps-chip.ok { border-color: rgba(0,255,157,0.4); color: var(--green); }
+
+    /* stats dock */
+    .dock {
+      background: linear-gradient(180deg, rgba(12,14,24,0.96), #07080f);
+      border-top: 1px solid rgba(180,100,255,0.22);
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.45);
+      padding: 12px 12px calc(14px + var(--safe-b));
+      z-index: 5;
+    }
+    .primary-stats {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
     }
     .stat {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
+      text-align: center;
+      padding: 10px 6px 8px;
       border-radius: 14px;
-      padding: 16px 16px 14px;
-      min-width: 0;
-      position: relative;
-      overflow: hidden;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.07);
     }
-    .stat::before {
-      content: "";
-      position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-      opacity: 0.7;
+    .stat.main {
+      border-color: rgba(0,240,255,0.35);
+      box-shadow: 0 0 18px rgba(0,240,255,0.12);
     }
     .stat-label {
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 600;
-      margin-bottom: 8px;
-      display: flex; align-items: center; gap: 6px;
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
     }
     .stat-value {
-      font-size: 1.85rem;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 800;
       letter-spacing: -0.02em;
-      line-height: 1.1;
-      word-break: break-word;
+      direction: ltr;
+      unicode-bidi: isolate;
+      line-height: 1.15;
     }
-    .stat-value.empty { color: #4e5566; font-size: 1.4rem; font-weight: 500; }
-    .stat-value .unit {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      margin-left: 4px;
-      letter-spacing: 0;
+    .stat.main .stat-value {
+      font-size: 28px;
+      background: linear-gradient(90deg, #e8d6ff, #7ef9ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .stat-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-top: 6px;
-      min-height: 1em;
-      word-break: break-word;
+    .stat-unit {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .secondary-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .s2 {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .s2-l { font-size: 9px; color: var(--muted); font-weight: 700; }
+    .s2-v {
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 3px;
+      direction: ltr;
+      unicode-bidi: isolate;
     }
 
-    .result-meta {
-      padding: 18px 22px 0;
+    .controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .chip {
-      display: inline-flex;
       align-items: center;
-      gap: 7px;
-      font-size: 0.76rem;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
+      justify-content: center;
+      gap: 12px;
     }
-    .chip .chip-label {
-      font-weight: 600;
-      color: #b8c1d4;
-    }
-    .chip .dot-sm {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--green);
-    }
-    .chip.conf-high .dot-sm { background: var(--green); box-shadow: 0 0 6px var(--green); }
-    .chip.conf-medium .dot-sm { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-    .chip.conf-low .dot-sm { background: var(--red); box-shadow: 0 0 6px var(--red); }
-
-    .notes-line {
-      padding: 12px 22px 0;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      display: none;
-    }
-    .notes-line.visible { display: block; }
-    .notes-line b { color: #c2cbdd; font-weight: 600; }
-
-    .json-section {
-      margin: 18px 22px 22px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      background: var(--surface-3);
-    }
-    .json-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-      background: rgba(91, 140, 255, 0.04);
-      border-bottom: 1px solid var(--border);
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-    .json-header .jh-left {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .json-header .jh-badge {
-      font-size: 0.62rem;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .copy-btn {
-      background: transparent;
-      border: 1px solid var(--border-strong);
-      color: var(--text-muted);
-      border-radius: 7px;
-      padding: 5px 11px;
-      font-family: var(--font);
-      font-size: 0.72rem;
+    .btn {
+      border: 0;
+      font-family: inherit;
+      font-weight: 800;
       cursor: pointer;
-      transition: all var(--transition);
+      border-radius: 16px;
+      transition: transform .12s ease, box-shadow .12s ease;
     }
-    .copy-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+    .btn:active { transform: scale(0.96); }
+    .btn-main {
+      min-width: 140px;
+      padding: 14px 22px;
+      font-size: 15px;
+      color: #061018;
+      background: linear-gradient(135deg, #00f0ff, #7ef9ff 40%, #b44cff);
+      box-shadow: 0 0 22px rgba(0,240,255,0.35);
     }
-    .json-section pre {
-      margin: 0;
-      padding: 14px 16px;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      line-height: 1.65;
-      color: #c9d3e8;
-      overflow-x: auto;
-      white-space: pre;
+    .btn-main.stop {
+      background: linear-gradient(135deg, #ff4d6d, #ff8a5c);
+      box-shadow: 0 0 22px rgba(255,77,109,0.35);
+      color: #fff;
     }
+    .btn-side {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 18px;
+      display: grid; place-items: center;
+    }
+    .btn-side:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    .result-card.error-mode .result-hero,
-    .result-card.error-mode .result-meta,
-    .result-card.error-mode .notes-line,
-    .result-card.error-mode .json-section { display: none; }
-    .error-block {
+    /* panels */
+    .sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(5,6,12,0.72);
+      backdrop-filter: blur(8px);
       display: none;
-      padding: 24px 22px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .sheet.open { display: flex; }
+    .sheet-card {
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow: auto;
+      background: linear-gradient(165deg, #141828, #0a0d16);
+      border: 1px solid rgba(180,100,255,0.35);
+      border-radius: 22px 22px 0 0;
+      padding: 16px 14px calc(18px + var(--safe-b));
+      box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+    }
+    .sheet-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      background: linear-gradient(90deg, #b44cff, #00f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .sheet-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .field {
+      margin-bottom: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.35);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: rgba(0,240,255,0.5);
+      box-shadow: 0 0 0 3px rgba(0,240,255,0.12);
+    }
+    .row-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .row-btns .btn-ghost, .row-btns .btn-solid {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-solid {
+      border: 0;
+      background: linear-gradient(135deg, #b44cff, #00f0ff);
+      color: #061018;
+    }
+    .hist-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .hist-item:active { background: rgba(0,240,255,0.08); }
+    .hist-title { font-weight: 800; font-size: 13px; }
+    .hist-meta { font-size: 11px; color: var(--muted); margin-top: 4px; direction: ltr; unicode-bidi: isolate; text-align: right; }
+    .hist-del {
+      align-self: center;
+      border: 0;
+      background: rgba(255,77,109,0.15);
       color: var(--red);
-      font-size: 0.88rem;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
+      border-radius: 10px;
+      width: 36px; height: 36px;
+      cursor: pointer;
+      font-size: 14px;
     }
-    .result-card.error-mode .error-block { display: block; }
-
+    .empty-h {
+      text-align: center;
+      color: var(--muted);
+      padding: 24px 12px;
+      font-size: 13px;
+    }
     .toast {
-      position: fixed; bottom: 28px; left: 50%;
-      transform: translate(-50%, 20px);
-      background: #1c2130; border: 1px solid var(--border); color: var(--text);
-      padding: 11px 22px; border-radius: 10px; font-size: 0.82rem;
-      opacity: 0; pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 100; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+      position: fixed;
+      left: 50%;
+      bottom: calc(120px + var(--safe-b));
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(12,14,24,0.95);
+      border: 1px solid rgba(0,240,255,0.35);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,240,255,0.15);
     }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
-
-    @media (max-width: 640px) {
-      body { padding: 28px 12px 60px; }
-      .brand h1 { font-size: 1.15rem; }
-      .tagline { font-size: 0.82rem; margin-bottom: 22px; }
-      .actions { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
-      .hint { justify-content: center; }
-      .btn-primary { justify-content: center; padding: 13px 24px; }
-      .result-hero {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        padding: 18px 16px 4px;
-      }
-      .stat { padding: 14px 14px 12px; }
-      .stat-value { font-size: 1.6rem; }
-      .result-meta, .notes-line { padding-left: 16px; padding-right: 16px; }
-      .json-section { margin-left: 16px; margin-right: 16px; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .note {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 8px;
     }
+    .split-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+      direction: ltr;
+    }
+    .split-row span:first-child { color: var(--muted); }
   </style>
 </head>
 <body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">HQL Run</div>
+      <div class="mode-pills" role="tablist">
+        <button type="button" class="mode-pill on" data-mode="run" id="modeRun">دویدن</button>
+        <button type="button" class="mode-pill" data-mode="walk" id="modeWalk">پیاده‌روی</button>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="icon-btn" id="btnHistory" title="تاریخچه">📋</button>
+        <button type="button" class="icon-btn" id="btnSettings" title="تنظیمات">⚙️</button>
+      </div>
+    </header>
 
-  <div class="brand">
-    <div class="brand-mark">🏃</div>
-    <h1>Run Result <span>OCR</span></h1>
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="map-overlay">
+        <div class="live-badge" id="liveBadge"><span class="live-dot"></span> زنده</div>
+        <div class="gps-chip" id="gpsChip">GPS …</div>
+      </div>
+    </div>
+
+    <footer class="dock">
+      <div class="primary-stats">
+        <div class="stat main">
+          <div class="stat-label">مسافت</div>
+          <div class="stat-value" id="vDist">0.00</div>
+          <div class="stat-unit">km</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">زمان</div>
+          <div class="stat-value" id="vTime">00:00</div>
+          <div class="stat-unit">hh:mm:ss</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">پیس</div>
+          <div class="stat-value" id="vPace">—</div>
+          <div class="stat-unit">min/km</div>
+        </div>
+      </div>
+      <div class="secondary-stats">
+        <div class="s2">
+          <div class="s2-l">سرعت</div>
+          <div class="s2-v" id="vSpeed">0.0</div>
+        </div>
+        <div class="s2">
+          <div class="s2-l">کالری</div>
+          <div class="s2-v" id="vCal">0</div>
+        </div>
+        <div class="s2">
+          <div class="s2-l">ارتفاع</div>
+          <div class="s2-v" id="vElev">—</div>
+        </div>
+        <div class="s2">
+          <div class="s2-l">اسپلیت</div>
+          <div class="s2-v" id="vSplit">0</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn btn-side" id="btnLocate" title="موقعیت من">📍</button>
+        <button type="button" class="btn btn-main" id="btnPrimary">شروع</button>
+        <button type="button" class="btn btn-side" id="btnPause" disabled title="توقف موقت">⏸</button>
+      </div>
+    </footer>
   </div>
-  <p class="tagline">
-    Upload a screenshot of your run. The Supabase Edge Function reads it with Gemini and returns
-    <b>distance</b> and <b>pace</b> in a fixed JSON schema — your Gemini key stays on the server.
-  </p>
 
-  <div class="card">
-    <div class="dropzone" id="dropzone">
-      <div class="dz-icon">🖼️</div>
-      <div class="dz-title">Drop a run-result screenshot here</div>
-      <div class="dz-sub">PNG · JPEG · WebP · HEIC · HEIF — max 7 MB inline</div>
-      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" />
-      <div class="preview-wrap" id="previewWrap">
-        <img id="previewImg" alt="Preview" />
-        <button class="remove-img" id="removeImgBtn" type="button" title="Remove image">✕</button>
+  <!-- Settings -->
+  <div class="sheet" id="sheetSettings">
+    <div class="sheet-card">
+      <div class="sheet-title">تنظیمات</div>
+      <div class="sheet-sub">صفحه کاملاً مستقل است · داده فقط روی همین دستگاه</div>
+      <div class="field">
+        <label for="inpToken">Mapbox Public Token</label>
+        <input id="inpToken" type="text" placeholder="pk.eyJ..." autocomplete="off" spellcheck="false" />
       </div>
-    </div>
-
-    <div class="actions">
-      <span class="hint">
-        <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to extract
-      </span>
-      <button class="btn-primary" id="sendBtn" disabled>
-        <span class="spinner"></span>
-        <span class="btn-label">Extract distance &amp; pace →</span>
-      </button>
+      <div class="field">
+        <label for="inpWeight">وزن (kg) برای تخمین کالری</label>
+        <input id="inpWeight" type="number" min="30" max="200" step="0.1" value="70" />
+      </div>
+      <div class="field">
+        <label for="inpMinAcc">حداکثر خطای GPS قابل قبول (متر)</label>
+        <input id="inpMinAcc" type="number" min="5" max="100" step="1" value="25" />
+      </div>
+      <p class="note">
+        توکن Mapbox به‌صورت خودکار از edge function
+        <b>run-record</b>
+        (secret: MAPBOX_KEY_V) خوانده می‌شود.
+        در صورت نیاز می‌توانی دستی هم وارد کنی. موقعیت فقط روی دستگاه پردازش می‌شود.
+      </p>
+      <div class="row-btns">
+        <button type="button" class="btn-ghost" id="btnCloseSettings">بستن</button>
+        <button type="button" class="btn-solid" id="btnSaveSettings">ذخیره</button>
+      </div>
     </div>
   </div>
 
-  <div class="result-card" id="resultCard">
-    <div class="result-hero">
-      <div class="stat">
-        <div class="stat-label">Distance</div>
-        <div class="stat-value" id="statDistance">—</div>
-        <div class="stat-sub" id="statDistanceSub"></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Pace</div>
-        <div class="stat-value" id="statPace">—</div>
-        <div class="stat-sub" id="statPaceSub"></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Duration</div>
-        <div class="stat-value" id="statDuration">—</div>
-        <div class="stat-sub" id="statDurationSub"></div>
+  <!-- History -->
+  <div class="sheet" id="sheetHistory">
+    <div class="sheet-card">
+      <div class="sheet-title">تاریخچه</div>
+      <div class="sheet-sub">ذخیره‌شده روی همین گوشی / مرورگر</div>
+      <div id="histList"></div>
+      <div class="row-btns">
+        <button type="button" class="btn-ghost" id="btnCloseHistory">بستن</button>
       </div>
     </div>
+  </div>
 
-    <div class="result-meta">
-      <span class="chip"><span class="chip-label">Activity</span><span id="metaActivity">—</span></span>
-      <span class="chip conf-high" id="metaConfidenceChip">
-        <span class="dot-sm"></span>
-        <span class="chip-label">Confidence</span>
-        <span id="metaConfidence">—</span>
-      </span>
-    </div>
-
-    <div class="notes-line" id="notesLine">
-      <b>Notes:</b> <span id="notesText"></span>
-    </div>
-
-    <div class="json-section">
-      <div class="json-header">
-        <span class="jh-left">
-          <span class="jh-badge">JSON</span>
-          <span>Structured output · fixed schema</span>
-        </span>
-        <button class="copy-btn" id="copyJsonBtn" type="button">Copy JSON</button>
+  <!-- Summary after stop -->
+  <div class="sheet" id="sheetSummary">
+    <div class="sheet-card">
+      <div class="sheet-title">پایان فعالیت</div>
+      <div class="sheet-sub" id="sumSub">—</div>
+      <div class="primary-stats" style="margin-bottom:12px">
+        <div class="stat main">
+          <div class="stat-label">مسافت</div>
+          <div class="stat-value" id="sumDist">0</div>
+          <div class="stat-unit">km</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">زمان</div>
+          <div class="stat-value" id="sumTime">00:00</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">پیس میانگین</div>
+          <div class="stat-value" id="sumPace">—</div>
+        </div>
       </div>
-      <pre><code id="jsonOutput"></code></pre>
+      <div class="secondary-stats">
+        <div class="s2"><div class="s2-l">کالری</div><div class="s2-v" id="sumCal">0</div></div>
+        <div class="s2"><div class="s2-l">سرعت میانگین</div><div class="s2-v" id="sumAvgSp">0</div></div>
+        <div class="s2"><div class="s2-l">بیشینه</div><div class="s2-v" id="sumMaxSp">0</div></div>
+        <div class="s2"><div class="s2-l">↑ ارتفاع</div><div class="s2-v" id="sumGain">0</div></div>
+      </div>
+      <div id="sumSplits" style="margin:10px 0 4px"></div>
+      <div class="row-btns">
+        <button type="button" class="btn-ghost" id="btnDiscard">حذف</button>
+        <button type="button" class="btn-solid" id="btnSaveRun">ذخیره</button>
+      </div>
+      <div class="row-btns" style="margin-top:8px">
+        <button type="button" class="btn-ghost" id="btnExportGpx">خروجی GPX</button>
+      </div>
     </div>
-
-    <div class="error-block" id="errorBlock"></div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    (() => {
-      "use strict";
+(function () {
+  "use strict";
 
-      // ── Supabase config (publishable key — safe in client code) ──
-      const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
-      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+  const STORAGE = {
+    token: "hql_run_mapbox_token",
+    weight: "hql_run_weight_kg",
+    minAcc: "hql_run_min_acc",
+    history: "hql_run_history_v1"
+  };
 
-      const supabase = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-      );
+  const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
+  const RUN_FN = SUPABASE_URL + "/functions/v1/run-record";
 
-      // ── DOM refs ──
-      const dropzone        = document.getElementById("dropzone");
-      const fileInput       = document.getElementById("fileInput");
-      const previewImg      = document.getElementById("previewImg");
-      const removeImgBtn    = document.getElementById("removeImgBtn");
-      const sendBtn         = document.getElementById("sendBtn");
-      const resultCard      = document.getElementById("resultCard");
-      const statDistance    = document.getElementById("statDistance");
-      const statDistanceSub = document.getElementById("statDistanceSub");
-      const statPace        = document.getElementById("statPace");
-      const statPaceSub     = document.getElementById("statPaceSub");
-      const statDuration    = document.getElementById("statDuration");
-      const statDurationSub = document.getElementById("statDurationSub");
-      const metaActivity    = document.getElementById("metaActivity");
-      const metaConfidence  = document.getElementById("metaConfidence");
-      const metaConfChip    = document.getElementById("metaConfidenceChip");
-      const notesLine       = document.getElementById("notesLine");
-      const notesText       = document.getElementById("notesText");
-      const jsonOutput      = document.getElementById("jsonOutput");
-      const copyJsonBtn     = document.getElementById("copyJsonBtn");
-      const errorBlock      = document.getElementById("errorBlock");
-      const toastEl         = document.getElementById("toast");
-
-      // ── State ──
-      let imageBase64 = null;
-      let imageMime   = null;
-      let toastTimer  = null;
-
-      const MAX_INLINE_BYTES = 7 * 1024 * 1024;
-
-      // Expose result for downstream code
-      window.RunOCR = { last: null, raw: null, onResult: null };
-
-      // ── Helpers ──
-      function showToast(msg) {
-        toastEl.textContent = msg;
-        toastEl.classList.add("show");
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
-      }
-
-      function updateSendState() {
-        sendBtn.disabled = !imageBase64;
-      }
-
-      function resetImage() {
-        imageBase64 = null;
-        imageMime   = null;
-        fileInput.value = "";
-        dropzone.classList.remove("has-image");
-        previewImg.removeAttribute("src");
-        updateSendState();
-      }
-
-      function setImage(file) {
-        if (!file) return;
-        const allowed = ["image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"];
-        if (!allowed.includes(file.type)) {
-          showToast("Unsupported format. Use PNG, JPEG, WebP, HEIC or HEIF.");
-          return;
+  async function fetchMapboxToken() {
+    // 1) cache
+    const cached = (localStorage.getItem(STORAGE.token) || "").trim();
+    // 2) edge function secret MAPBOX_KEY_V
+    try {
+      const res = await fetch(RUN_FN, {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + SUPABASE_KEY,
+          apikey: SUPABASE_KEY
         }
-        if (file.size > MAX_INLINE_BYTES) {
-          showToast("Image is too large (max 7 MB for inline upload).");
-          return;
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const tok = (data && (data.token || data.mapbox || data.MAPBOX_KEY_V) || "").trim();
+        if (tok) {
+          localStorage.setItem(STORAGE.token, tok);
+          return tok;
         }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target.result;
-          imageBase64 = dataUrl.split(",")[1];
-          imageMime   = file.type;
-          previewImg.src = dataUrl;
-          dropzone.classList.add("has-image");
-          updateSendState();
-        };
-        reader.onerror = () => showToast("Could not read the image file.");
-        reader.readAsDataURL(file);
+      } else {
+        console.warn("run-record", res.status, await res.text().catch(() => ""));
       }
+    } catch (e) {
+      console.warn("run-record fetch", e);
+    }
+    return cached;
+  }
 
-      function fmtKm(v) {
-        if (typeof v !== "number" || !isFinite(v)) return null;
-        return v.toFixed(2).replace(/\.?0+$/, "");
-      }
-      function fmtSecsAsClock(secs) {
-        if (typeof secs !== "number" || !isFinite(secs) || secs < 0) return null;
-        secs = Math.round(secs);
-        const h = Math.floor(secs / 3600);
-        const m = Math.floor((secs % 3600) / 60);
-        const s = secs % 60;
-        const pad = (n) => String(n).padStart(2, "0");
-        return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-      }
-      function setStat(el, main, unit, subEl, sub) {
-        el.innerHTML = "";
-        if (main == null) {
-          el.textContent = "—";
-          el.classList.add("empty");
-        } else {
-          el.classList.remove("empty");
-          el.textContent = main;
-          if (unit) {
-            const u = document.createElement("span");
-            u.className = "unit";
-            u.textContent = unit;
-            el.appendChild(u);
+  // ── utils ──
+  const fa = (v) => String(v).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+  const $ = (id) => document.getElementById(id);
+
+  function toast(msg, ms = 2200) {
+    const el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove("show"), ms);
+  }
+
+  function haversineM(a, b) {
+    const R = 6371000;
+    const toRad = (x) => (x * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  function formatTime(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+  }
+
+  function formatPace(secPerKm) {
+    if (!secPerKm || !isFinite(secPerKm) || secPerKm <= 0 || secPerKm > 3600) return "—";
+    const m = Math.floor(secPerKm / 60);
+    const s = Math.floor(secPerKm % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
+    } catch {
+      return [];
+    }
+  }
+  function saveHistory(list) {
+    localStorage.setItem(STORAGE.history, JSON.stringify(list.slice(0, 50)));
+  }
+
+  // ── state ──
+  let mode = "run"; // run | walk
+  let status = "idle"; // idle | running | paused
+  let map = null;
+  let watchId = null;
+  let marker = null;
+  let pathCoords = []; // [lng, lat]
+  let points = []; // {lat,lng,t,acc,alt,speed}
+  let distanceM = 0;
+  let elevGain = 0;
+  let lastAlt = null;
+  let maxSpeed = 0;
+  let startedAt = 0;
+  let elapsedMs = 0;
+  let pauseStarted = 0;
+  let pausedTotal = 0;
+  let tickTimer = null;
+  let lastPoint = null;
+  let splits = []; // {km, timeMs, pace}
+  let nextSplitKm = 1;
+  let pendingSession = null;
+
+  function getToken() {
+    return (localStorage.getItem(STORAGE.token) || "").trim();
+  }
+  function getWeight() {
+    const w = Number(localStorage.getItem(STORAGE.weight) || 70);
+    return w > 0 ? w : 70;
+  }
+  function getMinAcc() {
+    const a = Number(localStorage.getItem(STORAGE.minAcc) || 25);
+    return a > 0 ? a : 25;
+  }
+
+  // ── map ──
+  function initMap() {
+    const token = getToken();
+    if (!token) {
+      $("gpsChip").textContent = "توکن Mapbox لازم است";
+      $("gpsChip").className = "gps-chip bad";
+      return false;
+    }
+    if (map) return true;
+    mapboxgl.accessToken = token;
+    try {
+      map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/dark-v11",
+        center: [51.389, 35.689], // Tehran default
+        zoom: 14,
+        attributionControl: false,
+        logoPosition: "bottom-left"
+      });
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-left");
+      map.on("load", () => {
+        map.addSource("route", {
+          type: "geojson",
+          data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
+        });
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": mode === "run" ? "#00f0ff" : "#b44cff",
+            "line-width": 4,
+            "line-opacity": 0.9
           }
-        }
-        if (subEl) subEl.textContent = sub || "";
-      }
-
-      function renderResult(data, rawText) {
-        resultCard.classList.remove("error-mode");
-        resultCard.classList.add("visible");
-
-        const distKm = fmtKm(data.distance_km);
-        setStat(statDistance, distKm, distKm ? "km" : "", statDistanceSub, data.distance_display || "");
-
-        const paceStr = data.pace_per_km || fmtSecsAsClock(data.pace_per_km_seconds);
-        setStat(statPace, paceStr || null, paceStr ? "/km" : "", statPaceSub, data.pace_display || "");
-
-        const durStr = data.duration_display || fmtSecsAsClock(data.duration_seconds);
-        setStat(
-          statDuration,
-          durStr || null,
-          "",
-          statDurationSub,
-          typeof data.duration_seconds === "number" ? `${data.duration_seconds} s` : ""
-        );
-
-        metaActivity.textContent = data.activity_type || "—";
-        const conf = (data.confidence || "low").toLowerCase();
-        metaConfidence.textContent = conf;
-        metaConfChip.classList.remove("conf-high", "conf-medium", "conf-low");
-        metaConfChip.classList.add(`conf-${conf}`);
-
-        if (data.notes && String(data.notes).trim()) {
-          notesText.textContent = data.notes;
-          notesLine.classList.add("visible");
-        } else {
-          notesLine.classList.remove("visible");
-        }
-
-        jsonOutput.textContent = JSON.stringify(data, null, 2);
-
-        window.RunOCR.last = data;
-        window.RunOCR.raw  = rawText;
-        if (typeof window.RunOCR.onResult === "function") {
-          try { window.RunOCR.onResult(data); } catch (e) { console.error(e); }
-        }
-
-        resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-
-      function renderError(message, rawText) {
-        resultCard.classList.add("visible", "error-mode");
-        errorBlock.textContent = "⚠️ " + message;
-        window.RunOCR.last = null;
-        window.RunOCR.raw  = rawText || null;
-        resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-
-      // ── Drag & drop ──
-      dropzone.addEventListener("click", (e) => {
-        if (e.target === removeImgBtn || removeImgBtn.contains(e.target)) return;
-        if (dropzone.classList.contains("has-image")) return;
-        fileInput.click();
-      });
-      dropzone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropzone.classList.add("dragover");
-      });
-      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
-      dropzone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        dropzone.classList.remove("dragover");
-        const file = e.dataTransfer.files?.[0];
-        if (file) setImage(file);
-      });
-      fileInput.addEventListener("change", () => {
-        const file = fileInput.files?.[0];
-        if (file) setImage(file);
-      });
-      removeImgBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        resetImage();
-      });
-
-      // ── Ctrl/Cmd + Enter ──
-      document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-          if (!sendBtn.disabled && !sendBtn.classList.contains("loading")) {
-            e.preventDefault();
-            sendBtn.click();
+        });
+        map.addLayer({
+          id: "route-glow",
+          type: "line",
+          source: "route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": mode === "run" ? "#00f0ff" : "#b44cff",
+            "line-width": 12,
+            "line-opacity": 0.18
           }
-        }
+        });
       });
+      return true;
+    } catch (e) {
+      console.error(e);
+      toast("خطا در بارگذاری نقشه");
+      return false;
+    }
+  }
 
-      // ── Copy JSON ──
-      copyJsonBtn.addEventListener("click", async () => {
-        if (!window.RunOCR.last) return;
-        try {
-          await navigator.clipboard.writeText(JSON.stringify(window.RunOCR.last, null, 2));
-          copyJsonBtn.textContent = "Copied ✓";
-          setTimeout(() => (copyJsonBtn.textContent = "Copy JSON"), 1600);
-        } catch {
-          showToast("Could not copy to clipboard.");
+  function updateRouteLine() {
+    if (!map || !map.getSource("route")) return;
+    map.getSource("route").setData({
+      type: "Feature",
+      geometry: { type: "LineString", coordinates: pathCoords }
+    });
+  }
+
+  function setMarker(lng, lat) {
+    if (!map) return;
+    if (!marker) {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:16px;height:16px;border-radius:50%;background:#00f0ff;border:3px solid #fff;box-shadow:0 0 12px #00f0ff;";
+      marker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+    } else {
+      marker.setLngLat([lng, lat]);
+    }
+  }
+
+  function updateLineColor() {
+    if (!map || !map.getLayer("route-line")) return;
+    const c = mode === "run" ? "#00f0ff" : "#b44cff";
+    map.setPaintProperty("route-line", "line-color", c);
+    map.setPaintProperty("route-glow", "line-color", c);
+  }
+
+  // ── metrics ──
+  function movingMs() {
+    if (status === "idle") return elapsedMs;
+    if (status === "paused") return elapsedMs;
+    return Date.now() - startedAt - pausedTotal;
+  }
+
+  function caloriesKcal() {
+    // approx MET: run ~9.8, walk ~3.5 · kcal = MET * weight_kg * hours
+    const hours = movingMs() / 3600000;
+    const met = mode === "run" ? 9.8 : 3.5;
+    return Math.round(met * getWeight() * hours);
+  }
+
+  function renderStats() {
+    const distKm = distanceM / 1000;
+    const ms = movingMs();
+    const paceSec = distKm > 0.01 ? ms / 1000 / distKm : 0;
+    const speedKmh =
+      points.length && points[points.length - 1].speed != null && points[points.length - 1].speed >= 0
+        ? points[points.length - 1].speed * 3.6
+        : distKm > 0 && ms > 0
+        ? distKm / (ms / 3600000)
+        : 0;
+
+    $("vDist").textContent = fa(distKm.toFixed(2));
+    $("vTime").textContent = fa(formatTime(ms));
+    $("vPace").textContent = fa(formatPace(paceSec));
+    $("vSpeed").textContent = fa(speedKmh.toFixed(1)) + " km/h";
+    $("vCal").textContent = fa(String(caloriesKcal()));
+    const alt = lastAlt != null ? Math.round(lastAlt) + " m" : "—";
+    $("vElev").textContent = alt === "—" ? "—" : fa(alt);
+    $("vSplit").textContent = fa(String(Math.floor(distKm)));
+  }
+
+  function onTick() {
+    if (status === "running") renderStats();
+  }
+
+  // ── GPS ──
+  function setGpsChip(acc, ok) {
+    const el = $("gpsChip");
+    if (acc == null) {
+      el.textContent = "GPS …";
+      el.className = "gps-chip";
+      return;
+    }
+    el.textContent = "±" + Math.round(acc) + " m";
+    el.className = "gps-chip " + (ok ? "ok" : "bad");
+  }
+
+  function onPosition(pos) {
+    const { latitude: lat, longitude: lng, accuracy, altitude, speed } = pos.coords;
+    const t = pos.timestamp || Date.now();
+    const minAcc = getMinAcc();
+    const ok = accuracy == null || accuracy <= minAcc;
+    setGpsChip(accuracy, ok);
+
+    setMarker(lng, lat);
+    if (map && status === "idle" && pathCoords.length === 0) {
+      map.easeTo({ center: [lng, lat], zoom: 16, duration: 600 });
+    }
+
+    if (status !== "running") return;
+    if (!ok && pathCoords.length > 0) return; // skip noisy points after start
+
+    const pt = {
+      lat,
+      lng,
+      t,
+      acc: accuracy,
+      alt: altitude,
+      speed: speed != null && speed >= 0 ? speed : null
+    };
+
+    if (lastPoint) {
+      const d = haversineM(lastPoint, pt);
+      // filter teleport / GPS jump
+      const dt = Math.max(0.001, (t - lastPoint.t) / 1000);
+      const instSpeed = d / dt; // m/s
+      if (d < 0.8) {
+        // ignore micro noise
+      } else if (instSpeed > 12 && mode === "walk") {
+        // > ~43 km/h while walking — ignore
+      } else if (instSpeed > 15) {
+        // > ~54 km/h — ignore for run too
+      } else {
+        distanceM += d;
+        pathCoords.push([lng, lat]);
+        points.push(pt);
+        lastPoint = pt;
+
+        if (pt.speed != null) maxSpeed = Math.max(maxSpeed, pt.speed);
+        if (pt.alt != null && lastAlt != null) {
+          const up = pt.alt - lastAlt;
+          if (up > 0.8) elevGain += up;
         }
-      });
+        if (pt.alt != null) lastAlt = pt.alt;
 
-      // ── Send to Supabase Edge Function ──
-      sendBtn.addEventListener("click", async () => {
-        if (!imageBase64) {
-          showToast("Please select an image first.");
-          return;
+        // km splits
+        while (distanceM / 1000 >= nextSplitKm) {
+          const ms = movingMs();
+          const pace = ms / 1000 / nextSplitKm;
+          splits.push({ km: nextSplitKm, timeMs: ms, pace });
+          nextSplitKm += 1;
+          toast("اسپلیت " + fa(String(nextSplitKm - 1)) + " km · " + fa(formatPace(pace)));
         }
 
-        sendBtn.classList.add("loading");
-        sendBtn.disabled = true;
-        resultCard.classList.remove("visible", "error-mode");
+        updateRouteLine();
+        if (map) {
+          map.easeTo({ center: [lng, lat], duration: 400 });
+        }
+      }
+    } else {
+      lastPoint = pt;
+      pathCoords.push([lng, lat]);
+      points.push(pt);
+      if (pt.alt != null) lastAlt = pt.alt;
+      updateRouteLine();
+    }
+    renderStats();
+  }
 
-        try {
-          const { data, error } = await supabase.functions.invoke(
-            "extract-run-result",
-            {
-              body: { imageBase64, imageMime },
-            }
+  function onPosError(err) {
+    console.warn(err);
+    $("gpsChip").textContent = "GPS قطع";
+    $("gpsChip").className = "gps-chip bad";
+    if (err.code === 1) toast("دسترسی موقعیت را فعال کن");
+  }
+
+  function startWatch() {
+    if (!navigator.geolocation) {
+      toast("این دستگاه GPS ندارد");
+      return;
+    }
+    if (watchId != null) return;
+    watchId = navigator.geolocation.watchPosition(onPosition, onPosError, {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 15000
+    });
+  }
+
+  function stopWatch() {
+    if (watchId != null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+  }
+
+  // ── controls ──
+  function setStatus(s) {
+    status = s;
+    const primary = $("btnPrimary");
+    const pause = $("btnPause");
+    const live = $("liveBadge");
+    if (s === "idle") {
+      primary.textContent = "شروع";
+      primary.classList.remove("stop");
+      pause.disabled = true;
+      pause.textContent = "⏸";
+      live.classList.remove("on");
+    } else if (s === "running") {
+      primary.textContent = "پایان";
+      primary.classList.add("stop");
+      pause.disabled = false;
+      pause.textContent = "⏸";
+      live.classList.add("on");
+    } else if (s === "paused") {
+      primary.textContent = "پایان";
+      primary.classList.add("stop");
+      pause.disabled = false;
+      pause.textContent = "▶";
+      live.classList.remove("on");
+    }
+  }
+
+  function resetSession() {
+    pathCoords = [];
+    points = [];
+    distanceM = 0;
+    elevGain = 0;
+    lastAlt = null;
+    maxSpeed = 0;
+    startedAt = 0;
+    elapsedMs = 0;
+    pauseStarted = 0;
+    pausedTotal = 0;
+    lastPoint = null;
+    splits = [];
+    nextSplitKm = 1;
+    pendingSession = null;
+    updateRouteLine();
+    renderStats();
+  }
+
+  async function startRun() {
+    if (!getToken()) {
+      $("gpsChip").textContent = "توکن…";
+      const tok = await fetchMapboxToken();
+      if (!tok) {
+        openSheet("sheetSettings");
+        toast("توکن Mapbox در دسترس نیست");
+        return;
+      }
+    }
+    if (!map) initMap();
+    if (status === "idle") {
+      resetSession();
+      startedAt = Date.now();
+      pausedTotal = 0;
+      setStatus("running");
+      startWatch();
+      if (!tickTimer) tickTimer = setInterval(onTick, 500);
+      toast(mode === "run" ? "دویدن شروع شد" : "پیاده‌روی شروع شد");
+    }
+  }
+
+  function pauseRun() {
+    if (status === "running") {
+      pauseStarted = Date.now();
+      elapsedMs = Date.now() - startedAt - pausedTotal;
+      setStatus("paused");
+      toast("متوقف موقت");
+    } else if (status === "paused") {
+      pausedTotal += Date.now() - pauseStarted;
+      pauseStarted = 0;
+      setStatus("running");
+      toast("ادامه");
+    }
+  }
+
+  function stopRun() {
+    if (status === "idle") return;
+    if (status === "running") {
+      elapsedMs = Date.now() - startedAt - pausedTotal;
+    } else if (status === "paused" && pauseStarted) {
+      // already frozen in elapsedMs
+    }
+    setStatus("idle");
+    stopWatch();
+    clearInterval(tickTimer);
+    tickTimer = null;
+    renderStats();
+
+    if (distanceM < 20 && elapsedMs < 15000) {
+      toast("فعالیت خیلی کوتاه بود · ذخیره نشد");
+      resetSession();
+      return;
+    }
+
+    const distKm = distanceM / 1000;
+    const paceSec = distKm > 0.01 ? elapsedMs / 1000 / distKm : 0;
+    const avgSpeed = distKm > 0 && elapsedMs > 0 ? distKm / (elapsedMs / 3600000) : 0;
+
+    pendingSession = {
+      id: Date.now().toString(36),
+      mode,
+      startedAt: new Date(startedAt).toISOString(),
+      durationMs: elapsedMs,
+      distanceM,
+      paceSec,
+      avgSpeedKmh: avgSpeed,
+      maxSpeedKmh: maxSpeed * 3.6,
+      elevGain,
+      calories: caloriesKcal(),
+      splits: splits.slice(),
+      path: pathCoords.slice(),
+      points: points.map((p) => ({
+        lat: p.lat,
+        lng: p.lng,
+        t: p.t,
+        alt: p.alt
+      }))
+    };
+
+    $("sumSub").textContent =
+      (mode === "run" ? "دویدن" : "پیاده‌روی") +
+      " · " +
+      fa(new Date().toLocaleDateString("fa-IR"));
+    $("sumDist").textContent = fa(distKm.toFixed(2));
+    $("sumTime").textContent = fa(formatTime(elapsedMs));
+    $("sumPace").textContent = fa(formatPace(paceSec));
+    $("sumCal").textContent = fa(String(pendingSession.calories));
+    $("sumAvgSp").textContent = fa(avgSpeed.toFixed(1)) + " km/h";
+    $("sumMaxSp").textContent = fa((maxSpeed * 3.6).toFixed(1)) + " km/h";
+    $("sumGain").textContent = fa(String(Math.round(elevGain))) + " m";
+
+    const sp = $("sumSplits");
+    if (splits.length) {
+      sp.innerHTML =
+        '<div style="font-size:12px;font-weight:800;margin-bottom:6px">اسپلیت‌ها</div>' +
+        splits
+          .map(
+            (s) =>
+              `<div class="split-row"><span>km ${fa(String(s.km))}</span><span>${fa(
+                formatTime(s.timeMs)
+              )} · ${fa(formatPace(s.pace))}/km</span></div>`
+          )
+          .join("");
+    } else {
+      sp.innerHTML = "";
+    }
+    openSheet("sheetSummary");
+  }
+
+  function savePending() {
+    if (!pendingSession) return;
+    const list = loadHistory();
+    list.unshift(pendingSession);
+    saveHistory(list);
+    toast("ذخیره شد ✓");
+    pendingSession = null;
+    closeSheets();
+    resetSession();
+  }
+
+  function discardPending() {
+    pendingSession = null;
+    closeSheets();
+    resetSession();
+    toast("حذف شد");
+  }
+
+  function exportGpx(session) {
+    const s = session || pendingSession;
+    if (!s || !s.points || !s.points.length) {
+      toast("مسیری برای خروجی نیست");
+      return;
+    }
+    const name = (s.mode === "run" ? "run" : "walk") + "-" + s.id;
+    let trk = s.points
+      .map((p) => {
+        const t = new Date(p.t).toISOString();
+        const ele = p.alt != null ? `<ele>${p.alt}</ele>` : "";
+        return `<trkpt lat="${p.lat}" lon="${p.lng}">${ele}<time>${t}</time></trkpt>`;
+      })
+      .join("\n");
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="HQL Run" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk><name>${name}</name><trkseg>
+${trk}
+  </trkseg></trk>
+</gpx>`;
+    const blob = new Blob([gpx], { type: "application/gpx+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name + ".gpx";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("GPX دانلود شد");
+  }
+
+  // ── sheets ──
+  function openSheet(id) {
+    closeSheets();
+    $(id).classList.add("open");
+  }
+  function closeSheets() {
+    document.querySelectorAll(".sheet").forEach((s) => s.classList.remove("open"));
+  }
+
+  function renderHistory() {
+    const list = loadHistory();
+    const box = $("histList");
+    if (!list.length) {
+      box.innerHTML = '<div class="empty-h">هنوز فعالیتی ذخیره نشده</div>';
+      return;
+    }
+    box.innerHTML = list
+      .map((s) => {
+        const dist = (s.distanceM / 1000).toFixed(2);
+        const when = new Date(s.startedAt).toLocaleString("fa-IR");
+        const label = s.mode === "run" ? "دویدن" : "پیاده‌روی";
+        return `<div class="hist-item" data-id="${s.id}">
+          <div>
+            <div class="hist-title">${label}</div>
+            <div class="hist-meta">${fa(when)} · ${fa(dist)} km · ${fa(
+          formatTime(s.durationMs)
+        )} · ${fa(formatPace(s.paceSec))}/km</div>
+          </div>
+          <button type="button" class="hist-del" data-del="${s.id}" title="حذف">✕</button>
+        </div>`;
+      })
+      .join("");
+
+    box.querySelectorAll(".hist-item").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        if (e.target.closest("[data-del]")) return;
+        const id = el.getAttribute("data-id");
+        const s = loadHistory().find((x) => x.id === id);
+        if (!s) return;
+        // replay path on map
+        pathCoords = (s.path || []).slice();
+        updateRouteLine();
+        if (pathCoords.length && map) {
+          const bounds = pathCoords.reduce(
+            (b, c) => b.extend(c),
+            new mapboxgl.LngLatBounds(pathCoords[0], pathCoords[0])
           );
-
-          if (error) {
-            let msg = error.message || "Edge Function call failed";
-            try {
-              if (error.context && typeof error.context.json === "function") {
-                const body = await error.context.json();
-                if (body && body.error) msg = body.error;
-              }
-            } catch (_) { /* keep original message */ }
-            throw new Error(msg);
-          }
-
-          if (!data || !data.data) {
-            throw new Error(
-              (data && data.error) ||
-                "The Edge Function did not return structured data."
-            );
-          }
-
-          renderResult(data.data, data.raw || "");
-        } catch (err) {
-          renderError(err.message || String(err), null);
-        } finally {
-          sendBtn.classList.remove("loading");
-          updateSendState();
+          map.fitBounds(bounds, { padding: 48, duration: 800 });
         }
+        closeSheets();
+        toast("مسیر روی نقشه");
       });
+    });
+    box.querySelectorAll("[data-del]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-del");
+        saveHistory(loadHistory().filter((x) => x.id !== id));
+        renderHistory();
+        toast("حذف شد");
+      });
+    });
+  }
 
-      // ── Init ──
-      updateSendState();
-    })();
+  // ── events ──
+  $("btnPrimary").onclick = () => {
+    if (status === "idle") startRun();
+    else stopRun();
+  };
+  $("btnPause").onclick = pauseRun;
+  $("btnLocate").onclick = () => {
+    startWatch();
+    if (!map) initMap();
+    toast("در حال یافتن موقعیت…");
+  };
+  $("btnSettings").onclick = () => {
+    $("inpToken").value = getToken();
+    $("inpWeight").value = String(getWeight());
+    $("inpMinAcc").value = String(getMinAcc());
+    openSheet("sheetSettings");
+  };
+  $("btnCloseSettings").onclick = closeSheets;
+  $("btnSaveSettings").onclick = () => {
+    localStorage.setItem(STORAGE.token, $("inpToken").value.trim());
+    localStorage.setItem(STORAGE.weight, String(Number($("inpWeight").value) || 70));
+    localStorage.setItem(STORAGE.minAcc, String(Number($("inpMinAcc").value) || 25));
+    if (map) {
+      map.remove();
+      map = null;
+      marker = null;
+    }
+    initMap();
+    closeSheets();
+    toast("ذخیره شد");
+  };
+  $("btnHistory").onclick = () => {
+    renderHistory();
+    openSheet("sheetHistory");
+  };
+  $("btnCloseHistory").onclick = closeSheets;
+  $("btnSaveRun").onclick = savePending;
+  $("btnDiscard").onclick = discardPending;
+  $("btnExportGpx").onclick = () => exportGpx();
+
+  document.querySelectorAll(".mode-pill").forEach((btn) => {
+    btn.onclick = () => {
+      if (status !== "idle") {
+        toast("اول فعالیت را تمام کن");
+        return;
+      }
+      mode = btn.getAttribute("data-mode");
+      document.querySelectorAll(".mode-pill").forEach((b) => b.classList.toggle("on", b === btn));
+      updateLineColor();
+    };
+  });
+
+  document.querySelectorAll(".sheet").forEach((sheet) => {
+    sheet.addEventListener("click", (e) => {
+      if (e.target === sheet && status === "idle") closeSheets();
+    });
+  });
+
+  // boot
+  renderStats();
+  $("gpsChip").textContent = "توکن…";
+  (async () => {
+    const tok = await fetchMapboxToken();
+    if (tok) {
+      initMap();
+      startWatch();
+      $("gpsChip").textContent = "GPS …";
+      $("gpsChip").className = "gps-chip";
+    } else {
+      $("gpsChip").textContent = "توکن نیست";
+      $("gpsChip").className = "gps-chip bad";
+      toast("edge function run-record یا توکن Mapbox را تنظیم کن");
+    }
+  })();
+
+  // wake lock — صفحه روشن بماند هنگام دویدن
+  let wakeLock = null;
+  async function requestWake() {
+    try {
+      if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+    } catch (_) {}
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && status === "running") requestWake();
+  });
+  // hook: request wake when entering running state
+  const _pauseRun = pauseRun;
+  const _startRun = startRun;
+  pauseRun = function () {
+    const was = status;
+    _pauseRun();
+    if (status === "running") requestWake();
+  };
+  startRun = function () {
+    _startRun();
+    if (status === "running") requestWake();
+  };
+})();
   </script>
 </body>
 </html>
