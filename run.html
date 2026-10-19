@@ -584,6 +584,29 @@
       accent-color: #0e7490;
     }
     .ocr-opt small { color: var(--muted); font-weight: 600; }
+    .ocr-map-region {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f0f9ff;
+      border: 1px solid rgba(8,145,178,0.2);
+    }
+    .ocr-map-hint {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 0 0 8px;
+      line-height: 1.45;
+    }
+    .ocr-bounds-status {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+    .ocr-bounds-status.ok { color: #0f766e; }
     .ocr-route-note {
       font-size: 11px;
       color: var(--muted);
@@ -827,6 +850,15 @@
         <input type="checkbox" id="ocrExtractRoute" />
         <span>تشخیص مسیر و نمایش روی نقشه <small>(اختیاری)</small></span>
       </label>
+      <div class="ocr-map-region" id="ocrMapRegionBox" hidden>
+        <label class="ocr-opt" style="margin-bottom:8px">
+          <input type="checkbox" id="ocrUseMapRegion" />
+          <span>محدوده را روی نقشه مشخص کرده‌ام <small>(اختیاری)</small></span>
+        </label>
+        <p class="ocr-map-hint">نقشه را روی همان محله/مسیر ببر، سپس «ثبت محدوده» را بزن.</p>
+        <button type="button" class="btn-ghost" id="btnOcrCaptureBounds" style="width:100%;margin-bottom:4px">ثبت محدودهٔ فعلی نقشه</button>
+        <div class="ocr-bounds-status" id="ocrBoundsStatus">محدوده ثبت نشده</div>
+      </div>
       <div class="ocr-result" id="ocrResult">
         <div class="ocr-result-grid">
           <div class="ocr-stat"><div class="ocr-stat-l">مسافت</div><div class="ocr-stat-v" id="ocrDist">—</div></div>
@@ -1867,7 +1899,14 @@ ${trk}
   $("btnOcr").onclick = () => {
     resetOcrImage();
     openOcrSheet();
+    updateOcrRouteUi();
   };
+  if ($("ocrExtractRoute")) {
+    $("ocrExtractRoute").addEventListener("change", updateOcrRouteUi);
+  }
+  if ($("btnOcrCaptureBounds")) {
+    $("btnOcrCaptureBounds").onclick = captureMapBoundsForOcr;
+  }
   $("btnOcrClose").onclick = closeSheets;
   $("btnOcrExtract").onclick = runOcrExtract;
   $("btnOcrApply").onclick = applyOcrToPending;
@@ -1946,6 +1985,54 @@ ${trk}
   let ocrImageB64 = null;
   let ocrImageMime = null;
   let ocrLastData = null;
+  let ocrCapturedBounds = null; // { west, south, east, north, center }
+
+
+  function updateOcrRouteUi() {
+    const on = $("ocrExtractRoute") && $("ocrExtractRoute").checked;
+    const box = $("ocrMapRegionBox");
+    if (box) box.hidden = !on;
+    if (!on) {
+      const u = $("ocrUseMapRegion");
+      if (u) u.checked = false;
+    }
+  }
+
+  function captureMapBoundsForOcr() {
+    if (!map) {
+      toast("نقشه هنوز آماده نیست");
+      return;
+    }
+    try {
+      const b = map.getBounds();
+      const c = map.getCenter();
+      ocrCapturedBounds = {
+        west: b.getWest(),
+        south: b.getSouth(),
+        east: b.getEast(),
+        north: b.getNorth(),
+        center: [c.lng, c.lat],
+        zoom: map.getZoom()
+      };
+      const st = $("ocrBoundsStatus");
+      if (st) {
+        st.classList.add("ok");
+        st.textContent =
+          ocrCapturedBounds.west.toFixed(4) +
+          "," +
+          ocrCapturedBounds.south.toFixed(4) +
+          " → " +
+          ocrCapturedBounds.east.toFixed(4) +
+          "," +
+          ocrCapturedBounds.north.toFixed(4);
+      }
+      const u = $("ocrUseMapRegion");
+      if (u) u.checked = true;
+      toast("محدوده ثبت شد");
+    } catch (e) {
+      toast("ثبت محدوده ممکن نشد");
+    }
+  }
 
   function openOcrSheet() {
     openSheet("sheetOcr");
@@ -1955,6 +2042,15 @@ ${trk}
     ocrImageB64 = null;
     ocrImageMime = null;
     ocrLastData = null;
+    ocrCapturedBounds = null;
+    const st = $("ocrBoundsStatus");
+    if (st) {
+      st.classList.remove("ok");
+      st.textContent = "محدوده ثبت نشده";
+    }
+    const u = $("ocrUseMapRegion");
+    if (u) u.checked = false;
+    updateOcrRouteUi();
     const file = $("ocrFile");
     if (file) file.value = "";
     const drop = $("ocrDrop");
@@ -2014,7 +2110,15 @@ ${trk}
         body: JSON.stringify({
           imageBase64: ocrImageB64,
           imageMime: ocrImageMime,
-          extractRoute: !!( $("ocrExtractRoute") && $("ocrExtractRoute").checked )
+          extractRoute: !!( $("ocrExtractRoute") && $("ocrExtractRoute").checked ),
+          mapBounds:
+            $("ocrExtractRoute") &&
+            $("ocrExtractRoute").checked &&
+            $("ocrUseMapRegion") &&
+            $("ocrUseMapRegion").checked &&
+            ocrCapturedBounds
+              ? ocrCapturedBounds
+              : null
         })
       });
       const payload = await res.json().catch(() => ({}));
