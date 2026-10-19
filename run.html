@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#07080f" />
+  <meta name="theme-color" content="#f4f6fb" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>HQL | دو و پیاده‌روی</title>
   <link rel="icon" type="image/png" href="images/favicon.png" />
@@ -14,18 +14,18 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
   <style>
     :root {
-      --bg: #07080f;
-      --card: rgba(18, 22, 38, 0.92);
-      --card2: rgba(28, 34, 56, 0.95);
-      --border: rgba(180, 100, 255, 0.28);
-      --text: #e8ecff;
-      --muted: #8b93b8;
-      --neon: #b44cff;
-      --neon2: #00f0ff;
-      --green: #00ff9d;
-      --amber: #ffb84d;
-      --red: #ff4d6d;
-      --glow: 0 0 24px rgba(180, 76, 255, 0.25);
+      --bg: #f4f6fb;
+      --card: rgba(255, 255, 255, 0.96);
+      --card2: #ffffff;
+      --border: rgba(90, 70, 180, 0.18);
+      --text: #1a1d2e;
+      --muted: #6b728a;
+      --neon: #7c3aed;
+      --neon2: #0891b2;
+      --green: #059669;
+      --amber: #d97706;
+      --red: #e11d48;
+      --glow: 0 4px 20px rgba(124, 58, 237, 0.12);
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -51,14 +51,14 @@
       justify-content: space-between;
       gap: 8px;
       padding: 10px 12px 8px;
-      background: linear-gradient(180deg, rgba(7,8,15,0.98), rgba(7,8,15,0.85));
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,246,251,0.92));
+      border-bottom: 1px solid rgba(0,0,0,0.06);
       z-index: 5;
     }
     .brand {
       font-weight: 800;
       font-size: 15px;
-      background: linear-gradient(90deg, #b44cff, #00f0ff);
+      background: linear-gradient(90deg, #7c3aed, #0891b2);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -77,10 +77,10 @@
     .mode-pills {
       display: flex;
       gap: 4px;
-      background: rgba(0,0,0,0.35);
+      background: rgba(0,0,0,0.04);
       border-radius: 12px;
       padding: 3px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(0,0,0,0.06);
     }
     .mode-pill {
       border: 0;
@@ -94,9 +94,9 @@
       cursor: pointer;
     }
     .mode-pill.on {
-      background: linear-gradient(135deg, rgba(180,76,255,0.35), rgba(0,240,255,0.2));
+      background: linear-gradient(135deg, #7c3aed, #0891b2);
       color: #fff;
-      box-shadow: 0 0 12px rgba(0,240,255,0.2);
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
     }
 
     /* map */
@@ -107,7 +107,7 @@
     #map {
       width: 100%;
       height: 100%;
-      background: #0a0d18;
+      background: #e8eef5;
     }
     .map-overlay {
       position: absolute;
@@ -125,8 +125,8 @@
       gap: 6px;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(8,10,18,0.82);
-      border: 1px solid rgba(255,77,109,0.45);
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(225,29,72,0.35);
       font-size: 11px;
       font-weight: 700;
       box-shadow: 0 0 14px rgba(255,77,109,0.25);
@@ -147,20 +147,21 @@
       pointer-events: auto;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(8,10,18,0.82);
-      border: 1px solid rgba(0,240,255,0.3);
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(8,145,178,0.3);
       font-size: 11px;
       font-weight: 700;
       color: var(--neon2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
-    .gps-chip.bad { border-color: rgba(255,77,109,0.4); color: var(--red); }
-    .gps-chip.ok { border-color: rgba(0,255,157,0.4); color: var(--green); }
+    .gps-chip.bad { border-color: rgba(225,29,72,0.4); color: var(--red); }
+    .gps-chip.ok { border-color: rgba(5,150,105,0.4); color: var(--green); }
 
     /* stats dock */
     .dock {
-      background: linear-gradient(180deg, rgba(12,14,24,0.96), #07080f);
-      border-top: 1px solid rgba(180,100,255,0.22);
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.45);
+      background: linear-gradient(180deg, #ffffff, #f4f6fb);
+      border-top: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 -8px 28px rgba(0,0,0,0.08);
       padding: 12px 12px calc(14px + var(--safe-b));
       z-index: 5;
     }
@@ -178,8 +179,8 @@
       border: 1px solid rgba(255,255,255,0.07);
     }
     .stat.main {
-      border-color: rgba(0,240,255,0.35);
-      box-shadow: 0 0 18px rgba(0,240,255,0.12);
+      border-color: rgba(8,145,178,0.35);
+      box-shadow: 0 4px 16px rgba(8,145,178,0.12);
     }
     .stat-label {
       font-size: 10px;
@@ -197,7 +198,7 @@
     }
     .stat.main .stat-value {
       font-size: 28px;
-      background: linear-gradient(90deg, #e8d6ff, #7ef9ff);
+      background: linear-gradient(90deg, #7c3aed, #0891b2);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -217,8 +218,8 @@
       text-align: center;
       padding: 8px 4px;
       border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.05);
     }
     .s2-l { font-size: 9px; color: var(--muted); font-weight: 700; }
     .s2-v {
@@ -248,13 +249,13 @@
       min-width: 140px;
       padding: 14px 22px;
       font-size: 15px;
-      color: #061018;
-      background: linear-gradient(135deg, #00f0ff, #7ef9ff 40%, #b44cff);
-      box-shadow: 0 0 22px rgba(0,240,255,0.35);
+      color: #fff;
+      background: linear-gradient(135deg, #0891b2, #7c3aed);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
     }
     .btn-main.stop {
-      background: linear-gradient(135deg, #ff4d6d, #ff8a5c);
-      box-shadow: 0 0 22px rgba(255,77,109,0.35);
+      background: linear-gradient(135deg, #e11d48, #f97316);
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.28);
       color: #fff;
     }
     .btn-side {
@@ -273,7 +274,7 @@
       position: fixed;
       inset: 0;
       z-index: 40;
-      background: rgba(5,6,12,0.72);
+      background: rgba(15, 20, 40, 0.35);
       backdrop-filter: blur(8px);
       display: none;
       align-items: flex-end;
@@ -285,17 +286,17 @@
       max-width: 480px;
       max-height: 85vh;
       overflow: auto;
-      background: linear-gradient(165deg, #141828, #0a0d16);
-      border: 1px solid rgba(180,100,255,0.35);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
       border-radius: 22px 22px 0 0;
       padding: 16px 14px calc(18px + var(--safe-b));
-      box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 -12px 40px rgba(0,0,0,0.15);
     }
     .sheet-title {
       font-size: 16px;
       font-weight: 800;
       margin-bottom: 4px;
-      background: linear-gradient(90deg, #b44cff, #00f0ff);
+      background: linear-gradient(90deg, #7c3aed, #0891b2);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -316,15 +317,15 @@
       padding: 12px 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: rgba(0,0,0,0.35);
+      background: #f4f6fb;
       color: var(--text);
       font-family: inherit;
       font-size: 14px;
     }
     .field input:focus, .field select:focus {
       outline: none;
-      border-color: rgba(0,240,255,0.5);
-      box-shadow: 0 0 0 3px rgba(0,240,255,0.12);
+      border-color: rgba(8,145,178,0.5);
+      box-shadow: 0 0 0 3px rgba(8,145,178,0.12);
     }
     .row-btns { display: flex; gap: 8px; margin-top: 8px; }
     .row-btns .btn-ghost, .row-btns .btn-solid {
@@ -343,8 +344,8 @@
     }
     .btn-solid {
       border: 0;
-      background: linear-gradient(135deg, #b44cff, #00f0ff);
-      color: #061018;
+      background: linear-gradient(135deg, #7c3aed, #0891b2);
+      color: #fff;
     }
     .hist-item {
       display: grid;
@@ -352,18 +353,18 @@
       gap: 8px;
       padding: 12px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.07);
-      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(0,0,0,0.07);
+      background: #f8f9fc;
       margin-bottom: 8px;
       cursor: pointer;
     }
-    .hist-item:active { background: rgba(0,240,255,0.08); }
+    .hist-item:active { background: rgba(8,145,178,0.08); }
     .hist-title { font-weight: 800; font-size: 13px; }
     .hist-meta { font-size: 11px; color: var(--muted); margin-top: 4px; direction: ltr; unicode-bidi: isolate; text-align: right; }
     .hist-del {
       align-self: center;
       border: 0;
-      background: rgba(255,77,109,0.15);
+      background: rgba(225,29,72,0.1);
       color: var(--red);
       border-radius: 10px;
       width: 36px; height: 36px;
@@ -381,8 +382,8 @@
       left: 50%;
       bottom: calc(120px + var(--safe-b));
       transform: translateX(-50%) translateY(12px);
-      background: rgba(12,14,24,0.95);
-      border: 1px solid rgba(0,240,255,0.35);
+      background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(8,145,178,0.35);
       color: var(--text);
       padding: 10px 16px;
       border-radius: 12px;
@@ -394,7 +395,7 @@
       transition: opacity .2s, transform .2s;
       max-width: 90vw;
       text-align: center;
-      box-shadow: 0 0 20px rgba(0,240,255,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .note {
@@ -407,7 +408,7 @@
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
       font-size: 12px;
       direction: ltr;
     }
@@ -703,7 +704,7 @@
     try {
       map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/dark-v11",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [51.389, 35.689], // Tehran default
         zoom: 14,
         attributionControl: false,
@@ -721,9 +722,9 @@
           source: "route",
           layout: { "line-join": "round", "line-cap": "round" },
           paint: {
-            "line-color": mode === "run" ? "#00f0ff" : "#b44cff",
-            "line-width": 4,
-            "line-opacity": 0.9
+            "line-color": mode === "run" ? "#0891b2" : "#7c3aed",
+            "line-width": 5,
+            "line-opacity": 0.95
           }
         });
         map.addLayer({
@@ -732,9 +733,9 @@
           source: "route",
           layout: { "line-join": "round", "line-cap": "round" },
           paint: {
-            "line-color": mode === "run" ? "#00f0ff" : "#b44cff",
+            "line-color": mode === "run" ? "#0891b2" : "#7c3aed",
             "line-width": 12,
-            "line-opacity": 0.18
+            "line-opacity": 0.2
           }
         });
       });
@@ -759,7 +760,7 @@
     if (!marker) {
       const el = document.createElement("div");
       el.style.cssText =
-        "width:16px;height:16px;border-radius:50%;background:#00f0ff;border:3px solid #fff;box-shadow:0 0 12px #00f0ff;";
+        "width:16px;height:16px;border-radius:50%;background:#0891b2;border:3px solid #fff;box-shadow:0 2px 10px rgba(8,145,178,0.5);";
       marker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
     } else {
       marker.setLngLat([lng, lat]);
@@ -768,7 +769,7 @@
 
   function updateLineColor() {
     if (!map || !map.getLayer("route-line")) return;
-    const c = mode === "run" ? "#00f0ff" : "#b44cff";
+    const c = mode === "run" ? "#0891b2" : "#7c3aed";
     map.setPaintProperty("route-line", "line-color", c);
     map.setPaintProperty("route-glow", "line-color", c);
   }
