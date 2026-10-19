@@ -112,37 +112,43 @@
     .focus-hud {
       position: absolute;
       left: 50%;
-      top: 6px;
+      top: 10px;
       transform: translateX(-50%);
       z-index: 3;
       pointer-events: none;
       display: inline-flex;
-      align-items: baseline;
-      gap: 5px;
-      padding: 4px 11px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      backdrop-filter: blur(8px);
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 16px;
+      background: linear-gradient(165deg, rgba(255,255,255,0.96), rgba(240,248,255,0.9));
+      border: 1px solid rgba(8,145,178,0.2);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.9) inset,
+        0 6px 20px rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(12px);
       white-space: nowrap;
     }
     .focus-hud-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748b;
+      letter-spacing: 0.02em;
     }
     .focus-hud-value {
-      font-size: 17px;
+      font-size: 22px;
       font-weight: 800;
       direction: ltr;
       unicode-bidi: isolate;
-      color: #0f766e;
+      background: linear-gradient(90deg, #0f766e, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       line-height: 1;
     }
     .focus-hud-unit {
-      font-size: 10px;
-      color: var(--muted);
+      font-size: 11px;
+      color: #94a3b8;
       font-weight: 700;
     }
     .elev-chart-vals span { opacity: 0.85; }
@@ -153,20 +159,20 @@
     }
     .pace-strip {
       position: absolute;
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
       z-index: 3;
-      height: 48px;
+      height: 64px;
       display: none;
       align-items: flex-end;
-      gap: 3px;
-      padding: 3px 5px 2px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-      backdrop-filter: blur(8px);
+      gap: 5px;
+      padding: 6px 8px 4px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+      border: 1px solid rgba(0,0,0,0.07);
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(10px);
       overflow-x: auto;
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
@@ -175,7 +181,7 @@
     }
     .pace-strip::-webkit-scrollbar { display: none; }
     .pace-bar-wrap {
-      flex: 0 0 36px;
+      flex: 0 0 42px;
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -184,10 +190,10 @@
       gap: 2px;
     }
     .pace-bar {
-      width: 14px;
-      border-radius: 6px 6px 3px 3px;
+      width: 16px;
+      border-radius: 7px 7px 3px 3px;
       background: linear-gradient(180deg, #0891b2, #7c3aed);
-      min-height: 4px;
+      min-height: 6px;
       transition: height .25s ease;
     }
     .pace-bar-wrap.latest .pace-bar {
@@ -195,15 +201,15 @@
       box-shadow: 0 0 8px rgba(8,145,178,0.35);
     }
     .pace-bar-label {
-      font-size: 8px;
+      font-size: 9px;
       font-weight: 800;
-      color: var(--muted);
+      color: #475569;
       direction: ltr;
       line-height: 1;
     }
     .pace-bar-km {
-      font-size: 7px;
-      color: #9ca3af;
+      font-size: 8px;
+      color: #94a3b8;
       font-weight: 700;
     }
     .map-overlay {
@@ -349,47 +355,49 @@
     }
     .btn:active { transform: scale(0.96); }
     .btn-main {
-      min-width: 148px;
-      padding: 16px 26px 14px;
+      min-width: 160px;
+      height: 56px;
+      padding: 0 28px;
       font-size: 16px;
-      letter-spacing: 0.02em;
+      font-weight: 800;
+      letter-spacing: 0.03em;
       color: #fff;
-      background: linear-gradient(180deg, #2dd4bf 0%, #0891b2 42%, #6d28d9 100%);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-bottom: 0;
-      border-radius: 18px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(160deg, #2dd4bf 0%, #0e7490 48%, #6d28d9 100%);
       box-shadow:
-        0 1px 0 rgba(255,255,255,0.45) inset,
-        0 -3px 0 rgba(0,0,0,0.18) inset,
-        0 8px 0 #4c1d95,
-        0 12px 24px rgba(76, 29, 149, 0.35);
-      text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        0 10px 24px rgba(109, 40, 217, 0.35),
+        0 2px 0 rgba(255,255,255,0.25) inset;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.15);
       transform: translateY(0);
-      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+      position: relative;
+    }
+    .btn-main::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0.22), transparent 42%);
+      pointer-events: none;
     }
     .btn-main:active {
-      transform: translateY(5px);
+      transform: translateY(2px) scale(0.98);
       box-shadow:
-        0 1px 0 rgba(255,255,255,0.35) inset,
-        0 -2px 0 rgba(0,0,0,0.15) inset,
-        0 3px 0 #4c1d95,
-        0 6px 12px rgba(76, 29, 149, 0.3);
+        0 4px 12px rgba(109, 40, 217, 0.28),
+        0 1px 0 rgba(255,255,255,0.2) inset;
+      filter: brightness(0.97);
     }
     .btn-main.stop {
-      background: linear-gradient(180deg, #fb7185 0%, #e11d48 45%, #c2410c 100%);
+      background: linear-gradient(160deg, #fb7185 0%, #e11d48 50%, #c2410c 100%);
       box-shadow:
-        0 1px 0 rgba(255,255,255,0.4) inset,
-        0 -3px 0 rgba(0,0,0,0.18) inset,
-        0 8px 0 #9f1239,
-        0 12px 24px rgba(159, 18, 57, 0.35);
+        0 10px 24px rgba(225, 29, 72, 0.32),
+        0 2px 0 rgba(255,255,255,0.22) inset;
     }
     .btn-main.stop:active {
-      transform: translateY(5px);
       box-shadow:
-        0 1px 0 rgba(255,255,255,0.3) inset,
-        0 -2px 0 rgba(0,0,0,0.15) inset,
-        0 3px 0 #9f1239,
-        0 6px 12px rgba(159, 18, 57, 0.3);
+        0 4px 12px rgba(225, 29, 72, 0.25),
+        0 1px 0 rgba(255,255,255,0.18) inset;
     }
     .btn-side {
       width: 52px; height: 52px;
@@ -510,6 +518,61 @@
       padding: 24px 12px;
       font-size: 13px;
     }
+    .btn-ocr {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      font-size: 18px;
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .ocr-drop {
+      border: 2px dashed rgba(8,145,178,0.35);
+      border-radius: 14px;
+      background: #f8fafc;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .ocr-drop.has-img { border-style: solid; min-height: 160px; }
+    .ocr-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .ocr-drop img {
+      max-width: 100%; max-height: 180px; object-fit: contain; display: none;
+    }
+    .ocr-drop.has-img img { display: block; }
+    .ocr-drop.has-img .ocr-dz-hint { display: none; }
+    .ocr-dz-hint {
+      text-align: center; color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 8px;
+    }
+    .ocr-result {
+      display: none; margin-bottom: 12px; padding: 12px;
+      border-radius: 14px; background: #f1f5f9;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .ocr-result.show { display: block; }
+    .ocr-result-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-bottom: 8px;
+    }
+    .ocr-stat {
+      text-align: center; padding: 8px 4px; border-radius: 10px;
+      background: #fff; border: 1px solid rgba(0,0,0,0.05);
+    }
+    .ocr-stat-l { font-size: 10px; color: var(--muted); font-weight: 700; }
+    .ocr-stat-v {
+      font-size: 15px; font-weight: 800; margin-top: 4px;
+      direction: ltr; unicode-bidi: isolate;
+    }
     .toast {
       position: fixed;
       left: 50%;
@@ -627,6 +690,7 @@
       </div>
       <div class="controls">
         <button type="button" class="btn btn-side" id="btnLocate" title="موقعیت من">📍</button>
+        <button type="button" class="btn btn-side btn-ocr" id="btnOcr" title="از اسکرین‌شات">🖼️</button>
         <button type="button" class="btn btn-main" id="btnPrimary">شروع</button>
         <button type="button" class="btn btn-side" id="btnPause" disabled title="توقف موقت">⏸</button>
       </div>
@@ -714,7 +778,34 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+    <div class="sheet" id="sheetOcr">
+    <div class="sheet-card">
+      <div class="sheet-title">وارد کردن از اسکرین‌شات</div>
+      <div class="sheet-sub">عکس نتیجهٔ دویدن از اپ دیگر · استخراج فاصله و پیس</div>
+      <div class="ocr-drop" id="ocrDrop">
+        <div class="ocr-dz-hint">📷 تصویر را انتخاب یا رها کن<br><small>PNG · JPEG · WebP</small></div>
+        <img id="ocrPreview" alt="" />
+        <input type="file" id="ocrFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" />
+      </div>
+      <div class="ocr-result" id="ocrResult">
+        <div class="ocr-result-grid">
+          <div class="ocr-stat"><div class="ocr-stat-l">مسافت</div><div class="ocr-stat-v" id="ocrDist">—</div></div>
+          <div class="ocr-stat"><div class="ocr-stat-l">پیس</div><div class="ocr-stat-v" id="ocrPace">—</div></div>
+          <div class="ocr-stat"><div class="ocr-stat-l">زمان</div><div class="ocr-stat-v" id="ocrDur">—</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:center" id="ocrMeta"></div>
+      </div>
+      <div class="row-btns">
+        <button type="button" class="btn-ghost" id="btnOcrClose">بستن</button>
+        <button type="button" class="btn-solid" id="btnOcrExtract" disabled>استخراج</button>
+      </div>
+      <div class="row-btns" style="margin-top:8px;display:none" id="ocrApplyRow">
+        <button type="button" class="btn-solid" id="btnOcrApply" style="flex:1">استفاده در گزارش</button>
+      </div>
+    </div>
+  </div>
+
+<div class="toast" id="toast"></div>
 
   <script>
 (function () {
@@ -920,7 +1011,7 @@
         const latest = i >= rows.length - 3;
         // faster = taller bar (invert: lower pace sec = higher bar)
         const inv = maxP - r.paceSec;
-        const h = 8 + Math.round((inv / span) * 28);
+        const h = 10 + Math.round((inv / span) * 34);
         const cls = latest ? "pace-bar-wrap latest" : "pace-bar-wrap";
         return `<div class="${cls}" title="km ${r.km}">
           <div class="pace-bar-label">${fa(formatPace(r.paceSec))}</div>
@@ -1732,6 +1823,26 @@ ${trk}
     el.addEventListener("click", () => setFocusMetric(el.getAttribute("data-focus")));
   });
   $("btnPause").onclick = pauseRun;
+  $("btnOcr").onclick = () => {
+    resetOcrImage();
+    openOcrSheet();
+  };
+  $("btnOcrClose").onclick = closeSheets;
+  $("btnOcrExtract").onclick = runOcrExtract;
+  $("btnOcrApply").onclick = applyOcrToPending;
+  $("ocrFile").addEventListener("change", () => {
+    const f = $("ocrFile").files && $("ocrFile").files[0];
+    if (f) setOcrImage(f);
+  });
+  const ocrDropEl = $("ocrDrop");
+  if (ocrDropEl) {
+    ocrDropEl.addEventListener("dragover", (e) => { e.preventDefault(); });
+    ocrDropEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) setOcrImage(f);
+    });
+  }
   $("btnLocate").onclick = () => {
     startWatch();
     if (!map) initMap();
@@ -1788,6 +1899,150 @@ ${trk}
       if (e.target === sheet && status === "idle") closeSheets();
     });
   });
+
+
+  // OCR import via extract-run-result (mechanism unchanged)
+  let ocrImageB64 = null;
+  let ocrImageMime = null;
+  let ocrLastData = null;
+
+  function openOcrSheet() {
+    openSheet("sheetOcr");
+  }
+
+  function resetOcrImage() {
+    ocrImageB64 = null;
+    ocrImageMime = null;
+    ocrLastData = null;
+    const file = $("ocrFile");
+    if (file) file.value = "";
+    const drop = $("ocrDrop");
+    if (drop) drop.classList.remove("has-img");
+    const img = $("ocrPreview");
+    if (img) img.removeAttribute("src");
+    const res = $("ocrResult");
+    if (res) res.classList.remove("show");
+    const apply = $("ocrApplyRow");
+    if (apply) apply.style.display = "none";
+    const btn = $("btnOcrExtract");
+    if (btn) btn.disabled = true;
+  }
+
+  function setOcrImage(file) {
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"];
+    if (!allowed.includes(file.type)) {
+      toast("فرمت پشتیبانی نمی‌شود");
+      return;
+    }
+    if (file.size > 7 * 1024 * 1024) {
+      toast("حداکثر ۷ مگابایت");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      ocrImageB64 = String(dataUrl).split(",")[1];
+      ocrImageMime = file.type;
+      $("ocrPreview").src = dataUrl;
+      $("ocrDrop").classList.add("has-img");
+      $("btnOcrExtract").disabled = false;
+      $("ocrResult").classList.remove("show");
+      $("ocrApplyRow").style.display = "none";
+      ocrLastData = null;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function runOcrExtract() {
+    if (!ocrImageB64) {
+      toast("اول تصویر را انتخاب کن");
+      return;
+    }
+    const btn = $("btnOcrExtract");
+    btn.disabled = true;
+    btn.textContent = "...";
+    try {
+      const res = await fetch(SUPABASE_URL + "/functions/v1/extract-run-result", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + SUPABASE_KEY,
+          apikey: SUPABASE_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ imageBase64: ocrImageB64, imageMime: ocrImageMime })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || ("خطا " + res.status));
+      const data = payload.data;
+      if (!data) throw new Error(payload.error || "داده برنگشت");
+      ocrLastData = data;
+      const dist = typeof data.distance_km === "number" ? data.distance_km.toFixed(2) + " km" : "—";
+      const pace = data.pace_per_km || "—";
+      const dur = data.duration_display || "—";
+      $("ocrDist").textContent = fa(dist);
+      $("ocrPace").textContent = fa(String(pace));
+      $("ocrDur").textContent = fa(String(dur));
+      $("ocrMeta").textContent =
+        (data.activity_type || "") + (data.confidence ? " · اطمینان: " + data.confidence : "");
+      $("ocrResult").classList.add("show");
+      $("ocrApplyRow").style.display = "flex";
+      try {
+        localStorage.setItem("hql_run_ocr_last", JSON.stringify({ at: Date.now(), data }));
+      } catch (_) {}
+      toast("استخراج شد");
+    } catch (err) {
+      console.warn(err);
+      toast(err.message || "استخراج ناموفق");
+    } finally {
+      btn.disabled = !ocrImageB64;
+      btn.textContent = "استخراج";
+    }
+  }
+
+  function applyOcrToPending() {
+    if (!ocrLastData) return;
+    const d = ocrLastData;
+    const distM = typeof d.distance_km === "number" ? d.distance_km * 1000 : 0;
+    const durSec = typeof d.duration_seconds === "number" ? d.duration_seconds : 0;
+    const paceSec =
+      typeof d.pace_per_km_seconds === "number"
+        ? d.pace_per_km_seconds
+        : distM > 0 && durSec > 0
+        ? durSec / (distM / 1000)
+        : 0;
+    pendingSession = {
+      id: "ocr-" + Date.now().toString(36),
+      mode: d.activity_type === "walk" ? "walk" : "run",
+      startedAt: new Date().toISOString(),
+      durationMs: durSec * 1000,
+      distanceM: distM,
+      paceSec,
+      avgSpeedKmh: distM > 0 && durSec > 0 ? distM / 1000 / (durSec / 3600) : 0,
+      maxSpeedKmh: 0,
+      elevGain: 0,
+      calories: 0,
+      splits: [],
+      path: [],
+      points: [],
+      source: "ocr",
+      ocr: d
+    };
+    $("sumSub").textContent = "از اسکرین‌شات · " + fa(new Date().toLocaleDateString("fa-IR"));
+    $("sumDist").textContent = fa((distM / 1000).toFixed(2));
+    $("sumTime").textContent = fa(formatTime(durSec * 1000));
+    $("sumPace").textContent = fa(formatPace(paceSec));
+    $("sumCal").textContent = "—";
+    $("sumAvgSp").textContent = fa((pendingSession.avgSpeedKmh || 0).toFixed(1)) + " km/h";
+    $("sumMaxSp").textContent = "—";
+    $("sumGain").textContent = "—";
+    $("sumSplits").innerHTML = "";
+    closeSheets();
+    openSheet("sheetSummary");
+    requestAnimationFrame(() => drawReportCard(pendingSession));
+    toast("آمادهٔ ذخیره در گزارش");
+  }
+
 
   // boot — توکن از edge function
   renderStats();
