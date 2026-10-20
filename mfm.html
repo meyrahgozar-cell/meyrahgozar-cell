@@ -435,6 +435,14 @@
             z-index: 3;
             transition: background .15s, border-color .15s;
         }
+        /* Hide the per-card hover action buttons while picking */
+        body.select-mode .card .del,
+        body.select-mode .card .open-browser,
+        body.select-mode .card .download-btn,
+        body.select-mode .card .copy-content,
+        body.select-mode .card .replace-btn {
+            display: none !important;
+        }
 
         /* Gradient icon tile */
         .card .icon-big {
@@ -466,6 +474,60 @@
             line-height: 1.35;
         }
         .card .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* Shared style for the per-card action buttons */
+        .card .del,
+        .card .open-browser,
+        .card .download-btn,
+        .card .copy-content,
+        .card .replace-btn {
+            position: absolute;
+            background: rgba(10,10,22,.55);
+            border: 1px solid var(--line);
+            color: var(--text);
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: none;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s, border-color .2s, transform .15s;
+            z-index: 2;
+        }
+        .card .del:active,
+        .card .open-browser:active,
+        .card .download-btn:active,
+        .card .copy-content:active,
+        .card .replace-btn:active { transform: scale(.92); }
+
+        /* Top-right */
+        .card .del { top: 7px; right: 7px; border-color: rgba(255,77,109,.6); color: var(--danger); }
+        .card .del:hover { background: rgba(255,77,109,.22); }
+        .card .open-browser { top: 7px; right: 39px; border-color: rgba(var(--accent-rgb), .6); color: var(--accent); }
+        .card .open-browser:hover { background: rgba(var(--accent-rgb), .22); }
+
+        /* Top-left */
+        .card .download-btn { top: 7px; left: 7px; border-color: rgba(var(--accent-rgb), .6); color: var(--accent); }
+        .card .download-btn:hover { background: rgba(var(--accent-rgb), .22); }
+        .card .copy-content { top: 7px; left: 39px; border-color: rgba(255,217,61,.6); color: var(--warn); }
+        .card .copy-content:hover { background: rgba(255,217,61,.22); }
+
+        /* Bottom-left — Replace */
+        .card .replace-btn { bottom: 7px; left: 7px; border-color: rgba(var(--violet-rgb),.75); color: #b794ff; }
+        .card .replace-btn:hover { background: rgba(var(--violet-rgb),.28); color: #d7c1ff; }
+
+        .card:hover .del,
+        .card:hover .open-browser,
+        .card:hover .download-btn,
+        .card:hover .copy-content,
+        .card:hover .replace-btn,
+        .card:focus-within .del,
+        .card:focus-within .open-browser,
+        .card:focus-within .download-btn,
+        .card:focus-within .copy-content,
+        .card:focus-within .replace-btn { display: flex; }
 
         .card .ext-badge {
             position: absolute;
@@ -1279,6 +1341,21 @@
             .editor-modal { height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
             .editor-header .file-path { max-width: 80px; }
 
+            .card .del,
+            .card .open-browser,
+            .card .download-btn,
+            .card .copy-content,
+            .card .replace-btn {
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
+                display: flex;
+            }
+            .card .del { top: 5px; right: 5px; }
+            .card .open-browser { top: 5px; right: 31px; }
+            .card .download-btn { top: 5px; left: 5px; }
+            .card .copy-content { top: 5px; left: 31px; }
+            .card .replace-btn { bottom: 5px; left: 5px; }
 
             .upload-panel { right: 12px; bottom: 12px; }
             .zip-footer { justify-content: stretch; }
@@ -1331,16 +1408,11 @@
         .card:hover, .card.selected { transform: none; }
         .card.selected { background: rgba(var(--accent-rgb), .10); box-shadow: inset 0 0 0 1px var(--accent); }
         .card:focus-visible { outline-offset: -2px; }
-        .card .more {
-            position: absolute; top: 6px; right: 6px; width: 28px; height: 28px;
-            border: 0; border-radius: 8px; background: none; color: var(--muted);
-            font-size: 18px; line-height: 1; cursor: pointer;
-            opacity: 0; transition: opacity .12s, background .12s;
+        .card .del, .card .open-browser, .card .download-btn, .card .copy-content, .card .replace-btn { background: var(--surface-2); }
+        /* a card focused by mouse click shouldn't keep its icon buttons showing */
+        @media (hover: hover) {
+            .card:focus:not(:focus-visible):not(:hover) :is(.del, .open-browser, .download-btn, .copy-content, .replace-btn) { display: none; }
         }
-        .card:hover .more, .card:focus-within .more { opacity: 1; }
-        .card .more:hover { background: rgba(255,255,255,.08); color: var(--text); }
-        @media (hover: none) { .card .more { opacity: 1; } }
-        body.select-mode .card .more { display: none; }
         .selection-bar #selDelete:hover { color: var(--danger); border-color: rgba(255,77,109,.55); }
     </style>
 </head>
@@ -1410,8 +1482,6 @@
         <div class="item" role="menuitem" tabindex="-1" data-action="cancelClipboard" data-clipboard-only><span class="ico">🚫</span><span class="lbl">Cancel</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="copyPath" data-needs-item data-single-only><span class="ico">📋</span><span class="lbl">Copy Path</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="copyRaw" data-file-only data-needs-item data-single-only><span class="ico">🔗</span><span class="lbl">Copy Raw URL</span></div>
-        <div class="item" role="menuitem" tabindex="-1" data-action="copyContent" data-file-only data-needs-item data-single-only><span class="ico">📋</span><span class="lbl">Copy content</span></div>
-        <div class="item" role="menuitem" tabindex="-1" data-action="pages" data-file-only data-needs-item data-single-only><span class="ico">🌐</span><span class="lbl">Open on GitHub Pages</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="select" data-needs-item data-single-only><span class="ico">☑️</span><span class="lbl">Select</span></div>
         <div class="sep" data-needs-item></div>
         <div class="item danger" role="menuitem" tabindex="-1" data-action="delete" data-needs-item><span class="ico">🗑️</span><span class="lbl" id="ctxDeleteLabel">Delete</span></div>
@@ -1810,19 +1880,69 @@
             }
             const ext = item.name.includes('.') ? item.name.split('.').pop().toLowerCase() : '';
 
-            const more = document.createElement('button');
-            more.type = 'button';
-            more.className = 'more';
-            more.textContent = '⋯';
-            more.title = 'Actions';
-            more.setAttribute('aria-label', 'Actions for ' + item.name);
-            more.onclick = e => {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'del';
+            delBtn.textContent = '✕';
+            delBtn.title = 'Delete';
+            delBtn.onclick = e => {
                 e.stopPropagation();
-                if (selection.size > 0 && !selection.has(item.path)) clearSelection();
-                const r = more.getBoundingClientRect();
-                showContextMenu(r.left, r.bottom + 4, item, card);
+                deleteItem(item);
             };
-            card.appendChild(more);
+            card.appendChild(delBtn);
+
+            if (!isDir) {
+                const browserBtn = document.createElement('button');
+                browserBtn.className = 'open-browser';
+                browserBtn.textContent = '🌐';
+                browserBtn.title = 'Open as GitHub Pages (if enabled)';
+                browserBtn.onclick = e => {
+                    e.stopPropagation();
+                    const isUserSite = state.repo === `${state.owner}.github.io`;
+                    const baseUrl = isUserSite
+                        ? `https://${state.owner}.github.io/`
+                        : `https://${state.owner}.github.io/${state.repo}/`;
+                    window.open(baseUrl + enc(item.path), '_blank');
+                };
+                card.appendChild(browserBtn);
+            }
+
+            const dlBtn = document.createElement('button');
+            dlBtn.className = 'download-btn';
+            dlBtn.textContent = '⬇️';
+            dlBtn.title = isDir ? 'Download folder as .zip' : 'Download file';
+            dlBtn.onclick = e => {
+                e.stopPropagation();
+                if (isDir) {
+                    downloadFolder(item).catch(err => notifyErr(err.message));
+                } else {
+                    downloadItem(item).catch(err => notifyErr(err.message));
+                }
+            };
+            card.appendChild(dlBtn);
+
+            if (!isDir && isTextFile(item.name)) {
+                const ccBtn = document.createElement('button');
+                ccBtn.className = 'copy-content';
+                ccBtn.textContent = '📋';
+                ccBtn.title = 'Copy file content';
+                ccBtn.onclick = e => {
+                    e.stopPropagation();
+                    copyFileContent(item);
+                };
+                card.appendChild(ccBtn);
+            }
+
+            const repBtn = document.createElement('button');
+            repBtn.className = 'replace-btn';
+            repBtn.textContent = '🔄';
+            repBtn.title = isDir
+                ? 'Replace folder contents (merge)'
+                : 'Replace file content (keeps name)';
+            repBtn.onclick = e => {
+                e.stopPropagation();
+                startReplace(item);
+            };
+            card.appendChild(repBtn);
 
             if (!isDir && ext) {
                 const badge = document.createElement('span');
@@ -2430,20 +2550,6 @@
                     if (item) {
                         if (item.download_url) copyToClipboard(item.download_url);
                         else notifyErr('Raw URL not available.');
-                    }
-                    break;
-                case 'copyContent':
-                    if (item) {
-                        if (isTextFile(item.name)) copyFileContent(item);
-                        else notify('Only text files can be copied', 'warning');
-                    }
-                    break;
-                case 'pages':
-                    if (item) {
-                        const site = state.repo === `${state.owner}.github.io`
-                            ? `https://${state.owner}.github.io/`
-                            : `https://${state.owner}.github.io/${state.repo}/`;
-                        window.open(site + enc(item.path), '_blank', 'noopener');
                     }
                     break;
                 case 'select':
@@ -3781,9 +3887,11 @@
             if (!card || e.target !== card) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
             else if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+                const item = displayedItems.find(i => i.path === card.dataset.path);
+                if (!item) return;
                 e.preventDefault();
-                const more = card.querySelector('.more');
-                if (more) more.click();
+                const r = card.getBoundingClientRect();
+                showContextMenu(r.left + 16, r.top + 16, item, card);
             }
         });
 
