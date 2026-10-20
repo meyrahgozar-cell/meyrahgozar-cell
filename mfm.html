@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="ltr">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,34 +29,16 @@
             --warn: #ffd93d;
             --danger: #ff4d6d;
 
-            /* glass surfaces */
-            --glass: linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.03));
-            --glass-hi: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
-            --glass-border: rgba(255,255,255,.11);
-            --glass-edge: rgba(255,255,255,.20);
-            --glass-shadow: 0 8px 28px rgba(0,0,0,.28),
-                            inset 0 1px 0 rgba(255,255,255,.12),
-                            inset 0 -1px 0 rgba(255,255,255,.02);
-            --blur: blur(8px) saturate(140%);
-            --field: rgba(0,0,0,.28);
-            --menu: linear-gradient(145deg, rgba(48,48,84,.46), rgba(18,18,36,.56));
-            --panel: linear-gradient(145deg, rgba(34,34,62,.50), rgba(14,14,28,.62));
+            /* solid surfaces */
+            --surface: #0e0e1a;
+            --surface-2: #151527;
+            --line: #24243a;
+            --line-hi: #38385a;
+            --field: #080810;
 
             --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
-            /* background halo rings (alpha = strength) */
-            --ring-a: rgba(160, 190, 255, .15);
-            --ring-b: rgba(130, 235, 255, .12);
         }
 
-        /* Browsers without backdrop-filter get near-opaque surfaces instead */
-        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-            :root {
-                --glass: rgba(28,28,48,.92);
-                --glass-hi: rgba(40,40,66,.95);
-                --menu: rgba(26,26,46,.98);
-                --panel: rgba(22,22,40,.98);
-            }
-        }
 
         * { box-sizing: border-box; }
         html { background: var(--bg); scroll-behavior: smooth; }
@@ -81,54 +63,6 @@
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.26); background-clip: content-box; }
         :focus-visible { outline: 2px solid rgba(var(--accent-rgb), .7); outline-offset: 2px; }
 
-        /* Every frosted surface shares the same blur */
-        header, .path, .toolbar, .upload-area, .card,
-        .context-menu, .editor-modal, .upload-panel, .zip-modal, .selection-bar {
-            -webkit-backdrop-filter: var(--blur);
-            backdrop-filter: var(--blur);
-        }
-
-        /* ══════════════════════════════════════════════════════════════
-           BACKDROP
-           ══════════════════════════════════════════════════════════════ */
-        .bg {
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            overflow: hidden;
-            pointer-events: none;
-            background: linear-gradient(180deg, #080b16 0%, var(--bg) 100%);
-        }
-        .bg i { position: absolute; border-radius: 50%; }
-        .bg .o1 {
-            width: 80vmax; height: 80vmax; right: -22vmax; top: -34vmax;
-            background: radial-gradient(circle, rgba(70, 95, 255, .34), transparent 65%);
-        }
-        .bg .o2 {
-            width: 70vmax; height: 70vmax; left: -22vmax; bottom: -34vmax;
-            background: radial-gradient(circle, rgba(0, 205, 255, .20), transparent 65%);
-        }
-        .bg .halo {
-            position: absolute;
-            inset: 0;
-            --at: 84% -8%;
-            --ring: var(--ring-a);
-            background: repeating-radial-gradient(circle at var(--at),
-                transparent 0, transparent 41px,
-                var(--ring) 50px, var(--ring) 54px,
-                transparent 63px, transparent 104px);
-            -webkit-mask-image: radial-gradient(circle 88vmax at var(--at), #000 0, #000 25%, transparent 100%);
-                    mask-image: radial-gradient(circle 88vmax at var(--at), #000 0, #000 25%, transparent 100%);
-        }
-        .bg .halo.b { --at: 8% 110%; --ring: var(--ring-b); }
-        .bg .grain {
-            position: absolute;
-            inset: 0;
-            opacity: .07;
-            background-size: 200px 200px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-
         /* ══════════════════════════════════════════════════════════════
            HEADER  (NON-STICKY)
            ══════════════════════════════════════════════════════════════ */
@@ -138,9 +72,8 @@
             margin: 16px 16px 0;
             padding: 13px 16px;
             border-radius: 20px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
+            background: var(--surface);
+            border: 1px solid var(--line);
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
@@ -153,7 +86,7 @@
             align-items: center;
             gap: 10px;
             padding-right: 14px;
-            border-right: 1px solid var(--glass-border);
+            border-right: 1px solid var(--line);
             margin-right: 2px;
         }
         .brand-mark {
@@ -163,12 +96,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), .55));
-            animation: brandPulse 4s ease-in-out infinite;
-        }
-        @keyframes brandPulse {
-            0%, 100% { filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), .45)); }
-            50%      { filter: drop-shadow(0 0 18px rgba(var(--accent-rgb), .75)); }
         }
         .brand-text {
             font-size: 14px;
@@ -188,7 +115,7 @@
         }
         header input {
             background: var(--field);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             padding: 9px 14px;
             border-radius: 10px;
@@ -209,7 +136,7 @@
         .toolbar button,
         .editor-footer button {
             background: rgba(255,255,255,.07);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             padding: 8px 16px;
             border-radius: 10px;
@@ -217,7 +144,6 @@
             font-size: 13px;
             font-weight: 500;
             white-space: nowrap;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
             transition: background .2s, border-color .2s, color .2s, box-shadow .2s;
         }
         header button:hover,
@@ -247,7 +173,7 @@
             border-color: transparent;
             color: #03040a;
             font-weight: 600;
-            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28), inset 0 1px 0 rgba(255,255,255,.45);
+            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28);
         }
         .toolbar button.primary:hover,
         .editor-footer button.primary:hover {
@@ -261,7 +187,7 @@
             background: rgba(var(--accent-rgb), .22);
             border-color: rgba(var(--accent-rgb), .8);
             color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12), inset 0 1px 0 rgba(255,255,255,.14);
+            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12);
         }
         .toolbar button.active:hover {
             background: rgba(var(--accent-rgb), .3);
@@ -272,7 +198,7 @@
             background: rgba(var(--violet-rgb), .26);
             border-color: rgba(var(--violet-rgb), .85);
             color: #d7c1ff;
-            box-shadow: 0 0 0 3px rgba(var(--violet-rgb), .14), inset 0 1px 0 rgba(255,255,255,.14);
+            box-shadow: 0 0 0 3px rgba(var(--violet-rgb), .14);
         }
         .toolbar button#formattedBtn.active:hover {
             background: rgba(var(--violet-rgb), .36);
@@ -287,7 +213,7 @@
             padding: 7px 14px;
             border-radius: 999px;
             background: rgba(0,0,0,.22);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -306,7 +232,6 @@
         .status.ok::before {
             background: var(--ok);
             box-shadow: 0 0 10px var(--ok);
-            animation: pulseOk 2.4s ease-in-out infinite;
         }
         .status.err     { color: var(--danger); border-color: rgba(255,77,109,.35); }
         .status.err::before { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
@@ -316,7 +241,6 @@
             box-shadow: 0 0 10px var(--warn);
             animation: pulseLoad 1s ease-in-out infinite;
         }
-        @keyframes pulseOk   { 50% { box-shadow: 0 0 18px var(--ok); } }
         @keyframes pulseLoad { 50% { opacity: .35; } }
 
         /* ══════════════════════════════════════════════════════════════
@@ -326,9 +250,8 @@
             margin: 12px 16px 0;
             padding: 9px 14px;
             border-radius: 14px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
+            background: var(--surface);
+            border: 1px solid var(--line);
             font-family: var(--mono);
             font-size: 13px;
             color: var(--accent);
@@ -369,9 +292,8 @@
             margin: 10px 16px 0;
             padding: 8px 12px;
             border-radius: 14px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
+            background: var(--surface);
+            border: 1px solid var(--line);
             display: none;
             gap: 8px;
             flex-wrap: wrap;
@@ -387,7 +309,7 @@
             padding: 5px 12px;
             border-radius: 999px;
             background: rgba(0,0,0,.28);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
         }
         .toolbar .branch::before {
             content: "⎇ ";
@@ -448,15 +370,13 @@
             gap: 14px;
         }
         .card {
-            --blur: blur(5px) saturate(130%);
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
+            background: var(--surface);
+            border: 1px solid var(--line);
             border-radius: 16px;
             padding: 18px 10px 16px;
             text-align: center;
             cursor: pointer;
             position: relative;
-            box-shadow: var(--glass-shadow);
             transition: transform .22s, border-color .22s, background .22s, box-shadow .22s;
             user-select: none;
             -webkit-user-select: none;
@@ -465,11 +385,10 @@
         .card.folder { background: linear-gradient(135deg, rgba(var(--accent-rgb), .08), rgba(255,255,255,.03)); }
         .card:hover,
         .card.ctx-active {
-            background: var(--glass-hi);
+            background: var(--surface-2);
             border-color: rgba(var(--accent-rgb), .55);
             box-shadow: 0 14px 34px rgba(0,0,0,.4),
-                        0 0 30px rgba(var(--accent-rgb), .12),
-                        inset 0 1px 0 rgba(255,255,255,.24);
+                        0 0 30px rgba(var(--accent-rgb), .12);
         }
         .card:hover { transform: translateY(-3px); }
 
@@ -479,8 +398,7 @@
             border-color: rgba(var(--accent-rgb), .85);
             box-shadow: 0 14px 34px rgba(0,0,0,.4),
                         0 0 0 2px rgba(var(--accent-rgb), .35),
-                        0 0 40px rgba(var(--accent-rgb), .18),
-                        inset 0 1px 0 rgba(255,255,255,.24);
+                        0 0 40px rgba(var(--accent-rgb), .18);
             transform: translateY(-2px);
         }
         .card.selected::after {
@@ -517,14 +435,6 @@
             z-index: 3;
             transition: background .15s, border-color .15s;
         }
-        /* Hide the per-card hover action buttons while picking */
-        body.select-mode .card .del,
-        body.select-mode .card .open-browser,
-        body.select-mode .card .download-btn,
-        body.select-mode .card .copy-content,
-        body.select-mode .card .replace-btn {
-            display: none !important;
-        }
 
         /* Gradient icon tile */
         .card .icon-big {
@@ -539,7 +449,6 @@
             border-radius: 14px;
             background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.02));
             border: 1px solid rgba(255,255,255,.06);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
             transition: transform .22s, background .22s, border-color .22s;
         }
         .card.folder .icon-big {
@@ -557,62 +466,6 @@
             line-height: 1.35;
         }
         .card .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
-
-        /* Shared style for the per-card action buttons */
-        .card .del,
-        .card .open-browser,
-        .card .download-btn,
-        .card .copy-content,
-        .card .replace-btn {
-            position: absolute;
-            background: rgba(10,10,22,.55);
-            border: 1px solid var(--glass-border);
-            color: var(--text);
-            width: 26px;
-            height: 26px;
-            border-radius: 8px;
-            font-size: 12px;
-            display: none;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            transition: background .2s, border-color .2s, transform .15s;
-            z-index: 2;
-            -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
-        }
-        .card .del:active,
-        .card .open-browser:active,
-        .card .download-btn:active,
-        .card .copy-content:active,
-        .card .replace-btn:active { transform: scale(.92); }
-
-        /* Top-right */
-        .card .del { top: 7px; right: 7px; border-color: rgba(255,77,109,.6); color: var(--danger); }
-        .card .del:hover { background: rgba(255,77,109,.22); }
-        .card .open-browser { top: 7px; right: 39px; border-color: rgba(var(--accent-rgb), .6); color: var(--accent); }
-        .card .open-browser:hover { background: rgba(var(--accent-rgb), .22); }
-
-        /* Top-left */
-        .card .download-btn { top: 7px; left: 7px; border-color: rgba(var(--accent-rgb), .6); color: var(--accent); }
-        .card .download-btn:hover { background: rgba(var(--accent-rgb), .22); }
-        .card .copy-content { top: 7px; left: 39px; border-color: rgba(255,217,61,.6); color: var(--warn); }
-        .card .copy-content:hover { background: rgba(255,217,61,.22); }
-
-        /* Bottom-left — Replace */
-        .card .replace-btn { bottom: 7px; left: 7px; border-color: rgba(var(--violet-rgb),.75); color: #b794ff; }
-        .card .replace-btn:hover { background: rgba(var(--violet-rgb),.28); color: #d7c1ff; }
-
-        .card:hover .del,
-        .card:hover .open-browser,
-        .card:hover .download-btn,
-        .card:hover .copy-content,
-        .card:hover .replace-btn,
-        .card:focus-within .del,
-        .card:focus-within .open-browser,
-        .card:focus-within .download-btn,
-        .card:focus-within .copy-content,
-        .card:focus-within .replace-btn { display: flex; }
 
         .card .ext-badge {
             position: absolute;
@@ -644,11 +497,6 @@
             font-size: 40px;
             display: block;
             margin-bottom: 12px;
-            animation: floatEmoji 3.4s ease-in-out infinite;
-        }
-        @keyframes floatEmoji {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-6px); }
         }
         .files .msg { grid-column: 1 / -1; }
 
@@ -665,11 +513,10 @@
             gap: 8px;
             padding: 9px 12px 9px 18px;
             border-radius: 999px;
-            background: var(--panel);
-            border: 1px solid var(--glass-edge);
+            background: var(--surface-2);
+            border: 1px solid var(--line-hi);
             box-shadow: 0 22px 60px rgba(0,0,0,.55),
-                        0 0 40px rgba(var(--accent-rgb), .10),
-                        inset 0 1px 0 rgba(255,255,255,.18);
+                        0 0 40px rgba(var(--accent-rgb), .10);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -697,7 +544,7 @@
         }
         .selection-bar button {
             background: rgba(255,255,255,.07);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             padding: 7px 14px;
             border-radius: 999px;
@@ -721,7 +568,7 @@
             border-color: transparent;
             color: #03040a;
             font-weight: 600;
-            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28), inset 0 1px 0 rgba(255,255,255,.45);
+            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28);
         }
         .selection-bar button.primary:hover {
             background: linear-gradient(135deg, #33f4ff, #6fd0ff);
@@ -745,12 +592,10 @@
             max-width: 320px;
             padding: 6px;
             border-radius: 14px;
-            background: var(--menu);
-            border: 1px solid var(--glass-edge);
+            background: var(--surface-2);
+            border: 1px solid var(--line-hi);
             box-shadow: 0 22px 60px rgba(0,0,0,.6),
-                        0 0 30px rgba(var(--accent-rgb), .08),
-                        inset 0 1px 0 rgba(255,255,255,.2);
-            --blur: blur(14px) saturate(150%);
+                        0 0 30px rgba(var(--accent-rgb), .08);
             transform-origin: top left;
             outline: none;
         }
@@ -825,9 +670,9 @@
             display: none;
             flex-direction: column;
             border-radius: 18px;
-            background: var(--panel);
-            border: 1px solid var(--glass-edge);
-            box-shadow: 0 24px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.18);
+            background: var(--surface-2);
+            border: 1px solid var(--line-hi);
+            box-shadow: 0 24px 70px rgba(0,0,0,.55);
             overflow: hidden;
         }
         .upload-panel.show { display: flex; animation: panelIn .25s cubic-bezier(.2,.9,.3,1.1); }
@@ -994,25 +839,22 @@
             position: absolute;
             inset: 0;
             background: rgba(4,4,12,.50);
-            -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px);
         }
         .editor-overlay.open { display: flex; }
         .editor-overlay.open::before { animation: fadeIn .2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .editor-modal {
-            --blur: blur(14px) saturate(150%);
             position: relative;
             background: linear-gradient(145deg, rgba(34,34,62,.52), rgba(10,10,22,.66));
-            border: 1px solid var(--glass-edge);
+            border: 1px solid var(--line-hi);
             border-radius: 20px;
             width: 100%;
             max-width: 1100px;
             height: min(92vh, 860px);
             display: flex;
             flex-direction: column;
-            box-shadow: 0 30px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18);
+            box-shadow: 0 30px 90px rgba(0,0,0,.65);
             overflow: hidden;
         }
         .editor-overlay.open .editor-modal { animation: modalIn .22s cubic-bezier(.2,.9,.3,1.05); }
@@ -1056,7 +898,7 @@
             padding: 3px 10px;
             border-radius: 12px;
             background: rgba(0,0,0,.25);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             white-space: nowrap;
         }
         .editor-header .editor-status.saved { color: var(--ok); }
@@ -1106,7 +948,7 @@
         }
         .editor-body .CodeMirror-dialog input {
             background: var(--field);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             border-radius: 6px;
             padding: 2px 8px;
@@ -1144,21 +986,18 @@
             position: absolute;
             inset: 0;
             background: rgba(4,4,12,.55);
-            -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px);
         }
         .zip-overlay.open { display: flex; }
         .zip-overlay.open::before { animation: fadeIn .2s ease-out; }
 
         .zip-modal {
-            --blur: blur(14px) saturate(150%);
             position: relative;
             background: linear-gradient(145deg, rgba(34,34,62,.58), rgba(10,10,22,.72));
-            border: 1px solid var(--glass-edge);
+            border: 1px solid var(--line-hi);
             border-radius: 20px;
             width: 100%;
             max-width: 460px;
-            box-shadow: 0 30px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18);
+            box-shadow: 0 30px 90px rgba(0,0,0,.65);
             overflow: hidden;
         }
         .zip-overlay.open .zip-modal { animation: modalIn .22s cubic-bezier(.2,.9,.3,1.05); }
@@ -1206,7 +1045,7 @@
         }
         .zip-field input {
             background: var(--field);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             padding: 10px 14px;
             border-radius: 10px;
@@ -1230,7 +1069,7 @@
             cursor: pointer;
             padding: 9px 12px;
             border-radius: 10px;
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             background: rgba(255,255,255,.03);
             transition: background .2s, border-color .2s;
             user-select: none;
@@ -1242,7 +1081,7 @@
             width: 18px;
             height: 18px;
             border-radius: 5px;
-            border: 1.5px solid var(--glass-border);
+            border: 1.5px solid var(--line);
             background: rgba(0,0,0,.28);
             cursor: pointer;
             position: relative;
@@ -1280,7 +1119,7 @@
         }
         .zip-footer button {
             background: rgba(255,255,255,.07);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--line);
             color: var(--text);
             padding: 9px 18px;
             border-radius: 10px;
@@ -1288,7 +1127,6 @@
             font-size: 13px;
             font-weight: 500;
             white-space: nowrap;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
             transition: background .2s, border-color .2s, color .2s;
         }
         .zip-footer button:hover {
@@ -1301,7 +1139,7 @@
             border-color: transparent;
             color: #03040a;
             font-weight: 600;
-            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28), inset 0 1px 0 rgba(255,255,255,.45);
+            box-shadow: 0 6px 20px rgba(var(--accent-rgb), .28);
         }
         .zip-footer button.primary:hover {
             background: linear-gradient(135deg, #33f4ff, #6fd0ff);
@@ -1332,13 +1170,10 @@
             gap: 10px;
             padding: 11px 10px 12px 14px;
             border-radius: 14px;
-            background: var(--menu);
-            border: 1px solid var(--glass-edge);
+            background: var(--surface-2);
+            border: 1px solid var(--line-hi);
             box-shadow: 0 16px 44px rgba(0,0,0,.5),
-                        0 0 26px rgba(var(--accent-rgb), .06),
-                        inset 0 1px 0 rgba(255,255,255,.16);
-            -webkit-backdrop-filter: blur(16px) saturate(160%);
-            backdrop-filter: blur(16px) saturate(160%);
+                        0 0 26px rgba(var(--accent-rgb), .06);
             color: var(--text);
             font-size: 13px;
             overflow: hidden;
@@ -1444,21 +1279,6 @@
             .editor-modal { height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
             .editor-header .file-path { max-width: 80px; }
 
-            .card .del,
-            .card .open-browser,
-            .card .download-btn,
-            .card .copy-content,
-            .card .replace-btn {
-                width: 22px;
-                height: 22px;
-                font-size: 11px;
-                display: flex;
-            }
-            .card .del { top: 5px; right: 5px; }
-            .card .open-browser { top: 5px; right: 31px; }
-            .card .download-btn { top: 5px; left: 5px; }
-            .card .copy-content { top: 5px; left: 31px; }
-            .card .replace-btn { bottom: 5px; left: 5px; }
 
             .upload-panel { right: 12px; bottom: 12px; }
             .zip-footer { justify-content: stretch; }
@@ -1494,11 +1314,38 @@
             .toast, .toast.out { animation: none; }
             .toast .t-bar { animation: none; opacity: .3; }
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           FLAT REFINEMENTS
+           ══════════════════════════════════════════════════════════════ */
+        .toast .t-msg { white-space: pre-line; }
+        .files.loading .card { opacity: .6; }
+        .upload-area { padding: 18px; border-radius: 14px; }
+        .card {
+            content-visibility: auto;
+            contain-intrinsic-size: auto 136px;
+            box-shadow: none;
+            transition: background .12s, border-color .12s;
+        }
+        .card:hover, .card.ctx-active { background: var(--surface-2); border-color: var(--line-hi); box-shadow: none; }
+        .card:hover, .card.selected { transform: none; }
+        .card.selected { background: rgba(var(--accent-rgb), .10); box-shadow: inset 0 0 0 1px var(--accent); }
+        .card:focus-visible { outline-offset: -2px; }
+        .card .more {
+            position: absolute; top: 6px; right: 6px; width: 28px; height: 28px;
+            border: 0; border-radius: 8px; background: none; color: var(--muted);
+            font-size: 18px; line-height: 1; cursor: pointer;
+            opacity: 0; transition: opacity .12s, background .12s;
+        }
+        .card:hover .more, .card:focus-within .more { opacity: 1; }
+        .card .more:hover { background: rgba(255,255,255,.08); color: var(--text); }
+        @media (hover: none) { .card .more { opacity: 1; } }
+        body.select-mode .card .more { display: none; }
+        .selection-bar #selDelete:hover { color: var(--danger); border-color: rgba(255,77,109,.55); }
     </style>
 </head>
 <body>
 
-    <div class="bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><div class="halo a"></div><div class="halo b"></div><div class="grain"></div></div>
 
     <!-- Toast stack: separate notification system, always pinned to the top -->
     <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
@@ -1546,6 +1393,7 @@
         <button type="button" class="primary" id="selDownload">⬇️ Download ZIP</button>
         <button type="button" id="selCopy">📄 Copy</button>
         <button type="button" id="selCut">✂️ Cut</button>
+        <button type="button" id="selDelete">🗑️ Delete</button>
         <button type="button" id="selClear">✕ Clear</button>
     </div>
 
@@ -1562,6 +1410,8 @@
         <div class="item" role="menuitem" tabindex="-1" data-action="cancelClipboard" data-clipboard-only><span class="ico">🚫</span><span class="lbl">Cancel</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="copyPath" data-needs-item data-single-only><span class="ico">📋</span><span class="lbl">Copy Path</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="copyRaw" data-file-only data-needs-item data-single-only><span class="ico">🔗</span><span class="lbl">Copy Raw URL</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="copyContent" data-file-only data-needs-item data-single-only><span class="ico">📋</span><span class="lbl">Copy content</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="pages" data-file-only data-needs-item data-single-only><span class="ico">🌐</span><span class="lbl">Open on GitHub Pages</span></div>
         <div class="item" role="menuitem" tabindex="-1" data-action="select" data-needs-item data-single-only><span class="ico">☑️</span><span class="lbl">Select</span></div>
         <div class="sep" data-needs-item></div>
         <div class="item danger" role="menuitem" tabindex="-1" data-action="delete" data-needs-item><span class="ico">🗑️</span><span class="lbl" id="ctxDeleteLabel">Delete</span></div>
@@ -1671,8 +1521,9 @@
             connected: false,
         };
 
-        let editorFile = null; // { path, sha, name, content, savedContent }
+        let editorFile = null; // { path, sha, name, gen }
         let cm = null;         // CodeMirror instance
+        let infoTimer = 0;
         let ctx = null;        // open context menu
         let loadSeq = 0;       // guards against out-of-order directory loads
 
@@ -1759,6 +1610,7 @@
 
         const savedToken = localStorage.getItem('fm_token');
         if (savedToken) tokenInput.value = savedToken;
+        repoInput.value = localStorage.getItem('fm_repo') || repoInput.value;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  UTF-8 SAFE BASE64
@@ -1795,7 +1647,9 @@
         async function api(method, path, body) {
             const url = apiUrl(path);
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
+            const payload = body ? JSON.stringify(body) : undefined;
+            // big uploads need more than 15 s: allow ~50 KB/s on top of the base
+            const timeout = setTimeout(() => controller.abort(), 15000 + (payload ? payload.length / 50 : 0));
 
             const opts = {
                 method,
@@ -1807,7 +1661,7 @@
                 },
                 signal: controller.signal,
             };
-            if (body) opts.body = JSON.stringify(body);
+            if (payload) opts.body = payload;
 
             try {
                 const res = await fetch(url, opts);
@@ -1833,12 +1687,12 @@
         //  CONNECT
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         async function connect() {
-            const repoVal = repoInput.value.trim();
+            const repoVal = repoInput.value.trim().replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, '').replace(/(?:\.git|\/+)$/g, '');
             const token = tokenInput.value.trim();
 
             if (!repoVal.includes('/') || !token) {
                 setStatus('Please fill both fields', 'err');
-                alert('Please fill both fields (owner/repo and token)');
+                notifyErr('Please fill both fields (owner/repo and token)');
                 return;
             }
 
@@ -1847,6 +1701,8 @@
             state.repo = repo;
             state.token = token;
             state.path = '';
+            dirCache.clear();
+            renderedPath = null;
 
             connectBtn.disabled = true;
             connectBtn.textContent = 'Connecting…';
@@ -1857,6 +1713,7 @@
                 state.branch = info.default_branch || 'master';
                 state.connected = true;
                 localStorage.setItem('fm_token', token);
+                localStorage.setItem('fm_repo', repoVal);
                 setStatus(`✓ Connected: ${info.full_name}`, 'ok');
                 toolbar.style.display = 'flex';
                 drop.style.display = 'block';
@@ -1866,7 +1723,7 @@
             } catch (err) {
                 console.error('Connection error:', err);
                 setStatus('✗ Failed: ' + err.message, 'err');
-                alert('Connection failed: ' + err.message + '\n\nMake sure:\n• Token has "repo" scope\n• Repo exists and is accessible');
+                notifyErr('Connection failed: ' + err.message + '\n\nMake sure:\n• Token has "repo" scope\n• Repo exists and is accessible');
                 state.connected = false;
             } finally {
                 connectBtn.disabled = false;
@@ -1881,45 +1738,48 @@
             if (selection.size > 0) clearSelection();
             if (selectMode) setSelectMode(false);
             state.path = path;
-            load();
+            load(true);
         }
 
-        async function load() {
+        const dirCache = new Map();   // path → listing, shown instantly while a fresh copy loads
+        let renderedPath = null;
+
+        function render(items) {
+            items.sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : (a.type === 'dir' ? -1 : 1));
+            displayedItems = items;
+            renderedPath = state.path;
+            const frag = document.createDocumentFragment();
+            if (state.path) {
+                const back = makeCard('..', '⬅️', 'folder', null);
+                back.onclick = () => navigate(state.path.split('/').slice(0, -1).join('/'));
+                frag.appendChild(back);
+            }
+            items.forEach(item => frag.appendChild(buildCard(item)));
+            if (!items.length && state.path) {
+                const empty = document.createElement('div');
+                empty.className = 'msg';
+                empty.innerHTML = '<span class="emoji">📭</span>This folder is empty';
+                frag.appendChild(empty);
+            }
+            filesEl.replaceChildren(frag);
+            fileCount.textContent = items.length + ' item' + (items.length !== 1 ? 's' : '');
+            refreshSelectionUI();
+        }
+
+        async function load(useCache = false) {
             if (!state.connected) return;
             const seq = ++loadSeq;
-            filesEl.innerHTML = '';
+            const key = state.path;
             renderCrumbs();
-
+            if (useCache && dirCache.has(key)) render(dirCache.get(key).slice());
+            else if (renderedPath !== key) { filesEl.replaceChildren(); renderedPath = null; }
+            filesEl.classList.add('loading');
             try {
-                const data = await api('GET', `/contents/${enc(state.path)}${refQ()}`);
+                const data = await api('GET', `/contents/${enc(key)}${refQ()}`);
                 if (seq !== loadSeq) return;
-
                 const items = Array.isArray(data) ? data : [data];
-                items.sort((a, b) => {
-                    if (a.type === b.type) return a.name.localeCompare(b.name);
-                    return a.type === 'dir' ? -1 : 1;
-                });
-
-                displayedItems = items.slice();
-
-                if (state.path) {
-                    const back = makeCard('..', '⬅️', 'folder', null);
-                    back.onclick = () => navigate(state.path.split('/').slice(0, -1).join('/'));
-                    filesEl.appendChild(back);
-                }
-
-                items.forEach(item => filesEl.appendChild(buildCard(item)));
-
-                refreshSelectionUI();
-
-                fileCount.textContent = items.length + ' item' + (items.length !== 1 ? 's' : '');
-                if (items.length === 0 && state.path) {
-                    const empty = document.createElement('div');
-                    empty.className = 'msg';
-                    empty.innerHTML = '<span class="emoji">📭</span>This folder is empty';
-                    empty.style.padding = '40px 20px';
-                    filesEl.appendChild(empty);
-                }
+                dirCache.set(key, items.slice());
+                render(items);
             } catch (e) {
                 if (seq !== loadSeq) return;
                 if (e.status === 404 && state.path) {
@@ -1927,7 +1787,10 @@
                     return load();
                 }
                 console.error('Load error:', e);
+                renderedPath = null;
                 filesEl.innerHTML = `<div class="msg"><span class="emoji">⚠️</span>${escapeHtml(e.message)}</div>`;
+            } finally {
+                if (seq === loadSeq) filesEl.classList.remove('loading');
             }
         }
 
@@ -1947,69 +1810,19 @@
             }
             const ext = item.name.includes('.') ? item.name.split('.').pop().toLowerCase() : '';
 
-            const delBtn = document.createElement('button');
-            delBtn.className = 'del';
-            delBtn.textContent = '✕';
-            delBtn.title = 'Delete';
-            delBtn.onclick = e => {
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'more';
+            more.textContent = '⋯';
+            more.title = 'Actions';
+            more.setAttribute('aria-label', 'Actions for ' + item.name);
+            more.onclick = e => {
                 e.stopPropagation();
-                deleteItem(item);
+                if (selection.size > 0 && !selection.has(item.path)) clearSelection();
+                const r = more.getBoundingClientRect();
+                showContextMenu(r.left, r.bottom + 4, item, card);
             };
-            card.appendChild(delBtn);
-
-            if (!isDir) {
-                const browserBtn = document.createElement('button');
-                browserBtn.className = 'open-browser';
-                browserBtn.textContent = '🌐';
-                browserBtn.title = 'Open as GitHub Pages (if enabled)';
-                browserBtn.onclick = e => {
-                    e.stopPropagation();
-                    const isUserSite = state.repo === `${state.owner}.github.io`;
-                    const baseUrl = isUserSite
-                        ? `https://${state.owner}.github.io/`
-                        : `https://${state.owner}.github.io/${state.repo}/`;
-                    window.open(baseUrl + enc(item.path), '_blank');
-                };
-                card.appendChild(browserBtn);
-            }
-
-            const dlBtn = document.createElement('button');
-            dlBtn.className = 'download-btn';
-            dlBtn.textContent = '⬇️';
-            dlBtn.title = isDir ? 'Download folder as .zip' : 'Download file';
-            dlBtn.onclick = e => {
-                e.stopPropagation();
-                if (isDir) {
-                    downloadFolder(item).catch(err => alert(err.message));
-                } else {
-                    downloadItem(item).catch(err => alert(err.message));
-                }
-            };
-            card.appendChild(dlBtn);
-
-            if (!isDir && isTextFile(item.name)) {
-                const ccBtn = document.createElement('button');
-                ccBtn.className = 'copy-content';
-                ccBtn.textContent = '📋';
-                ccBtn.title = 'Copy file content';
-                ccBtn.onclick = e => {
-                    e.stopPropagation();
-                    copyFileContent(item);
-                };
-                card.appendChild(ccBtn);
-            }
-
-            const repBtn = document.createElement('button');
-            repBtn.className = 'replace-btn';
-            repBtn.textContent = '🔄';
-            repBtn.title = isDir
-                ? 'Replace folder contents (merge)'
-                : 'Replace file content (keeps name)';
-            repBtn.onclick = e => {
-                e.stopPropagation();
-                startReplace(item);
-            };
-            card.appendChild(repBtn);
+            card.appendChild(more);
 
             if (!isDir && ext) {
                 const badge = document.createElement('span');
@@ -2144,94 +1957,13 @@
         }
 
         async function downloadSelection() {
-            if (!selection.size) return;
-            if (typeof JSZip === 'undefined') {
-                alert('Zip library failed to load. Check your connection and try again.');
-                return;
-            }
-
             const items = displayedItems.filter(i => selection.has(i.path));
             if (!items.length) return;
-
-            selDownload.disabled = true;
-            const originalLabel = selDownload.textContent;
-            selDownload.textContent = '⏳ Zipping…';
-            setStatus(`Preparing ${items.length} item${items.length !== 1 ? 's' : ''}…`, 'loading');
-
-            const zip = new JSZip();
-            let added = 0;
-            try {
-                let treeCache = null;
-                const getTree = async () => {
-                    if (treeCache) return treeCache;
-                    const ref = await api('GET', `/git/ref/heads/${state.branch}`);
-                    const head = await api('GET', `/git/commits/${ref.object.sha}`);
-                    const t = await api('GET', `/git/trees/${head.tree.sha}?recursive=1`);
-                    if (t.truncated) throw new Error('Repository is too large to zip');
-                    treeCache = t.tree;
-                    return treeCache;
-                };
-
-                const fetchBlob = async (sha, label) => {
-                    const res = await fetch(apiUrl(`/git/blobs/${sha}`), {
-                        headers: {
-                            Accept: 'application/vnd.github.v3.raw',
-                            Authorization: `token ${state.token}`,
-                        },
-                    });
-                    if (!res.ok) throw new Error(`HTTP ${res.status} while fetching ${label}`);
-                    return res.blob();
-                };
-
-                for (const item of items) {
-                    if (item.type === 'file') {
-                        zip.file(item.name, await fetchBlob(item.sha, item.path));
-                        added++;
-                        setStatus(`Zipping ${added} file${added !== 1 ? 's' : ''}…`, 'loading');
-                    } else {
-                        const tree = await getTree();
-                        const prefix = item.path + '/';
-                        const blobs = tree.filter(t => t.type === 'blob' && t.path.startsWith(prefix));
-                        for (const t of blobs) {
-                            const rel = t.path.slice(prefix.length);
-                            zip.file(`${item.name}/${rel}`, await fetchBlob(t.sha, t.path));
-                            added++;
-                            setStatus(`Zipping ${added} file${added !== 1 ? 's' : ''}…`, 'loading');
-                        }
-                    }
-                }
-
-                setStatus('Compressing…', 'loading');
-                const out = await zip.generateAsync({ type: 'blob' }, meta => {
-                    setStatus(`Compressing ${Math.round(meta.percent)}%…`, 'loading');
-                });
-
-                let name;
-                if (items.length === 1) {
-                    name = items[0].type === 'dir'
-                        ? items[0].name + '.zip'
-                        : items[0].name.replace(/\.[^.]+$/, '') + '.zip';
-                } else {
-                    name = `selection-${items.length}-items.zip`;
-                }
-
-                const url = URL.createObjectURL(out);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = name;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
-                flashStatus(`Downloaded ${name} (${added} file${added !== 1 ? 's' : ''})`, 'ok');
-            } catch (err) {
-                console.error('Selection zip error:', err);
-                flashStatus('✗ ZIP failed', 'err', 4000);
-                alert('ZIP failed: ' + err.message);
-            } finally {
-                selDownload.disabled = false;
-                selDownload.textContent = originalLabel;
-            }
+            const one = items.length === 1 ? items[0] : null;
+            const name = one
+                ? (one.type === 'dir' ? one.name : one.name.replace(/\.[^.]+$/, '')) + '.zip'
+                : `selection-${items.length}-items.zip`;
+            await downloadZip(items, name, selDownload);
         }
 
         selDownload.onclick = downloadSelection;
@@ -2298,7 +2030,7 @@
 
         async function replaceFileWith(item, file) {
             if (file.size > MAX_UPLOAD) {
-                alert('Larger than GitHub’s 100 MB file limit');
+                notifyErr('Larger than GitHub’s 100 MB file limit');
                 return;
             }
             setStatus(`Replacing ${item.name}…`, 'loading');
@@ -2314,7 +2046,7 @@
             } catch (err) {
                 console.error('Replace file error:', err);
                 flashStatus('✗ Replace failed', 'err', 4000);
-                alert('Replace failed: ' + err.message);
+                notifyErr('Replace failed: ' + err.message);
             }
         }
 
@@ -2362,7 +2094,7 @@
 
         async function replaceFolderWithZip(folderItem, zipFile) {
             if (typeof JSZip === 'undefined') {
-                alert('Zip library failed to load.');
+                notifyErr('Zip library failed to load.');
                 return;
             }
             setStatus(`Reading ${zipFile.name}…`, 'loading');
@@ -2395,7 +2127,7 @@
             } catch (err) {
                 console.error('Replace folder error:', err);
                 flashStatus('✗ Replace failed', 'err', 4000);
-                alert('Replace failed: ' + err.message);
+                notifyErr('Replace failed: ' + err.message);
             }
         }
 
@@ -2411,7 +2143,7 @@
             } catch (err) {
                 console.error('Replace folder error:', err);
                 flashStatus('✗ Replace failed', 'err', 4000);
-                alert('Replace failed: ' + err.message);
+                notifyErr('Replace failed: ' + err.message);
             }
         }
 
@@ -2448,9 +2180,10 @@
         function makeCard(name, icon, type, meta) {
             const card = document.createElement('div');
             card.className = 'card' + (type === 'folder' ? ' folder' : '');
+            card.tabIndex = 0;
             card.innerHTML = `
                 <div class="icon-big">${icon}</div>
-                <div class="name">${escapeHtml(name)}</div>
+                <div class="name" dir="auto">${escapeHtml(name)}</div>
                 ${meta ? `<div class="meta">${meta}</div>` : ''}
             `;
             return card;
@@ -2478,7 +2211,7 @@
                 copyToClipboard(text);
             } catch (err) {
                 flashStatus('✗ Copy failed', 'err', 4000);
-                alert('Copy content failed: ' + err.message);
+                notifyErr('Copy content failed: ' + err.message);
             }
         }
 
@@ -2611,7 +2344,7 @@
             hideContextMenu();
             runAction(action, item).catch(err => {
                 console.error(`Context action "${action}" failed:`, err);
-                alert(err.message);
+                notifyErr(err.message);
             });
         });
         contextMenu.addEventListener('contextmenu', e => e.preventDefault());
@@ -2628,7 +2361,7 @@
                 hideContextMenu();
                 return;
             }
-            if (clipboard && state.connected && (e.target.closest('.files') || e.target.closest('.upload-area') || e.target === document.body || e.target.classList.contains('bg'))) {
+            if (clipboard && state.connected && (e.target.closest('.files') || e.target.closest('.upload-area') || e.target === document.body)) {
                 e.preventDefault();
                 showContextMenu(e.clientX, e.clientY, null, null);
                 return;
@@ -2696,16 +2429,33 @@
                 case 'copyRaw':
                     if (item) {
                         if (item.download_url) copyToClipboard(item.download_url);
-                        else alert('Raw URL not available.');
+                        else notifyErr('Raw URL not available.');
+                    }
+                    break;
+                case 'copyContent':
+                    if (item) {
+                        if (isTextFile(item.name)) copyFileContent(item);
+                        else notify('Only text files can be copied', 'warning');
+                    }
+                    break;
+                case 'pages':
+                    if (item) {
+                        const site = state.repo === `${state.owner}.github.io`
+                            ? `https://${state.owner}.github.io/`
+                            : `https://${state.owner}.github.io/${state.repo}/`;
+                        window.open(site + enc(item.path), '_blank', 'noopener');
                     }
                     break;
                 case 'select':
                     if (!selectMode) setSelectMode(true);
                     if (item && !selection.has(item.path)) toggleSelect(item);
                     break;
-                case 'delete':
-                    if (item) await deleteItem(item);
+                case 'delete': {
+                    const items = getActionItems(item);
+                    if (items.length > 1) await deleteMany(items);
+                    else if (item) await deleteItem(item);
                     break;
+                }
             }
         }
 
@@ -2777,7 +2527,7 @@
                 );
             } catch (err) {
                 flashStatus('✗ Paste failed', 'err', 4000);
-                alert('Paste failed: ' + err.message);
+                notifyErr('Paste failed: ' + err.message);
             }
             load();
         }
@@ -2863,8 +2613,28 @@
             input.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
             document.body.appendChild(input);
             input.select();
-            try { document.execCommand('copy'); done(); } catch (_) { alert('Copy failed — here it is:\n' + text); }
+            try { document.execCommand('copy'); done(); } catch (_) { notifyErr('Copy failed — here it is:\n' + text); }
             input.remove();
+        }
+
+        async function getHead() {
+            const ref = await api('GET', `/git/ref/heads/${state.branch}`);
+            const commit = await api('GET', `/git/commits/${ref.object.sha}`);
+            return { headSha: ref.object.sha, treeSha: commit.tree.sha };
+        }
+
+        // One commit that applies `tree` entries on top of baseTree and moves the branch.
+        async function commitTree(headSha, baseTree, tree, message) {
+            const t = await api('POST', '/git/trees', { base_tree: baseTree, tree });
+            const c = await api('POST', '/git/commits', { message, tree: t.sha, parents: [headSha] });
+            await api('PATCH', `/git/refs/heads/${state.branch}`, { sha: c.sha });
+        }
+
+        async function repoTree() {
+            const { headSha, treeSha } = await getHead();
+            const t = await api('GET', `/git/trees/${treeSha}?recursive=1`);
+            if (t.truncated) throw new Error('Repository is too large for this operation');
+            return { headSha, treeSha, nodes: t.tree };
         }
 
         async function downloadItem(item) {
@@ -2877,15 +2647,7 @@
                     },
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = item.name;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
+                saveBlob(await res.blob(), item.name);
                 flashStatus(`Downloaded ${item.name}`, 'ok');
             } catch (err) {
                 flashStatus('✗ Download failed', 'err', 4000);
@@ -2893,59 +2655,73 @@
             }
         }
 
-        async function downloadFolder(item) {
-            if (typeof JSZip === 'undefined') {
-                alert('Zip library failed to load. Check your connection and try again.');
-                return;
+        async function pool(list, n, fn) {
+            let i = 0;
+            await Promise.all(Array.from({ length: Math.min(n, list.length) }, async () => {
+                while (i < list.length) await fn(list[i++]);
+            }));
+        }
+
+        function saveBlob(blob, name) {
+            const url = URL.createObjectURL(blob);
+            const a = Object.assign(document.createElement('a'), { href: url, download: name });
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+        }
+
+        async function collectEntries(items) {
+            const out = [];
+            let nodes = null;
+            for (const it of items) {
+                if (it.type !== 'dir') { out.push({ zipPath: it.name, sha: it.sha, label: it.path }); continue; }
+                nodes = nodes || (await repoTree()).nodes;
+                const prefix = it.path + '/';
+                for (const n of nodes) {
+                    if (n.type === 'blob' && n.path.startsWith(prefix)) {
+                        out.push({ zipPath: `${it.name}/${n.path.slice(prefix.length)}`, sha: n.sha, label: n.path });
+                    }
+                }
             }
-            setStatus(`Preparing “${item.name}”…`, 'loading');
+            return out;
+        }
+
+        async function downloadZip(items, name, btn) {
+            if (typeof JSZip === 'undefined') { notifyErr('Zip library failed to load. Check your connection and try again.'); return; }
+            const t = notify('Preparing ZIP…', 'info', 600000);
+            const say = msg => { t.querySelector('.t-msg').textContent = msg; };
+            if (btn) btn.disabled = true;
             try {
-                const ref = await api('GET', `/git/ref/heads/${state.branch}`);
-                const head = await api('GET', `/git/commits/${ref.object.sha}`);
-                const tree = await api('GET', `/git/trees/${head.tree.sha}?recursive=1`);
-                if (tree.truncated) throw new Error('Repository is too large to zip this folder');
-
-                const prefix = item.path + '/';
-                const blobs = tree.tree.filter(t => t.type === 'blob' && t.path.startsWith(prefix));
-                if (!blobs.length) throw new Error('This folder contains no files');
-
+                const entries = await collectEntries(items);
+                if (!entries.length) throw new Error('There are no files to zip');
                 const zip = new JSZip();
                 let done = 0;
-                for (const t of blobs) {
-                    const rel = t.path.slice(prefix.length);
-                    const res = await fetch(apiUrl(`/git/blobs/${t.sha}`), {
-                        headers: {
-                            Accept: 'application/vnd.github.v3.raw',
-                            Authorization: `token ${state.token}`,
-                        },
+                await pool(entries, 6, async e => {
+                    const res = await fetch(apiUrl(`/git/blobs/${e.sha}`), {
+                        headers: { Accept: 'application/vnd.github.v3.raw', Authorization: `token ${state.token}` },
                     });
-                    if (!res.ok) throw new Error(`HTTP ${res.status} while fetching ${rel}`);
-                    zip.file(`${item.name}/${rel}`, await res.blob());
-                    done++;
-                    setStatus(`Zipping ${done}/${blobs.length}…`, 'loading');
-                }
-
-                const out = await zip.generateAsync({ type: 'blob' }, meta => {
-                    setStatus(`Compressing ${Math.round(meta.percent)}%…`, 'loading');
+                    if (!res.ok) throw new Error(`HTTP ${res.status} while fetching ${e.label}`);
+                    zip.file(e.zipPath, await res.blob());
+                    say(`Fetching ${++done}/${entries.length} files…`);
                 });
-                const url = URL.createObjectURL(out);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = item.name + '.zip';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
-                flashStatus(`Downloaded ${item.name}.zip (${blobs.length} file${blobs.length !== 1 ? 's' : ''})`, 'ok');
+                const blob = await zip.generateAsync({ type: 'blob' }, m => say(`Compressing ${Math.round(m.percent)}%…`));
+                saveBlob(blob, name);
+                notify(`Downloaded ${name} (${entries.length} file${entries.length !== 1 ? 's' : ''})`, 'success');
             } catch (err) {
-                flashStatus('✗ Folder download failed', 'err', 4000);
-                alert('Folder download failed: ' + err.message);
+                console.error('ZIP error:', err);
+                notifyErr('ZIP failed: ' + err.message);
+            } finally {
+                dismissToast(t);
+                if (btn) btn.disabled = false;
             }
         }
 
+        const downloadFolder = item => downloadZip([item], item.name + '.zip');
+
         async function renameItem(item, newName) {
             if (/[\\/]/.test(newName)) {
-                alert('A name can’t contain “/” or “\\”.');
+                notifyErr('A name can’t contain “/” or “\\”.');
                 return;
             }
             const dir = item.path.includes('/') ? item.path.slice(0, item.path.lastIndexOf('/') + 1) : '';
@@ -2979,7 +2755,7 @@
                 flashStatus(`Renamed to ${newName}`, 'ok');
             } catch (err) {
                 flashStatus('✗ Rename failed', 'err', 4000);
-                alert('Rename failed: ' + err.message);
+                notifyErr('Rename failed: ' + err.message);
             }
             load();
         }
@@ -3030,33 +2806,39 @@
                 }
             } catch (err) {
                 flashStatus('✗ Delete failed', 'err', 4000);
-                alert('Delete failed: ' + err.message);
+                notifyErr('Delete failed: ' + err.message);
             }
             load();
         }
 
         async function deleteFolder(dirPath) {
-            const ref = await api('GET', `/git/ref/heads/${state.branch}`);
-            const headSha = ref.object.sha;
-            const head = await api('GET', `/git/commits/${headSha}`);
-            const tree = await api('GET', `/git/trees/${head.tree.sha}?recursive=1`);
-            if (tree.truncated) throw new Error('Repository is too large to delete a folder in one commit');
-
+            const { headSha, treeSha, nodes } = await repoTree();
             const prefix = dirPath + '/';
-            const doomed = tree.tree.filter(t => t.type === 'blob' && t.path.startsWith(prefix));
+            const doomed = nodes.filter(t => t.type === 'blob' && t.path.startsWith(prefix));
             if (!doomed.length) throw new Error('Nothing to delete — the folder may already be gone');
-
-            const newTree = await api('POST', '/git/trees', {
-                base_tree: head.tree.sha,
-                tree: doomed.map(t => ({ path: t.path, mode: t.mode, type: 'blob', sha: null })),
-            });
-            const commit = await api('POST', '/git/commits', {
-                message: `Delete folder ${dirPath}`,
-                tree: newTree.sha,
-                parents: [headSha],
-            });
-            await api('PATCH', `/git/refs/heads/${state.branch}`, { sha: commit.sha });
+            await commitTree(headSha, treeSha, doomed.map(t => ({ path: t.path, mode: t.mode, type: 'blob', sha: null })), `Delete folder ${dirPath}`);
             return doomed.length;
+        }
+
+        // Several items in a single commit (the old menu entry deleted only one of them)
+        async function deleteMany(items) {
+            if (!confirm(`Delete ${items.length} items? Folders are deleted with everything inside.`)) return;
+            const t = notify(`Deleting ${items.length} items…`, 'info', 120000);
+            try {
+                const { headSha, treeSha, nodes } = await repoTree();
+                const dirs = items.filter(i => i.type === 'dir').map(i => i.path + '/');
+                const files = new Set(items.filter(i => i.type !== 'dir').map(i => i.path));
+                const doomed = nodes.filter(n => n.type === 'blob' && (files.has(n.path) || dirs.some(d => n.path.startsWith(d))));
+                if (!doomed.length) throw new Error('Nothing to delete');
+                await commitTree(headSha, treeSha, doomed.map(n => ({ path: n.path, mode: n.mode, type: 'blob', sha: null })), `Delete ${items.length} items`);
+                notify(`Deleted ${items.length} items (${doomed.length} files)`, 'success');
+            } catch (err) {
+                notifyErr('Delete failed: ' + err.message);
+            } finally {
+                dismissToast(t);
+            }
+            clearSelection();
+            load();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3099,11 +2881,16 @@
         //  OPEN FILE → CODEMIRROR EDITOR
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         async function openFile(item) {
+            const t = isTextFile(item.name) ? notify(`Opening ${item.name}…`, 'info', 30000) : null;
+            try { await openFileInner(item); } finally { dismissToast(t); }
+        }
+
+        async function openFileInner(item) {
             if (!isTextFile(item.name)) {
                 if (item.download_url) {
                     window.open(item.download_url, '_blank');
                 } else {
-                    alert('This file type cannot be edited here. Use Download.');
+                    notifyErr('This file type cannot be edited here. Use Download.');
                 }
                 return;
             }
@@ -3123,14 +2910,12 @@
                     path: item.path,
                     sha: data.sha,
                     name: item.name,
-                    content,
-                    savedContent: content,
                 };
                 openEditor(content);
                 setEditorStatus('● saved', 'saved');
             } catch (e) {
                 console.error('Open file error:', e);
-                alert('Failed to load file: ' + e.message);
+                notifyErr('Failed to load file: ' + e.message);
                 setEditorStatus('✕ error', 'error');
             }
         }
@@ -3145,6 +2930,7 @@
                 cm = null;
             }
             edBody.innerHTML = '';
+            edOverlay.classList.add('open');   // visible first, so CodeMirror measures correctly
 
             const ta = document.createElement('textarea');
             ta.value = content;
@@ -3169,27 +2955,21 @@
                 }
             });
 
-            setTimeout(() => cm.refresh(), 50);
-            setTimeout(() => cm.refresh(), 200);
-
+            editorFile.gen = cm.changeGeneration(true);
             cm.on('change', () => {
-                const current = cm.getValue();
-                const dirty = current !== editorFile.savedContent;
+                const dirty = !cm.isClean(editorFile.gen);
                 setEditorStatus(dirty ? '● unsaved' : '● saved', dirty ? 'dirty' : 'saved');
-                updateEditorInfo();
+                clearTimeout(infoTimer);
+                infoTimer = setTimeout(updateEditorInfo, 250);
             });
 
             updateEditorInfo();
-            edOverlay.classList.add('open');
             cm.focus();
         }
 
         function closeEditor() {
             if (editorFile && cm) {
-                const current = cm.getValue();
-                if (current !== editorFile.savedContent) {
-                    if (!confirm('You have unsaved changes. Discard them?')) return;
-                }
+                if (!cm.isClean(editorFile.gen) && !confirm('You have unsaved changes. Discard them?')) return;
             }
             edOverlay.classList.remove('open');
             if (cm) {
@@ -3208,7 +2988,7 @@
         function updateEditorInfo() {
             if (!cm) return;
             const content = cm.getValue();
-            const lines = content.split('\n').length;
+            const lines = cm.lineCount();
             const size = new Blob([content]).size;
             edLines.textContent = lines;
             edSize.textContent = formatSize(size);
@@ -3219,13 +2999,12 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         async function saveFile() {
             if (!editorFile || !cm) return;
-            const content = cm.getValue();
-            if (content === editorFile.savedContent) {
+            if (cm.isClean(editorFile.gen)) {
                 setEditorStatus('● no changes', 'saved');
                 return;
             }
-
-            const base64 = encodeBase64UTF8(content);
+            const gen = cm.changeGeneration(true);
+            const base64 = encodeBase64UTF8(cm.getValue());
             edSave.disabled = true;
             setEditorStatus('Saving…', 'loading');
             try {
@@ -3235,7 +3014,7 @@
                     sha: editorFile.sha,
                     branch: state.branch,
                 });
-                editorFile.savedContent = content;
+                editorFile.gen = gen;
                 if (result && result.content && result.content.sha) {
                     editorFile.sha = result.content.sha;
                 } else {
@@ -3247,7 +3026,7 @@
             } catch (e) {
                 console.error('Save error:', e);
                 setEditorStatus('✕ save failed', 'error');
-                alert('Save failed: ' + e.message);
+                notifyErr('Save failed: ' + e.message);
             } finally {
                 edSave.disabled = false;
             }
@@ -3794,7 +3573,7 @@
                 load();
             } catch (e) {
                 console.error('New folder error:', e);
-                alert('Failed to create folder: ' + e.message);
+                notifyErr('Failed to create folder: ' + e.message);
             }
         }
 
@@ -3811,7 +3590,7 @@
                 existing = await api('GET', `/contents/${enc(path)}${refQ()}`);
             } catch (err) {
                 if (err.status !== 404) {
-                    alert('Failed to check file: ' + err.message);
+                    notifyErr('Failed to check file: ' + err.message);
                     return;
                 }
             }
@@ -3837,7 +3616,7 @@
                 });
             } catch (e) {
                 console.error('New file error:', e);
-                alert('Failed to create file: ' + e.message);
+                notifyErr('Failed to create file: ' + e.message);
             }
         }
 
@@ -3854,6 +3633,8 @@
             el.classList.add('out');
             setTimeout(() => el.remove(), 240);
         }
+
+        const notifyErr = msg => notify(String(msg), 'error', 7000);
 
         function notify(text, type = 'info', ms = 3200) {
             if (!toastsEl) return null;
@@ -3994,9 +3775,29 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  AUTO-CONNECT
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        if (savedToken) {
-            setTimeout(connect, 400);
-        }
+        // Keyboard access: Enter/Space opens a card, Menu key / Shift+F10 opens its actions
+        filesEl.addEventListener('keydown', e => {
+            const card = e.target.closest('.card');
+            if (!card || e.target !== card) return;
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+            else if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+                e.preventDefault();
+                const more = card.querySelector('.more');
+                if (more) more.click();
+            }
+        });
+
+        $('selDelete').onclick = () => {
+            const items = getActionItems(null);
+            if (items.length > 1) deleteMany(items);
+            else if (items.length === 1) deleteItem(items[0]);
+        };
+
+        window.addEventListener('beforeunload', e => {
+            if (pumping || (cm && editorFile && !cm.isClean(editorFile.gen))) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        if (savedToken) connect();
     </script>
 </body>
 </html>
