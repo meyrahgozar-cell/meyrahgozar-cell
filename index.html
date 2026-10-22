@@ -2,7 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
 
 <link rel="icon" type="image/png" href="images/favicon.png">
 <link rel="apple-touch-icon" href="images/favicon.png">
@@ -12,7 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 
 <style>
@@ -647,7 +649,6 @@ button { cursor: pointer; border: none; background: none; }
 
 @media (max-width: 380px) {
   .score-value { font-size: 32px; }
-  .summary { /* n/a on index */ }
 }
 
 /* Score fill animation */
@@ -981,6 +982,12 @@ a.icon-btn.call-btn {
   cursor: pointer;
 }
 
+html { touch-action: manipulation; }
+
+/* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
 <body>
@@ -1140,6 +1147,27 @@ let exerciseLog = null;
 let mountainTrips = [];
 let latePenalty = 0;
 let calOpen = false;
+let loadSeq = 0;   // newest day-load wins (see loadDayData)
+
+/* nav.js is loaded after this script; if a response arrives before it ran, apply the admin flag once it did */
+function navAdmin(v){
+  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v);
+  else document.addEventListener("DOMContentLoaded", () => { if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v); }, { once: true });
+}
+
+/* PostgREST returns at most 1000 rows per request: page through so long histories are never silently cut off */
+async function fetchAllRows(make, page){
+  page = page || 1000;
+  const out = [];
+  for (let from = 0; ; from += page) {
+    const res = await make().range(from, from + page - 1);
+    if (res.error) throw res.error;
+    const rows = res.data || [];
+    out.push(...rows);
+    if (rows.length < page) break;
+  }
+  return out;
+}
 
 const J_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
 
@@ -1211,7 +1239,6 @@ function refreshTodayDate() {
   todayDate = normalizeISO(isoDate(new Date()));
   return todayDate;
 }
-function parseISO(s){ const[y,m,d]=s.split("-").map(Number); return new Date(Date.UTC(y,m-1,d)); }
 function toMinutes(t){ if(!t)return null; const[h,m]=t.split(":").map(Number); return h*60+m; }
 function minutesToTime(mins){
   if(mins==null)return"";
@@ -1290,19 +1317,24 @@ function exerciseCalc(w,a,r){
   const score=calories<100?0:calories<300?1:calories<=600?3:5;
   return{aerobicKm,totalKm,calories,caloriesRaw,factor,score};
 }
-async function loadGenderAndKmFactors(){
-  if(!currentUser) return;
+async function loadProfileAndSettings(user){
+  // one profile query (gender + admin flag + display name) and the app settings, in parallel
+  let prof = null;
   try {
-    const prof = await db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle();
-    if (prof.data && prof.data.gender) userGender = prof.data.gender;
-  } catch (e) { console.warn("gender", e); }
-  try {
-    const sett = await db.from("app_settings").select("key, value").in("key", ["km_factor_male","km_factor_female"]);
-    (sett.data || []).forEach(r => {
+    const [p, sett] = await Promise.all([
+      db.from("profiles").select("gender, is_admin, display_name").eq("id", user.id).maybeSingle(),
+      db.from("app_settings").select("key, value").in("key", ["km_factor_male","km_factor_female"])
+    ]);
+    prof = p && p.data;
+    if (prof && prof.gender) userGender = prof.gender;
+    (sett && sett.data || []).forEach(r => {
       if (r.key === "km_factor_male") kmFactorMale = Number(r.value) || 1;
       if (r.key === "km_factor_female") kmFactorFemale = Number(r.value) || 1.15;
     });
-  } catch (e) { console.warn("app_settings", e); }
+  } catch (e) { console.warn("profile/settings", e); }
+  navAdmin(!!(prof && prof.is_admin));
+  setUserButtonAvatar(prof && prof.display_name);
+  refreshExercisePreview();   // the preview may have been drawn before the gender factor arrived
 }
 
 /* ===== AUTH ===== */
@@ -1341,7 +1373,7 @@ document.getElementById("authForm").onsubmit=async e=>{
       r=await db.auth.signInWithPassword({email,password});
     }
     if(r.error) throw r.error;
-    if(r.data.session) await openApp(r.data.session.user);
+    if(r.data.session){ const u=r.data.session.user; if(!(__appOpened && currentUser && currentUser.id===u.id)) await openApp(u); }
     else showToast("حساب ساخته شد.");
   }catch(x){
     const map={"Invalid login credentials":"ایمیل یا رمز اشتباه است.","User already registered":"این ایمیل قبلاً ثبت شده.","Password should be at least 6 characters.":"رمز حداقل ۶ کاراکتر."};
@@ -1460,71 +1492,97 @@ document.getElementById("nextMonth").onclick=e=>{
 };
 
 /* ===== RENDER ITEMS ===== */
+function buildItemCard(item){
+  const card=document.createElement("article");
+  card.className="item";
+  card.dataset.type=item.type;
+  const log=todayLogs.get(item.type);
+  const sc=log?Number(log.score):0;
+
+  let body="";
+  if(item.options){
+    body=`<div class="options">${item.options.map(([label,val])=>{
+      const active=log&&Number(log.value)===val?"active":"";
+      return `<button class="opt ${active}" data-val="${val}">${label}</button>`;
+    }).join("")}</div>`;
+  }else if(item.time){
+    const t=log?minutesToTime(Number(log.value)):"";
+    body=`<input type="time" class="time-input" value="${t}">`;
+  }else if(item.input){
+    const v=log?log.value:"";
+    body=`<div class="input-row">
+      <input type="number" inputmode="numeric" placeholder="${item.placeholder||""}" value="${v||""}">
+      <button class="small-primary save-btn">ثبت</button>
+    </div>`;
+  }
+
+  card.innerHTML=`
+    <div class="item-top">
+      <div>
+        <div class="item-name"><span>${item.icon}</span>${item.title}</div>
+        <div class="item-desc">${item.desc}</div>
+      </div>
+      <div class="item-score ${sc>0?"positive":sc<0?"negative":""}">${sc?(sc>0?"+":"")+scoreText(sc):""}</div>
+    </div>${body}`;
+
+  if(item.options){
+    card.querySelectorAll(".opt").forEach(btn=>{
+      btn.onclick=e=>saveDailyLog(item.type,Number(btn.dataset.val),e);
+    });
+  }else if(item.time){
+    const inp=card.querySelector("input");
+    inp.onchange=e=>{
+      const mins=toMinutes(inp.value);
+      if(mins!=null) saveDailyLog(item.type,mins,e);
+    };
+  }else if(item.input){
+    const inp=card.querySelector("input");
+    card.querySelector(".save-btn").onclick=e=>{
+      const val=Number(inp.value);
+      if(isNaN(val)||val<0) return showToast("عدد معتبر وارد کن.");
+      saveDailyLog(item.type,val,e);
+    };
+  }
+  return card;
+}
+
 function renderItems(){
   const c=document.getElementById("items");
   c.innerHTML="";
-
-  ITEMS.forEach(item=>{
-    const card=document.createElement("article");
-    card.className="item";
-    const log=todayLogs.get(item.type);
-    const sc=log?Number(log.score):0;
-
-    let body="";
-    if(item.options){
-      body=`<div class="options">${item.options.map(([label,val])=>{
-        const active=log&&Number(log.value)===val?"active":"";
-        return `<button class="opt ${active}" data-val="${val}">${label}</button>`;
-      }).join("")}</div>`;
-    }else if(item.time){
-      const t=log?minutesToTime(Number(log.value)):"";
-      body=`<input type="time" class="time-input" value="${t}">`;
-    }else if(item.input){
-      const v=log?log.value:"";
-      body=`<div class="input-row">
-        <input type="number" inputmode="numeric" placeholder="${item.placeholder||""}" value="${v||""}">
-        <button class="small-primary save-btn">ثبت</button>
-      </div>`;
-    }
-
-    card.innerHTML=`
-      <div class="item-top">
-        <div>
-          <div class="item-name"><span>${item.icon}</span>${item.title}</div>
-          <div class="item-desc">${item.desc}</div>
-        </div>
-        <div class="item-score ${sc>0?"positive":sc<0?"negative":""}">${sc?(sc>0?"+":"")+scoreText(sc):""}</div>
-      </div>${body}`;
-    c.appendChild(card);
-
-    if(item.options){
-      card.querySelectorAll(".opt").forEach(btn=>{
-        btn.onclick=e=>saveDailyLog(item.type,Number(btn.dataset.val),e);
-      });
-    }else if(item.time){
-      const inp=card.querySelector("input");
-      inp.onchange=e=>{
-        const mins=toMinutes(inp.value);
-        if(mins!=null) saveDailyLog(item.type,mins,e);
-      };
-    }else if(item.input){
-      const inp=card.querySelector("input");
-      card.querySelector(".save-btn").onclick=e=>{
-        const val=Number(inp.value);
-        if(isNaN(val)||val<0) return showToast("عدد معتبر وارد کن.");
-        saveDailyLog(item.type,val,e);
-      };
-    }
-  });
-
+  ITEMS.forEach(item=>c.appendChild(buildItemCard(item)));
   renderExercise(c);
   renderMountain(c);
 }
 
-function renderExercise(c){
+/* after a save only the touched card is rebuilt: the other cards keep their unsaved input and nothing else flickers */
+function renderItemCard(type){
+  const c=document.getElementById("items");
+  const item=ITEMS.find(i=>i.type===type);
+  const old=c&&item?c.querySelector('[data-type="'+type+'"]'):null;
+  if(!old) return renderItems();
+  old.replaceWith(buildItemCard(item));
+}
+
+function refreshExercisePreview(){
+  const wEl=document.getElementById("exW");
+  if(!wEl) return;
+  const ww=Number(wEl.value);
+  const aa=Number(document.getElementById("exA").value)||0;
+  const rr=Number(document.getElementById("exR").value)||0;
+  const box=document.getElementById("exPreview");
+  if(!ww||ww<=0){ box.innerHTML=""; return; }
+  const x=exerciseCalc(ww,aa,rr);
+  box.innerHTML=
+    `<span>معادل: <b>${fa(x.aerobicKm.toFixed(2))} km</b></span>
+     <span>کل: <b>${fa(x.totalKm.toFixed(2))} km</b></span>
+     <span>کالری: <b>${fa(Math.round(x.calories))}</b></span>`;
+}
+
+function renderExercise(c, replaceExisting){
   const card=document.createElement("article");
   card.className="item";
   card.dataset.full="1";
+  card.dataset.card="exercise";
   const w=exerciseLog?.weight_kg??"";
   const a=exerciseLog?.aerobic_minutes??"";
   const r=exerciseLog?.running_km??"";
@@ -1545,21 +1603,11 @@ function renderExercise(c){
     </div>
     <div class="exercise-stats" id="exPreview"></div>
     <button class="small-primary" style="width:100%" id="saveEx">ثبت ورزش</button>`;
-  c.appendChild(card);
+  const prev=replaceExisting?c.querySelector('[data-card="exercise"]'):null;
+  if(prev) prev.replaceWith(card); else c.appendChild(card);
 
-  const preview=()=>{
-    const ww=Number(document.getElementById("exW").value);
-    const aa=Number(document.getElementById("exA").value)||0;
-    const rr=Number(document.getElementById("exR").value)||0;
-    if(!ww||ww<=0){ document.getElementById("exPreview").innerHTML=""; return; }
-    const x=exerciseCalc(ww,aa,rr);
-    document.getElementById("exPreview").innerHTML=
-      `<span>معادل: <b>${fa(x.aerobicKm.toFixed(2))} km</b></span>
-       <span>کل: <b>${fa(x.totalKm.toFixed(2))} km</b></span>
-       <span>کالری: <b>${fa(Math.round(x.calories))}</b></span>`;
-  };
-  ["exW","exA","exR"].forEach(id=>document.getElementById(id).oninput=preview);
-  preview();
+  ["exW","exA","exR"].forEach(id=>document.getElementById(id).oninput=refreshExercisePreview);
+  refreshExercisePreview();
   document.getElementById("saveEx").onclick=saveExercise;
 }
 
@@ -1592,15 +1640,19 @@ function renderMountain(c){
 
 async function loadDayData(){
   if(!currentUser||!selectedDate) return;
+  const seq=++loadSeq;                       // only the most recently requested day may paint the screen
+  const date=selectedDate, uid=currentUser.id, range=monthRangeISO(date);
 
   const [logs,ex,mt,pen]=await Promise.all([
-    db.from("daily_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate),
-    db.from("exercise_logs").select("*").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle(),
-    db.from("mountain_trips").select("id,trip_date").eq("user_id",currentUser.id)
-      .gte("trip_date",monthRangeISO(selectedDate).start)
-      .lte("trip_date",monthRangeISO(selectedDate).end),
-    db.from("daily_penalties").select("score").eq("user_id",currentUser.id).eq("log_date",selectedDate).maybeSingle()
+    db.from("daily_logs").select("item_type,value,score").eq("user_id",uid).eq("log_date",date),
+    db.from("exercise_logs").select("id,weight_kg,aerobic_minutes,running_km,score").eq("user_id",uid).eq("log_date",date).maybeSingle(),
+    db.from("mountain_trips").select("id,trip_date").eq("user_id",uid)
+      .gte("trip_date",range.start)
+      .lte("trip_date",range.end),
+    db.from("daily_penalties").select("score").eq("user_id",uid).eq("log_date",date).maybeSingle()
   ]);
+  if(seq!==loadSeq) return;                  // a newer day was requested while this one was in flight
+  if(logs.error||ex.error||mt.error) showToast("خطا در دریافت اطلاعات؛ اتصال را بررسی کن.");
 
   todayLogs=new Map((logs.data||[]).map(r=>[r.item_type,r]));
   exerciseLog=ex.data||null;
@@ -1618,16 +1670,17 @@ function animateScore(el, target){
   el.dataset.val = end;
   const dur = 700;
   const t0 = performance.now();
+  if(el._raf) cancelAnimationFrame(el._raf);
   function frame(now){
     const p = Math.min(1, (now - t0) / dur);
     // easeOutCubic
     const e = 1 - Math.pow(1 - p, 3);
     const cur = start + (end - start) * e;
     el.textContent = scoreText(Math.round(cur * 100) / 100);
-    if(p < 1) requestAnimationFrame(frame);
-    else el.textContent = scoreText(end);
+    if(p < 1) el._raf = requestAnimationFrame(frame);
+    else { el._raf = 0; el.textContent = scoreText(end); }
   }
-  requestAnimationFrame(frame);
+  el._raf = requestAnimationFrame(frame);
 }
 
 function updateScoreUI(){
@@ -1720,7 +1773,8 @@ async function ensureDisciplineBonus(logDate) {
     let row = q.data;
     if (Array.isArray(row)) row = row[0] || null;
     if (!row) {
-      const f = await db.from("daily_logs").select("*")
+      const f = await db.from("daily_logs").select("item_type,log_date,value,score")
+        .eq("user_id", currentUser.id)
         .eq("log_date", logDate).eq("item_type", "discipline").maybeSingle();
       row = f.data || { item_type: "discipline", log_date: logDate, value: 1, score: 1 };
     }
@@ -1736,23 +1790,29 @@ async function ensureDisciplineBonus(logDate) {
 
 async function saveDailyLog(type,value,e){
   if(type==="discipline") return; // فقط سیستمی
+  const date=selectedDate;
   const score=calculateScore(type,value);
   const old=Number(todayLogs.get(type)?.score||0);
   const q=await db.rpc("save_daily_log",{
-    p_log_date:selectedDate, p_item_type:type, p_value:value, p_score:score
+    p_log_date:date, p_item_type:type, p_value:value, p_score:score
   });
   if(q.error) return showToast("خطا: "+q.error.message);
+  if(date!==selectedDate) return;            // the user switched day while saving: don't paint this row into the other day
   todayLogs.set(type,q.data);
-  const disc = await ensureDisciplineBonus(selectedDate);
-  const discNew = disc && !old && isTimelyLog(selectedDate);
   updateScoreUI();
-  renderItems();
+  renderItemCard(type);
   if (type === "reading") { try { loadPersonalRecords(); } catch (_) {} }
-  if(e) floatingScore(score-old,e.clientX,e.clientY);
-  if(isTimelyLog(selectedDate) && todayLogs.has("discipline")) {
-    showToast("ثبت شد ✓ · نظم +۱");
-  } else {
-    showToast("ثبت شد ✓");
+  const srvScore=Number(q.data&&q.data.score);          // the server decides the score; ours is only the preview
+  if(e) floatingScore((Number.isFinite(srvScore)?srvScore:score)-old,e.clientX,e.clientY);
+  const timely=isTimelyLog(date);
+  showToast(timely && todayLogs.has("discipline") ? "ثبت شد ✓ · نظم +۱" : "ثبت شد ✓");
+  // the discipline bonus is a second write — don't make the user wait for it
+  if(timely && !(Number(todayLogs.get("discipline")?.score)>0)){
+    ensureDisciplineBonus(date).then(disc=>{
+      if(!disc || date!==selectedDate) return;
+      updateScoreUI();
+      showToast("ثبت شد ✓ · نظم +۱");
+    });
   }
 }
 
@@ -1761,34 +1821,40 @@ async function saveExercise(e){
   const a=Number(document.getElementById("exA").value)||0;
   const r=Number(document.getElementById("exR").value)||0;
   if(!w||w<=0) return showToast("وزن معتبر وارد کن.");
+  const date=selectedDate;
   const x=exerciseCalc(w,a,r);
   const old=Number(exerciseLog?.score||0);
   const q=await db.rpc("save_exercise_log",{
-    p_log_date:selectedDate, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
+    p_log_date:date, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
   });
   if(q.error) return showToast("خطا: "+q.error.message);
-  // امتیاز با ضریب جنسیت روی کلاینت — سرور ممکن است بدون ضریب ذخیره کند
-  exerciseLog = q.data || {};
-  if (Number(exerciseLog.score) !== x.score || exerciseLog.score == null) {
+  // The server applies the gender factor itself (save_exercise_log), so row.score is final and normally equals x.score.
+  // Compatibility only: against an OLDER server that stores the un-factored score, correct it once with the old direct
+  // update. Once direct writes are revoked that update is refused and we simply keep the server's value.
+  let row = q.data || {};
+  if (row.score == null || Number(row.score) !== x.score) {
     try {
-      const id = exerciseLog.id;
+      const id = row.id;
       if (id) {
-        const up = await db.from("exercise_logs").update({ score: x.score }).eq("id", id).select("*").maybeSingle();
-        if (up.data) exerciseLog = up.data;
-        else exerciseLog = { ...exerciseLog, score: x.score };
-      } else {
-        exerciseLog = { ...exerciseLog, score: x.score };
+        const up = await db.from("exercise_logs").update({ score: x.score }).eq("id", id)
+          .select("id,weight_kg,aerobic_minutes,running_km,total_km,calories,score").maybeSingle();
+        if (up.error) console.warn("score correction not applied — keeping the server's score:", up.error.message);
+        if (up.data) row = up.data;
       }
-    } catch (_) {
-      exerciseLog = { ...exerciseLog, score: x.score };
-    }
+    } catch (_) {}
   }
-  await ensureDisciplineBonus(selectedDate);
+  if (row.score == null) row = { ...row, score: x.score };
+  if(date!==selectedDate) return;            // the user switched day while saving
+  exerciseLog = row;
   updateScoreUI();
-  renderItems();
+  renderExercise(document.getElementById("items"), true);   // rebuild only the exercise card
   try { loadPersonalRecords(); } catch (_) {}
-  floatingScore(x.score-old,e.clientX,e.clientY);
-  showToast(isTimelyLog(selectedDate) ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
+  if(e) floatingScore(Number(row.score)-old,e.clientX,e.clientY);
+  const timely=isTimelyLog(date);
+  showToast(timely ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
+  if(timely && !(Number(todayLogs.get("discipline")?.score)>0)){
+    ensureDisciplineBonus(date).then(d=>{ if(d && date===selectedDate) updateScoreUI(); });
+  }
 }
 
 async function saveMountain(){
@@ -1843,10 +1909,6 @@ document.getElementById("btnToday")?.addEventListener("click", async () => {
   await loadDayData();
 });
 
-const __rb = document.getElementById("reportButton");
-if (__rb) __rb.onclick = () => { location.href = "report.html"; };
-const __ab = document.getElementById("adminButton");
-if (__ab) __ab.onclick = () => { location.href = "admin.html"; };
 
 
 /* ===== OPEN / AUTH ===== */
@@ -1920,21 +1982,22 @@ let personalRecords = {
 async function loadPersonalRecords() {
   if (!currentUser) return;
   try {
-    const [ex, rd] = await Promise.all([
-      db.from("exercise_logs").select("log_date, running_km, total_km")
-        .eq("user_id", currentUser.id),
-      db.from("daily_logs").select("log_date, value, score")
-        .eq("user_id", currentUser.id).eq("item_type", "reading")
+    const uid = currentUser.id;
+    const [exRows, rdRows] = await Promise.all([
+      fetchAllRows(() => db.from("exercise_logs").select("log_date, running_km, total_km")
+        .eq("user_id", uid).order("log_date")),
+      fetchAllRows(() => db.from("daily_logs").select("log_date, value")
+        .eq("user_id", uid).eq("item_type", "reading").order("log_date"))
     ]);
     let maxKm = 0, maxKmDate = null, totalKm = 0;
-    (ex.data || []).forEach(r => {
+    exRows.forEach(r => {
       // کیلومتر معادل (total_km) وگرنه دویدن
       const km = Number(r.total_km) || Number(r.running_km) || 0;
       totalKm += km;
       if (km > maxKm) { maxKm = km; maxKmDate = r.log_date; }
     });
     let maxPages = 0, maxPagesDate = null, totalPages = 0;
-    (rd.data || []).forEach(r => {
+    rdRows.forEach(r => {
       const pg = Number(r.value) || 0;
       totalPages += pg;
       if (pg > maxPages) { maxPages = pg; maxPagesDate = r.log_date; }
@@ -2020,29 +2083,24 @@ async function openApp(user) {
   showAppShell();
 
   try {
-    const now = new Date();
     todayDate = refreshTodayDate();
     if (!selectedDate) selectedDate = todayDate;
     else selectedDate = normalizeISO(selectedDate);
-    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const tp = todayDate.split("-").map(Number);   // Tehran's calendar day, not the device's timezone
+    const j = jalaali.toJalaali(tp[0], tp[1], tp[2]);
     viewYear = j.jy;
     viewMonth = j.jm;
-    if (typeof updateCalLabel === "function") updateCalLabel();
-    if (typeof renderCalendar === "function") renderCalendar();
+    updateCalLabel();
+    renderCalendar();
   } catch (e) { console.warn("openApp calendar", e); }
 
-  try { await loadGenderAndKmFactors(); } catch (e) { console.warn(e); }
-  try {
-    const __pa = await db.from("profiles").select("is_admin, display_name").eq("id", user.id).maybeSingle();
-    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(!!(__pa.data && __pa.data.is_admin));
-    setUserButtonAvatar(__pa.data && __pa.data.display_name);
-  } catch (_) {
-    setUserButtonAvatar(null);
-  }
-  try { await loadDayData(); } catch (e) { console.warn("loadDayData", e); }
-  try { await loadPersonalRecords(); } catch (e) { console.warn("records", e); }
-  try {
-  } catch (_) {}
+  // profile/settings, today's data and the personal records don't depend on each other:
+  // fetch them together instead of one after another (was 5 sequential round-trips)
+  await Promise.all([
+    loadProfileAndSettings(user).catch(e => console.warn("profile/settings", e)),
+    loadDayData().catch(e => console.warn("loadDayData", e)),
+    loadPersonalRecords().catch(e => console.warn("records", e))
+  ]);
 }
 
 async function resolveSession() {
@@ -2068,6 +2126,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   if (event === "INITIAL_SESSION") {
     __authInit = true;
     if (session && session.user) {
+      if (__appOpened && currentUser && currentUser.id === session.user.id) return;   // bootSession() got there first
       try { await openApp(session.user); } catch (e) { console.warn(e); }
     } else if (!__appOpened) {
       showAuthShell();
@@ -2075,7 +2134,9 @@ db.auth.onAuthStateChange(async (event, session) => {
     return;
   }
   if (session && session.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
-    if (event === "TOKEN_REFRESHED" && __appOpened) return;
+    // supabase-js also emits SIGNED_IN when the tab regains focus: for the same user there is nothing to reload
+    // (reloading would refetch everything and wipe whatever the user was typing)
+    if (__appOpened && currentUser && currentUser.id === session.user.id) { currentUser = session.user; return; }
     try { await openApp(session.user); } catch (e) { console.warn(e); }
     return;
   }
@@ -2088,6 +2149,22 @@ db.auth.onAuthStateChange(async (event, session) => {
       setMode("login");
     } catch (_) {}
   }
+});
+
+/* the Tehran day can change while the app sits in the background: refresh "today" when it comes back */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !currentUser || !todayDate) return;
+  const prev = todayDate;
+  if (refreshTodayDate() === prev) return;
+  if (selectedDate === prev) {
+    selectedDate = todayDate;
+    const tp = todayDate.split("-").map(Number);
+    const j = jalaali.toJalaali(tp[0], tp[1], tp[2]);
+    viewYear = j.jy; viewMonth = j.jm;
+  }
+  updateCalLabel();
+  renderCalendar();
+  loadDayData();
 });
 
 (async function bootSession() {
@@ -2105,7 +2182,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   }
   if (!__appOpened) {
     const session = await resolveSession();
-    if (session && session.user) await openApp(session.user);
+    if (session && session.user) { if (!(__appOpened && currentUser && currentUser.id === session.user.id)) await openApp(session.user); }
     else if (__authInit) showAuthShell();
     else showAuthShell();
   }
