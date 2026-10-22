@@ -1802,7 +1802,8 @@ async function saveDailyLog(type,value,e){
   updateScoreUI();
   renderItemCard(type);
   if (type === "reading") { try { loadPersonalRecords(); } catch (_) {} }
-  if(e) floatingScore(score-old,e.clientX,e.clientY);
+  const srvScore=Number(q.data&&q.data.score);          // the server decides the score; ours is only the preview
+  if(e) floatingScore((Number.isFinite(srvScore)?srvScore:score)-old,e.clientX,e.clientY);
   const timely=isTimelyLog(date);
   showToast(timely && todayLogs.has("discipline") ? "ثبت شد ✓ · نظم +۱" : "ثبت شد ✓");
   // the discipline bonus is a second write — don't make the user wait for it
@@ -1827,28 +1828,28 @@ async function saveExercise(e){
     p_log_date:date, p_weight_kg:w, p_aerobic_minutes:a, p_running_km:r
   });
   if(q.error) return showToast("خطا: "+q.error.message);
-  // امتیاز با ضریب جنسیت روی کلاینت — سرور ممکن است بدون ضریب ذخیره کند
+  // The server applies the gender factor itself (save_exercise_log), so row.score is final and normally equals x.score.
+  // Compatibility only: against an OLDER server that stores the un-factored score, correct it once with the old direct
+  // update. Once direct writes are revoked that update is refused and we simply keep the server's value.
   let row = q.data || {};
-  if (Number(row.score) !== x.score || row.score == null) {
+  if (row.score == null || Number(row.score) !== x.score) {
     try {
       const id = row.id;
       if (id) {
         const up = await db.from("exercise_logs").update({ score: x.score }).eq("id", id)
           .select("id,weight_kg,aerobic_minutes,running_km,total_km,calories,score").maybeSingle();
-        row = up.data ? up.data : { ...row, score: x.score };
-      } else {
-        row = { ...row, score: x.score };
+        if (up.error) console.warn("score correction not applied — keeping the server's score:", up.error.message);
+        if (up.data) row = up.data;
       }
-    } catch (_) {
-      row = { ...row, score: x.score };
-    }
+    } catch (_) {}
   }
+  if (row.score == null) row = { ...row, score: x.score };
   if(date!==selectedDate) return;            // the user switched day while saving
   exerciseLog = row;
   updateScoreUI();
   renderExercise(document.getElementById("items"), true);   // rebuild only the exercise card
   try { loadPersonalRecords(); } catch (_) {}
-  if(e) floatingScore(x.score-old,e.clientX,e.clientY);
+  if(e) floatingScore(Number(row.score)-old,e.clientX,e.clientY);
   const timely=isTimelyLog(date);
   showToast(timely ? "ورزش ثبت شد ✓ · نظم +۱" : "ورزش ثبت شد ✓");
   if(timely && !(Number(todayLogs.get("discipline")?.score)>0)){
