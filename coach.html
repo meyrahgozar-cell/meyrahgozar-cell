@@ -2,12 +2,12 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05060a">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <title>HQL | چوب استاد</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <style>
     :root {
       --bg: #05060a; --card: #0d1019; --card2: #131722;
@@ -483,6 +483,12 @@
       margin-bottom: 4px;
     }
     .hql-top-row .page-title { flex: 0 0 auto; margin-bottom: 0; }
+html { touch-action: manipulation; }
+
+/* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
 <body>
@@ -586,6 +592,8 @@
   </div>
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
   <script>
   const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
   const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
@@ -634,8 +642,19 @@
     return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
   function avatarHtml(name) {
-    const n = (name||"؟").trim();
-    return `<img class="avatar" src="images/${n}.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${n.slice(0,1)}</div>`;
+    const n = String(name || "؟").trim() || "؟";
+    return `<img class="avatar" src="images/${encodeURIComponent(n)}.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${escapeHtml([...n][0])}</div>`;
+  }
+  /* today's Jalali date in Tehran, whatever timezone the device is in */
+  function tehranJalaali() {
+    const t = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" })
+      .format(new Date()).split("-").map(Number);
+    return jalaali.toJalaali(t[0], t[1], t[2]);
+  }
+  /* nav.js is loaded after this script; if a response arrives before it ran, apply the admin flag once it did */
+  function navAdmin(v) {
+    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v);
+    else document.addEventListener("DOMContentLoaded", () => { if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v); }, { once: true });
   }
   function formatTime(iso) {
     try { return new Date(iso).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"}); }
@@ -678,8 +697,7 @@
   }
 
   function initMonthPicker() {
-    const now = new Date();
-    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth()+1, now.getDate());
+    const j = tehranJalaali();
     selectedYear = j.jy; selectedMonth = j.jm; selectedDay = j.jd;
     const ySel = document.getElementById("yearSelect");
     const mSel = document.getElementById("monthSelect");
@@ -927,13 +945,13 @@
     const avgCls = ctx.avg > 0 ? "pos" : ctx.avg < 0 ? "neg" : "";
     const dsCls = ctx.ds > 0 ? "pos" : ctx.ds < 0 ? "neg" : "";
     const dayPart = ctx.jd != null
-      ? `<span class="nc-chip nc-day">روز <b class="${dsCls}">${fa(ctx.jd)}</b>${ctx.ds != null ? ` · <b class="${dsCls}">${scoreText(ctx.ds)}</b>` : ""}</span>`
+      ? `<span class="nc-chip nc-day">روز <b class="${dsCls}">${fa(Number(ctx.jd))}</b>${ctx.ds != null ? ` · <b class="${dsCls}">${scoreText(Number(ctx.ds))}</b>` : ""}</span>`
       : "";
     return `<div class="note-ctx">
-      <span class="nc-chip">${monthName} ${fa(ctx.jy || "")}</span>
-      <span class="nc-chip">روزها <b>${fa(ctx.n || 0)}</b></span>
-      <span class="nc-chip">جمع <b class="${sumCls}">${scoreText(ctx.sum || 0)}</b></span>
-      <span class="nc-chip">میانگین <b class="${avgCls}">${scoreText(ctx.avg || 0)}</b></span>
+      <span class="nc-chip">${monthName} ${fa(Number(ctx.jy) || "")}</span>
+      <span class="nc-chip">روزها <b>${fa(Number(ctx.n) || 0)}</b></span>
+      <span class="nc-chip">جمع <b class="${sumCls}">${scoreText(Number(ctx.sum) || 0)}</b></span>
+      <span class="nc-chip">میانگین <b class="${avgCls}">${scoreText(Number(ctx.avg) || 0)}</b></span>
       ${dayPart}
     </div>`;
   }
@@ -953,7 +971,7 @@
           <button type="button" class="danger" data-del="${n.id}">حذف</button>
         </div>` : "";
       return `<div class="note" data-id="${n.id}">
-        <div class="note-meta"><span class="note-topic">${ti.icon} ${ti.title}</span>
+        <div class="note-meta"><span class="note-topic">${ti.icon} ${escapeHtml(ti.title)}</span>
         <span>${formatTime(n.created_at)}</span></div>
         ${renderCtxBar(parsed.ctx)}
         <div class="note-body" data-body="${n.id}">${escapeHtml(parsed.text)}</div>
@@ -1013,7 +1031,7 @@
     box.innerHTML = list.map(u => {
       const name = u.display_name || "کاربر";
       const me = u.id === currentUser.id ? ' <span style="color:var(--neon2);font-size:10px">(من)</span>' : "";
-      return `<div class="user-chip" data-uid="${u.id}" data-name="${escapeHtml(name)}">
+      return `<div class="user-chip" data-uid="${escapeHtml(u.id)}" data-name="${escapeHtml(name)}">
         ${avatarHtml(name)}<span class="name">${escapeHtml(name)}${me}</span></div>`;
     }).join("");
     box.querySelectorAll(".user-chip").forEach(chip => {
@@ -1037,7 +1055,7 @@
   async function loadUsers() {
     const box = document.getElementById("userList");
     const { data, error } = await db.from("profiles").select("id, display_name").order("display_name");
-    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    if (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; return; }
     allUsersCache = data || [];
     renderUserList(document.getElementById("userSearch")?.value || "");
     const search = document.getElementById("userSearch");
@@ -1065,7 +1083,7 @@
       .lte("created_at", end + "T23:59:59.999Z")
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    if (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; return; }
     if (!data || !data.length) {
       box.innerHTML = `<div class="empty">در ${J_MONTHS[selectedMonth-1]} ${fa(selectedYear)} یادداشتی نیست</div>`;
       return;
@@ -1078,7 +1096,7 @@
     const { data, error } = await db.from("coach_notes")
       .select("id, topic, body, created_at")
       .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(50);
-    if (error) { box.innerHTML = `<div class="empty">${error.message}</div>`; return; }
+    if (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; return; }
     renderNotes(data, box, { editable: false });
     markCoachNotesSeen(data);
   }
@@ -1140,16 +1158,16 @@
     const r = await db.auth.getSession();
     if (!r.data.session) {
       document.getElementById("denyBox").classList.remove("hidden");
-      if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(false);
+      navAdmin(false);
       return;
     }
     currentUser = r.data.session.user;
-    const prof = await db.from("profiles").select("is_admin").eq("id", currentUser.id).maybeSingle();
+    const prof = await db.from("profiles").select("is_admin, display_name").eq("id", currentUser.id).maybeSingle();
     isAdmin = !!(prof.data && prof.data.is_admin);
-    if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
+    navAdmin(isAdmin);
 
     document.getElementById("appBox").classList.remove("hidden");
-    await checkCoachBadge();
+    checkCoachBadge();                       // fire-and-forget: the badge must not delay the page
     if (isAdmin) {
       document.getElementById("pageSub").textContent = "سه مرحله: شاگرد ← موضوع و گزارش ← یادداشت";
       document.getElementById("adminView").classList.remove("hidden");
@@ -1189,12 +1207,9 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
       document.getElementById("pageSub").textContent = "پیام‌های استاد برای شما";
       document.getElementById("userView").classList.remove("hidden");
       selectedUserId = currentUser.id;
-      try {
-        const pr = await db.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
-        selectedUserName = (pr.data && pr.data.display_name) || "من";
-      } catch (_) { selectedUserName = "من"; }
+      selectedUserName = (prof.data && prof.data.display_name) || "من";
+      initWheel();                            // the wheel and the list load at the same time
       await loadMyNotes();
-      initWheel();
     }
   }
 
@@ -1282,10 +1297,15 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
     const list = document.getElementById("wheelList");
     if (!track || !list) return;
     const cards = list.querySelectorAll(".wheel-card");
-    const mid = track.scrollTop + track.clientHeight / 2;
-    cards.forEach(card => {
-      const cMid = card.offsetTop + card.offsetHeight / 2;
-      const dist = (cMid - mid) / track.clientHeight; // ~-1..1
+    const h = track.clientHeight;
+    const mid = track.scrollTop + h / 2;
+    // read phase first, write phase second: reading offsetTop between style writes forced a layout for every card
+    const n = cards.length, mids = new Array(n);
+    for (let i = 0; i < n; i++) mids[i] = cards[i].offsetTop + cards[i].offsetHeight / 2;
+    for (let i = 0; i < n; i++) {
+      const dist = (mids[i] - mid) / h; // ~-1..1
+      if (dist > 1.6 || dist < -1.6) continue;   // far outside the clipped track: not visible, skip the work
+      const card = cards[i];
       const rot = Math.max(-55, Math.min(55, dist * 70));
       const scale = 1 - Math.min(0.28, Math.abs(dist) * 0.35);
       const opacity = 1 - Math.min(0.65, Math.abs(dist) * 0.75);
@@ -1293,7 +1313,7 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
       card.style.transform = `rotateX(${(-rot).toFixed(2)}deg) scale(${scale.toFixed(3)}) translateZ(${(z * 0.2).toFixed(1)}px)`;
       card.style.opacity = String(Math.max(0.25, opacity));
       card.style.zIndex = String(Math.round(200 - Math.abs(dist) * 100));
-    });
+    }
   }
 
   function wheelGlowFromSpeed(speed) {
@@ -1368,9 +1388,9 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
       const topicLabel = (ti && (ti.title || ti.label)) ? (ti.title || ti.label) : (n.topic || "عمومی");
       const icon = (ti && ti.icon) ? ti.icon : "💬";
       const ctx = (typeof renderCtxBar === "function") ? renderCtxBar(parsed && parsed.ctx) : "";
-      return `<div class="wheel-card note" data-uid="${n.user_id || ""}" data-name="${String(name).replace(/"/g, "&quot;")}">
+      return `<div class="wheel-card note" data-uid="${escapeHtml(n.user_id || "")}" data-name="${escapeHtml(name)}">
         <div class="note-meta">
-          <span class="note-topic">${icon} ${topicLabel} · ${name}</span>
+          <span class="note-topic">${icon} ${escapeHtml(topicLabel)} · ${escapeHtml(name)}</span>
           <span>${faDate(n.created_at)}</span>
         </div>
         ${ctx || ""}
@@ -1415,7 +1435,7 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
     } catch (e) {
       console.warn(e);
       const list = document.getElementById("wheelList");
-      if (list && wheelOffset === 0) list.innerHTML = `<div class="wheel-empty">${e.message || "خطا"}</div>`;
+      if (list && wheelOffset === 0) list.innerHTML = `<div class="wheel-empty">${escapeHtml(e.message || "خطا")}</div>`;
     } finally {
       wheelLoading = false;
       if (loading) loading.classList.add("hidden");
@@ -1458,8 +1478,9 @@ document.getElementById("openTopicPicker").onclick = openTopicPicker;
     let lastY = track.scrollTop;
     let lastT = performance.now();
     let glowIdleTimer = null;
+    let tfRaf = 0;
     track.addEventListener("scroll", () => {
-      applyWheelTransforms();
+      if (!tfRaf) tfRaf = requestAnimationFrame(() => { tfRaf = 0; applyWheelTransforms(); });   // at most once per frame
       const now = performance.now();
       const dy = track.scrollTop - lastY;
       const dt = Math.max(16, now - lastT);
