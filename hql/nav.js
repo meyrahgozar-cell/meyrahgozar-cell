@@ -11,6 +11,7 @@
   const isReport = path.includes("report");
   const isAdmin = path.includes("admin");
   const isCoach = path.includes("coach");
+  const isRun = path === "run.html" || path === "run";
   const isFood = path.includes("food");
 
   const style = document.createElement("style");
@@ -113,6 +114,7 @@
     .hql-glass-nav a:active {
       transform: scale(0.94);
     }
+    .hql-glass-nav.nav-5 a { padding: 8px 2px; }
     @media (min-width: 900px) {
       .hql-glass-nav {
         width: min(420px, 100%);
@@ -271,6 +273,10 @@
     <a href="report.html" class="${isReport ? "active" : ""}" ${isReport ? 'aria-current="page"' : ""} data-nav="report">
       <span class="ico">📊</span>
       <span>گزارش</span>
+    </a>
+    <a href="run.html" class="${isRun ? "active" : ""}" ${isRun ? 'aria-current="page"' : ""} data-nav="run" id="hqlNavRun">
+      <span class="ico">🏃</span>
+      <span>RR</span>
     </a>
     <a href="coach.html" class="${isCoach ? "active" : ""}" ${isCoach ? 'aria-current="page"' : ""} data-nav="coach" id="hqlNavCoach">
       <span class="ico">🪵</span>
@@ -508,6 +514,7 @@
     const link = document.getElementById("hqlNavAdmin");
     if (!link) return;
     link.style.display = show ? "" : "none";
+    nav.classList.toggle("nav-5", !!show);
   }
   // پیش‌فرض: مخفی تا لاگین + ادمین بودن مشخص شود
   setAdminNavVisible(false);
