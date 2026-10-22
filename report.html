@@ -2,17 +2,15 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#05060a">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <title>HQL | گزارش ماهانه</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js">
-    </script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <style>
         :root {
             --bg: #05060a;
@@ -1133,12 +1131,8 @@
         }
         @keyframes kmPulse {
             0%,
-            100% {
-                filter: brightness(1);
-            }
-            50% {
-                filter: brightness(1.25);
-            }
+            100% { opacity: 0.8; }
+            50% { opacity: 1; }
         }
         .podium-km {
             margin-top: 6px;
@@ -2422,6 +2416,12 @@
             box-shadow: 0 0 14px rgba(100, 120, 255, 0.18);
         }
 
+html { touch-action: manipulation; }
+
+/* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
 <body>
@@ -2460,6 +2460,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
     <script>
         const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
         const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
@@ -2503,6 +2505,20 @@
         let selectedYear = null;
         let selectedMonth = null;
         let lastRenderData = null;
+        let groupRecCache = null;     // all-time group records, 60 s
+        let yearWeightsCache = {};    // weight-chart data per user+year, 60 s
+        let lastLoad = null;          // last fetched report data: switching the ranking metric re-renders it instead of refetching
+        let stripCleanup = null;      // listeners of the current weight strip (they live on `document`)
+        let adminReady = Promise.resolve();
+        const loadKey = () => [selectedYear, selectedMonth, rankMode, selectedWeekNum].join("|");
+
+        const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+        /* nav.js is loaded after this script; if a response arrives before it ran, apply the admin flag once it did */
+        function navAdmin(v) {
+            if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v);
+            else document.addEventListener("DOMContentLoaded", () => { if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v); }, { once: true });
+        }
 
         function fa(v) {
             return String(v).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
@@ -2529,6 +2545,12 @@
     return shifted.toISOString().slice(0, 10);
   }
 }
+
+        /* today's Jalali date in Tehran, whatever timezone the device is in */
+        function tehranJalaali() {
+            const t = isoDate(new Date()).split("-").map(Number);
+            return jalaali.toJalaali(t[0], t[1], t[2]);
+        }
 
         function jalaliRange(jy, jm) {
             const startG = jalaali.toGregorian(jy, jm, 1);
@@ -2593,7 +2615,7 @@
         (async function bootReport() {
             if (reportBooted) return;
             let session = null;
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 3; i++) {          // getSession() already waits for the client to initialise
                 const res = await db.auth.getSession();
                 session = res.data.session;
                 if (session) break;
@@ -2605,8 +2627,8 @@
             }
             reportBooted = true;
             currentUser = session.user;
-            await refreshAdminFlag();
-  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(isAdmin);
+            // the admin flag is only needed when rendering: fetch it alongside the report data, not before it
+            adminReady = refreshAdminFlag().then(() => navAdmin(isAdmin));
             initMonthPicker();
             await loadReport();
         })();
@@ -2614,8 +2636,7 @@
         /* backBtn removed — glass nav */
 
         function initMonthPicker() {
-            const now = new Date();
-            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const j = tehranJalaali();
             const currentYear = j.jy;
             const currentMonth = j.jm;
             const currentDay = j.jd;
@@ -2692,8 +2713,7 @@
                 loadReport();
             };
             if (nextBtn) nextBtn.onclick = () => {
-                const now = new Date();
-                const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                const j = tehranJalaali();
                 let m = selectedMonth + 1,
                     y = selectedYear;
                 if (m > 12) { m = 1;
@@ -2711,8 +2731,7 @@
         }
 
         function updateReportChrome() {
-            const now = new Date();
-            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const j = tehranJalaali();
             const isCurrent = selectedYear === j.jy && selectedMonth === j.jm;
             const note = document.getElementById("reportPeriodNote");
             const bar = document.getElementById("monthSpecialBar");
@@ -3054,13 +3073,18 @@ function setupWeightChartTabs() {
       drawWeightChart();
     };
   });
-  window.addEventListener("resize", () => {
-    cancelAnimationFrame(wchartRaf);
-    wchartRaf = requestAnimationFrame(drawWeightChart);
-  });
+  if (!window.__wchartResizeBound) {              // bind once, not on every open of the chart
+    window.__wchartResizeBound = true;
+    window.addEventListener("resize", () => {
+      cancelAnimationFrame(wchartRaf);
+      wchartRaf = requestAnimationFrame(drawWeightChart);
+    });
+  }
 }
 
 async function loadYearWeights(userId, year) {
+  const ck = userId + ":" + year, hit = yearWeightsCache[ck];
+  if (hit && Date.now() - hit.at < 60000) return hit.map;
   // بازه تقریبی میلادی سال شمسی
   const g0 = jalaali.toGregorian(year, 1, 1);
   const g1 = jalaali.toGregorian(year + 1, 1, 1);
@@ -3079,6 +3103,7 @@ async function loadYearWeights(userId, year) {
   (data || []).forEach(e => {
     if (e.log_date && e.weight_kg != null) map[e.log_date] = Number(e.weight_kg);
   });
+  yearWeightsCache[ck] = { at: Date.now(), map };
   return map;
 }
 
@@ -3410,8 +3435,12 @@ const spawnSparks = (speed, fromLeft) => {
                 if (Math.abs(delta) > 2) sparkFromLeft = delta < 0;
             }, { passive: true });
 
-            if (strip._cleanup) strip._cleanup();
-            strip._cleanup = () => {
+            // the strip is a brand-new element on every render but the mouse listeners are on `document`:
+            // drop the previous render's listeners/animation frames or they pile up with every month change
+            if (stripCleanup) stripCleanup();
+            stripCleanup = () => {
+                if (paintRaf != null) cancelAnimationFrame(paintRaf);
+                if (raf != null) cancelAnimationFrame(raf);
                 strip.removeEventListener("scroll", onScroll);
                 strip.removeEventListener("mousedown", onMouseDown);
                 document.removeEventListener("mousemove", onMouseMove);
@@ -3556,8 +3585,7 @@ const spawnSparks = (speed, fromLeft) => {
             if (!jy) return;
             const weeks = buildShamsiWeeks(jy);
             if (selectedWeekNum != null && selectedWeekNum >= 1 && selectedWeekNum <= 52) return;
-            const now = new Date();
-            const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const jNow = tehranJalaali();
             if (jy === jNow.jy) {
                 selectedWeekNum = currentShamsiWeekNum(jy);
             } else {
@@ -4106,9 +4134,11 @@ const spawnSparks = (speed, fromLeft) => {
             };
 
             try {
+                if (groupRecCache && Date.now() - groupRecCache.at < 60000) { apply(groupRecCache.d); return; }
                 const rpc = await db.rpc("get_group_records");
                 if (!rpc.error && rpc.data) {
                     const d = typeof rpc.data === "string" ? JSON.parse(rpc.data) : rpc.data;
+                    groupRecCache = { at: Date.now(), d };
                     apply(d);
                     return;
                 }
@@ -4219,10 +4249,10 @@ const spawnSparks = (speed, fromLeft) => {
         function avatarHtml(name, kind) {
             const cls = kind === "podium" ? "podium-avatar" : "rank-avatar";
             const fb = kind === "podium" ? "podium-avatar-fallback" : "rank-avatar-fallback";
-            const letter = (name && name.trim()[0]) ? name.trim()[0] : "?";
+            const letter = esc((name && String(name).trim()) ? [...String(name).trim()][0] : "?");
             const src = avatarSrc(name);
             if (!src) return `<div class="${fb}">${letter}</div>`;
-            return `<img class="${cls}" src="${src}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
+            return `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="${fb}" style="display:none">${letter}</div>`;
         }
 
         
@@ -4254,6 +4284,43 @@ const spawnSparks = (speed, fromLeft) => {
 
                 const endForBoard = range.endCompleted || range.end;
 
+                // everything that can be decided before the first request goes out
+                const todayISO = isoDate(new Date());
+                const jNowLb = tehranJalaali();
+                const daysInMonthLb = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
+                const isCurrentMonth = selectedYear === jNowLb.jy && selectedMonth === jNowLb.jm;
+                const isFutureMonth = selectedYear > jNowLb.jy || (selectedYear === jNowLb.jy && selectedMonth > jNowLb.jm);
+                let completedDays;
+                if (isWeek) {
+                    try {
+                        const wr = selectedWeekRange();
+                        completedDays = Number(wr.completedDays) || 0;
+                    } catch (_) { completedDays = 0; }
+                } else if (isCurrentMonth) {
+                    completedDays = Math.max(0, jNowLb.jd - 1);
+                } else if (isFutureMonth) {
+                    completedDays = 0;
+                } else {
+                    completedDays = daysInMonthLb;
+                }
+
+                // The current month's board only counts completed days (through yesterday). The old code asked for the
+                // whole month first and then asked again for completed days, keeping the 2nd answer: ask for the one that is used.
+                let boardArgs = { p_start: range.start, p_end: endForBoard };
+                let boardFallbackArgs = null, skipBoard = false;
+                if (!isWeek && isCurrentMonth) {
+                    if (completedDays > 0) {
+                        try {
+                            const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
+                            const endCompleted = g.gy + "-" + String(g.gm).padStart(2, "0") + "-" + String(g.gd).padStart(2, "0");
+                            boardFallbackArgs = boardArgs;        // only used if the completed-days board comes back empty
+                            boardArgs = { p_start: monthRange.start, p_end: endCompleted };
+                        } catch (e) { console.warn("board completed", e); }
+                    } else {
+                        skipBoard = true;
+                    }
+                }
+
                 // supabase-js rpc/from برمی‌گرداند thenable با {data,error} — نه Promise خالص با .catch
                 const safeRpc = async (name, args) => {
                     try {
@@ -4273,9 +4340,9 @@ const spawnSparks = (speed, fromLeft) => {
                 };
 
                 // آمار شخصی و عادت‌ها همیشه بازهٔ ماه؛ لیدربورد بر اساس range (ماه/هفته)
-                const [statsRes, boardRes, logsRes, exRes, mtRes, kmRes, calRes, wtRes] = await Promise.all([
+                const [statsRes, boardRes, logsRes, exRes, mtRes, kmRes, calRes, kmUsersRes, activeRes] = await Promise.all([
                     safeRpc("get_my_month_report", { p_start: monthRange.start, p_end: monthRange.end }),
-                    safeRpc("get_monthly_leaderboard", { p_start: range.start, p_end: endForBoard }),
+                    skipBoard ? Promise.resolve({ data: [], error: null }) : safeRpc("get_monthly_leaderboard", boardArgs),
                     safeFrom(
                         db.from("daily_logs")
                             .select("item_type, score, log_date, value")
@@ -4299,14 +4366,8 @@ const spawnSparks = (speed, fromLeft) => {
                     ),
                     safeRpc("get_month_km_stats", { p_start: monthRange.start, p_end: monthRange.end }),
                     safeRpc("get_month_user_calories", { p_start: range.start, p_end: endForBoard }),
-                    safeFrom(
-                        db.from("user_weights")
-                            .select("log_date, weight_kg")
-                            .eq("user_id", currentUser.id)
-                            .gte("log_date", monthRange.start)
-                            .lte("log_date", monthRange.end)
-                            .order("log_date", { ascending: true })
-                    )
+                    safeRpc("get_month_user_km", { p_start: range.start, p_end: endForBoard }),
+                    (isCurrentMonth || isWeek) ? safeRpc("get_today_active_users", { p_today: todayISO }) : Promise.resolve(null)
                 ]);
 
                 if (seq !== reportLoadSeq) return;
@@ -4385,65 +4446,26 @@ const spawnSparks = (speed, fromLeft) => {
                 if (!habitMap.discipline) habitMap.discipline = { count: 0, total: 0 };
 
                 // ========== لیدربورد ==========
-                const nowLb = new Date();
-                const jNowLb = jalaali.toJalaali(nowLb.getFullYear(), nowLb.getMonth() + 1, nowLb.getDate());
-                const daysInMonthLb = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
-                const isCurrentMonth = selectedYear === jNowLb.jy && selectedMonth === jNowLb.jm;
-                const isFutureMonth = selectedYear > jNowLb.jy || (selectedYear === jNowLb.jy && selectedMonth > jNowLb.jm);
-                let completedDays;
-                if (isWeek) {
-                    try {
-                        const wr = selectedWeekRange();
-                        completedDays = Number(wr.completedDays) || 0;
-                    } catch (_) { completedDays = 0; }
-                } else if (isCurrentMonth) {
-                    completedDays = Math.max(0, jNowLb.jd - 1);
-                } else if (isFutureMonth) {
-                    completedDays = 0;
-                } else {
-                    completedDays = daysInMonthLb;
+                const parseRows = (raw) => {
+                    if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch (_) { raw = []; } }
+                    if (Array.isArray(raw)) return raw;
+                    if (raw && Array.isArray(raw.rows)) return raw.rows;
+                    if (raw && Array.isArray(raw.leaderboard)) return raw.leaderboard;
+                    return [];
+                };
+                let boardData = (boardRes && !boardRes.error && boardRes.data != null) ? parseRows(boardRes.data) : [];
+                if (boardFallbackArgs && !boardData.length) {
+                    // the completed-days board was empty: fall back to the whole-month board, exactly as before
+                    const full = await safeRpc("get_monthly_leaderboard", boardFallbackArgs);
+                    if (full && !full.error && full.data != null) boardData = parseRows(full.data);
                 }
+                if (skipBoard) boardData = [];
 
-                let boardData = [];
-                if (boardRes && !boardRes.error && boardRes.data != null) {
-                    let raw = boardRes.data;
-                    if (typeof raw === "string") {
-                        try { raw = JSON.parse(raw); } catch (_) { raw = []; }
-                    }
-                    if (Array.isArray(raw)) boardData = raw;
-                    else if (raw && Array.isArray(raw.rows)) boardData = raw.rows;
-                    else if (raw && Array.isArray(raw.leaderboard)) boardData = raw.leaderboard;
-                }
-
-                if (!isWeek && isCurrentMonth && completedDays > 0) {
-                    try {
-                        const g = jalaali.toGregorian(selectedYear, selectedMonth, completedDays);
-                        const endCompleted = g.gy + "-" + String(g.gm).padStart(2, "0") + "-" + String(g.gd).padStart(2, "0");
-                        const boardCompleted = await safeRpc("get_monthly_leaderboard", {
-                            p_start: monthRange.start,
-                            p_end: endCompleted
-                        });
-                        if (boardCompleted && !boardCompleted.error && boardCompleted.data != null) {
-                            let bd = boardCompleted.data;
-                            if (typeof bd === "string") { try { bd = JSON.parse(bd); } catch (_) { bd = []; } }
-                            if (Array.isArray(bd) && bd.length) boardData = bd;
-                        }
-                    } catch (e) { console.warn("board completed", e); }
-                } else if (!isWeek && isCurrentMonth && completedDays === 0) {
-                    boardData = [];
-                }
-
-                const todayISO = isoDate(nowLb);
                 const todayActive = new Set();
-                if (isCurrentMonth || isWeek) {
-                    try {
-                        const act = await safeRpc("get_today_active_users", { p_today: todayISO });
-                        if (act && !act.error && act.data != null) {
-                            let arr = act.data;
-                            if (typeof arr === "string") { try { arr = JSON.parse(arr); } catch (_) { arr = []; } }
-                            (Array.isArray(arr) ? arr : []).forEach(id => todayActive.add(String(id)));
-                        }
-                    } catch (e) { /* optional */ }
+                if (activeRes && !activeRes.error && activeRes.data != null) {
+                    let arr = activeRes.data;
+                    if (typeof arr === "string") { try { arr = JSON.parse(arr); } catch (_) { arr = []; } }
+                    (Array.isArray(arr) ? arr : []).forEach(id => todayActive.add(String(id)));
                 }
 
                 let leaderboard = boardData.map(u => {
@@ -4470,47 +4492,36 @@ const spawnSparks = (speed, fromLeft) => {
                     };
                 });
 
-                if (todayActive.size) {
-                    const onBoard = new Set(leaderboard.map(u => String(u.user_id)));
-                    const missing = [...todayActive].filter(id => !onBoard.has(String(id)));
-                    if (missing.length) {
-                        let nameMap = {};
-                        try {
-                            const pr = await db.from("profiles").select("id, display_name").in("id", missing);
-                            (pr.data || []).forEach(p => {
-                                nameMap[p.id] = p.display_name;
-                                nameMap[String(p.id)] = p.display_name;
-                            });
-                        } catch (_) {}
-                        missing.forEach(uid => {
-                            leaderboard.push({
-                                user_id: uid,
-                                display_name: nameMap[uid] || nameMap[String(uid)] || "کاربر",
-                                total_score: 0, totalScore: 0, avg: 1, bonus: 1, completedDays,
-                                month_km: 0, month_cal: 0
-                            });
-                        });
+                // Names for people active today but not on the board, and for rows that came without one: a single
+                // profiles query, sent together with the BMI lookup (both only need the ids, which are known now).
+                const onBoard = new Set(leaderboard.map(u => String(u.user_id)));
+                const missing = [...todayActive].filter(id => !onBoard.has(String(id)));
+                const nameIds = [...new Set(
+                    leaderboard.filter(u => !u.display_name || u.display_name === "کاربر").map(u => String(u.user_id)).concat(missing)
+                )];
+                const bmiIds = leaderboard.map(u => u.user_id).concat(missing);
+                const [namesRes] = await Promise.all([
+                    nameIds.length ? safeFrom(db.from("profiles").select("id, display_name").in("id", nameIds)) : Promise.resolve(null),
+                    loadBmiDataForUsers(bmiIds)
+                ]);
+                const nameMap = {};
+                if (namesRes && !namesRes.error) {
+                    (namesRes.data || []).forEach(pr => { if (pr.display_name) nameMap[String(pr.id)] = pr.display_name; });
+                }
+                missing.forEach(uid => {
+                    leaderboard.push({
+                        user_id: uid,
+                        display_name: nameMap[String(uid)] || "کاربر",
+                        total_score: 0, totalScore: 0, avg: 1, bonus: 1, completedDays,
+                        month_km: 0, month_cal: 0
+                    });
+                });
+                leaderboard.forEach(u => {
+                    if (!u.display_name || u.display_name === "کاربر") {
+                        const n = nameMap[String(u.user_id)];
+                        if (n) u.display_name = n;
                     }
-                }
-
-                const needNames = leaderboard.filter(u => !u.display_name || u.display_name === "کاربر");
-                if (needNames.length) {
-                    try {
-                        const ids = needNames.map(u => u.user_id);
-                        const pr = await db.from("profiles").select("id, display_name").in("id", ids);
-                        const map = {};
-                        (pr.data || []).forEach(p => {
-                            if (p.display_name) {
-                                map[p.id] = p.display_name;
-                                map[String(p.id)] = p.display_name;
-                            }
-                        });
-                        leaderboard.forEach(u => {
-                            const n = map[u.user_id] || map[String(u.user_id)];
-                            if (n) u.display_name = n;
-                        });
-                    } catch (_) {}
-                }
+                });
 
                 // کالری روی لیدربورد — RPC: total_calories
                 if (calRes && !calRes.error && calRes.data != null) {
@@ -4544,7 +4555,7 @@ const spawnSparks = (speed, fromLeft) => {
 
                 // کیلومتر ماهانه روی لیدربورد (اگر RPC جدا باشد)
                 try {
-                    const kmUsers = await safeRpc("get_month_user_km", { p_start: range.start, p_end: endForBoard });
+                    const kmUsers = kmUsersRes;
                     if (kmUsers && !kmUsers.error && kmUsers.data) {
                         let rows = kmUsers.data;
                         if (typeof rows === "string") { try { rows = JSON.parse(rows); } catch (_) { rows = []; } }
@@ -4663,12 +4674,6 @@ const spawnSparks = (speed, fromLeft) => {
 
                 // وزن روزانه
                 const weightByDay = {};
-                const wtRows = (wtRes && !wtRes.error && wtRes.data) ? wtRes.data : [];
-                wtRows.forEach(r => {
-                    const w = Number(r.weight_kg != null ? r.weight_kg : r.weight);
-                    const dt = r.log_date || (r.recorded_at && String(r.recorded_at).slice(0, 10));
-                    if (w > 0 && dt) weightByDay[dt] = w;
-                });
                 exercises.forEach(r => {
                     const w = Number(r.weight_kg);
                     if (w > 0 && r.log_date && weightByDay[r.log_date] == null)
@@ -4677,7 +4682,6 @@ const spawnSparks = (speed, fromLeft) => {
 
                 // BMI برای جدول امتیازات (مثل قبل — بدون دستکاری DB اضافه)
                 try {
-                    await loadBmiDataForUsers(leaderboard.map(u => u.user_id));
                     leaderboard.forEach(u => {
                         const d = bmiDataByUser[String(u.user_id)] || {};
                         u.bmi = calcBmi(d.weight_kg, d.height_cm);
@@ -4687,15 +4691,11 @@ const spawnSparks = (speed, fromLeft) => {
                 }
 
                 if (seq !== reportLoadSeq) return;
+                await adminReady;                       // isAdmin decides which admin buttons get drawn
+                if (seq !== reportLoadSeq) return;
 
-                renderReport(
-                    stats,
-                    habitMap,
-                    leaderboard,
-                    { myKm, communityKm, activePeople },
-                    dayStatus,
-                    weightByDay
-                );
+                lastLoad = { key: loadKey(), args: [stats, habitMap, leaderboard, { myKm, communityKm, activePeople }, dayStatus, weightByDay] };
+                renderReport(...lastLoad.args);
             } catch (err) {
                 if (seq !== reportLoadSeq) return;
                 console.error(err);
@@ -4705,7 +4705,7 @@ const spawnSparks = (speed, fromLeft) => {
                       <div class="empty error-box">
                         <div class="empty-icon">⚠️</div>
                         <div>خطا در دریافت گزارش</div>
-                        <small>${(err && err.message) ? String(err.message).replace(/</g, "") : ""}</small>
+                        <small>${esc(err && err.message)}</small>
                         <button class="retry-btn" id="retryBtn">تلاش دوباره</button>
                       </div>`;
                     const retryBtn = document.getElementById("retryBtn");
@@ -4853,9 +4853,9 @@ const spawnSparks = (speed, fromLeft) => {
                     return `
                     <div class="podium-place ${place}">
                       <div class="podium-medal">${medal}</div>
-                      <div class="profile-hit" data-uid="${uid}" data-name="${name}">
+                      <div class="profile-hit" data-uid="${esc(uid)}" data-name="${esc(name)}">
                       ${avatarHtml(name, "podium")}
-                      <div class="podium-name">${name}</div>
+                      <div class="podium-name">${esc(name)}</div>
                       <div style="margin:4px 0 2px">${bmiChipHtml(u.bmi, currentUser && String(uid) === String(currentUser.id))}</div>
                       </div>
                       <div class="podium-score">${rankBy === "km"
@@ -4898,9 +4898,9 @@ const spawnSparks = (speed, fromLeft) => {
                     <div class="rank-item">
                       <div class="rank-row">
                         <div class="rank-num ${metricActiveIds.has(String(uid)) ? "active-glow" : ""}">${fa(i + 4)}</div>
-                        <div class="profile-hit" data-uid="${uid}" data-name="${u.display_name || "کاربر"}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:36%;min-width:0">
+                        <div class="profile-hit" data-uid="${esc(uid)}" data-name="${esc(u.display_name || "کاربر")}" style="display:flex;align-items:center;gap:10px;flex:0 1 auto;max-width:36%;min-width:0">
                         ${avatarHtml(u.display_name || "کاربر", "rank")}
-                        <div class="rank-name">${u.display_name || "کاربر"}</div>
+                        <div class="rank-name">${esc(u.display_name || "کاربر")}</div>
                         </div>
                         <div class="rank-bmi-mid" style="flex:0 0 auto;display:flex;justify-content:center;min-width:56px">
                           ${bmiChipHtml(u.bmi, currentUser && String(u.user_id) === String(currentUser.id))}
@@ -4940,8 +4940,7 @@ const spawnSparks = (speed, fromLeft) => {
             if (!activeKeys.length) {
                 habitsHtml = `<div class="empty"><div class="empty-icon">🌱</div>هیچ عادتی ثبت نشده</div>`;
             } else {
-                const nowH = new Date();
-                const jNowH = jalaali.toJalaali(nowH.getFullYear(), nowH.getMonth() + 1, nowH.getDate());
+                const jNowH = tehranJalaali();
                 const daysInMH = jalaali.jalaaliMonthLength(selectedYear, selectedMonth);
                 let daysElapsed = daysInMH;
                 if (selectedYear === jNowH.jy && selectedMonth === jNowH.jm) {
@@ -5278,7 +5277,9 @@ const spawnSparks = (speed, fromLeft) => {
                     const m = btn.getAttribute("data-metric");
                     if (!m || m === rankBy) return;
                     rankBy = m;
-                    loadReport();
+                    // same month/week → same data, only the sort/labels change: no need to hit the server again
+                    if (lastLoad && lastLoad.key === loadKey()) renderReport(...lastLoad.args);
+                    else loadReport();
                 };
             });
             const wPick = document.getElementById("weekPickBtn");
@@ -5506,8 +5507,7 @@ const spawnSparks = (speed, fromLeft) => {
             if (m > 12) { m = 1;
                 y += 1; }
             if (y < START_YEAR) return;
-            const now = new Date();
-            const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const j = tehranJalaali();
             if (y > j.jy || (y === j.jy && m > j.jm)) return;
             selectedYear = y;
             selectedMonth = m;
@@ -5519,6 +5519,9 @@ const spawnSparks = (speed, fromLeft) => {
         }
 
         initInteractions();
+
+        const refreshBtnEl = document.getElementById("refreshBtn");
+        if (refreshBtnEl) refreshBtnEl.onclick = () => { if (reportBooted) { groupRecCache = null; yearWeightsCache = {}; loadReport(); } };
     
 </script>
   <script src="nav.js"></script>
