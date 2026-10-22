@@ -11,6 +11,7 @@
   const isReport = path.includes("report");
   const isAdmin = path.includes("admin");
   const isCoach = path.includes("coach");
+  const isRun = path === "run.html" || path === "run";
   const isFood = path.includes("food");
 
   const style = document.createElement("style");
@@ -113,7 +114,7 @@
     .hql-glass-nav a:active {
       transform: scale(0.94);
     }
-    .hql-glass-nav
+    .hql-glass-nav.nav-5 a { padding: 8px 2px; }
     @media (min-width: 900px) {
       .hql-glass-nav {
         width: min(420px, 100%);
@@ -147,9 +148,20 @@
       border: 1px solid rgba(180, 120, 255, 0.32);
       -webkit-backdrop-filter: blur(10px) saturate(1.3);
       backdrop-filter: blur(10px) saturate(1.3);
-      box-shadow: 0 0 12px rgba(180, 76, 255, 0.18);
-      animation: hqlCoachGlow 3.6s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(180, 76, 255, 0.12), 0 0 16px rgba(0, 240, 255, 0.05);
+      position: relative;
       transition: padding 0.25s ease;
+    }
+    .hql-coach-word-inner::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      pointer-events: none;
+      border: 1px solid rgba(200, 160, 255, 0.55);
+      box-shadow: 0 0 18px rgba(180, 76, 255, 0.5), 0 0 32px rgba(0, 240, 255, 0.18);
+      opacity: 0;
+      animation: hqlCoachGlow 3.6s ease-in-out infinite;
     }
     .hql-coach-word-label {
       font-size: 9px;
@@ -207,113 +219,16 @@
       max-width: 100%;
     }
     @keyframes hqlCoachGlow {
-      0%, 100% {
-        box-shadow: 0 0 8px rgba(180, 76, 255, 0.12), 0 0 16px rgba(0, 240, 255, 0.05);
-        border-color: rgba(180, 120, 255, 0.25);
-      }
-      50% {
-        box-shadow: 0 0 18px rgba(180, 76, 255, 0.5), 0 0 32px rgba(0, 240, 255, 0.18);
-        border-color: rgba(200, 160, 255, 0.55);
-      }
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hql-glass-nav, .hql-coach-word-text { transition: none; }
+      .hql-coach-word-inner::after { animation: none; }
     }
 
   
     
-    .hql-burn-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 20000;
-      pointer-events: none;
-      overflow: hidden;
-      opacity: 0;
-      background: #05060a;
-    }
-    .hql-burn-overlay.on {
-      opacity: 1;
-    }
-    .hql-burn-overlay .burn-bg {
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 100% 70% at 50% 110%, rgba(255, 50, 0, 0.7), transparent 55%),
-        radial-gradient(ellipse 50% 40% at 15% 100%, rgba(255, 140, 0, 0.5), transparent 50%),
-        radial-gradient(ellipse 50% 40% at 85% 100%, rgba(255, 40, 0, 0.45), transparent 50%),
-        linear-gradient(180deg, #05060a 0%, #1a0800 50%, #000 100%);
-      animation: burnBgPulse 0.9s ease-in-out infinite alternate;
-    }
-    .hql-burn-overlay .burn-flame {
-      position: absolute;
-      bottom: -8%;
-      width: 28%;
-      height: 55%;
-      border-radius: 50% 50% 40% 40%;
-      background: radial-gradient(ellipse at 50% 80%,
-        rgba(255, 250, 200, 0.95) 0%,
-        rgba(255, 160, 0, 0.75) 35%,
-        rgba(255, 40, 0, 0.45) 65%,
-        transparent 78%);
-      filter: blur(8px);
-      opacity: 0;
-      animation: flameLick 0.55s ease-out forwards, flameWaver 0.7s ease-in-out 0.4s infinite alternate;
-    }
-    .hql-burn-overlay .burn-flame.f1 { left: 8%; animation-delay: 0s, 0.4s; }
-    .hql-burn-overlay .burn-flame.f2 { left: 36%; width: 32%; height: 62%; animation-delay: 0.08s, 0.35s; }
-    .hql-burn-overlay .burn-flame.f3 { left: 62%; animation-delay: 0.15s, 0.5s; }
-    .hql-burn-overlay .burn-smoke {
-      position: absolute;
-      bottom: 25%;
-      width: 40%;
-      height: 50%;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(80, 70, 65, 0.45), transparent 70%);
-      filter: blur(28px);
-      opacity: 0;
-      animation: smokeRise 1.1s ease-out forwards;
-    }
-    .hql-burn-overlay .burn-smoke.s1 { left: 5%; animation-delay: 0.12s; }
-    .hql-burn-overlay .burn-smoke.s2 { left: 35%; width: 50%; animation-delay: 0.22s; }
-    .hql-burn-overlay .burn-smoke.s3 { left: 55%; animation-delay: 0.18s; }
-    .hql-burn-overlay .burn-ember {
-      position: absolute;
-      bottom: 12%;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #ffc14d;
-      box-shadow: 0 0 10px 3px rgba(255, 100, 0, 0.9);
-      opacity: 0;
-      animation: emberFly 0.95s ease-out forwards;
-    }
-    .hql-burn-overlay .hql-burn-mark {
-      position: absolute;
-      left: 50%;
-      top: 38%;
-      transform: translate(-50%, -50%);
-      font-size: clamp(52px, 20vw, 104px);
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      color: rgba(255, 180, 80, 0.55);
-      text-shadow:
-        0 0 20px rgba(255, 80, 0, 0.9),
-        0 0 50px rgba(255, 40, 0, 0.7),
-        0 0 80px rgba(255, 100, 0, 0.4);
-      opacity: 0;
-      animation: hqlBurnMark 0.9s ease-out 0.15s forwards, markFlicker 0.35s ease-in-out 0.5s infinite alternate;
-      z-index: 2;
-    }
-    .hql-burn-overlay .burn-ash {
-      position: absolute;
-      inset: 0;
-      background-image: radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,200,150,0.5) 50%, transparent 50%),
-        radial-gradient(1px 1px at 70% 40%, rgba(255,180,100,0.4) 50%, transparent 50%),
-        radial-gradient(1.5px 1.5px at 40% 60%, rgba(255,220,180,0.35) 50%, transparent 50%),
-        radial-gradient(1px 1px at 85% 25%, rgba(255,160,80,0.45) 50%, transparent 50%),
-        radial-gradient(1px 1px at 15% 70%, rgba(255,200,120,0.3) 50%, transparent 50%);
-      background-size: 100% 100%;
-      opacity: 0;
-      animation: ashDrift 1s ease-out forwards;
-      z-index: 1;
-    }
     body.hql-burning {
       overflow: hidden !important;
       overscroll-behavior: none;
@@ -325,43 +240,6 @@
       filter: blur(2.5px) brightness(0.55) sepia(0.5) saturate(1.6);
       transform: scale(1.04) translateY(2%);
       opacity: 0.45;
-    }
-    @keyframes burnBgPulse {
-      from { filter: brightness(1); }
-      to { filter: brightness(1.15); }
-    }
-    @keyframes flameLick {
-      0% { opacity: 0; transform: translateY(40%) scaleY(0.5); }
-      40% { opacity: 1; }
-      100% { opacity: 0.9; transform: translateY(0) scaleY(1); }
-    }
-    @keyframes flameWaver {
-      from { transform: translateY(0) scaleX(1) scaleY(1); }
-      to { transform: translateY(-4%) scaleX(1.06) scaleY(1.08); }
-    }
-    @keyframes smokeRise {
-      0% { opacity: 0; transform: translateY(30%) scale(0.8); }
-      40% { opacity: 0.7; }
-      100% { opacity: 0.35; transform: translateY(-35%) scale(1.25); }
-    }
-    @keyframes emberFly {
-      0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
-      15% { opacity: 1; }
-      100% { opacity: 0; transform: translate(var(--ex, 0), -120px) scale(0.2); }
-    }
-    @keyframes hqlBurnMark {
-      0% { opacity: 0; transform: translate(-50%, -30%) scale(0.85); filter: blur(4px); }
-      60% { opacity: 1; filter: blur(0); }
-      100% { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
-    }
-    @keyframes markFlicker {
-      from { opacity: 0.75; filter: brightness(1); }
-      to { opacity: 1; filter: brightness(1.25); }
-    }
-    @keyframes ashDrift {
-      0% { opacity: 0; transform: translateY(10%); }
-      30% { opacity: 0.8; }
-      100% { opacity: 0.4; transform: translateY(-8%); }
     }
     body.hql-food-enter {
       animation: hqlFoodEnter 0.75s ease-out;
@@ -388,20 +266,24 @@
   nav.className = "hql-glass-nav";
   nav.setAttribute("aria-label", "ناوبری اصلی");
   nav.innerHTML = `
-    <a href="index.html" class="${isIndex || isFood ? "active" : ""}" data-nav="home" id="hqlNavHome">
+    <a href="index.html" class="${isIndex || isFood ? "active" : ""}" ${isIndex || isFood ? 'aria-current="page"' : ""} data-nav="home" id="hqlNavHome">
       <span class="ico">${isFood ? "🥗" : "🏠"}</span>
       <span>${isFood ? "تغذیه" : "خانه"}</span>
     </a>
-    <a href="report.html" class="${isReport ? "active" : ""}" data-nav="report">
+    <a href="report.html" class="${isReport ? "active" : ""}" ${isReport ? 'aria-current="page"' : ""} data-nav="report">
       <span class="ico">📊</span>
       <span>گزارش</span>
     </a>
-    <a href="coach.html" class="${isCoach ? "active" : ""}" data-nav="coach" id="hqlNavCoach">
+    <a href="run.html" class="${isRun ? "active" : ""}" ${isRun ? 'aria-current="page"' : ""} data-nav="run" id="hqlNavRun">
+      <span class="ico">🏃</span>
+      <span>RR</span>
+    </a>
+    <a href="coach.html" class="${isCoach ? "active" : ""}" ${isCoach ? 'aria-current="page"' : ""} data-nav="coach" id="hqlNavCoach">
       <span class="ico">🪵</span>
       <span>چوب استاد</span>
       <span class="nav-badge" aria-label="پیام جدید"></span>
     </a>
-    <a href="admin.html" class="${isAdmin ? "active" : ""}" data-nav="admin" id="hqlNavAdmin">
+    <a href="admin.html" class="${isAdmin ? "active" : ""}" ${isAdmin ? 'aria-current="page"' : ""} data-nav="admin" id="hqlNavAdmin">
       <span class="ico">🛡️</span>
       <span>ادمین</span>
     </a>
@@ -410,6 +292,7 @@
   function hqlBurnNavigate(url) {
     if (window.__hqlBurning) return;
     window.__hqlBurning = true;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) { location.href = url; return; }
     try {
       document.body.classList.add("hql-burning");
       document.body.style.overflow = "hidden";
@@ -582,6 +465,7 @@
 
 
   let hideTimer = null;
+  let lastBump = 0;
   let lastY = window.scrollY || 0;
 
   function showNav() {
@@ -598,7 +482,13 @@
 
   showNav();
 
-  const bump = () => showNav();
+  const bump = () => {
+    // only refresh the hide-timer a few times per second; always react immediately if the bar is hidden
+    const now = Date.now();
+    if (now - lastBump < 250 && !nav.classList.contains("is-hidden")) return;
+    lastBump = now;
+    showNav();
+  };
   window.addEventListener("touchstart", bump, { passive: true });
   window.addEventListener("touchmove", bump, { passive: true });
   window.addEventListener("pointerdown", bump, { passive: true });
@@ -618,39 +508,13 @@
     lastY = y;
   }, { passive: true });
 
-  // ادمین: فقط اگر is_admin
-  async function resolveAdminLink() {
-    const link = document.getElementById("hqlNavAdmin");
-    if (!link) return;
-    try {
-      if (!window.supabase && !window.db) {
-        // client ممکن است بعداً آماده شود
-        setTimeout(resolveAdminLink, 400);
-        return;
-      }
-      // صفحات HQL معمولاً const db دارند
-      const client = window.__hqlDb || null;
-      if (!client) {
-        // تلاش از طریق اسکریپت‌های صفحه
-        setTimeout(async () => {
-          try {
-            // اگر پروفایل ادمین در sessionStorage
-            const flag = sessionStorage.getItem("hql_is_admin");
-            if (flag === "1") link.classList.remove("hidden-nav");
-            else if (flag === "0") link.classList.add("hidden-nav");
-          } catch (_) {}
-        }, 300);
-        return;
-      }
-    } catch (_) {}
-  }
-  resolveAdminLink();
 
   // API برای صفحات: پس از دانستن is_admin
   function setAdminNavVisible(show) {
     const link = document.getElementById("hqlNavAdmin");
     if (!link) return;
     link.style.display = show ? "" : "none";
+    nav.classList.toggle("nav-5", !!show);
   }
   // پیش‌فرض: مخفی تا لاگین + ادمین بودن مشخص شود
   setAdminNavVisible(false);
@@ -671,41 +535,67 @@
     if (sessionStorage.getItem("hql_is_admin") === "1") setAdminNavVisible(true);
   } catch (_) {}
 
-  setTimeout(async () => {
+  function hqlCacheRead(key, ttl) {
+    try { const v = JSON.parse(sessionStorage.getItem(key) || "null"); if (v && Date.now() - v.at < ttl) return v; } catch (_) {}
+    return null;
+  }
+  function hqlCacheWrite(key, obj) {
+    try { obj.at = Date.now(); sessionStorage.setItem(key, JSON.stringify(obj)); } catch (_) {}
+  }
+  const hqlIdle = window.requestIdleCallback
+    ? (fn) => window.requestIdleCallback(fn, { timeout: 1500 })
+    : (fn) => setTimeout(fn, 400);
+
+  async function hqlCheckCoachBadge() {
     try {
       const client = window.__hqlDb;
       if (!client || !client.auth) return;
-      const { data: sess } = await client.auth.getSession();
+      const { data: sess } = await client.auth.getSession();   // local read, no network
       const uid = sess && sess.session && sess.session.user && sess.session.user.id;
       if (!uid) return;
-      const { data } = await client.from("coach_notes")
-        .select("created_at")
-        .eq("user_id", uid)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (!data || !data.length) return;
-      const latest = new Date(data[0].created_at).getTime();
+      let latest;
+      const cached = hqlCacheRead("hql_coach_latest", 60000);   // newest-note time, cached 60s per tab
+      if (cached && cached.uid === uid) latest = cached.t;
+      else {
+        const { data } = await client.from("coach_notes")
+          .select("created_at")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        latest = data && data.length ? new Date(data[0].created_at).getTime() : 0;
+        hqlCacheWrite("hql_coach_latest", { uid, t: latest });
+      }
+      if (!latest) return;
       const seen = Number(localStorage.getItem("hql_coach_seen_at") || 0);
       if (typeof window.hqlNavSetCoachBadge === "function") {
         window.hqlNavSetCoachBadge(latest > seen);
       }
     } catch (e) {}
-  }, 900);
+  }
+  hqlIdle(hqlCheckCoachBadge);
 
 
 
   // ---- سخن هفته (هفتگی، همه صفحات) ----
-  async function hqlLoadCoachWord() {
+  async function hqlLoadCoachWord(force) {
     try {
       const client = window.__hqlDb || window.db;
       if (!client || !client.from) return;
-      const { data, error } = await client
-        .from("site_messages")
-        .select("key, body")
-        .eq("key", "coach_weekly_word")
-        .maybeSingle();
-      if (error || !data || !data.body) return;
-      const text = String(data.body || "").trim();
+      let text = null;
+      if (!force) {                                   // the weekly word changes weekly: cache 10 min per tab
+        const c = hqlCacheRead("hql_weekly_word", 600000);
+        if (c) text = c.text;
+      }
+      if (text == null) {
+        const { data, error } = await client
+          .from("site_messages")
+          .select("body")
+          .eq("key", "coach_weekly_word")
+          .maybeSingle();
+        if (error) return;
+        text = String((data && data.body) || "").trim();
+        hqlCacheWrite("hql_weekly_word", { text });
+      }
       if (!text) return;
 
       let wrap = document.getElementById("hqlCoachWord");
@@ -782,7 +672,7 @@
     } catch (e) {}
   }
 
-  setTimeout(hqlLoadCoachWord, 600);
-  window.hqlReloadCoachWord = hqlLoadCoachWord;
+  hqlIdle(() => hqlLoadCoachWord(false));
+  window.hqlReloadCoachWord = () => hqlLoadCoachWord(true);
 
 })();
