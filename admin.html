@@ -2,15 +2,15 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
 <link rel="icon" type="image/png" href="images/favicon.png">
 <link rel="apple-touch-icon" href="images/favicon.png">
 <title>HQL | پنل ادمین</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <style>
 :root {
   --bg: #05060a;
@@ -507,6 +507,12 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
 
 
 
+html { touch-action: manipulation; }
+
+/* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
 </style>
 
 
@@ -570,6 +576,8 @@ button, select { font: inherit; color: inherit; border: none; background: none; 
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
 <script>
 const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
@@ -629,11 +637,25 @@ function jalaliRange(jy, jm) {
     days
   };
 }
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* nav.js is loaded after this script; if a response arrives before it ran, apply the admin flag once it did */
+function navAdmin(v) {
+  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v);
+  else document.addEventListener("DOMContentLoaded", () => { if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(v); }, { once: true });
+}
+
+/* today's Jalali date in Tehran, whatever timezone the device is in */
+function tehranJalaali() {
+  const t = isoDate(new Date()).split("-").map(Number);
+  return jalaali.toJalaali(t[0], t[1], t[2]);
+}
+
 function avatarHtml(name) {
-  const letter = (name && name.trim()[0]) || "?";
+  const letter = esc((name && String(name).trim()) ? [...String(name).trim()][0] : "?");
   const src = name ? "images/" + encodeURIComponent(String(name).trim()) + ".png" : null;
   if (!src) return `<div class="avatar-fb">${letter}</div>`;
-  return `<img class="avatar" src="${src}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${letter}</div>`;
+  return `<img class="avatar" src="${esc(src)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="avatar-fb" style="display:none">${letter}</div>`;
 }
 
 /* backBtn removed — glass nav */
@@ -661,7 +683,7 @@ async function init() {
   }
 
   document.getElementById("appBox").classList.remove("hidden");
-  if (typeof hqlNavSetAdmin === "function") hqlNavSetAdmin(true);
+  navAdmin(true);
   loadKmFactors();
   const saveBtn = document.getElementById("saveKmFactors");
   if (saveBtn) saveBtn.onclick = saveKmFactors;
@@ -682,8 +704,7 @@ async function init() {
 }
 
 function initMonthPicker() {
-  const now = new Date();
-  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const j = tehranJalaali();
   selectedYear = j.jy;
   selectedMonth = j.jm;
 
@@ -732,8 +753,7 @@ async function loadUsers() {
   document.getElementById("listView").classList.remove("hidden");
 
   const range = jalaliRange(selectedYear, selectedMonth);
-  const now = new Date();
-  const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const jNow = tehranJalaali();
   let completedDays = range.days;
   if (selectedYear === jNow.jy && selectedMonth === jNow.jm) {
     completedDays = Math.max(0, jNow.jd - 1);
@@ -822,10 +842,10 @@ async function loadUsers() {
         ? `<span class="user-stats-inline">${bits.join("")}</span>`
         : "";
       return `
-      <button class="user-row" data-id="${u.id}">
+      <button class="user-row" data-id="${esc(u.id)}">
         ${avatarHtml(u.display_name)}
         <div class="user-meta">
-          <div class="user-name">${u.display_name}${u.is_admin ? " · admin" : ""}</div>
+          <div class="user-name">${esc(u.display_name)}${u.is_admin ? " · admin" : ""}</div>
           <div class="user-sub">مجموع ${scoreText(u.total)} · میانگین ${scoreText(u.avg)}${stats ? " · " : ""}${stats}</div>
         </div>
         <div class="user-score">${scoreText(u.avg)}</div>
@@ -836,7 +856,7 @@ async function loadUsers() {
       btn.onclick = () => openUser(btn.dataset.id);
     });
   } catch (e) {
-    list.innerHTML = `<div class="empty">خطا: ${e.message}</div>`;
+    list.innerHTML = `<div class="empty">خطا: ${esc(e.message)}</div>`;
   }
 }
 
@@ -863,7 +883,7 @@ async function openUser(userId) {
   document.getElementById("listView").classList.add("hidden");
   document.getElementById("detailView").classList.remove("hidden");
   const box = document.getElementById("detailContent");
-  box.innerHTML = `<div class="loading">در حال بارگذاری آمار ${u.display_name}...</div>`;
+  box.innerHTML = `<div class="loading">در حال بارگذاری آمار ${esc(u.display_name)}...</div>`;
 
   const range = jalaliRange(selectedYear, selectedMonth);
   const daysInMonth = range.days;
@@ -991,8 +1011,7 @@ async function openUser(userId) {
     if (!habitMap.discipline) habitMap.discipline = { count: 0, total: 0 };
 
     const order = ["water","sleep","instagram","sun","solitude","reading","sugar","dinner","exercise","discipline","mountain"];
-    const nowH = new Date();
-    const jNowH = jalaali.toJalaali(nowH.getFullYear(), nowH.getMonth() + 1, nowH.getDate());
+    const jNowH = tehranJalaali();
     let daysElapsed = daysInMonth;
     if (selectedYear === jNowH.jy && selectedMonth === jNowH.jm) {
       daysElapsed = Math.max(1, jNowH.jd);
@@ -1066,7 +1085,7 @@ async function openUser(userId) {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           ${avatarHtml(u.display_name)}
           <div>
-            <div class="card-title" style="margin:0">${u.display_name}</div>
+            <div class="card-title" style="margin:0">${esc(u.display_name)}</div>
             <div class="card-sub" style="margin:0">جزئیات ماه انتخاب‌شده</div>
           </div>
         </div>
@@ -1102,7 +1121,7 @@ async function openUser(userId) {
     });
     animateAdminHabitBars(box);
   } catch (e) {
-    box.innerHTML = `<div class="empty">خطا: ${e.message}<br><small>اگر RLS ادمین را ندادی، آمار دیگران خوانده نمی‌شود.</small></div>`;
+    box.innerHTML = `<div class="empty">خطا: ${esc(e.message)}<br><small>اگر RLS ادمین را ندادی، آمار دیگران خوانده نمی‌شود.</small></div>`;
   }
 }
 
@@ -1218,7 +1237,7 @@ function openDayModal(isoDateStr) {
         const sc = Number(it.score) || 0;
         const cls = sc > 0 ? "pos" : sc < 0 ? "neg" : "";
         return `<div class="day-modal-row">
-          <div class="day-modal-row-name">${it.label}</div>
+          <div class="day-modal-row-name">${esc(it.label)}</div>
           <div class="day-modal-row-val ${cls}">${scoreText(sc)}</div>
         </div>`;
       }).join("")
@@ -1230,7 +1249,7 @@ function openDayModal(isoDateStr) {
     <div class="day-modal" role="dialog">
       <div class="day-modal-header">
         <div>
-          <div class="day-modal-title">${detailUserName}</div>
+          <div class="day-modal-title">${esc(detailUserName)}</div>
           <div class="day-modal-sub">${dateLabel}</div>
         </div>
         <button type="button" class="day-modal-close" aria-label="بستن">✕</button>
