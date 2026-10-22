@@ -3,10 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#05060a" />
   <title>HQL · تغذیه</title>
   <link rel="icon" href="images/favicon.png" type="image/png" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.7/dist/jalaali.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- the stylesheet already asks for Vazirmatn but this page never loaded it (it fell back to Tahoma) -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    /* start downloading the food list right away (while the page is still parsing); loadFoods() awaits it later.
+       "no-cache" = always revalidate, but a 304 costs almost nothing (it used to be "no-store": full download every visit) */
+    window.__foodsP = fetch("foods.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error("foods.json"); return r.json(); });
+    window.__foodsP.catch(function () {});
+  </script>
   <style>
     :root {
       --bg: #05060a;
@@ -374,6 +384,12 @@
       ) !important;
     }
 
+html { touch-action: manipulation; }
+
+/* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
   </style>
 </head>
 <body>
@@ -457,6 +473,8 @@
   </div>
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.8/dist/jalaali.min.js"></script>
   <script>
     const SUPABASE_URL = "https://zlvsmjhwyzfdecfyhxal.supabase.co";
     const SUPABASE_KEY = "sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm";
@@ -487,6 +505,13 @@
     function isoDate(d) {
       return d.toISOString().slice(0, 10);
     }
+    /* the app's "today" is the Tehran calendar day, whatever the device's timezone (toISOString() gave the UTC day,
+       which is "yesterday" for the first 3.5 hours after Tehran midnight - and out of step with index.html) */
+    function tehranISO() {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    }
+    const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const faCollator = new Intl.Collator("fa");
     function showToast(t) {
       const el = document.getElementById("toast");
       el.textContent = t;
@@ -603,38 +628,20 @@
       userWeight = null;
       dailyBaseCal = null;
       if (!currentUser) return;
-      try {
-        const pr = await db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle();
-        if (pr.data && pr.data.gender) userGender = String(pr.data.gender).toLowerCase();
-      } catch (e) {}
-
-      // آخرین وزن ثبت‌شده — چند نام ستون رایج
-      try {
-        const wt = await db.from("user_weights")
-          .select("*")
+      // profile and latest weight don't depend on each other: ask for both at once.
+      // (The old code first queried user_weights by a `log_date` column that table doesn't have - that request always
+      //  failed - and then fell back to exercise_logs, which is what was actually used.)
+      const [pr, ex] = await Promise.all([
+        db.from("profiles").select("gender").eq("id", currentUser.id).maybeSingle().then(r => r, () => null),
+        db.from("exercise_logs")
+          .select("weight_kg, log_date")
           .eq("user_id", currentUser.id)
+          .not("weight_kg", "is", null)
           .order("log_date", { ascending: false })
-          .limit(1);
-        if (!wt.error && wt.data && wt.data.length) {
-          const row = wt.data[0];
-          userWeight = Number(row.weight ?? row.weight_kg ?? row.value ?? row.kg) || null;
-        }
-      } catch (e) {}
-
-      // اگر جدول وزن خالی بود، از آخرین exercise_logs
-      if (userWeight == null) {
-        try {
-          const ex = await db.from("exercise_logs")
-            .select("weight_kg, log_date")
-            .eq("user_id", currentUser.id)
-            .not("weight_kg", "is", null)
-            .order("log_date", { ascending: false })
-            .limit(1);
-          if (!ex.error && ex.data && ex.data.length) {
-            userWeight = Number(ex.data[0].weight_kg) || null;
-          }
-        } catch (e) {}
-      }
+          .limit(1).then(r => r, () => null)
+      ]);
+      if (pr && pr.data && pr.data.gender) userGender = String(pr.data.gender).toLowerCase();
+      if (ex && !ex.error && ex.data && ex.data.length) userWeight = Number(ex.data[0].weight_kg) || null;
 
       dailyBaseCal = estimateDailyNeed(userWeight, userGender);
       updateBalanceUI();
@@ -674,65 +681,6 @@
       }
     }
 
-    // آتش فقط پشت اسکرولر غذا
-    function bindFoodListFire() {
-      const list = document.getElementById("foodList");
-      const shell = document.getElementById("foodScrollShell");
-      if (!list || !shell) return;
-
-      let heat = 0;
-      let target = 0;
-      let lastY = list.scrollTop;
-      let lastT = performance.now();
-
-      function setHeat(v) {
-        heat = v;
-        shell.style.setProperty("--hql-heat", heat.toFixed(3));
-      }
-
-      // حلقه دائمی: نرم به سمت target، target خودش آرام صفر می‌شود
-      function loop() {
-        target *= 0.965;
-        if (target < 0.002) target = 0;
-        heat += (target - heat) * 0.14;
-        if (heat < 0.001) heat = 0;
-        setHeat(heat);
-        requestAnimationFrame(loop);
-      }
-      requestAnimationFrame(loop);
-
-      function addEnergy(e) {
-        target = Math.min(1, target + e);
-      }
-
-      list.addEventListener("scroll", function () {
-        const now = performance.now();
-        const y = list.scrollTop;
-        const dt = Math.max(10, now - lastT);
-        const speed = Math.abs(y - lastY) / dt * 18;
-        lastY = y;
-        lastT = now;
-        addEnergy(Math.min(0.55, 0.12 + speed * 0.35));
-      }, { passive: true });
-
-      list.addEventListener("wheel", function (e) {
-        addEnergy(Math.min(0.5, 0.15 + Math.abs(e.deltaY) / 100));
-      }, { passive: true });
-
-      let touchY = null;
-      list.addEventListener("touchstart", function (e) {
-        if (e.touches && e.touches[0]) touchY = e.touches[0].clientY;
-      }, { passive: true });
-      list.addEventListener("touchmove", function (e) {
-        if (!e.touches || !e.touches[0] || touchY == null) return;
-        const dy = Math.abs(e.touches[0].clientY - touchY);
-        touchY = e.touches[0].clientY;
-        if (dy > 1) addEnergy(Math.min(0.45, dy / 50));
-      }, { passive: true });
-
-      setHeat(0);
-    }
-
     function scale(food, grams) {
       const k = num(grams) / 100;
       return {
@@ -755,7 +703,7 @@
       }
       const g = num(document.getElementById("grams").value) || 100;
       const s = scale(selected, g);
-      pv.innerHTML = `<strong>${selected.Persian_Name}</strong> · ${fa(g)}g → کالری <strong>${s.calories}</strong> · چربی <strong>${s.fat}</strong> · کربو <strong>${s.carbs}</strong>`;
+      pv.innerHTML = `<strong>${esc(selected.Persian_Name)}</strong> · ${fa(g)}g → کالری <strong>${s.calories}</strong> · چربی <strong>${s.fat}</strong> · کربو <strong>${s.carbs}</strong>`;
       btn.disabled = false;
     }
 
@@ -771,54 +719,58 @@
     }
     
     function foodKey(f) {
+      if (f && f._k !== undefined) return f._k;
       return String((f && (f.Persian_Name || f.Name_En)) || "").trim();
     }
     function personalFreq(f) {
       const k = foodKey(f);
-      return foodFreq[k] || foodFreq[normFa(k)] || 0;
+      return foodFreq[k] || foodFreq[f && f._nk !== undefined ? f._nk : normFa(k)] || 0;
     }
     function globalFreq(f) {
       const k = foodKey(f);
-      return foodGlobal[k] || foodGlobal[normFa(k)] || 0;
+      return foodGlobal[k] || foodGlobal[f && f._nk !== undefined ? f._nk : normFa(k)] || 0;
     }
     /** شخصی اول، بعد محبوب همه، بعد نام */
     function sortFoodsSmart(list) {
-      return list.slice().sort((a, b) => {
-        const pa = personalFreq(a), pb = personalFreq(b);
-        if (pb !== pa) return pb - pa;
-        const ga = globalFreq(a), gb = globalFreq(b);
-        if (gb !== ga) return gb - ga;
-        return foodKey(a).localeCompare(foodKey(b), "fa");
-      });
+      // compute each food's numbers once instead of inside every comparison
+      return list.map(f => ({ f, p: personalFreq(f), g: globalFreq(f), k: foodKey(f) }))
+        .sort((a, b) => (b.p - a.p) || (b.g - a.g) || faCollator.compare(a.k, b.k))
+        .map(x => x.f);
+    }
+    /** one-time per-food search keys (the old code ran several regex passes over every food on every keystroke) */
+    function prepFoods(arr) {
+      for (let i = 0; i < arr.length; i++) {
+        const f = arr[i];
+        f._i = i;
+        f._k = String(f.Persian_Name || f.Name_En || "").trim();
+        f._nk = normFa(f._k);
+        f._p = normFa(f.Persian_Name);
+        f._e = normFa(f.Name_En);
+      }
     }
     async function loadFoodFreq() {
       foodFreq = {};
       foodGlobal = {};
       if (!currentUser) return;
-      try {
-        const { data } = await db.from("food_logs")
-          .select("food_name")
-          .eq("user_id", currentUser.id)
-          .limit(2000);
-        (data || []).forEach(r => {
+      const [mine, pop] = await Promise.all([
+        db.from("food_logs").select("food_name").eq("user_id", currentUser.id).limit(2000).then(r => r, () => null),
+        db.rpc("get_popular_foods", { p_limit: 80 }).then(r => r, () => null)
+      ]);
+      ((mine && mine.data) || []).forEach(r => {
+        const n = String(r.food_name || "").trim();
+        if (!n) return;
+        foodFreq[n] = (foodFreq[n] || 0) + 1;
+        foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
+      });
+      if (pop && !pop.error && Array.isArray(pop.data)) {
+        pop.data.forEach(r => {
           const n = String(r.food_name || "").trim();
           if (!n) return;
-          foodFreq[n] = (foodFreq[n] || 0) + 1;
-          foodFreq[normFa(n)] = (foodFreq[normFa(n)] || 0) + 1;
+          const c = Number(r.use_count) || 0;
+          foodGlobal[n] = c;
+          foodGlobal[normFa(n)] = c;
         });
-      } catch (e) {}
-      try {
-        const { data: pop, error } = await db.rpc("get_popular_foods", { p_limit: 80 });
-        if (!error && Array.isArray(pop)) {
-          pop.forEach(r => {
-            const n = String(r.food_name || "").trim();
-            if (!n) return;
-            const c = Number(r.use_count) || 0;
-            foodGlobal[n] = c;
-            foodGlobal[normFa(n)] = c;
-          });
-        }
-      } catch (e) {}
+      }
     }
     function bumpFreq(name) {
       const n = String(name || "").trim();
@@ -833,11 +785,7 @@
       const query = normFa(q);
       let list;
       if (query) {
-        list = foods.filter(f => {
-          const p = normFa(f.Persian_Name);
-          const e = normFa(f.Name_En);
-          return p.includes(query) || e.includes(query);
-        });
+        list = foods.filter(f => f._p.includes(query) || f._e.includes(query));
         list = sortFoodsSmart(list).slice(0, 35);
       } else {
         // فقط خوراک‌های آشنا: اول شخصی، بعد محبوب همه — نه اول فایل JSON
@@ -860,9 +808,9 @@
         const name = f.Persian_Name || f.Name_En || "—";
         const cal = num(f.Calories);
         const sel = selected && selected.Persian_Name === f.Persian_Name ? " selected" : "";
-        const idx = foods.indexOf(f);
+        const idx = f._i;
         return `<button type="button" class="food-item${sel}" data-i="${idx}">
-          <span class="food-name">${name}</span>
+          <span class="food-name">${esc(name)}</span>
           <span class="meta">${cal} kcal/100g</span>
         </button>`;
       }).join("");
@@ -877,10 +825,9 @@
 
     async function loadFoods() {
       try {
-        const res = await fetch("foods.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("foods.json");
-        const raw = await res.json();
-        foods = Array.isArray(raw) ? raw : [];
+        const raw = await (window.__foodsP || fetch("foods.json", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("foods.json"); return r.json(); }));
+        foods = Array.isArray(raw) ? raw.filter(f => f && typeof f === "object") : [];
+        prepFoods(foods);
         if (!foods.length) {
           document.getElementById("foodList").innerHTML = `<div class="empty">فهرست foods.json خالی است</div>`;
           return;
@@ -895,7 +842,7 @@
     async function loadLogs() {
       if (!currentUser || !selectedDate) return;
       const { data, error } = await db.from("food_logs")
-        .select("*")
+        .select("id, food_name, grams, calories, fat, carbs")
         .eq("user_id", currentUser.id)
         .eq("log_date", selectedDate)
         .order("created_at", { ascending: false });
@@ -922,12 +869,12 @@
         return;
       }
       box.innerHTML = rows.map(r => `
-        <div class="log-row" data-id="${r.id}">
+        <div class="log-row" data-id="${esc(r.id)}">
           <div>
-            <div class="n">${r.food_name}</div>
+            <div class="n">${esc(r.food_name)}</div>
             <div class="s">${num(r.grams)}g · ${num(r.calories)} kcal · F ${num(r.fat)} · C ${num(r.carbs)}</div>
           </div>
-          <button type="button" data-del="${r.id}" title="حذف">✕</button>
+          <button type="button" data-del="${esc(r.id)}" title="حذف">✕</button>
         </div>
       `).join("");
       box.querySelectorAll("[data-del]").forEach(btn => {
@@ -968,19 +915,19 @@
     }
 
     async function boot() {
-      const now = new Date();
-      todayDate = isoDate(now);
+      todayDate = tehranISO();
       selectedDate = todayDate;
-      const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      const tp = todayDate.split("-").map(Number);
+      const j = jalaali.toJalaali(tp[0], tp[1], tp[2]);
       viewYear = j.jy;
       viewMonth = j.jm;
 
       let session = null;
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 3; i++) {          // getSession() already waits for the client to initialise
         const r = await db.auth.getSession();
         session = r.data && r.data.session;
         if (session) break;
-        await new Promise(res => setTimeout(res, 80));
+        await new Promise(res => setTimeout(res, 100));
       }
       if (!session || !session.user) {
         location.href = "index.html";
@@ -1015,23 +962,27 @@
       };
       document.getElementById("btnToday").onclick = () => {
         selectedDate = todayDate;
-        const jj = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        const jj = jalaali.toJalaali(tp[0], tp[1], tp[2]);
         viewYear = jj.jy; viewMonth = jj.jm;
         updateCalLabel();
         renderCalendar();
         loadLogs();
       };
 
-      document.getElementById("foodSearch").oninput = e => renderFoodList(e.target.value);
+      let searchTimer = 0;
+      document.getElementById("foodSearch").oninput = e => {
+        clearTimeout(searchTimer);                       // let a burst of keystrokes settle before re-filtering
+        const v = e.target.value;
+        searchTimer = setTimeout(() => renderFoodList(v), 60);
+      };
       document.getElementById("grams").oninput = updatePreview;
       document.getElementById("addBtn").onclick = addLog;
 
       updateCalLabel();
       renderCalendar();
-      await loadBodyProfile();
-      await loadFoodFreq();
-      await loadFoods();
-      await loadLogs();
+      // these four don't depend on each other (the food list was already downloading since page start):
+      // run them together instead of one after another (was 6 sequential round-trips)
+      await Promise.all([loadBodyProfile(), loadFoodFreq().then(loadFoods), loadLogs()]);
     }
 
     boot();
