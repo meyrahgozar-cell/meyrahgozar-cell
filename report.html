@@ -2473,9 +2473,10 @@ html { touch-action: manipulation; }
         const J_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
         const START_YEAR = 1405;
 
-                const HABIT_MAX = {
-            water: 1.5, sleep: 2, instagram: 1.5, sun: 1.5, solitude: 1.5,
-            reading: 1, sugar: 2, dinner: 2, exercise: 5,
+                const BB_TYPES = ["bb_pushup", "bb_abs", "bb_pullup", "bb_fillet"];   // the 4 bodybuilding moves are stored as separate rows
+        const HABIT_MAX = {
+            water: 1.5, sleep: 1.5, instagram: 1.5, sun: 1.5, solitude: 0.5,
+            reading: 1.5, sugar: 1.5, dinner: 1.5, exercise: 4.5, bodybuilding: 2,
             discipline: 1, mountain: 3
         };
         const HABIT_LABELS = {
@@ -2485,9 +2486,14 @@ html { touch-action: manipulation; }
             sun: { icon: "☀️", title: "آفتاب" },
             solitude: { icon: "🧘", title: "خلوت" },
             reading: { icon: "📖", title: "مطالعه" },
-            sugar: { icon: "🍬", title: "قند" },
+            sugar: { icon: "🍬", title: "قند - الکل - سیگار" },
             dinner: { icon: "🍽️", title: "شام" },
             exercise: { icon: "🏃", title: "ورزش" },
+            bodybuilding: { icon: "💪", title: "بدنسازی" },
+            bb_pushup: { icon: "💪", title: "شنا - پهلو" },
+            bb_abs: { icon: "💪", title: "شکم - زیر شکم" },
+            bb_pullup: { icon: "💪", title: "بارفیکس" },
+            bb_fillet: { icon: "💪", title: "فیله" },
             discipline: { icon: "✅", title: "نظم" },
             mountain: { icon: "⛰️", title: "کوهنوردی" }
         };
@@ -4436,6 +4442,14 @@ const spawnSparks = (speed, fromLeft) => {
                     habitMap[r.item_type].count++;
                     habitMap[r.item_type].total += Number(r.score) || 0;
                 });
+                // bodybuilding: 4 rows per day -> ONE habit (days with any move, summed score)
+                const bbDays = new Set();
+                let bbTotal = 0;
+                logs.forEach(row => {
+                    if (BB_TYPES.indexOf(row.item_type) >= 0) { bbDays.add(row.log_date); bbTotal += Number(row.score) || 0; }
+                });
+                BB_TYPES.forEach(t => { delete habitMap[t]; });
+                if (bbDays.size) habitMap.bodybuilding = { count: bbDays.size, total: bbTotal };
                 if (exercises.length) {
                     habitMap.exercise = {
                         count: exercises.length,
@@ -4933,7 +4947,7 @@ const spawnSparks = (speed, fromLeft) => {
                 }
             }
 
-            const orderH = ["water", "sleep", "instagram", "sun", "solitude", "reading", "sugar", "dinner", "exercise", "discipline", "mountain"];
+            const orderH = ["water", "sleep", "instagram", "sun", "solitude", "reading", "sugar", "dinner", "exercise", "bodybuilding", "discipline", "mountain"];
             const activeKeys = orderH.filter(k => habitMap[k]);
 
             let habitsHtml = "";
