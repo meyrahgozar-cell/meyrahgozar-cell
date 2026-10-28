@@ -13,6 +13,8 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet" />
   <link rel="preconnect" href="https://api.mapbox.com" />
   <script defer id="mapboxScript" src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script defer id="supabaseScript" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
   <style>
     :root {
       --bg: #f4f6fb;
@@ -713,6 +715,7 @@
       height: auto;
     }
     html { touch-action: manipulation; }
+    a.icon-btn { text-decoration: none; }
 
 /* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
 @media (prefers-reduced-motion: reduce) {
@@ -730,7 +733,7 @@
       </div>
       <div class="top-actions">
         <button type="button" class="icon-btn" id="btnHistory" title="تاریخچه">📋</button>
-        <button type="button" class="icon-btn" id="btnSettings" title="تنظیمات">⚙️</button>
+        <a class="icon-btn" id="btnHome" href="index.html" title="بازگشت به سایت" aria-label="بازگشت به سایت">🏠</a>
       </div>
     </header>
 
@@ -797,29 +800,6 @@
     </footer>
   </div>
 
-  <!-- Settings -->
-  <div class="sheet" id="sheetSettings">
-    <div class="sheet-card">
-      <div class="sheet-title">تنظیمات</div>
-      <div class="sheet-sub">صفحه کاملاً مستقل است · داده فقط روی همین دستگاه</div>
-      <div class="field">
-        <label for="inpWeight">وزن (kg) برای تخمین کالری</label>
-        <input id="inpWeight" type="number" min="30" max="200" step="0.1" value="70" />
-      </div>
-      <div class="field">
-        <label for="inpMinAcc">حداکثر خطای GPS قابل قبول (متر)</label>
-        <input id="inpMinAcc" type="number" min="5" max="100" step="1" value="25" />
-      </div>
-      <p class="note">
-        توکن نقشه به‌صورت خودکار از Supabase (function: <b>run-record</b>، secret: <b>MAPBOX_KEY_V</b>) خوانده می‌شود.
-      </p>
-      <div class="row-btns">
-        <button type="button" class="btn-ghost" id="btnCloseSettings">بستن</button>
-        <button type="button" class="btn-solid" id="btnSaveSettings">ذخیره</button>
-      </div>
-    </div>
-  </div>
-
   <!-- History -->
   <div class="sheet" id="sheetHistory">
     <div class="sheet-card">
@@ -859,6 +839,7 @@
         <div class="s2"><div class="s2-l">صعود</div><div class="s2-v" id="sumGain">0</div></div>
       </div>
       <div id="sumSplits" style="margin:10px 0 4px"></div>
+      <div id="sumWeightNote" class="note" style="margin:0 0 6px"></div>
       <div class="report-preview">
         <canvas id="reportCanvas" width="720" height="960"></canvas>
       </div>
@@ -945,10 +926,9 @@
     const tok = (localStorage.getItem(STORAGE.token) || "").trim();
     if (isPublicToken(tok)) settings.token = tok;
     else if (tok) localStorage.removeItem(STORAGE.token);      // a secret (sk.) token must never live in the browser
-    const w = Number(localStorage.getItem(STORAGE.weight) || 70);
+    const w = Number(localStorage.getItem(STORAGE.weight) || 70);   // last weight read from the site (fallback while offline)
     settings.weight = w > 0 ? w : 70;
-    const a = Number(localStorage.getItem(STORAGE.minAcc) || 25);
-    settings.minAcc = a > 0 ? a : 25;
+    settings.minAcc = 25;                                           // fixed GPS tolerance in metres
   })();
   function getToken() { return settings.token; }
   function getWeight() { return settings.weight; }
@@ -1010,6 +990,44 @@
     el.addEventListener("error", () => reject(new Error("mapbox-gl.js failed to load")));
   });
   mapboxReady.catch(() => {});        // handled where it is awaited
+
+  /* supabase-js (deferred too) is used only to read the signed-in user's latest weight from the site */
+  const supabaseReady = new Promise((resolve, reject) => {
+    if (window.supabase) return resolve();
+    const el = document.getElementById("supabaseScript");
+    if (!el) return reject(new Error("supabase-js missing"));
+    el.addEventListener("load", () => resolve());
+    el.addEventListener("error", () => reject(new Error("supabase-js failed to load")));
+  });
+  supabaseReady.catch(() => {});
+  let weightNote = "کالری با وزن پیش‌فرض ۷۰ کیلو محاسبه شد — برای دقت بیشتر وزن را در بخش ورزش سایت ثبت کن";
+  async function loadSiteWeight() {
+    try {
+      await supabaseReady;
+      const sb = window.__hqlDb || window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.__hqlDb = sb;                              // from now on the edge-function calls use the signed-in user's token
+      const { data: s } = await sb.auth.getSession();
+      const uid = s && s.session && s.session.user && s.session.user.id;
+      if (!uid) { weightNote = "وارد سایت نشده‌ای — کالری با وزن " + fa(String(settings.weight)) + " کیلو محاسبه می‌شود"; return; }
+      let w = null;
+      const ex = await sb.from("exercise_logs").select("weight_kg").eq("user_id", uid)
+        .not("weight_kg", "is", null).order("log_date", { ascending: false }).limit(1);
+      if (ex.data && ex.data.length) w = Number(ex.data[0].weight_kg);
+      if (!(w > 0)) {
+        const uw = await sb.from("user_weights").select("weight_kg").eq("user_id", uid)
+          .order("recorded_at", { ascending: false }).limit(1);
+        if (uw.data && uw.data.length) w = Number(uw.data[0].weight_kg);
+      }
+      if (w > 0) {
+        settings.weight = w;
+        try { localStorage.setItem(STORAGE.weight, String(w)); } catch (_) {}
+        weightNote = "کالری با وزن " + fa(String(Math.round(w * 10) / 10)) + " کیلو محاسبه شد (آخرین وزن ثبت‌شده در سایت)";
+        renderStats();
+      } else {
+        weightNote = "هنوز وزنی در سایت ثبت نشده — کالری با " + fa(String(settings.weight)) + " کیلو محاسبه می‌شود";
+      }
+    } catch (e) { console.warn("site weight", e); }
+  }
 
   /* keep the screen on while a session is running (released on pause/stop) */
   let wakeLock = null;
@@ -1215,6 +1233,9 @@
   let tokenRetried = false;
   let centerOnNextFix = true;   // centre the map once on the first GPS fix (not on every fix: that made the map unpannable)
   let lastFix = null;           // {lng, lat} of the latest GPS fix
+  let fitOnLoad = false;        // fit the map to a restored route as soon as the map exists
+  let tickCount = 0;
+  let leavingByChoice = false;
 
 
   function vibratePaceSplit() {
@@ -1357,6 +1378,7 @@
           }
         });
         updateRouteLine();       // a route may already exist (e.g. recorded before the map finished loading)
+        if (fitOnLoad) fitRoute();
         if (lastFix) {           // …and so may a GPS fix (the map library now loads in the background): show it right away
           setMarker(lastFix.lng, lastFix.lat);
           if (centerOnNextFix && status === "idle" && pathCoords.length === 0) {
@@ -1443,7 +1465,10 @@
   }
 
   function onTick() {
-    if (status === "running") renderStats();
+    if (status === "running") {
+      renderStats();
+      if (++tickCount % 20 === 0) saveDraft();      // every ~10 s the running session is written to the device
+    }
   }
 
   // ── GPS ──
@@ -1629,6 +1654,7 @@
       setStatus("running");
       startWatch();
       if (!tickTimer) tickTimer = setInterval(onTick, 500);
+      saveDraft();
       toast(mode === "run" ? "دویدن شروع شد" : "پیاده‌روی شروع شد");
     }
   }
@@ -1638,12 +1664,15 @@
       pauseStarted = Date.now();
       elapsedMs = Date.now() - startedAt - pausedTotal;
       setStatus("paused");
+      saveDraft();
       toast("متوقف موقت");
     } else if (status === "paused") {
       pausedTotal += Date.now() - pauseStarted;
       pauseStarted = 0;
       lastPoint = null;          // distance moved while paused must not be added to the run
       setStatus("running");
+      if (!tickTimer) tickTimer = setInterval(onTick, 500);   // also after a restored session
+      saveDraft();
       toast("ادامه");
     }
   }
@@ -1663,6 +1692,7 @@
 
     if (distanceM < 20 && elapsedMs < 15000) {
       toast("فعالیت خیلی کوتاه بود · ذخیره نشد");
+      clearDraft();
       resetSession();
       return;
     }
@@ -1704,6 +1734,7 @@
     $("sumAvgSp").textContent = fa(avgSpeed.toFixed(1)) + " km/h";
     $("sumMaxSp").textContent = fa(maxKmhShow.toFixed(1)) + " km/h";
     $("sumGain").textContent = fa(String(Math.round(elevGain))) + " m";
+    $("sumWeightNote").textContent = weightNote;
 
     const sp = $("sumSplits");
     if (splits.length) {
@@ -1736,6 +1767,7 @@
       return;
     }
     toast(r.dropped ? "ذخیره شد ✓ · برای آزاد کردن جا، مسیر چند فعالیت قدیمی حذف شد" : "ذخیره شد ✓", r.dropped ? 4200 : 2200);
+    clearDraft();                // saved for real: the recovery copy is no longer needed
     // hook for the website/DB connection: document.addEventListener("hql:run-saved", e => …e.detail…)
     // detail = the full session (path, points, …) plus `compact` = the small form that is stored locally (route as `enc`)
     try { document.dispatchEvent(new CustomEvent("hql:run-saved", { detail: Object.assign({}, pendingSession, { compact: rec }) })); } catch (_) {}
@@ -1745,6 +1777,7 @@
   }
 
   function discardPending() {
+    clearDraft();
     pendingSession = null;
     closeSheets();
     resetSession();
@@ -2023,6 +2056,7 @@ ${trk}
   function openSheet(id) {
     closeSheets();
     $(id).classList.add("open");
+    if (id === "sheetSummary") saveDraft();      // a finished-but-unsaved activity is kept too
   }
   function closeSheets() {
     document.querySelectorAll(".sheet").forEach((s) => s.classList.remove("open"));
@@ -2138,24 +2172,6 @@ ${trk}
     if (!map) initMap();
     toast("در حال یافتن موقعیت…");
   };
-  $("btnSettings").onclick = () => {
-    $("inpWeight").value = String(getWeight());
-    $("inpMinAcc").value = String(getMinAcc());
-    openSheet("sheetSettings");
-  };
-  $("btnCloseSettings").onclick = closeSheets;
-  $("btnSaveSettings").onclick = () => {
-    // only weight and GPS tolerance are editable now; the map token comes from the edge function (no manual key)
-    const w = Number($("inpWeight").value) || 70;
-    const a = Number($("inpMinAcc").value) || 25;
-    settings.weight = w > 0 ? w : 70;
-    settings.minAcc = a > 0 ? a : 25;
-    localStorage.setItem(STORAGE.weight, String(settings.weight));
-    localStorage.setItem(STORAGE.minAcc, String(settings.minAcc));
-    renderStats();                 // calories depend on the weight
-    closeSheets();
-    toast("ذخیره شد");
-  };
   $("btnHistory").onclick = () => {
     renderHistory();
     openSheet("sheetHistory");
@@ -2180,7 +2196,7 @@ ${trk}
 
   document.querySelectorAll(".sheet").forEach((sheet) => {
     sheet.addEventListener("click", (e) => {
-      if (e.target === sheet && status === "idle") closeSheets();
+      if (e.target === sheet && status === "idle" && !(pendingSession && sheet.id === "sheetSummary")) closeSheets();
     });
   });
 
@@ -2572,6 +2588,7 @@ ${trk}
     $("sumMaxSp").textContent = "—";
     $("sumGain").textContent = "—";
     $("sumSplits").innerHTML = "";
+    $("sumWeightNote").textContent = "";
     closeSheets();
     openSheet("sheetSummary");
     requestAnimationFrame(() => drawReportCard(pendingSession));
@@ -2579,8 +2596,163 @@ ${trk}
   }
 
 
+  // ── nothing is lost on refresh / closed browser / interruption ──
+  // The running (or finished-but-unsaved) activity is written to the device every ~10 s and whenever the page is
+  // hidden or closed. On the next visit it is restored as PAUSED: the time away is not counted and the distance
+  // between the last recorded point and the first new one is not added. (A web page cannot record GPS while the
+  // phone is locked or the browser is in the background, so there can be a gap in the route.)
+  const DRAFT_KEY = "hql_run_draft_v1";
+  function pointsFromCompact(rec) {
+    const e = rec.enc || {};
+    const la = decInts(e.la || ""), lo = decInts(e.lo || ""), tt = decInts(e.t || ""), aa = decInts(e.a || "");
+    return la.map((v, i) => ({
+      lat: v / 1e6, lng: lo[i] / 1e6, t: (rec.t0 || 0) + (tt[i] || 0),
+      alt: aa[i] == null || aa[i] === ALT_NULL ? null : aa[i] / 10, acc: null, speed: null
+    }));
+  }
+  function snapshotDraft() {
+    if (pendingSession) return { v: 1, kind: "pending", savedAt: Date.now(), session: compactSession(pendingSession) };
+    if (status === "idle") return null;
+    const snap = {
+      v: 1, kind: "active", savedAt: Date.now(), mode, status, startedAt, pausedTotal, pauseStarted, elapsedMs,
+      distanceM, elevGain, lastAlt, maxSpeed, splits, nextSplitKm
+    };
+    if (points.length) {
+      const t0 = points[0].t;
+      snap.n = points.length;
+      snap.t0 = t0;
+      snap.enc = {
+        la: encInts(points.map((q) => Math.round(q.lat * 1e6))),
+        lo: encInts(points.map((q) => Math.round(q.lng * 1e6))),
+        t: encInts(points.map((q) => Math.round(q.t - t0))),
+        a: encInts(points.map((q) => (q.alt == null ? ALT_NULL : Math.round(q.alt * 10))))
+      };
+    }
+    return snap;
+  }
+  function saveDraft() {
+    try {
+      const snap = snapshotDraft();
+      if (snap) localStorage.setItem(DRAFT_KEY, JSON.stringify(snap));   // idle with nothing pending: leave any existing draft alone
+    } catch (_) {}
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} }
+
+  function fitRoute() {
+    if (pathCoords.length < 2) return;
+    if (!map || !window.mapboxgl) { fitOnLoad = true; return; }
+    try {
+      const b = pathCoords.reduce((bb, c) => bb.extend(c), new mapboxgl.LngLatBounds(pathCoords[0], pathCoords[0]));
+      map.fitBounds(b, { padding: 48, duration: 600 });
+      fitOnLoad = false;
+    } catch (_) {}
+  }
+  function setModeUi(m) {
+    mode = m;
+    document.querySelectorAll(".mode-pill").forEach((b) => b.classList.toggle("on", b.getAttribute("data-mode") === m));
+    updateLineColor();
+  }
+  function fillSummaryFromSession(s) {
+    const ocr = s.source === "ocr";
+    $("sumSub").textContent = (ocr ? "از اسکرین‌شات" : s.mode === "walk" ? "پیاده‌روی" : "دویدن") + " · " + fa(new Date(s.startedAt || Date.now()).toLocaleDateString("fa-IR"));
+    $("sumDist").textContent = fa(((s.distanceM || 0) / 1000).toFixed(2));
+    $("sumTime").textContent = fa(formatTime(s.durationMs || 0));
+    $("sumPace").textContent = fa(formatPace(s.paceSec || 0));
+    $("sumCal").textContent = ocr ? "—" : fa(String(s.calories || 0));
+    $("sumAvgSp").textContent = fa((s.avgSpeedKmh || 0).toFixed(1)) + " km/h";
+    $("sumMaxSp").textContent = ocr ? "—" : fa((s.maxSpeedKmh || 0).toFixed(1)) + " km/h";
+    $("sumGain").textContent = ocr ? "—" : fa(String(Math.round(s.elevGain || 0))) + " m";
+    $("sumWeightNote").textContent = ocr ? "" : weightNote;
+    const sp = $("sumSplits");
+    if (!ocr && s.splits && s.splits.length) {
+      sp.innerHTML = '<div style="font-size:12px;font-weight:800;margin-bottom:6px">اسپلیت‌ها</div>' +
+        s.splits.map((x) => '<div class="split-row"><span>km ' + fa(String(x.km)) + "</span><span>" + fa(formatTime(x.timeMs)) + " · " + fa(formatPace(x.pace)) + "/km</span></div>").join("");
+    } else sp.innerHTML = "";
+  }
+  function restoreDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (_) {}
+    if (!d || d.v !== 1) return false;
+    if (Date.now() - d.savedAt > 48 * 3600 * 1000) { clearDraft(); return false; }   // too old to be useful
+    centerOnNextFix = false;
+    if (d.kind === "pending") {
+      const rec = d.session || {};
+      const pts = pointsFromCompact(rec);
+      pendingSession = Object.assign({}, rec, { points: pts, path: pts.map((q) => [q.lng, q.lat]) });
+      ["enc", "n", "t0", "v"].forEach((k) => { delete pendingSession[k]; });
+      pathCoords = pendingSession.path.slice();
+      updateRouteLine();
+      fitRoute();
+      fillSummaryFromSession(pendingSession);
+      openSheet("sheetSummary");
+      requestAnimationFrame(() => { try { drawReportCard(pendingSession); } catch (_) {} });
+      toast("فعالیتِ تمام‌شده‌ای که ذخیره نشده بود بازیابی شد", 5200);
+      return true;
+    }
+    setModeUi(d.mode === "walk" ? "walk" : "run");
+    const pts = d.enc ? pointsFromCompact(d) : [];
+    points = pts;
+    pathCoords = pts.map((q) => [q.lng, q.lat]);
+    distanceM = d.distanceM || 0;
+    elevGain = d.elevGain || 0;
+    lastAlt = d.lastAlt == null ? null : d.lastAlt;
+    maxSpeed = d.maxSpeed || 0;
+    splits = Array.isArray(d.splits) ? d.splits : [];
+    nextSplitKm = d.nextSplitKm || 1;
+    startedAt = d.startedAt || Date.now();
+    pausedTotal = d.pausedTotal || 0;
+    lastPoint = null;                          // the first new point starts a fresh segment: the gap is not counted
+    if (d.status === "paused" && d.pauseStarted) {
+      pauseStarted = d.pauseStarted;           // still paused since then
+      elapsedMs = d.elapsedMs || 0;
+    } else {
+      pauseStarted = d.savedAt;                // it was running: everything after the last snapshot counts as paused time
+      elapsedMs = Math.max(0, d.savedAt - startedAt - pausedTotal);
+    }
+    setStatus("paused");
+    if (!tickTimer) tickTimer = setInterval(onTick, 500);
+    startWatch();
+    renderPaceStrip();
+    updateRouteLine();
+    fitRoute();
+    renderStats();
+    toast("فعالیتِ نیمه‌تمام بازیابی شد · برای ادامه ▶ را بزن", 5200);
+    return true;
+  }
+
+  // ── leaving the page ──
+  function atRisk() { return status !== "idle" || !!pendingSession; }
+  let trapArmed = false;
+  function armBackTrap() {
+    // browsers ignore history entries added before the first tap/click, so the trap is set on the first interaction
+    if (trapArmed) return;
+    trapArmed = true;
+    try { history.pushState({ rrTrap: 1 }, ""); } catch (_) {}
+  }
+  ["pointerdown", "touchstart", "keydown"].forEach((ev) => window.addEventListener(ev, armBackTrap, { once: true, passive: true }));
+  window.addEventListener("popstate", () => {
+    if (atRisk()) {
+      try { history.pushState({ rrTrap: 1 }, ""); } catch (_) {}      // stay: the Back button can't throw the activity away
+      toast("برای خروج از دکمهٔ 🏠 استفاده کن · اطلاعات فعالیت حفظ می‌شود", 3200);
+    } else if (trapArmed) {
+      trapArmed = false;
+      history.back();                                                 // nothing to lose: Back works normally again
+    }
+  });
+  $("btnHome").addEventListener("click", (e) => {
+    if (!atRisk()) return;                                            // nothing in progress: a plain link
+    e.preventDefault();
+    if (window.confirm("فعالیت جاری حفظ می‌شود، ولی ثبت مسیر تا برگشتنِ تو متوقف است. به سایت برگردی؟")) {
+      saveDraft();
+      leavingByChoice = true;
+      location.href = "index.html";
+    }
+  });
+
   // boot
   renderStats();
+  restoreDraft();
+  loadSiteWeight();
   (async () => {
     if (!getToken()) {
       // first visit: nothing cached, so the token has to arrive before the map can start
@@ -2606,9 +2778,12 @@ ${trk}
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && status === "running") requestWake();
   });
-  // a running session lives only in memory until it is saved: ask before the tab is closed/reloaded
+  // keep the recovery copy fresh whenever the page is hidden or closed, and ask before an accidental close
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveDraft(); });
+  window.addEventListener("pagehide", saveDraft);
   window.addEventListener("beforeunload", (e) => {
-    if (status !== "idle") { e.preventDefault(); e.returnValue = ""; }
+    saveDraft();
+    if (atRisk() && !leavingByChoice) { e.preventDefault(); e.returnValue = ""; }
   });
 })();
   </script>
