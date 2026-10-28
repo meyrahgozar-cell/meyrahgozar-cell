@@ -983,6 +983,23 @@ a.icon-btn.call-btn {
 }
 
 html { touch-action: manipulation; }
+.bb-list { display: grid; gap: 8px; margin-bottom: 10px; }
+.bb-row { display: grid; grid-template-columns: 1fr 84px 52px; gap: 8px; align-items: center; }
+.bb-name { font-size: 13px; font-weight: 600; }
+.bb-name small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.bb-sc { font-size: 12px; font-weight: 700; color: var(--positive); direction: ltr; text-align: left; }
+.run-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 8px; }
+.run-actions-label { flex: 1 0 100%; font-size: 11px; color: var(--muted); }
+.chip-btn {
+  flex: 1 1 140px; min-height: 40px; padding: 8px 10px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--card2); color: var(--text);
+  font: inherit; font-size: 12px; font-weight: 600; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.chip-btn:active { transform: scale(0.97); }
+.chip-btn:disabled { opacity: 0.5; }
+.run-note { font-size: 11px; color: var(--muted); }
+.run-note:not(:empty) { margin-bottom: 8px; }
 
 /* respect the OS "reduce motion" setting (also stops the always-on glow loops) */
 @media (prefers-reduced-motion: reduce) {
@@ -1045,7 +1062,7 @@ html { touch-action: manipulation; }
           <div id="score" class="score-value">۰</div>
         </div>
         <div class="score-meta">
-          <div id="itemsCount">۰ از ۱۰ آیتم</div>
+          <div id="itemsCount">۰ از ۱۱ آیتم</div>
           <div id="latePenalty"></div>
         <div id="disciplineBadge"></div>
           <div id="mountainBonus"></div>
@@ -1178,7 +1195,7 @@ const ITEMS = [
   { type:"sun", icon:"☀️", title:"۱۰ دقیقه آفتاب", desc:"امروز", options:[["بله",1],["خیر",0]] },
   { type:"solitude", icon:"🧘", title:"۱۰ دقیقه خلوت", desc:"امروز", options:[["بله",1],["خیر",0]] },
   { type:"reading", icon:"📖", title:"مطالعه کتاب", desc:"تعداد صفحه", input:true, placeholder:"مثلاً ۱۲" },
-  { type:"sugar", icon:"🍬", title:"قند مصنوعی", desc:"امروز", options:[["مصرف نشد",1],["مصرف شد",0]] },
+  { type:"sugar", icon:"🍬", title:"قند - الکل - سیگار", desc:"امروز", options:[["مصرف نشد",1],["مصرف شد",0]] },
   { type:"dinner", icon:"🍽️", title:"زمان شام", desc:"چه ساعتی؟", time:true }
 ];
 
@@ -1264,8 +1281,20 @@ function jalaliLabel(iso){
 }
 
 /* ===== SCORING ===== */
+/* Bodybuilding (max 2 points): four moves, each worth at most 0.5.
+   FILLET_BONUS = the extra "encouragement" points for doing the fillet move: amount not decided yet (0 = none).
+   Keep these numbers identical to 02-server-side-scoring.sql (hql_item_score). */
+const FILLET_BONUS = 0;
+const BB_MOVES = [
+  { type:"bb_pushup", title:"شنا - پهلو",      hint:"هر شنا ۰٫۰۱ نمره · تا ۵۰ تکرار" },
+  { type:"bb_abs",    title:"شکم - زیر شکم",   hint:"هر حرکت ۰٫۰۱ نمره · تا ۵۰ تکرار" },
+  { type:"bb_pullup", title:"بارفیکس",         hint:"هر بارفیکس ۰٫۰۵ نمره · تا ۱۰ تکرار" },
+  { type:"bb_fillet", title:"فیله",            hint:"هر تکرار ۰٫۰۲ نمره · تا ۲۵ تکرار" }
+];
 function calculateScore(type,value){
   value=Number(value);
+  if(!Number.isFinite(value)) return 0;
+  const r4=x=>Math.round(x*10000)/10000;     // keeps decimals exact (0.25 per page, 0.01 per rep, ...)
   switch(type){
     case"water":
       // value from options: 2, 4, 6, 8
@@ -1276,30 +1305,30 @@ function calculateScore(type,value){
       return 1.5;                // ۶–۸ لیوان
     case"sleep": {
       // value = دقیقه از ۰۰:۰۰ (۰ تا ۱۴۳۹)
-      // قبل ۲۳:۰۰ (۱۲:۰۰–۲۲:۵۹) → +2
+      // ۱۲:۰۰–۲۲:۵۹ → +1.5
       // ۲۳:۰۰–۲۳:۵۹ → +0.5
-      // بعد نیمه‌شب / دیر (۰۰:۰۰–۱۱:۵۹) → -0.5
-      // باگ قبلی: ۶:۰۰–۱۱:۵۹ به‌اشتباه +2 می‌گرفت
-      let mins = Number(value);
-      if (!Number.isFinite(mins)) return 0;
-      mins = ((Math.round(mins) % 1440) + 1440) % 1440;
-      if (mins >= 23 * 60) return 0.5;   // ۲۳:۰۰–۲۳:۵۹
-      if (mins < 12 * 60) return -0.5;   // ۰۰:۰۰–۱۱:۵۹ دیرخوابی
-      return 2;                          // ۱۲:۰۰–۲۲:۵۹ قبل از ۲۳
+      // بعد از نیمه‌شب (۰۰:۰۰–۱۱:۵۹): روز عوض شده ولی دیر خوابیده → -0.5
+      const mins=((Math.round(value)%1440)+1440)%1440;
+      if(mins>=23*60) return 0.5;
+      if(mins<12*60) return -0.5;
+      return 1.5;
     }
     case"instagram": return value===1?1.5:0;
     case"sun": return value===1?1.5:0;
-    case"solitude": return value===1?1.5:0;
+    case"solitude": return value===1?0.5:0;
     case"reading":
+      // هر صفحه ۰.۲۵ — با ۶ صفحه به سقف ۱.۵ می‌رسد؛ صفحات بیشتر قابل ثبت است ولی امتیاز بیشتر نمی‌شود
       if(value<=0) return 0;
-      if(value===1) return 0.5;  // ۱ صفحه
-      return 1;                  // بیشتر
-    case"sugar": return value===1?2:-.5;
+      return r4(Math.min(1.5,value*0.25));
+    case"sugar": return value===1?1.5:-.5;
     case"dinner":
-      // دقیقه از نیمه‌شب: قبل ۲۰:۰۰ → ۲ | قبل ۲۱:۳۰ → ۰.۵ | بعد → ۰
-      if(value < 1200) return 2;      // قبل از ۲۰:۰۰
-      if(value < 1290) return 0.5;    // ۲۰:۰۰ تا قبل ۲۱:۳۰
+      // دقیقه از نیمه‌شب: قبل ۲۰:۰۰ → ۱.۵ | ۲۰:۰۰ تا قبل ۲۱:۳۰ → ۰.۵ | بعد → ۰
+      if(value < 1200) return 1.5;
+      if(value < 1290) return 0.5;
       return 0;
+    case"bb_pushup": case"bb_abs": return value<=0?0:r4(Math.min(0.5,value*0.01));
+    case"bb_pullup": return value<=0?0:r4(Math.min(0.5,value*0.05));
+    case"bb_fillet": return value<=0?0:r4(Math.min(0.5,Math.min(value,25)*0.02)+FILLET_BONUS);
     default: return 0;
   }
 }
@@ -1314,7 +1343,7 @@ function exerciseCalc(w,a,r){
   const factor=genderKmFactor();
   const caloriesRaw=totalKm*w;
   const calories=caloriesRaw*factor;
-  const score=calories<100?0:calories<300?1:calories<=600?3:5;
+  const score=calories>500?4.5:calories>300?3:calories>100?1.5:0;
   return{aerobicKm,totalKm,calories,caloriesRaw,factor,score};
 }
 async function loadProfileAndSettings(user){
@@ -1551,6 +1580,7 @@ function renderItems(){
   c.innerHTML="";
   ITEMS.forEach(item=>c.appendChild(buildItemCard(item)));
   renderExercise(c);
+  renderBodybuilding(c);
   renderMountain(c);
 }
 
@@ -1601,6 +1631,13 @@ function renderExercise(c, replaceExisting){
       <div><label>هوازی (دقیقه)</label><input type="number" id="exA" class="time-input" value="${a}" placeholder="۰"></div>
       <div><label>دویدن (کیلومتر)</label><input type="number" step="0.1" id="exR" class="time-input" value="${r}" placeholder="۰"></div>
     </div>
+    <div class="run-actions">
+      <span class="run-actions-label">دویدن / پیاده‌روی</span>
+      <button type="button" class="chip-btn" id="exOcr">📷 آپلود تصویر · استخراج با هوش مصنوعی</button>
+      <a class="chip-btn" id="exRR" href="run.html">🏃 ورود به بخش RR</a>
+      <input type="file" id="exOcrFile" accept="image/*" hidden>
+    </div>
+    <div class="run-note" id="exOcrNote"></div>
     <div class="exercise-stats" id="exPreview"></div>
     <button class="small-primary" style="width:100%" id="saveEx">ثبت ورزش</button>`;
   const prev=replaceExisting?c.querySelector('[data-card="exercise"]'):null;
@@ -1609,6 +1646,148 @@ function renderExercise(c, replaceExisting){
   ["exW","exA","exR"].forEach(id=>document.getElementById(id).oninput=refreshExercisePreview);
   refreshExercisePreview();
   document.getElementById("saveEx").onclick=saveExercise;
+  const ocrBtn=document.getElementById("exOcr"), ocrFile=document.getElementById("exOcrFile");
+  ocrBtn.onclick=()=>ocrFile.click();
+  ocrFile.onchange=()=>{ const f=ocrFile.files&&ocrFile.files[0]; ocrFile.value=""; extractRunFromImage(f); };
+}
+
+/* ---------- running km from a screenshot (AI) ---------- */
+const OCR_MAX_EDGE=2000;
+async function prepareOcrImage(file){
+  // phone screenshots are often 2-6 MB: re-encode big ones as JPEG (max 2000 px) for a much smaller upload; any problem → original
+  try{
+    if(!window.createImageBitmap||!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size<600*1024) return file;
+    const bmp=await createImageBitmap(file);
+    const k=Math.min(1,OCR_MAX_EDGE/Math.max(bmp.width,bmp.height));
+    const w=Math.max(1,Math.round(bmp.width*k)), h=Math.max(1,Math.round(bmp.height*k));
+    const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+    const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,w,h); g.drawImage(bmp,0,0,w,h);
+    if(bmp.close) bmp.close();
+    const blob=await new Promise(res=>cv.toBlob(res,"image/jpeg",0.9));
+    return blob&&blob.size<file.size*0.8?blob:file;
+  }catch(_){ return file; }
+}
+async function edgeHeaders(extra){
+  let bearer=SUPABASE_KEY;
+  try{ const r=await db.auth.getSession(); if(r&&r.data&&r.data.session) bearer=r.data.session.access_token; }catch(_){}
+  return Object.assign({Authorization:"Bearer "+bearer, apikey:SUPABASE_KEY}, extra||{});
+}
+async function extractRunFromImage(file){
+  if(!file) return;
+  const note=document.getElementById("exOcrNote"), btn=document.getElementById("exOcr");
+  const okTypes=["image/png","image/jpeg","image/webp","image/heic","image/heif"];
+  if(!okTypes.includes(file.type)){ showToast("فرمت تصویر پشتیبانی نمی‌شود"); return; }
+  if(file.size>7*1024*1024){ showToast("حداکثر ۷ مگابایت"); return; }
+  btn.disabled=true; note.textContent="در حال خواندن تصویر با هوش مصنوعی…";
+  try{
+    const prepared=await prepareOcrImage(file);
+    const dataUrl=await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>rej(new Error("خواندن فایل ناموفق بود")); fr.readAsDataURL(prepared); });
+    const res=await fetch(SUPABASE_URL+"/functions/v1/extract-run-result",{
+      method:"POST",
+      headers:await edgeHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify({ imageBase64:String(dataUrl).split(",")[1], imageMime:prepared.type||file.type, extractRoute:false, mapBounds:null })
+    });
+    const payload=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(payload.error||("خطا "+res.status));
+    const d=payload.data;
+    if(!d||typeof d.distance_km!=="number") throw new Error(payload.error||"مسافت در تصویر پیدا نشد");
+    const km=Math.round(d.distance_km*100)/100;
+    document.getElementById("exR").value=String(km);
+    refreshExercisePreview();
+    note.textContent="استخراج شد: "+fa(km)+" کیلومتر"
+      +(d.duration_display?" · "+fa(String(d.duration_display)):"")
+      +(d.pace_per_km?" · "+fa(String(d.pace_per_km))+" /km":"")
+      +(d.confidence?" · اطمینان: "+d.confidence:"")
+      +" — بررسی کن و «ثبت ورزش» را بزن";
+  }catch(err){
+    note.textContent="";
+    showToast("خطا: "+((err&&err.message)||"استخراج انجام نشد"));
+  }
+  btn.disabled=false;
+}
+
+/* ---------- bodybuilding (max 2 points: 4 moves x 0.5) ---------- */
+function bbValues(){
+  const out={};
+  BB_MOVES.forEach(m=>{ const el=document.querySelector('[data-bb="'+m.type+'"]'); out[m.type]=el?el.value.trim():""; });
+  return out;
+}
+function refreshBodybuildingPreview(){
+  let total=0;
+  BB_MOVES.forEach(m=>{
+    const el=document.querySelector('[data-bb="'+m.type+'"]'), sc=document.querySelector('[data-bbsc="'+m.type+'"]');
+    if(!el||!sc) return;
+    const raw=el.value.trim();
+    if(raw===""){ sc.textContent=""; return; }
+    const s=calculateScore(m.type,Math.round(Number(raw)));
+    total+=s;
+    sc.textContent="+"+scoreText(s);
+  });
+  const t=document.getElementById("bbTotal");
+  if(t) t.innerHTML=`مجموع: <b>${scoreText(Math.round(total*10000)/10000)}</b> از ۲`;
+}
+function renderBodybuilding(c, replaceExisting){
+  const card=document.createElement("article");
+  card.className="item";
+  card.dataset.full="1";
+  card.dataset.card="bodybuilding";
+  let saved=0, any=false;
+  BB_MOVES.forEach(m=>{ const l=todayLogs.get(m.type); if(l){ saved+=Number(l.score)||0; any=true; } });
+  const rows=BB_MOVES.map(m=>{
+    const l=todayLogs.get(m.type);
+    return `<div class="bb-row">
+      <div class="bb-name">${m.title}<small>${m.hint}</small></div>
+      <input type="number" inputmode="numeric" min="0" step="1" class="time-input" data-bb="${m.type}" value="${l?Number(l.value):""}" placeholder="۰">
+      <div class="bb-sc" data-bbsc="${m.type}"></div>
+    </div>`;
+  }).join("");
+  card.innerHTML=`
+    <div class="item-top">
+      <div>
+        <div class="item-name"><span>💪</span>بدنسازی</div>
+        <div class="item-desc">حداکثر ۲ نمره</div>
+      </div>
+      <div class="item-score ${saved>0?"positive":""}" id="bbScore">${any&&saved?"+"+scoreText(Math.round(saved*10000)/10000):""}</div>
+    </div>
+    <div class="bb-list">${rows}</div>
+    <div class="exercise-stats" id="bbTotal"></div>
+    <button class="small-primary" style="width:100%" id="saveBb">ثبت بدنسازی</button>`;
+  const prev=replaceExisting?c.querySelector('[data-card="bodybuilding"]'):null;
+  if(prev) prev.replaceWith(card); else c.appendChild(card);
+  card.querySelectorAll("[data-bb]").forEach(el=>el.oninput=refreshBodybuildingPreview);
+  refreshBodybuildingPreview();
+  document.getElementById("saveBb").onclick=saveBodybuilding;
+}
+async function saveBodybuilding(e){
+  const date=selectedDate, vals=bbValues(), jobs=[];
+  for(const m of BB_MOVES){
+    const raw=vals[m.type];
+    if(raw==="") continue;                       // nothing typed for this move
+    const n=Math.round(Number(raw));
+    if(!Number.isFinite(n)||n<0||n>1000) return showToast("تعداد معتبر وارد کن (۰ تا ۱۰۰۰)");
+    jobs.push({type:m.type,value:n,score:calculateScore(m.type,n)});
+  }
+  if(!jobs.length) return showToast("حداقل یک حرکت را وارد کن");
+  const btn=document.getElementById("saveBb"); btn.disabled=true;
+  const before=BB_MOVES.reduce((s,m)=>s+(Number(todayLogs.get(m.type)?.score)||0),0);
+  const results=await Promise.all(jobs.map(j=>db.rpc("save_daily_log",{p_log_date:date,p_item_type:j.type,p_value:j.value,p_score:j.score})));
+  if(date!==selectedDate) return;                // the user moved to another day while saving
+  const failed=results.find(r=>r.error);
+  results.forEach((r,i)=>{ if(!r.error&&r.data) todayLogs.set(jobs[i].type,r.data); });
+  updateScoreUI();
+  renderBodybuilding(document.getElementById("items"),true);
+  if(failed) return showToast("خطا: "+failed.error.message);
+  const after=BB_MOVES.reduce((s,m)=>s+(Number(todayLogs.get(m.type)?.score)||0),0);
+  if(e) floatingScore(Math.round((after-before)*10000)/10000,e.clientX,e.clientY);
+  const timely=isTimelyLog(date);
+  showToast(timely && todayLogs.has("discipline") ? "ثبت شد ✓ · نظم +۱" : "ثبت شد ✓");
+  if(timely && !(Number(todayLogs.get("discipline")?.score)>0)){
+    ensureDisciplineBonus(date).then(disc=>{
+      if(!disc || date!==selectedDate) return;
+      updateScoreUI();
+      showToast("ثبت شد ✓ · نظم +۱");
+    });
+  }
 }
 
 function renderMountain(c){
@@ -1685,9 +1864,12 @@ function animateScore(el, target){
 
 function updateScoreUI(){
   let total=0, count=0;
+  let bbCounted=false;
   todayLogs.forEach((l, type)=>{
     total+=Number(l.score)||0;
-    if(type!=="discipline") count++;
+    if(type==="discipline") return;
+    if(type.indexOf("bb_")===0){ if(!bbCounted){ bbCounted=true; count++; } return; }   // the 4 bodybuilding moves are one item
+    count++;
   });
   if(exerciseLog){ total+=Number(exerciseLog.score)||0; count++; }
 
@@ -1701,8 +1883,8 @@ function updateScoreUI(){
   animateScore(el, total);
   const bar=document.getElementById("scoreBar");
   if(bar){
-    // max theoretical ~20; map to bar width
-    const pct=Math.min(100, Math.max(0, (Math.abs(total)/20)*100));
+    // max theoretical 18.5; map to bar width
+    const pct=Math.min(100, Math.max(0, (Math.abs(total)/18.5)*100));
     bar.classList.remove("positive","negative");
     if(total>0) bar.classList.add("positive");
     else if(total<0) bar.classList.add("negative");
@@ -1713,7 +1895,7 @@ function updateScoreUI(){
     });
   }
 
-  document.getElementById("itemsCount").textContent=fa(count)+" از ۱۰ آیتم";
+  document.getElementById("itemsCount").textContent=fa(count)+" از ۱۱ آیتم";
 
   const discEl=document.getElementById("disciplineBadge");
   if(discEl){
