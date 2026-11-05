@@ -1,0 +1,92 @@
+/* ============================================================
+   ریل — اصلاح‌های راست‌به‌چپ
+   ============================================================ */
+
+/* کنترل‌های فرم که ذاتاً لاتین‌اند */
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] input[type="url"],
+[dir="rtl"] input[type="date"],
+[dir="rtl"] input[type="time"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* کد و کیبورد همیشه چپ‌به‌راست */
+[dir="rtl"] code,
+[dir="rtl"] kbd,
+[dir="rtl"] pre {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+[dir="rtl"] pre { text-align: left; }
+[dir="rtl"] code { display: inline-block; }
+
+/* نقل‌قول */
+[dir="rtl"] blockquote,
+[dir="rtl"] .reader__body blockquote {
+  border-left: 0;
+  border-right: 2px solid var(--line-strong);
+  padding-left: 0;
+  padding-right: 14px;
+}
+
+/* فهرست‌های داخل متن */
+[dir="rtl"] .reader__body ul,
+[dir="rtl"] .reader__body ol,
+[dir="rtl"] .ed-body ul,
+[dir="rtl"] .ed-body ol {
+  padding-right: 1.4em;
+  padding-left: 0;
+}
+
+/* لایت‌باکس */
+[dir="rtl"] .lightbox__nav--prev { left: auto; right: 18px; }
+[dir="rtl"] .lightbox__nav--next { right: auto; left: 18px; }
+
+/* نشانه‌های گوشهٔ کارت */
+[dir="rtl"] .frame-card__flags { right: auto; left: 10px; }
+[dir="rtl"] .frame-card__menu { right: auto; left: 8px; }
+[dir="rtl"] .photo-tile__cover { left: auto; right: 6px; }
+
+/* تقویم */
+[dir="rtl"] .cal__cell { text-align: right; }
+[dir="rtl"] .cal__dots { justify-content: flex-start; }
+
+/* جدول‌ها */
+[dir="rtl"] .table td:first-child { text-align: right; }
+[dir="rtl"] .table td.num { text-align: left; }
+
+/* نوار ابزار ویرایشگر */
+[dir="rtl"] .ed-toolbar { direction: rtl; }
+
+/* بدنهٔ ویرایشگر و خواننده همیشه راست‌به‌چپ */
+[dir="rtl"] .ed-body,
+[dir="rtl"] .reader__body,
+[dir="rtl"] .frame__body,
+[dir="rtl"] .ed-title {
+  direction: rtl;
+  text-align: right;
+}
+[dir="rtl"] .ed-body ul,
+[dir="rtl"] .ed-body ol {
+  padding-left: 0;
+  padding-right: 1.5em;
+}
+[dir="rtl"] .ed-body blockquote {
+  border-left: 0;
+  border-right: 2px solid var(--accent-line);
+  padding-left: 0;
+  padding-right: var(--sp-4);
+}
+
+/* اعداد فارسی در جاهایی که راست‌چین‌اند */
+[dir="rtl"] .num,
+[dir="rtl"] .hero__stat strong,
+[dir="rtl"] .stat__value {
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+}
+
+/* متن‌های لاتین (ایمیل، پیوند) */
+[dir="rtl"] .ltr { direction: ltr; unicode-bidi: embed; text-align: right; }

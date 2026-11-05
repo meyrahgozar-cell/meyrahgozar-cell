@@ -1,0 +1,23 @@
+{
+  "name": "ریل — مستندی از یک زندگی",
+  "short_name": "ریل",
+  "description": "دفتری خصوصی و آراسته از روزهایی که تو را ساختند. یک عکس برای هر قاب، با اندازهٔ استاندارد ۷۲۰ پیکسل.",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c0b0a",
+  "theme_color": "#12100e",
+  "categories": ["lifestyle", "productivity", "photo"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "قاب تازه", "short_name": "نوشتن", "url": "./#/write", "description": "امروز را ثبت کن" },
+    { "name": "خط زمان", "short_name": "خط زمان", "url": "./#/timeline", "description": "ثبت را بخوان" },
+    { "name": "آلبوم", "short_name": "آلبوم", "url": "./#/gallery", "description": "همهٔ عکس‌ها" }
+  ]
+}

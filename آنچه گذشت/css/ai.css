@@ -1,0 +1,75 @@
+/* ============================================================
+   ریل — پنل اصلاح با هوش مصنوعی
+   ============================================================ */
+.ai-levels { display: grid; gap: 6px; }
+
+.ai-level {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  text-align: start;
+  transition: border-color var(--dur-1), background var(--dur-1), transform var(--dur-1);
+}
+.ai-level:hover { border-color: var(--line-strong); transform: translateX(-1px); }
+
+.ai-level__num {
+  width: 21px; height: 21px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ai-level__meta { display: grid; line-height: 1.35; min-width: 0; }
+.ai-level__meta strong { font-size: var(--fs-2xs); font-weight: 600; }
+.ai-level__meta em { font-style: normal; font-size: 10px; color: var(--faint); }
+
+.ai-level.is-on { border-color: var(--accent-line); background: var(--accent-soft); }
+.ai-level.is-on .ai-level__num { background: var(--accent); color: var(--accent-ink); }
+.ai-level.is-on .ai-level__meta strong { color: var(--ink); }
+
+.ai-hint {
+  font-size: var(--fs-3xs);
+  color: var(--faint);
+  line-height: 1.9;
+  margin: 8px 0 6px;
+  min-height: 2.6em;
+}
+
+.ai-result {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  overflow: hidden;
+  animation: fadeIn var(--dur-2) var(--ease) both;
+}
+.ai-result__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface-3);
+}
+.ai-result__head .badge { max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-result__text {
+  padding: 10px;
+  font-size: var(--fs-xs);
+  line-height: 2;
+  max-height: 230px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ai-result__acts {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+.ai-result__acts .icon-btn.is-on { color: var(--accent); background: var(--accent-soft); }
+
+/* دکمه‌های رأی */
+.icon-btn.is-on { color: var(--accent); }

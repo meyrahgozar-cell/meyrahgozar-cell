@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="light" data-accent="amber" data-density="comfy">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="ریل — مستندی از یک زندگی. دفتری خصوصی و زیبا از روزهایی که تو را ساختند." />
+<meta name="theme-color" content="#12100e" />
+<title>ریل — مستندی از یک زندگی</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2312100e'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='%23e7c07b' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23e7c07b'/%3E%3C/svg%3E" />
+<link rel="preload" href="fonts/Vazirmatn-arabic.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/views.css" />
+<link rel="stylesheet" href="css/ai.css" />
+<link rel="stylesheet" href="css/rtl.css" />
+<script src="js/lib/supabase.js"></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ── icon sprite ─────────────────────────────────────────────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-reel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16M16 4v16"/><circle cx="5.6" cy="6.6" r=".8"/><circle cx="5.6" cy="16.4" r=".8"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14" r="1"/><circle cx="12" cy="14" r="1"/><circle cx="15.5" cy="14" r="1"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M7.5 16v-4M11.5 16V8M15.5 16v-6M19.5 16v-3"/></symbol>
+<symbol id="i-threads" viewBox="0 0 24 24"><path d="M12 3.5 20.5 8 12 12.5 3.5 8z"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5"/><path d="m3.5 16.8 8.5 4.5 8.5-4.5"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 8 6 12l4 4M6 12h9"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/><path d="M10.5 11v5M13.5 11v5"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14.5 5.5 3 3"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.7"/><path d="m4 17 5-5 4 4 3-3 4 4"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5h2.5L8 6h8l1.5 2.5H20a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12M7.5 11.5 12 16l4.5-4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.5 5.2 5.5.7-4 4 1 5.6-5-2.8-5 2.8 1-5.6-4-4 5.5-.7z"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4h11a1 1 0 0 1 1 1v15l-6.5-4-6.5 4V5a1 1 0 0 1 1-1z"/></symbol>
+<symbol id="i-pinmark" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 4 3v2H6v-2l4-3z"/><path d="M12 14v6"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M3.5 6.5h17M6.5 12h11M10 17.5h4"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M11 3.5H5.5A2 2 0 0 0 3.5 5.5V11a2 2 0 0 0 .6 1.4l8 8a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8l-8-8A2 2 0 0 0 11 3.5z"/><circle cx="7.8" cy="7.8" r="1.3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3.5 13.6 8l4.4 1.6L13.6 11 12 15.5 10.4 11 6 9.6 10.4 8z"/><path d="M18 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M5 15l.6 1.6 1.6.6-1.6.6L5 19.4l-.6-1.6L2.8 17l1.6-.6z"/></symbol>
+<symbol id="i-bold" viewBox="0 0 24 24"><path d="M7 4.5h6a4 4 0 0 1 0 8H7zM7 12.5h6.8a3.75 3.75 0 0 1 0 7.5H7z"/></symbol>
+<symbol id="i-italic" viewBox="0 0 24 24"><path d="M15 4.5h-5M14 19.5H9M14.5 4.5 9.5 19.5"/></symbol>
+<symbol id="i-underline" viewBox="0 0 24 24"><path d="M7 4.5v6a5 5 0 0 0 10 0v-6M5.5 20h13"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.8" cy="7" r="1.1"/><circle cx="4.8" cy="12" r="1.1"/><circle cx="4.8" cy="17" r="1.1"/></symbol>
+<symbol id="i-list-ol" viewBox="0 0 24 24"><path d="M10 7h10M10 12h10M10 17h10"/><path d="M4 5.5 5.3 5v4M3.6 14.2c.2-.6 1.6-.9 1.7.2 0 .8-1.8 1.9-1.8 2.6h2"/></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M9.5 6.5C6.5 8 5 10.3 5 13.2c0 2.2 1.2 3.8 3.2 3.8 1.8 0 3-1.2 3-2.9 0-1.6-1-2.7-2.6-2.8.3-1.4 1.3-2.5 2.9-3.4zM19.5 6.5C16.5 8 15 10.3 15 13.2c0 2.2 1.2 3.8 3.2 3.8 1.8 0 3-1.2 3-2.9 0-1.6-1-2.7-2.6-2.8.3-1.4 1.3-2.5 2.9-3.4z"/></symbol>
+<symbol id="i-heading" viewBox="0 0 24 24"><path d="M6 4.5v15M18 4.5v15M6 12h12"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.4 1.4"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.4-1.4"/></symbol>
+<symbol id="i-listview" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></symbol>
+<symbol id="i-gridview" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.4"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8" rx="2"/><path d="M7 13h10v7H7z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 5.5h-11a1 1 0 0 0-1 1v11"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 20H3z"/><path d="M12 10v4.5M12 17.4v.2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v6M12 7.6v.4"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-4.5"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 11.5a3.6 3.6 0 0 0 1 7z"/></symbol>
+<symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 3.4-6.1M16.4 8.5A6 6 0 0 0 6 11.5a3.6 3.6 0 0 0 1 7"/><path d="M4 4l16 16"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4.5V10h-5.5"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 7a2 2 0 0 1 2-2h3.6l2 2.5H18.5a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6.6M17.4 20a6 6 0 0 0-2.2-4.6"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h15M13.5 6.5 20 12l-6.5 5.5"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M20 12H5M10.5 6.5 4 12l6.5 5.5"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.4 0 2-1 2-1.8 0-1-.8-1.5-.8-2.4 0-1 .8-1.6 1.8-1.6h1.5a3.5 3.5 0 0 0 3.5-3.5c0-4.8-3.6-7.7-8-7.7z"/><circle cx="8.2" cy="10" r="1.1"/><circle cx="12" cy="7.6" r="1.1"/><circle cx="16" cy="10" r="1.1"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><circle cx="12" cy="15.5" r="1.4"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+<symbol id="i-thumb-up" viewBox="0 0 24 24"><path d="M7 10.5 11 3.5a2 2 0 0 1 2.8 2.4L13 10h5.2a2 2 0 0 1 2 2.4l-1.4 6a2 2 0 0 1-2 1.6H7z"/><path d="M7 10.5H4v10h3z"/></symbol>
+<symbol id="i-thumb-down" viewBox="0 0 24 24"><path d="M17 13.5 13 20.5a2 2 0 0 1-2.8-2.4L11 14H5.8a2 2 0 0 1-2-2.4l1.4-6a2 2 0 0 1 2-1.6H17z"/><path d="M17 13.5h3v-10h-3z"/></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24"><path d="m4 20 11-11"/><path d="m15 9 2.5-2.5 2 2L17 11z"/><path d="M6 4.5v3M4.5 6h3M18.5 16.5v3M17 18h3M9.5 3l.6 1.4L11.5 5l-1.4.6L9.5 7l-.6-1.4L7.5 5l1.4-.6z"/></symbol>
+</defs></svg>
+
+<!-- ── boot splash ─────────────────────────────────────────────── -->
+<div id="boot" class="boot">
+  <div class="boot__mark"><svg viewBox="0 0 64 64" class="boot__logo"><circle cx="32" cy="32" r="17" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="32" cy="32" r="5" fill="currentColor"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4.2 4.2M44.8 44.8 49 49M49 15l-4.2 4.2M19.2 44.8 15 49" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+  <p class="boot__word">ریل</p>
+  <div class="boot__bar"><span></span></div>
+</div>
+
+<!-- ── app shell ───────────────────────────────────────────────── -->
+<div class="shell" id="shell" hidden>
+  <aside class="rail" id="rail" aria-label="اصلی">
+    <div class="rail__top">
+      <a class="brand" href="#/home" aria-label="خانهٔ ریل">
+        <span class="brand__mark"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="17" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="32" r="5" fill="currentColor"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+        <span class="brand__text"><strong>ریل</strong><em>مستندی از یک زندگی</em></span>
+      </a>
+      <button class="icon-btn rail__close" data-action="close-rail" aria-label="بستن منو"><svg class="ico"><use href="#i-close"/></svg></button>
+    </div>
+
+    <button class="new-frame" data-action="new-frame">
+      <svg class="ico"><use href="#i-plus"/></svg><span>قاب تازه</span><kbd>N</kbd>
+    </button>
+
+    <nav class="nav" id="nav">
+      <p class="nav__label">روایت</p>
+      <a class="nav__item" href="#/home" data-nav="home"><svg class="ico"><use href="#i-home"/></svg><span>نمای کلی</span></a>
+      <a class="nav__item" href="#/timeline" data-nav="timeline"><svg class="ico"><use href="#i-reel"/></svg><span>خط زمان</span><span class="nav__count" id="countFrames"></span></a>
+      <a class="nav__item" href="#/gallery" data-nav="gallery"><svg class="ico"><use href="#i-grid"/></svg><span>آلبوم</span></a>
+      <a class="nav__item" href="#/calendar" data-nav="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>تقویم</span></a>
+      <p class="nav__label">تأمل</p>
+      <a class="nav__item" href="#/threads" data-nav="threads"><svg class="ico"><use href="#i-threads"/></svg><span>رشته‌ها</span></a>
+      <a class="nav__item" href="#/insights" data-nav="insights"><svg class="ico"><use href="#i-chart"/></svg><span>بینش</span></a>
+      <a class="nav__item" href="#/places" data-nav="places"><svg class="ico"><use href="#i-pin"/></svg><span>مکان‌ها</span></a>
+      <p class="nav__label">گنجینه</p>
+      <a class="nav__item" href="#/settings" data-nav="settings"><svg class="ico"><use href="#i-settings"/></svg><span>تنظیمات</span></a>
+    </nav>
+
+    <div class="rail__foot">
+      <div class="sync" id="syncChip" title="منبع داده">
+        <span class="dot"></span><span class="sync__text">در حال اتصال…</span>
+      </div>
+      <button class="userchip" id="userChip" data-action="open-user-menu">
+        <span class="avatar avatar--sm" id="railAvatar">ر</span>
+        <span class="userchip__meta"><strong id="railName">مهمان</strong><em id="railMeta">گنجینهٔ محلی</em></span>
+        <svg class="ico"><use href="#i-chevron-down"/></svg>
+      </button>
+    </div>
+  </aside>
+  <div class="rail-scrim" id="railScrim" data-action="close-rail"></div>
+
+  <main class="main" id="main">
+    <header class="topbar" id="topbar">
+      <button class="icon-btn rail__open" data-action="open-rail" aria-label="باز کردن منو"><svg class="ico"><use href="#i-menu"/></svg></button>
+      <div class="topbar__titles">
+        <h1 class="topbar__title" id="pageTitle">نمای کلی</h1>
+        <p class="topbar__sub" id="pageSub"></p>
+      </div>
+      <div class="topbar__actions" id="pageActions">
+        <button class="searchbtn" data-action="open-search" aria-label="جست‌وجو">
+          <svg class="ico"><use href="#i-search"/></svg><span>جست‌وجو در روایت</span><kbd>⌘K</kbd>
+        </button>
+        <button class="icon-btn" data-action="toggle-theme" aria-label="تغییر پوسته" id="themeBtn"><svg class="ico"><use href="#i-moon"/></svg></button>
+        <button class="icon-btn" data-action="open-search" aria-label="جست‌وجو" id="mobileSearchBtn"><svg class="ico"><use href="#i-search"/></svg></button>
+        <button class="btn btn--primary btn--sm hide-sm" data-action="new-frame"><svg class="ico"><use href="#i-plus"/></svg>قاب</button>
+      </div>
+    </header>
+    <div class="view" id="view" tabindex="-1"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="بخش‌ها">
+    <a href="#/home" data-nav="home"><svg class="ico"><use href="#i-home"/></svg><span>خانه</span></a>
+    <a href="#/timeline" data-nav="timeline"><svg class="ico"><use href="#i-reel"/></svg><span>ریل</span></a>
+    <a class="tabbar__new" href="#/write" data-nav="write" aria-label="قاب تازه"><svg class="ico"><use href="#i-plus"/></svg></a>
+    <a href="#/gallery" data-nav="gallery"><svg class="ico"><use href="#i-grid"/></svg><span>آلبوم</span></a>
+    <a href="#/insights" data-nav="insights"><svg class="ico"><use href="#i-chart"/></svg><span>بینش</span></a>
+  </nav>
+</div>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<div id="overlay" class="overlay-root"></div>
+<div id="offlineBar" class="offline-bar" hidden><svg class="ico"><use href="#i-cloud-off"/></svg><span>آفلاین — نوشته‌هایت روی همین دستگاه ذخیره می‌شود و در اولین فرصت همگام می‌شود.</span></div>
+<noscript><div class="noscript">ریل برای اجرا به جاوااسکریپت نیاز دارد.</div></noscript>
+</body>
+</html>
