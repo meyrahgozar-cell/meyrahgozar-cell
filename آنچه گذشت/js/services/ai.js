@@ -20,7 +20,7 @@ export class AiError extends Error {
 
 const FA_ERRORS = {
   notDeployed: 'سرویس هوش مصنوعی هنوز مستقر نشده است. تابع diary را در Supabase اجرا کن (راهنما در تنظیمات ← هوش مصنوعی).',
-  noKey: 'کلید OPENROUTER در Supabase تنظیم نشده است.',
+  noKey: 'مشکل در خواندن کلید OpenRouter. لاگ تابع را بررسی کن.',
   empty: 'متنی برای اصلاح پیدا نشد. اول چند جمله بنویس.',
   offline: 'برای اصلاح متن به اینترنت نیاز است.',
   busy: 'مدل‌های رایگان الان شلوغ‌اند. چند لحظه بعد دوباره امتحان کن.',
@@ -69,7 +69,8 @@ export async function correct({ text, level = 1, model = '' }) {
 
   if (!res.ok) {
     const msg = data?.error || data?.message || `HTTP ${res.status}`;
-    if (/OPENROUTER|api key|unauthor/i.test(String(msg))) throw new AiError(FA_ERRORS.noKey, 'no-key');
+    // موقتاً غیرفعال شد تا پیام واقعی تابع دیده شود
+    // if (/OPENROUTER|api key|unauthor/i.test(String(msg))) throw new AiError(FA_ERRORS.noKey, 'no-key');
     if (res.status === 429) throw new AiError(FA_ERRORS.busy, 'busy');
     throw new AiError(String(msg), 'http');
   }
