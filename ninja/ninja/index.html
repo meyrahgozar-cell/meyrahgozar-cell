@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#06060d" />
+    <title>Ninja File Manager — GitHub Studio</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+
+    <!-- CodeMirror (editor) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css" />
+
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-accent="cyan" data-connected="false">
+
+    <div class="bg" aria-hidden="true">
+        <i class="o1"></i><i class="o2"></i>
+        <div class="halo a"></div><div class="halo b"></div>
+        <div class="grain"></div>
+    </div>
+
+    <div class="app">
+        <!-- ══════════════ SIDEBAR ══════════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="side-head">
+                <div class="brand">
+                    <span class="logo">⚡</span>
+                    <span class="brand-text">
+                        <strong>File Manager</strong>
+                        <small>GitHub Studio</small>
+                    </span>
+                </div>
+                <button class="icon-btn only-mobile" id="sidebarClose" title="Close menu">✕</button>
+            </div>
+
+            <div class="repo-card" id="repoCard" data-empty="true">
+                <div class="repo-icon" id="repoIcon">🐙</div>
+                <div class="repo-main">
+                    <div class="repo-name" id="repoName">No repository</div>
+                    <div class="repo-meta" id="repoMeta">Connect to get started</div>
+                </div>
+            </div>
+
+            <label class="side-field" id="branchWrap" hidden>
+                <span>Branch</span>
+                <select id="branchSelect" class="select"></select>
+            </label>
+
+            <div class="side-group">
+                <div class="side-title">Upload</div>
+                <button class="side-item" id="navUpload"><span>📤</span> Files…</button>
+                <button class="side-item" id="navUploadFolder"><span>🗂</span> Folder…</button>
+                <button class="side-item" id="navUploadZip"><span>📦</span> ZIP archive…</button>
+            </div>
+
+            <div class="side-group">
+                <div class="side-title">Create</div>
+                <button class="side-item" id="navNewFile"><span>📄</span> New file…</button>
+                <button class="side-item" id="navNewFolder"><span>📁</span> New folder…</button>
+            </div>
+
+            <div class="side-group">
+                <div class="side-title">Navigate</div>
+                <button class="side-item" id="navUp"><span>⬆</span> Up one level</button>
+                <button class="side-item" id="navRefresh"><span>⟳</span> Refresh</button>
+                <button class="side-item" id="navPalette"><span>⌘</span> Quick open…</button>
+            </div>
+
+            <div class="side-card">
+                <div class="side-title">This folder</div>
+                <div class="stats">
+                    <div class="stat"><b id="statFiles">0</b><span>files</span></div>
+                    <div class="stat"><b id="statFolders">0</b><span>folders</span></div>
+                    <div class="stat"><b id="statSize">0 B</b><span>size</span></div>
+                    <div class="stat"><b id="statSel">0</b><span>selected</span></div>
+                </div>
+            </div>
+
+            <div class="side-card clip-card" id="clipCard" hidden>
+                <div class="side-title">Clipboard <span class="chip" id="clipMode">copy</span></div>
+                <div class="clip-text" id="clipText"></div>
+                <div class="clip-actions">
+                    <button class="btn btn-sm btn-primary" id="clipPaste">📋 Paste here</button>
+                    <button class="btn btn-sm" id="clipClear" title="Clear clipboard">✕</button>
+                </div>
+            </div>
+
+            <div class="side-group">
+                <div class="side-title">Appearance</div>
+                <div class="swatches" id="accentSwatches">
+                    <button class="sw" data-accent="cyan" style="--sw:#00f0ff" title="Cyan"></button>
+                    <button class="sw" data-accent="violet" style="--sw:#a78bfa" title="Violet"></button>
+                    <button class="sw" data-accent="mint" style="--sw:#34f5c5" title="Mint"></button>
+                    <button class="sw" data-accent="amber" style="--sw:#ffb02e" title="Amber"></button>
+                    <button class="sw" data-accent="rose" style="--sw:#ff6b9a" title="Rose"></button>
+                </div>
+                <label class="check slim"><input type="checkbox" id="optHideGitkeep" checked /><span>Hide <code>.gitkeep</code></span></label>
+            </div>
+
+            <div class="side-foot">
+                <button class="side-item" id="helpBtn2"><span>⌨</span> Shortcuts</button>
+                <a class="side-item" id="repoLink" href="#" target="_blank" rel="noopener"><span>↗</span> Open on GitHub</a>
+            </div>
+        </aside>
+        <div class="scrim" id="scrim"></div>
+
+        <!-- ══════════════ MAIN ══════════════ -->
+        <div class="main">
+            <header class="topbar">
+                <button class="icon-btn only-mobile" id="sidebarToggle" title="Menu">☰</button>
+
+                <form id="auth" class="connect-form" autocomplete="off">
+                    <div class="field">
+                        <span class="field-ico">🐙</span>
+                        <input id="repo" type="text" value="meyrahgozar-cell/meyrahgozar-cell" placeholder="owner/repo" spellcheck="false" />
+                    </div>
+                    <div class="field">
+                        <span class="field-ico">🔑</span>
+                        <input id="token" type="password" placeholder="GitHub token (repo scope)" autocomplete="new-password" spellcheck="false" />
+                        <button type="button" class="field-btn" id="tokenToggle" title="Show / hide token">👁</button>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="connectBtn">Connect</button>
+                    <button type="button" class="btn" id="disconnectBtn" hidden>Disconnect</button>
+                </form>
+
+                <div class="topbar-right">
+                    <div class="status" id="status">Not connected</div>
+                    <button class="icon-btn" id="helpBtn" title="Keyboard shortcuts (?)">?</button>
+                </div>
+            </header>
+
+            <section class="pathbar">
+                <button class="icon-btn" id="upBtn" title="Go up one level (Backspace)">⬆</button>
+                <div class="path" id="path"></div>
+                <div class="jump">
+                    <input id="jumpInput" placeholder="go to path…" spellcheck="false" />
+                </div>
+                <button class="icon-btn" id="refreshBtn" title="Refresh (R)">⟳</button>
+            </section>
+
+            <section class="toolbar" id="toolbar">
+                <div class="btn-wrap">
+                    <div class="split">
+                        <button class="btn btn-primary" id="uploadBtn"><span class="bi">📤</span> Upload</button>
+                        <button class="btn btn-primary caret" id="uploadMenuBtn" aria-haspopup="menu" aria-expanded="false" title="More upload options">▾</button>
+                    </div>
+                    <div class="menu" id="uploadMenu" role="menu">
+                        <button class="mi" data-upload="files" role="menuitem"><span class="ico">📄</span><span>Upload files…</span><em>multiple</em></button>
+                        <button class="mi" data-upload="folder" role="menuitem"><span class="ico">🗂</span><span>Upload folder…</span><em>keeps structure</em></button>
+                        <button class="mi" data-upload="zip" role="menuitem"><span class="ico">📦</span><span>Upload ZIP…</span><em>pick contents</em></button>
+                    </div>
+                </div>
+
+                <div class="btn-wrap">
+                    <div class="split">
+                        <button class="btn" id="newBtn"><span class="bi">＋</span> New</button>
+                        <button class="btn caret" id="newMenuBtn" aria-haspopup="menu" aria-expanded="false" title="More create options">▾</button>
+                    </div>
+                    <div class="menu" id="newMenu" role="menu">
+                        <button class="mi" data-new="file" role="menuitem"><span class="ico">📄</span><span>New file…</span></button>
+                        <button class="mi" data-new="folder" role="menuitem"><span class="ico">📁</span><span>New folder…</span></button>
+                    </div>
+                </div>
+
+                <div class="searchbox">
+                    <span class="si">🔍</span>
+                    <input id="searchInput" placeholder="Filter this folder…   /" spellcheck="false" />
+                    <button class="clear" id="searchClear" title="Clear search">✕</button>
+                </div>
+                <button class="btn toggle" id="deepSearchBtn" title="Also search file names across the whole repository">🌐 Repo</button>
+
+                <div class="spacer"></div>
+
+                <select id="sortSelect" class="select" title="Sort files">
+                    <option value="name-asc">Name A→Z</option>
+                    <option value="name-desc">Name Z→A</option>
+                    <option value="size-desc">Size ↓</option>
+                    <option value="size-asc">Size ↑</option>
+                    <option value="date-desc">Modified ↓</option>
+                    <option value="date-asc">Modified ↑</option>
+                    <option value="type">Type</option>
+                </select>
+
+                <div class="viewtoggle" role="group" aria-label="View mode">
+                    <button id="viewGrid" class="vt" title="Grid view">▦</button>
+                    <button id="viewList" class="vt" title="Detail view">☰</button>
+                </div>
+
+                <button class="btn toggle" id="selectBtn">☑ Select</button>
+                <button class="btn toggle" id="formattedBtn" title="Bulk upload using paths embedded in filenames: js_app_app.js → js/app/app.js">🔀 Formatted</button>
+            </section>
+
+            <section class="content" id="content">
+                <div class="files grid" id="files"></div>
+            </section>
+
+            <footer class="statusbar">
+                <span class="sb-item" id="sbItems">Not connected</span>
+                <span class="sb-item" id="sbFilter" hidden></span>
+                <span class="grow"></span>
+                <span class="sb-item" id="sbClip" hidden></span>
+                <span class="sb-item" id="sbSel" hidden></span>
+                <span class="sb-item branch" id="branchLabel">master</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ══════════════ SELECTION BAR ══════════════ -->
+    <div class="selection-bar" id="selectionBar" role="toolbar" aria-label="Selection actions">
+        <span class="sel-count" id="selCount"></span>
+        <button type="button" class="primary" id="selDownload">⬇️ Download ZIP</button>
+        <button type="button" id="selCopy">📄 Copy</button>
+        <button type="button" id="selCut">✂️ Cut</button>
+        <button type="button" id="selDelete">🗑️ Delete</button>
+        <button type="button" id="selClear">✕ Clear</button>
+    </div>
+
+    <!-- ══════════════ CONTEXT MENU ══════════════ -->
+    <div class="context-menu" id="contextMenu" role="menu" tabindex="-1">
+        <div class="ctx-title" id="ctxTitle"></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="open" data-needs-item data-single-only><span class="ico">📂</span><span class="lbl" id="ctxOpenLabel">Open / Edit</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="preview" data-needs-item data-file-only data-single-only><span class="ico">👁️</span><span class="lbl">Preview</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="openNewTab" data-needs-item data-single-only><span class="ico">🌐</span><span class="lbl">Open on live site</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="copyContent" data-file-only data-single-only><span class="ico">📋</span><span class="lbl">Copy contents</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="download" data-needs-item data-single-only><span class="ico">⬇️</span><span class="lbl" id="ctxDownloadLabel">Download</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="replace" data-needs-item data-single-only><span class="ico">🔄</span><span class="lbl" id="ctxReplaceLabel">Replace…</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="rename" data-needs-item data-single-only><span class="ico">✏️</span><span class="lbl">Rename…</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="duplicate" data-needs-item data-single-only><span class="ico">⧉</span><span class="lbl">Duplicate…</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="copy" data-needs-item><span class="ico">📄</span><span class="lbl" id="ctxCopyLabel">Copy</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="cut" data-needs-item><span class="ico">✂️</span><span class="lbl" id="ctxCutLabel">Cut</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="paste" data-clipboard-only><span class="ico">📋</span><span class="lbl" id="ctxPasteLabel">Paste</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="cancelClipboard" data-clipboard-only><span class="ico">🚫</span><span class="lbl">Cancel clipboard</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="copyPath" data-needs-item data-single-only><span class="ico">🧭</span><span class="lbl">Copy path</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="copyRaw" data-file-only data-needs-item data-single-only><span class="ico">🔗</span><span class="lbl">Copy raw URL</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="openGitHub" data-needs-item data-single-only><span class="ico">↗</span><span class="lbl">Open in GitHub</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="info" data-needs-item data-single-only><span class="ico">ℹ️</span><span class="lbl">File info</span></div>
+        <div class="item" role="menuitem" tabindex="-1" data-action="select" data-needs-item data-single-only><span class="ico">☑️</span><span class="lbl">Select</span></div>
+        <div class="sep" data-needs-item></div>
+        <div class="item danger" role="menuitem" tabindex="-1" data-action="delete" data-needs-item><span class="ico">🗑️</span><span class="lbl" id="ctxDeleteLabel">Delete</span></div>
+    </div>
+
+    <!-- ══════════════ UPLOAD PANEL ══════════════ -->
+    <div class="upload-panel" id="uploadPanel" data-state="active" aria-live="polite">
+        <div class="up-head">
+            <div class="up-titles">
+                <div class="up-title" id="upTitle">Uploading…</div>
+                <div class="up-summary" id="upSummary"></div>
+            </div>
+            <button type="button" id="upRetry" title="Retry failed uploads" hidden>⟲</button>
+            <button type="button" id="upToggle" title="Collapse / expand">▾</button>
+            <button type="button" id="upCancel" title="Cancel remaining uploads">⏹</button>
+            <button type="button" id="upClose" title="Dismiss">✕</button>
+        </div>
+        <div class="up-overall" id="upOverall" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="upBar"></i></div>
+        <div class="up-list" id="upList"></div>
+    </div>
+
+    <!-- ══════════════ EDITOR ══════════════ -->
+    <div class="editor-overlay" id="editorOverlay">
+        <div class="editor-modal">
+            <div class="editor-header">
+                <span class="file-icon" id="edIcon">📄</span>
+                <span class="file-name" id="edFileName">file</span>
+                <span class="file-path" id="edFilePath"></span>
+                <span class="editor-status" id="edStatus">● saved</span>
+                <button class="close-btn" id="edClose" title="Close (Esc)">✕</button>
+            </div>
+            <div class="editor-body" id="edBody"></div>
+            <div class="editor-footer">
+                <div class="info">
+                    <span id="edLines">0</span> lines · <span id="edSize">0</span> B
+                    <span class="hint">Ctrl/Cmd + S to save · Esc to close</span>
+                </div>
+                <button id="edCancel">Cancel</button>
+                <button class="primary" id="edSave">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ ZIP WIZARD ══════════════ -->
+    <div class="overlay zip-overlay" id="zipOverlay">
+        <div class="modal zip-modal" role="dialog" aria-modal="true" aria-labelledby="zipTitle">
+            <div class="modal-head">
+                <span class="mh-icon">📦</span>
+                <div class="mh-titles">
+                    <div class="mh-title" id="zipTitle">archive.zip</div>
+                    <div class="mh-sub" id="zipSubtitle"></div>
+                </div>
+                <button class="icon-btn" id="zipClose" title="Cancel">✕</button>
+            </div>
+
+            <div class="zip-tools">
+                <div class="searchbox sm">
+                    <span class="si">🔍</span>
+                    <input id="zipSearch" placeholder="Filter files in archive…" spellcheck="false" />
+                </div>
+                <div class="zip-quick">
+                    <button class="btn btn-xs" id="zipSelectAll">All</button>
+                    <button class="btn btn-xs" id="zipSelectNone">None</button>
+                    <button class="btn btn-xs" id="zipSelectInvert">Invert</button>
+                    <button class="btn btn-xs" id="zipExpandAll" title="Expand all folders">⤢</button>
+                    <button class="btn btn-xs" id="zipCollapseAll" title="Collapse all folders">⤡</button>
+                </div>
+            </div>
+
+            <div class="zip-tree" id="zipTree"></div>
+
+            <div class="zip-summary">
+                <span id="zipSummary">0 of 0 files</span>
+                <span class="dot"></span>
+                <span id="zipSizeSum"></span>
+                <span class="grow"></span>
+                <span class="muted" id="zipConflictNote"></span>
+            </div>
+
+            <div class="zip-options">
+                <label class="opt">
+                    <span class="opt-label">Destination folder</span>
+                    <div class="input-prefix">
+                        <span class="prefix" id="zipTargetPrefix">/</span>
+                        <input id="zipTarget" placeholder="leave empty for the current folder" spellcheck="false" />
+                    </div>
+                </label>
+                <div class="opt-row">
+                    <label class="check" id="zipStripWrap"><input type="checkbox" id="zipStrip" /><span>Strip common root <em id="zipStripLabel"></em></span></label>
+                    <label class="check"><input type="checkbox" id="zipFlatten" /><span>Flatten folders</span></label>
+                    <label class="check"><input type="checkbox" id="zipKeepZip" /><span>Keep the .zip</span></label>
+                </div>
+                <label class="opt">
+                    <span class="opt-label">If a file already exists</span>
+                    <select class="select" id="zipConflict">
+                        <option value="overwrite">Overwrite it</option>
+                        <option value="skip">Skip it</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="modal-foot">
+                <span class="foot-hint" id="zipFootHint">Nothing selected yet</span>
+                <button class="btn" id="zipCancel">Cancel</button>
+                <button class="btn" id="zipAsIs">Upload as .zip</button>
+                <button class="btn btn-primary" id="zipExtract">Extract selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ PROMPT ══════════════ -->
+    <div class="overlay" id="promptOverlay">
+        <div class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="promptTitle">
+            <div class="modal-head">
+                <span class="mh-icon" id="promptIcon">✏️</span>
+                <div class="mh-titles">
+                    <div class="mh-title" id="promptTitle">Rename</div>
+                    <div class="mh-sub" id="promptSub"></div>
+                </div>
+                <button class="icon-btn" id="promptClose" title="Cancel">✕</button>
+            </div>
+            <div class="modal-body">
+                <label class="opt">
+                    <span class="opt-label" id="promptLabel">Name</span>
+                    <input id="promptInput" type="text" spellcheck="false" autocomplete="off" />
+                </label>
+                <label class="opt" id="promptExtraWrap" hidden>
+                    <span class="opt-label" id="promptExtraLabel">Template</span>
+                    <select class="select" id="promptExtra"></select>
+                </label>
+                <p class="modal-hint" id="promptHint"></p>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" id="promptCancel">Cancel</button>
+                <button class="btn btn-primary" id="promptOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ CONFIRM ══════════════ -->
+    <div class="overlay" id="confirmOverlay">
+        <div class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <div class="modal-head">
+                <span class="mh-icon" id="confirmIcon">⚠️</span>
+                <div class="mh-titles">
+                    <div class="mh-title" id="confirmTitle">Are you sure?</div>
+                    <div class="mh-sub" id="confirmSub"></div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p class="modal-text" id="confirmText"></p>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" id="confirmCancel">Cancel</button>
+                <button class="btn btn-primary" id="confirmOk">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ INFO ══════════════ -->
+    <div class="overlay" id="infoOverlay">
+        <div class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+            <div class="modal-head">
+                <span class="mh-icon" id="infoIcon">📄</span>
+                <div class="mh-titles">
+                    <div class="mh-title" id="infoTitle">Info</div>
+                    <div class="mh-sub" id="infoSub"></div>
+                </div>
+                <button class="icon-btn" id="infoClose" title="Close">✕</button>
+            </div>
+            <div class="info-body" id="infoBody"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ PREVIEW ══════════════ -->
+    <div class="overlay preview-overlay" id="previewOverlay">
+        <div class="preview-shell">
+            <div class="preview-bar">
+                <span class="preview-title" id="previewTitle"></span>
+                <span class="grow"></span>
+                <button class="icon-btn" id="previewOpen" title="Open raw in a new tab">↗</button>
+                <button class="icon-btn" id="previewDownload" title="Download">⬇</button>
+                <button class="icon-btn" id="previewClose" title="Close (Esc)">✕</button>
+            </div>
+            <div class="preview-body" id="previewBody"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ SHORTCUTS ══════════════ -->
+    <div class="overlay" id="helpOverlay">
+        <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal-head">
+                <span class="mh-icon">⌨</span>
+                <div class="mh-titles">
+                    <div class="mh-title" id="helpTitle">Keyboard shortcuts</div>
+                    <div class="mh-sub">Drive the manager without the mouse</div>
+                </div>
+                <button class="icon-btn" id="helpClose" title="Close">✕</button>
+            </div>
+            <div class="help-body" id="helpBody"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ COMMAND PALETTE ══════════════ -->
+    <div class="overlay" id="paletteOverlay">
+        <div class="modal palette-modal" role="dialog" aria-modal="true">
+            <div class="palette-input">
+                <span>⌘</span>
+                <input id="paletteInput" placeholder="Type a command or a file name…" spellcheck="false" autocomplete="off" />
+                <kbd>esc</kbd>
+            </div>
+            <div class="palette-list" id="paletteList"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ DROP OVERLAY ══════════════ -->
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-card">
+            <span class="di">📥</span>
+            <strong>Drop to upload</strong>
+            <small>Files, folders and .zip archives — you can pick which ZIP entries to extract</small>
+        </div>
+    </div>
+
+    <!-- ══════════════ TOASTS ══════════════ -->
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- Hidden inputs -->
+    <input type="file" id="fileInput" multiple hidden />
+    <input type="file" id="folderInput" webkitdirectory directory multiple hidden />
+    <input type="file" id="zipInput" accept=".zip,application/zip" multiple hidden />
+    <input type="file" id="replaceInput" multiple hidden />
+
+    <!-- CodeMirror + JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script src="app.js"></script>
+</body>
+</html>
