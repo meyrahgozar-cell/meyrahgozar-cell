@@ -1305,13 +1305,13 @@ function calculateScore(type,value){
       return 1.5;                // ۶–۸ لیوان
     case"sleep": {
       // value = دقیقه از ۰۰:۰۰ (۰ تا ۱۴۳۹)
-      // ۱۲:۰۰–۲۲:۵۹ → +1.5
+      // ۱۲:۰۰–۲۲:۵۹ → +2
       // ۲۳:۰۰–۲۳:۵۹ → +0.5
       // بعد از نیمه‌شب (۰۰:۰۰–۱۱:۵۹): روز عوض شده ولی دیر خوابیده → -0.5
       const mins=((Math.round(value)%1440)+1440)%1440;
       if(mins>=23*60) return 0.5;
       if(mins<12*60) return -0.5;
-      return 1.5;
+      return 2;
     }
     case"instagram": return value===1?1.5:0;
     case"sun": return value===1?1.5:0;
@@ -1320,7 +1320,7 @@ function calculateScore(type,value){
       // هر صفحه ۰.۲۵ — با ۶ صفحه به سقف ۱.۵ می‌رسد؛ صفحات بیشتر قابل ثبت است ولی امتیاز بیشتر نمی‌شود
       if(value<=0) return 0;
       return r4(Math.min(1.5,value*0.25));
-    case"sugar": return value===1?1.5:-.5;
+    case"sugar": return value===1?2:-.5;
     case"dinner":
       // دقیقه از نیمه‌شب: قبل ۲۰:۰۰ → ۱.۵ | ۲۰:۰۰ تا قبل ۲۱:۳۰ → ۰.۵ | بعد → ۰
       if(value < 1200) return 1.5;
@@ -1883,8 +1883,8 @@ function updateScoreUI(){
   animateScore(el, total);
   const bar=document.getElementById("scoreBar");
   if(bar){
-    // max theoretical 18.5; map to bar width
-    const pct=Math.min(100, Math.max(0, (Math.abs(total)/18.5)*100));
+    // max theoretical 19.5; map to bar width
+    const pct=Math.min(100, Math.max(0, (Math.abs(total)/19.5)*100));
     bar.classList.remove("positive","negative");
     if(total>0) bar.classList.add("positive");
     else if(total<0) bar.classList.add("negative");
