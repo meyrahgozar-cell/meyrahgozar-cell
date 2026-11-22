@@ -3,7 +3,6 @@
  * هر دو یک رابط مشترک دارند تا بقیه‌ی برنامه از جزئیات بی‌خبر باشد.
  */
 import { CONFIG } from './config.js';
-import { seedDemoDb } from './demo-data.js';
 
 export class ApiError extends Error {
   constructor(message, { status = 0, code = '', details = null } = {}) {
@@ -43,9 +42,9 @@ export function isMissingTable(err) {
 }
 
 const NUMERIC_FIELDS = new Set([
-  'weight', 'start_weight', 'promised_weight', 'target_bmi', 'height_cm',
-  'birth_year', 'measure_hour', 'amount', 'chance', 'promise_kg',
-  'final_weight', 'prize_pool', 'fee', 'seed', 'won', 'compliant', 'paid',
+  'weight', 'weight_kg', 'start_weight', 'promised_weight', 'height_cm',
+  'age_years', 'measure_hour', 'amount', 'chance', 'promise_kg',
+  'final_weight', 'value', 'score',
 ]);
 
 export function coerceRow(row) {
@@ -63,7 +62,7 @@ export function coerceRow(row) {
 /*                             Supabase                                */
 /* =================================================================== */
 
-const SESSION_KEY = 'tarazoo.session.v2';
+const SESSION_KEY = 'weightchallenge.session.v1';
 
 export function createSupabaseDb() {
   const base = CONFIG.supabaseUrl.replace(/\/$/, '');
@@ -182,7 +181,7 @@ export function createSupabaseDb() {
     kind: 'supabase',
 
     async probe() {
-      await restRequest(`/${CONFIG.prefix}rounds?select=id&limit=1`);
+      await restRequest(`/${CONFIG.tables.pledges}?select=id&limit=1`);
       return true;
     },
 
@@ -267,164 +266,4 @@ function translateAuthError(message, data) {
   ];
   for (const [re, fa] of map) if (re.test(message)) return fa;
   return message || data?.message || 'خطای ناشناخته';
-}
-
-/* =================================================================== */
-/*                        نسخه‌ی نمایشی (Demo)                          */
-/* =================================================================== */
-
-const DEMO_KEY = 'tarazoo.demo.v5';
-const DEMO_SESSION = 'tarazoo.demo.session.v5';
-
-export function createDemoDb() {
-  let db;
-  db = load();
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(DEMO_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.version === 5) return parsed;
-      }
-    } catch {
-      /* داده‌ی خراب را بازنویسی می‌کنیم */
-    }
-    const fresh = seedDemoDb();
-    persist(fresh);
-    return fresh;
-  }
-
-  function persist(next = db) {
-    db = next;
-    try { localStorage.setItem(DEMO_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-  }
-
-  const table = (name) => {
-    if (!db.tables[name]) db.tables[name] = [];
-    return db.tables[name];
-  };
-
-  function applyEq(rows, eq = {}) {
-    return rows.filter((row) =>
-      Object.entries(eq || {}).every(([key, value]) => value === undefined || value === null || String(row[key]) === String(value)),
-    );
-  }
-
-  return {
-    kind: 'demo',
-
-    async probe() { return true; },
-
-    getSession() {
-      try {
-        const id = localStorage.getItem(DEMO_SESSION);
-        if (!id) return null;
-        return db.users.find((u) => u.id === id) || null;
-      } catch {
-        return null;
-      }
-    },
-
-    async signIn(email, password) {
-      const user = db.users.find((u) => u.email.toLowerCase() === String(email).toLowerCase().trim());
-      if (!user || user.password !== password) {
-        throw new ApiError('ایمیل یا رمز عبور اشتباه است.', { status: 400 });
-      }
-      localStorage.setItem(DEMO_SESSION, user.id);
-      return { id: user.id, email: user.email };
-    },
-
-    async signUp(email, password, metadata = {}) {
-      const clean = String(email).toLowerCase().trim();
-      if (db.users.some((u) => u.email === clean)) {
-        throw new ApiError('این ایمیل قبلاً ثبت‌نام کرده است.', { status: 400 });
-      }
-      if (String(password).length < 6) {
-        throw new ApiError('رمز عبور باید حداقل ۶ کاراکتر باشد.', { status: 400 });
-      }
-      const user = { id: uidLocal(), email: clean, password, name: metadata.full_name || '' };
-      db.users.push(user);
-      persist();
-      localStorage.setItem(DEMO_SESSION, user.id);
-      return { user: { id: user.id, email: clean }, needsConfirm: false };
-    },
-
-    async signOut() {
-      localStorage.removeItem(DEMO_SESSION);
-    },
-
-    async select(name, { eq = {}, order, limit } = {}) {
-      let rows = applyEq(table(name), eq).map((r) => ({ ...r }));
-      if (order) {
-        const [col, dir] = order.split('.');
-        rows.sort((a, b) => {
-          const av = a[col];
-          const bv = b[col];
-          const cmp = av > bv ? 1 : av < bv ? -1 : 0;
-          return dir === 'desc' ? -cmp : cmp;
-        });
-      }
-      if (limit) rows = rows.slice(0, limit);
-      return rows;
-    },
-
-    async insert(name, row) {
-      const list = table(name);
-      const rows = (Array.isArray(row) ? row : [row]).map((r) => {
-        const item = { id: r.id || uidLocal(), created_at: r.created_at || new Date().toISOString(), ...r };
-        if (!item.id) item.id = uidLocal();
-        list.push(item);
-        return { ...item };
-      });
-      persist();
-      return rows;
-    },
-
-    async upsert(name, row, onConflict) {
-      const list = table(name);
-      const rows = (Array.isArray(row) ? row : [row]).map((r) => {
-        const keys = String(onConflict || 'id').split(',').map((s) => s.trim());
-        const existing = list.find((item) => keys.every((k) => String(item[k]) === String(r[k]) && r[k] !== undefined));
-        if (existing) {
-          Object.assign(existing, r, { id: existing.id });
-          return { ...existing };
-        }
-        const item = { id: r.id || uidLocal(), created_at: r.created_at || new Date().toISOString(), ...r };
-        list.push(item);
-        return { ...item };
-      });
-      persist();
-      return rows;
-    },
-
-    async update(name, patch, eq) {
-      const list = table(name);
-      const matched = applyEq(list, eq);
-      matched.forEach((row) => Object.assign(row, patch));
-      persist();
-      return matched.map((r) => ({ ...r }));
-    },
-
-    async remove(name, eq) {
-      const list = table(name);
-      const keep = list.filter((row) => !applyEq([row], eq).length);
-      db.tables[name] = keep;
-      persist();
-      return true;
-    },
-
-    reset() {
-      const fresh = seedDemoDb();
-      localStorage.removeItem(DEMO_SESSION);
-      persist(fresh);
-    },
-  };
-}
-
-let localCounter = 0;
-function uidLocal() {
-  localCounter += 1;
-  const rand = Math.random().toString(16).slice(2, 10);
-  return `d-${Date.now().toString(16)}-${localCounter}-${rand}`;
 }

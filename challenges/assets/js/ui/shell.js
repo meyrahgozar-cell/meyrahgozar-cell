@@ -23,7 +23,7 @@ const MOBILE_LABELS = {
 
 export function applyTheme(theme) {
   document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
-  localStorage.setItem('tarazoo.theme', theme);
+  localStorage.setItem('weightchallenge.theme', theme);
 }
 
 export function toggleTheme() {
@@ -96,7 +96,7 @@ function backendNoteStrip() {
   return h('div.notice-strip.no-print', {},
     h('div.inner', {},
       h('span', { html: icon('info', 16) }),
-      h('div.grow', {}, h('strong', {}, 'حالت نمایشی: '), state.backendNote),
+      h('div.grow', {}, h('strong', {}, 'پایگاه‌داده متصل نیست: '), state.backendNote),
       h('button.btn.sm.ghost', { onClick: showSetupHelp }, 'راهنمای فعال‌سازی'),
     ),
   );
@@ -110,20 +110,37 @@ export function showSetupHelp() {
     body: h('div.stack', {},
       h('div.alert.info', {},
         h('span', { html: icon('info', 18) }),
-        h('div', {}, 'در حال حاضر داده‌ها فقط در همین مرورگر ذخیره می‌شوند (حالت نمایشی با چند کاربر نمونه). برای اجرای واقعی چالش این سه قدم را انجام دهید.'),
+        h('div', {}, 'برای اینکه چالش با داده‌ی واقعی کار کند، این سه قدم را یک بار انجام دهید.'),
       ),
       h('ol', { style: { display: 'flex', flexDirection: 'column', gap: '12px', lineHeight: '2' } },
         h('li', {}, h('strong', {}, 'ورود به داشبورد Supabase'), ' پروژه‌ی ', h('span.mono', {}, 'zlvsmjhwyzfdecfyhxal'), ' و باز کردن بخش SQL Editor.'),
-        h('li', {}, h('strong', {}, 'اجرای فایل '), h('code.mono', {}, 'supabase/schema.sql'), ' که همراه پروژه است. این فایل جدول‌های ', h('code.mono', {}, 'weight_*'), ' و سیاست‌های دسترسی را می‌سازد.'),
+        h('li', {}, h('strong', {}, 'اجرای فایل '), h('code.mono', {}, 'supabase/schema.sql'), ' که همراه پروژه است. این فایل جدول‌های چالش (', h('code.mono', {}, 'challenge_*'), ') را می‌سازد و خواندن ', h('code.mono', {}, 'profiles'), ' و ', h('code.mono', {}, 'user_weights'), ' را برای اعضا باز می‌کند.'),
         h('li', {}, h('strong', {}, 'بارگذاری دوباره‌ی صفحه'), '؛ اگر ایمیلی برای تأیید ارسال می‌شود، در Authentication → Providers آن را خاموش کنید تا ثبت‌نام فوری باشد.'),
       ),
       h('div.alert.warn', {},
         h('span', { html: icon('alert', 18) }),
-        h('div', {}, 'تا زمانی که این کار انجام نشده، سایت کاملاً قابل استفاده است ولی داده‌ها بین مرورگرها مشترک نیست.'),
+        h('div', {}, 'تا زمانی که این کار انجام نشده، بخش‌های داده (جدول چالش، ثبت وزن، گزارش‌ها و قرعه‌کشی) نمایش داده نمی‌شوند.'),
       ),
     ),
     footer: h('button.btn.primary', { onClick: (e) => e.target.closest('.modal-overlay').remove() }, 'متوجه شدم'),
   });
+}
+
+export function offlinePage() {
+  return h('div.page', {},
+    pageHead('پایگاه‌داده در دسترس نیست', 'برای استفاده از چالش، جدول‌های Supabase باید یک بار ساخته شوند.'),
+    h('div.card', {},
+      h('div.empty', {},
+        h('div.empty-ic', { html: icon('alert', 24) }),
+        h('strong', {}, 'اتصال به Supabase برقرار نشد'),
+        h('p', {}, state.backendNote || 'بررسی کنید جدول‌های چالش ساخته شده‌اند و آدرس و کلید در assets/js/config.js درست است.'),
+        h('div.row.gap-8.mt-8', {},
+          h('button.btn.primary', { onClick: showSetupHelp }, 'راهنمای راه‌اندازی'),
+          h('button.btn.ghost', { onClick: () => location.reload() }, 'تلاش دوباره'),
+        ),
+      ),
+    ),
+  );
 }
 
 export function renderShell(activeKey) {
@@ -159,7 +176,7 @@ export function renderShell(activeKey) {
         userMenu(),
       ),
     ),
-    backendNoteStrip(),
+    ...[backendNoteStrip()].filter(Boolean),
   );
 
   mobileNav.hidden = false;
@@ -191,7 +208,7 @@ export function renderShell(activeKey) {
         h('a', { href: '#/overall' }, 'گزارش کلی'),
         h('a', { href: '#/coach' }, 'مربی هوشمند'),
         h('span.badge', { class: state.backend === 'supabase' ? 'brand' : 'gold' },
-          state.backend === 'supabase' ? 'متصل به Supabase' : 'حالت نمایشی',
+          state.backend === 'supabase' ? 'متصل به Supabase' : 'متصل نیست',
         ),
       ),
     ),

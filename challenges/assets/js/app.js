@@ -1,6 +1,6 @@
 /** نقطه‌ی ورود: راه‌اندازی، مسیریابی هش‌محور و اتصال به پوسته. */
 import { store, state } from './store.js';
-import { renderShell, applyTheme, pageHead } from './ui/shell.js';
+import { renderShell, applyTheme, pageHead, offlinePage } from './ui/shell.js';
 import { h, icon, toast } from './utils.js';
 
 import * as Home from './pages/home.js';
@@ -64,6 +64,14 @@ async function route() {
       return;
     }
 
+    if (state.backend === 'offline') {
+      renderShell(known.key);
+      const app = document.getElementById('app');
+      app.hidden = false;
+      app.replaceChildren(offlinePage());
+      return;
+    }
+
     if (known.auth && !store.isLoggedIn) {
       location.hash = `#/auth?next=${encodeURIComponent(path)}`;
       const loop = setTimeout(() => { if (!store.isLoggedIn) location.hash = '#/'; }, 3000);
@@ -85,7 +93,7 @@ async function route() {
     try {
       await known.module.render(page, { params });
     } catch (err) {
-      console.error('[tarazoo] render error:', err);
+      console.error('[challenge] render error:', err);
       page.replaceChildren(
         pageHead('خطا در نمایش صفحه', ''),
         h('div.alert.danger', {},
@@ -106,13 +114,13 @@ async function route() {
 /* -------------------------------------------------------------------- boot */
 
 async function boot() {
-  applyTheme(localStorage.getItem('tarazoo.theme') || 'dark');
+  applyTheme(localStorage.getItem('weightchallenge.theme') || 'dark');
   const bootEl = document.getElementById('app-loading');
 
   try {
     await store.init();
   } catch (err) {
-    console.error('[tarazoo] init failed', err);
+    console.error('[challenge] init failed', err);
     if (bootEl) {
       bootEl.innerHTML = `<div class="boot-title">خطا در راه‌اندازی</div><div class="boot-sub">${String(err?.message || err)}</div>`;
     }
@@ -145,7 +153,7 @@ async function boot() {
   });
 
   // در دسترس بودن برای عیب‌یابی در کنسول
-  window.__tarazoo = { store, state };
+  window.__challenge = { store, state };
 }
 
 boot();

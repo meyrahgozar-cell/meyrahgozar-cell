@@ -10,6 +10,48 @@ import { openPledgeModal } from '../ui/join.js';
 import { currentRoundRange, formatJalali, formatTime, relativeDay, daysBetween } from '../jalali.js';
 import { progressRing } from '../chart.js';
 
+const HOW_STEPS = [
+  { title: 'تعهدت را ثبت کن', text: 'قد، سال تولد و جنسیت را در پروفایل کامل کن؛ وزن شروع و وزن پایان ماه را در «پیوستن به چالش» ثبت کن و سهم اشتراک را بپرداز.' },
+  { title: 'هر روز وزن کن', text: 'وزن روزانه با ساعت اندازه‌گیری و وضعیت معده ثبت می‌شود تا تحلیل‌ها و نمودار دقیق باشند.' },
+  { title: 'پایان ماه، قرعه‌کشی', text: 'هر کیلو تعهد یک بلیت است. بین کسانی که به وزن تعهد رسیده‌اند و سهمشان تأیید شده، برنده به‌صورت تصادفی انتخاب می‌شود.' },
+];
+
+function openHowItWorks() {
+  modal({
+    title: 'چالش چطور کار می‌کند؟',
+    subtitle: 'سه قدم تا شرکت در قرعه‌کشی جایزه',
+    width: 620,
+    body: h('div.stack', {},
+      h('div.steps', {}, ...HOW_STEPS.map((s, i) => h('div.step', {},
+        h('div.step-num', {}, faDigits(i + 1)),
+        h('div', {}, h('h4', {}, s.title), h('p', {}, s.text)),
+      ))),
+      h('div.alert.info', {},
+        h('span', { html: icon('info', 18) }),
+        h('div', {}, 'استخر جایزه از مجموع سهم‌های تأییدشده ساخته می‌شود و بین کسانی که به تعهد پایان ماه رسیده‌اند قرعه‌کشی می‌شود.'),
+      ),
+    ),
+    footer: h('button.btn.primary', { onClick: (e) => e.target.closest('.modal-overlay').remove() }, 'متوجه شدم'),
+  });
+}
+
+function openBoardHelp() {
+  modal({
+    title: 'جدول چگونه محاسبه می‌شود؟',
+    width: 600,
+    body: h('div.stack', {},
+      h('div.kv', {},
+        h('div.kv-row', {}, h('span', {}, 'وزن فعلی'), h('strong', {}, 'آخرین وزن ثبت‌شده')),
+        h('div.kv-row', {}, h('span', {}, 'وزن شروع'), h('strong', {}, 'وزن ثبت‌شده در تعهد')),
+        h('div.kv-row', {}, h('span', {}, 'بلیت شانس'), h('strong', {}, 'حداقل ۱، بر پایه‌ی کیلوهای تعهد')),
+        h('div.kv-row', {}, h('span', {}, 'شرط برد'), h('strong', {}, 'رسیدن به تعهد + پرداخت تأییدشده')),
+      ),
+      h('p.small.muted', {}, 'وزن‌ها از ثبت‌های روزانه‌ی همان دوره خوانده می‌شوند؛ هر کس BMI را خصوصی کرده باشد، عددش نمایش داده نمی‌شود.'),
+    ),
+    footer: h('button.btn.ghost', { onClick: (e) => e.target.closest('.modal-overlay').remove() }, 'بستن'),
+  });
+}
+
 function countdownBlock(range) {
   const target = new Date(range.end);
   target.setHours(23, 59, 59, 999);
@@ -65,11 +107,11 @@ function hero(board) {
     h('div.hero-content', {},
       h('span.hero-eyebrow', {}, icon('calendar', 14), `دوره‌ی ${round.title} • ${formatJalali(range.start, { long: true })} تا ${formatJalali(range.end, { long: true })}`),
       h('h1.hero-title', {}, 'هر کیلو تعهد، ', h('em', {}, 'یک بلیت شانس'), ' برای جایزه‌ی ماه'),
-      h('p.hero-lead', {},
-        'وزن شروع، وزن فعلی و وزن تعهد پایان ماه هر شرکت‌کننده را در یک جدول ببین. هر روز وزن را با ساعت و وضعیت معده ثبت کن، '
-        + 'تحلیل هوشمند بگیر و در پایان ماه، جایزه‌ی استخر بین کسانی که به تعهد رسیده‌اند قرعه‌کشی می‌شود.',
+      h('p.hero-lead', {}, 'جدول زنده‌ی وزن شروع، وزن فعلی و تعهد پایان ماه — هر کیلو تعهد، یک بلیت شانس.'),
+      h('div.hero-actions', {},
+        ...actions,
+        h('button.btn.ghost', { onClick: openHowItWorks }, icon('info', 16), 'چالش چطور کار می‌کند؟'),
       ),
-      h('div.hero-actions', {}, ...actions),
       h('div.hero-stats', {},
         h('div.hero-stat', {}, h('strong', {}, faDigits(board.length)), h('span', {}, 'شرکت‌کننده')),
         h('div.hero-stat', {}, h('strong', {}, `${fmt(totalPromise)} کیلو`), h('span', {}, 'مجموع تعهد کاهش')),
@@ -169,9 +211,7 @@ function boardTable(board) {
       ),
       h('tbody', {}, ...rows),
     ),
-    h('div.table-note', {},
-      `آخرین به‌روزرسانی جدول: ${formatJalali(new Date(), { withTime: true })} — وزن فعلی از آخرین ثبت روزانه‌ی هر نفر خوانده می‌شود.`,
-    ),
+    h('div.table-note', {}, `آخرین به‌روزرسانی: ${formatJalali(new Date(), { withTime: true })}`),
   );
 }
 
@@ -182,7 +222,7 @@ export async function render(root) {
   root.append(
     pageHead(
       'چالش کاهش وزن گروهی',
-      'جدول زنده‌ی وزن شروع، وزن فعلی و وزن تعهد پایان ماه برای همه‌ی شرکت‌کننده‌ها.',
+      'وضعیت زنده‌ی وزن و تعهد اعضای گروه.',
       [
         store.isLoggedIn && !store.myPledge()
           ? h('button.btn.primary', { onClick: () => openPledgeModal() }, icon('plus', 16), 'پیوستن به چالش')
@@ -270,6 +310,7 @@ export async function render(root) {
             ? h('a.chip', { href: '#/log' }, icon('plus', 14), 'ثبت وزن')
             : null,
           h('a.chip', { href: '#/overall' }, icon('trophy', 14), 'شانس‌ها و قرعه‌کشی'),
+          h('button.chip', { onClick: openBoardHelp }, icon('info', 14), 'نحوه‌ی محاسبه'),
         ),
       ),
       h('div.filter-bar', {},
@@ -330,30 +371,6 @@ export async function render(root) {
       ),
     );
   }
-
-  /* --------------------------------------------------------------- steps */
-  root.append(
-    h('section.mt-24', {},
-      sectionHead('چالش چطور کار می‌کند؟', 'info'),
-      h('div.steps', {},
-        h('div.step', {},
-          h('div.step-num', {}, '۱'),
-          h('div', {}, h('h4', {}, 'تعهدت را ثبت کن'),
-            h('p', {}, 'قد، سال تولد و BMI هدف را وارد کن؛ وزن شروع و وزن پایان ماه را مشخص کن و سهم اشتراک را بپرداز.')),
-        ),
-        h('div.step', {},
-          h('div.step-num', {}, '۲'),
-          h('div', {}, h('h4', {}, 'هر روز وزن کن'),
-            h('p', {}, 'وزن روزانه با ساعت اندازه‌گیری و وضعیت معده ثبت می‌شود تا تحلیل‌ها و نمودار دقیق باشند.')),
-        ),
-        h('div.step', {},
-          h('div.step-num', {}, '۳'),
-          h('div', {}, h('h4', {}, 'پایان ماه، قرعه‌کشی'),
-            h('p', {}, 'هر کیلو تعهد یک بلیت است. بین کسانی که به وزن تعهد رسیده‌اند، برنده‌ی جایزه به‌صورت تصادفی انتخاب می‌شود.')),
-        ),
-      ),
-    ),
-  );
 
   /* -------------------------------------------------------- join CTA strip */
   if (store.isLoggedIn && !store.myPledge()) {

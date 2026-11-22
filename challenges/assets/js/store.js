@@ -1,16 +1,28 @@
-/** فروشگاه مرکزی: وضعیت برنامه، احراز هویت، خواندن/نوشتن داده و محاسبات مشترک. */
+/**
+ * فروشگاه مرکزی: وضعیت برنامه، احراز هویت و محاسبات مشترک.
+ *
+ * داده روی اسکیمای موجود پروژه سوار می‌شود:
+ *   profiles      → نام، قد، سن، جنسیت، مدیر، نمایش عمومی BMI
+ *   user_weights  → همه‌ی وزن‌های ثبت‌شده (وزن فعلی و وزن شروع)
+ *   daily_logs    → وضعیت معده‌ی هر ثبت وزن
+ *   app_settings  → سهم اشتراک (challenge_fee)
+ * فقط دفتر چالش (تعهد، پرداخت، تسویه) در جدول‌های challenge_* ذخیره می‌شود.
+ */
 import { CONFIG } from './config.js';
-import { createSupabaseDb, createDemoDb, isMissingTable } from './db.js';
+import { createSupabaseDb, isMissingTable } from './db.js';
 import {
-  currentRoundRange, jalaliISO, pad2, toJalali, formatJalali,
+  currentRoundRange, jalaliMonthLength, fromJalali, jalaliISO,
+  MONTHS, pad2, toJalali, formatJalali,
 } from './jalali.js';
-import { analyze } from './ai.js';
+import { analyze, bmiValue } from './ai.js';
 import { chancesFor, drawWinner } from './lottery.js';
-import { hashString, sum, uid } from './utils.js';
+import { faDigits, hashString, sum } from './utils.js';
+
+const STOMACH_STATES = ['empty', 'light', 'full'];
 
 const state = {
   ready: false,
-  backend: 'demo',
+  backend: 'offline',
   backendNote: '',
   sessionUser: null,
   profile: null,
@@ -21,6 +33,8 @@ const state = {
   entries: [],
   payments: [],
   settlements: [],
+  settings: [],
+  weights: [],
   loading: false,
   error: null,
 };
@@ -31,23 +45,70 @@ async function safe(promise, fallback = []) {
   try {
     return await promise;
   } catch (err) {
-    console.warn('[tarazoo] data:', err?.message || err);
+    console.warn('[challenge] data:', err?.message || err);
     return fallback;
   }
 }
 
-function synthRound(range) {
+const isoDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** profiles ردیف موجود → شکل داخلی برنامه */
+function normalizeProfile(row) {
+  if (!row) return null;
+  const age = row.age_years == null ? null : Number(row.age_years);
+  const { jy } = toJalali(new Date());
   return {
-    id: `local-${range.key}`,
+    ...row,
+    full_name: row.display_name || '',
+    age_years: age,
+    birth_year: age ? jy - age : null,
+    activity_level: 'light',
+    city: '',
+    target_bmi: null,
+    role: row.is_admin ? 'admin' : 'member',
+    bmi_public: row.bmi_public !== false,
+  };
+}
+
+/** بازه‌ی یک ماه شمسی از کلید آن (مثل 1405-09) */
+function rangeForKey(key) {
+  const current = currentRoundRange();
+  if (!key || key === current.key) return current;
+  const [jy, jm] = String(key).split('-').map(Number);
+  if (!jy || !jm || jm < 1 || jm > 12) return null;
+  const days = jalaliMonthLength(jy, jm);
+  return {
+    key,
+    title: `${MONTHS[jm - 1]} ${faDigits(jy)}`,
+    jy,
+    jm,
+    start: fromJalali(jy, jm, 1, 0),
+    end: fromJalali(jy, jm, days, 23),
+    startISO: `${jy}-${pad2(jm)}-01`,
+    endISO: `${jy}-${pad2(jm)}-${pad2(days)}`,
+    days,
+  };
+}
+
+/** دوره‌ی داخلی؛ تاریخ‌ها میلادی ISO هستند تا با ثبت وزن‌ها یکی باشند */
+function buildRound(key, fee) {
+  const range = rangeForKey(key);
+  if (!range) return null;
+  return {
+    id: range.key,
     local: true,
     round_key: range.key,
     title: range.title,
-    starts_on: `${range.jy}-${pad2(range.jm)}-01`,
-    ends_on: `${range.jy}-${pad2(range.jm)}-${pad2(range.days)}`,
-    fee: CONFIG.defaultFee,
+    starts_on: isoDate(range.start),
+    ends_on: isoDate(range.end),
+    starts_at: range.start,
+    ends_at: range.end,
+    fee,
     status: 'running',
     prize_pool: 0,
     seed: hashString(range.key),
+    winner_user_id: null,
+    settled_at: null,
   };
 }
 
@@ -69,25 +130,26 @@ export const store = {
   /* ------------------------------------------------------------- init */
 
   async init() {
-    let db = createSupabaseDb();
-    let note = '';
+    const db = createSupabaseDb();
+    this.db = db;
+    state.backend = 'offline';
     try {
       await db.probe();
       state.backend = 'supabase';
+      state.backendNote = '';
     } catch (err) {
       if (err?.code === 'NETWORK') {
-        note = 'ارتباط با سرور Supabase برقرار نشد. برنامه با داده‌ی نمایشی کار می‌کند.';
+        state.backendNote = 'ارتباط با سرور Supabase برقرار نشد. اتصال اینترنت را بررسی کنید.';
       } else if (isMissingTable(err)) {
-        note = 'جدول‌های weight_ ساخته نشده‌اند؛ برنامه با داده‌ی نمایشی کار می‌کند.';
+        state.backendNote = 'جدول‌های challenge_ ساخته نشده‌اند؛ فایل supabase/schema.sql را اجرا کنید.';
       } else {
-        note = `دسترسی به پایگاه‌داده ممکن نشد (${err?.status || '؟'}). برنامه با داده‌ی نمایشی کار می‌کند.`;
-        console.warn('[tarazoo] probe failed:', err);
+        state.backendNote = `دسترسی به پایگاه‌داده ممکن نشد (${err?.status || '؟'}).`;
       }
-      db = createDemoDb();
-      state.backend = 'demo';
+      console.warn('[challenge] probe failed:', err);
+      state.ready = true;
+      this.emit();
+      return state;
     }
-    state.backendNote = note;
-    this.db = db;
 
     try {
       const u = db.getSession();
@@ -106,36 +168,101 @@ export const store = {
 
   async reload() {
     const db = this.db;
+    if (!db || state.backend === 'offline') return;
     state.loading = true;
     this.emit();
-    const [profiles, rounds, pledges, entries, payments, settlements] = await Promise.all([
-      safe(db.select(`${CONFIG.prefix}profiles`, { order: 'created_at.asc' })),
-      safe(db.select(`${CONFIG.prefix}rounds`, { order: 'starts_on.asc' })),
-      safe(db.select(`${CONFIG.prefix}pledges`, { order: 'created_at.asc' })),
-      safe(db.select(`${CONFIG.prefix}entries`, { order: 'entry_date.asc' })),
-      safe(db.select(`${CONFIG.prefix}payments`, { order: 'created_at.asc' })),
-      safe(db.select(`${CONFIG.prefix}settlements`, { order: 'created_at.asc' })),
+
+    const [profileRows, weightRows, logRows, settingRows, pledgeRows, paymentRows, settlementRows] = await Promise.all([
+      safe(db.select(CONFIG.tables.profiles, { order: 'created_at.asc' })),
+      safe(db.select(CONFIG.tables.weights, { order: 'recorded_at.asc' })),
+      safe(db.select(CONFIG.tables.logs, { eq: { item_type: 'weight_stomach' }, order: 'log_date.asc' })),
+      safe(db.select(CONFIG.tables.settings)),
+      safe(db.select(CONFIG.tables.pledges, { order: 'created_at.asc' })),
+      safe(db.select(CONFIG.tables.payments, { order: 'created_at.asc' })),
+      safe(db.select(CONFIG.tables.settlements, { order: 'created_at.asc' })),
     ]);
 
-    state.profiles = profiles;
-    state.rounds = rounds;
-    state.pledges = pledges;
-    state.entries = entries;
-    state.payments = payments;
-    state.settlements = settlements;
+    state.profiles = profileRows.map(normalizeProfile).filter(Boolean);
+    state.settings = settingRows;
+    state.weights = weightRows;
 
-    if (state.sessionUser) {
-      state.profile = profiles.find((p) => p.id === state.sessionUser.id) || null;
-    } else {
-      state.profile = null;
+    const feeRow = settingRows.find((s) => s.key === CONFIG.feeSettingKey);
+    const fee = Number(feeRow?.value) || CONFIG.defaultFee;
+
+    /* وضعیت معده‌ی هر روز از daily_logs خوانده می‌شود */
+    const stomach = new Map(logRows.map((l) => [`${l.user_id}|${l.log_date}`, Number(l.value)]));
+
+    /* هر ثبت وزن در user_weights یک ردیف است؛ برای هر روز، آخرین ثبت می‌ماند */
+    const byDay = new Map();
+    for (const w of weightRows) {
+      const d = new Date(w.recorded_at);
+      if (Number.isNaN(d.getTime())) continue;
+      const day = isoDate(d);
+      const key = `${w.user_id}|${day}`;
+      const entry = {
+        id: w.id,
+        user_id: w.user_id,
+        entry_date: day,
+        shamsi_date: jalaliISO(d),
+        weight: Number(w.weight_kg),
+        measure_hour: d.getHours(),
+        stomach: STOMACH_STATES[stomach.get(key)] || 'empty',
+        note: '',
+        created_at: w.recorded_at,
+      };
+      const prev = byDay.get(key);
+      if (!prev || new Date(entry.created_at) >= new Date(prev.created_at)) byDay.set(key, entry);
     }
+    state.entries = [...byDay.values()].sort((a, b) => String(a.entry_date).localeCompare(String(b.entry_date)));
 
-    const range = currentRoundRange();
-    const current = rounds.find((r) => r.round_key === range.key && r.status !== 'settled')
-      || rounds.find((r) => r.round_key === range.key)
-      || rounds.find((r) => r.status === 'running')
-      || synthRound(range);
-    state.round = current;
+    state.pledges = pledgeRows.map((p) => {
+      const profile = state.profiles.find((x) => x.id === p.user_id);
+      const start = Number(p.start_weight);
+      const promised = Number(p.promised_weight);
+      return {
+        ...p,
+        round_id: p.round_key,
+        start_weight: start,
+        promised_weight: promised,
+        promise_kg: Number(p.promise_kg ?? (start - promised)),
+        target_bmi: bmiValue(promised, profile?.height_cm),
+      };
+    });
+
+    state.payments = paymentRows.map((p) => ({ ...p, round_id: p.round_key, amount: Number(p.amount) }));
+    state.settlements = settlementRows.map((s) => ({
+      ...s,
+      round_id: s.round_key,
+      chance: Number(s.chance),
+      final_weight: s.final_weight == null ? null : Number(s.final_weight),
+      promised_weight: s.promised_weight == null ? null : Number(s.promised_weight),
+    }));
+
+    /* دوره‌ها از داده‌ی موجود ساخته می‌شوند: ماه جاری + هر دوره‌ای که سابقه دارد */
+    const keys = new Set([
+      currentRoundRange().key,
+      ...state.pledges.map((p) => p.round_key),
+      ...state.payments.map((p) => p.round_key),
+      ...state.settlements.map((s) => s.round_key),
+    ].filter(Boolean));
+
+    state.rounds = [...keys].map((key) => buildRound(key, fee)).filter(Boolean).map((round) => {
+      const settled = state.settlements.filter((s) => s.round_key === round.round_key);
+      if (!settled.length) return round;
+      return {
+        ...round,
+        status: 'settled',
+        winner_user_id: settled.find((s) => s.won)?.user_id || null,
+        prize_pool: sum(state.payments.filter((p) => p.round_key === round.round_key && p.status === 'paid'), (p) => p.amount),
+      };
+    });
+
+    state.round = state.rounds.find((r) => r.round_key === currentRoundRange().key)
+      || buildRound(currentRoundRange().key, fee);
+
+    state.profile = state.sessionUser
+      ? state.profiles.find((p) => p.id === state.sessionUser.id) || null
+      : null;
 
     state.loading = false;
     this.emit();
@@ -146,7 +273,7 @@ export const store = {
   },
 
   get isAdmin() {
-    return state.profile?.role === 'admin';
+    return Boolean(state.profile?.is_admin);
   },
 
   get range() {
@@ -173,25 +300,16 @@ export const store = {
   /* ----------------------------------------------------------- auth */
 
   async afterAuth() {
-    const range = currentRoundRange();
     const u = state.sessionUser;
-    const existing = await safe(this.db.select(`${CONFIG.prefix}profiles`, { eq: { id: u.id } }));
+    const existing = await safe(this.db.select(CONFIG.tables.profiles, { eq: { id: u.id } }));
     if (!existing.length) {
-      const fullName = u.name || u.email?.split('@')[0] || 'کاربر ترازو';
+      const fullName = u.name || u.email?.split('@')[0] || 'کاربر';
       try {
-        await this.db.upsert(`${CONFIG.prefix}profiles`, {
-          id: u.id,
-          full_name: fullName,
-          role: 'member',
-          created_at: new Date().toISOString(),
-        }, 'id');
+        await this.db.insert(CONFIG.tables.profiles, { id: u.id, display_name: fullName });
       } catch (err) {
-        console.warn('[tarazoo] profile create failed', err);
+        console.warn('[challenge] profile create failed', err);
       }
     }
-    await this.reload();
-    // اطمینان از وجود دوره‌ی ماه جاری
-    if (state.round?.local) await this.ensureRound(range);
     await this.reload();
   },
 
@@ -221,111 +339,105 @@ export const store = {
     await this.reload();
   },
 
-  async signInDemo() {
-    const user = await this.db.signIn(CONFIG.demo.email, CONFIG.demo.password);
-    state.sessionUser = { id: user.id, email: user.email, name: user.name };
-    await this.afterAuth();
-    return user;
-  },
-
   /* --------------------------------------------------------- profile */
 
+  /** فقط ستون‌هایی که در profiles وجود دارند ذخیره می‌شوند. */
   async saveProfile(patch) {
     const u = this.requireUser();
-    const row = { ...patch, id: u.id };
-    const rows = await this.db.upsert(`${CONFIG.prefix}profiles`, row, 'id');
-    const saved = rows[0];
-    if (saved) {
-      const idx = state.profiles.findIndex((p) => p.id === saved.id);
-      if (idx >= 0) state.profiles[idx] = saved;
-      else state.profiles.push(saved);
-      state.profile = saved;
-    } else {
-      await this.reload();
+    const row = { updated_at: new Date().toISOString() };
+    if (patch.full_name !== undefined) row.display_name = String(patch.full_name).trim();
+    if (patch.height_cm !== undefined) row.height_cm = patch.height_cm;
+    if (patch.gender !== undefined) row.gender = patch.gender;
+    if (patch.birth_year !== undefined) {
+      const { jy } = toJalali(new Date());
+      const age = jy - Number(patch.birth_year);
+      row.age_years = age > 0 && age < 120 ? age : null;
     }
-    this.emit();
+    if (patch.bmi_public !== undefined) row.bmi_public = Boolean(patch.bmi_public);
+
+    await this.db.update(CONFIG.tables.profiles, row, { id: u.id });
+    await this.reload();
     return state.profile;
-  },
-
-  /* ---------------------------------------------------------- rounds */
-
-  async ensureRound(range = currentRoundRange()) {
-    if (state.round && !state.round.local) return state.round;
-    const row = {
-      round_key: range.key,
-      title: range.title,
-      starts_on: `${range.jy}-${pad2(range.jm)}-01`,
-      ends_on: `${range.jy}-${pad2(range.jm)}-${pad2(range.days)}`,
-      fee: CONFIG.defaultFee,
-      status: 'running',
-      prize_pool: 0,
-      seed: hashString(range.key),
-      created_at: new Date().toISOString(),
-    };
-    try {
-      const rows = await this.db.insert(`${CONFIG.prefix}rounds`, row);
-      const created = rows[0] || { ...row, id: uid() };
-      state.rounds.push(created);
-      state.round = created;
-      return created;
-    } catch (err) {
-      console.warn('[tarazoo] round create failed', err);
-      return state.round;
-    }
   },
 
   /* ---------------------------------------------------------- pledge */
 
-  async savePledge({ startWeight, promisedWeight, targetBmi }) {
+  async savePledge({ startWeight, promisedWeight }) {
     const u = this.requireUser();
-    const round = await this.ensureRound();
-    const promiseKg = Number((Number(startWeight) - Number(promisedWeight)).toFixed(1));
-    if (!(Number(startWeight) > 0) || !(Number(promisedWeight) > 0)) {
-      throw new Error('وزن‌ها را درست وارد کن.');
-    }
-    if (Number(promisedWeight) >= Number(startWeight)) {
-      throw new Error('وزن تعهد باید کمتر از وزن شروع باشد.');
-    }
+    const round = state.round;
+    const start = Number(startWeight);
+    const promised = Number(promisedWeight);
+    if (!(start > 0) || !(promised > 0)) throw new Error('وزن‌ها را درست وارد کن.');
+    if (promised >= start) throw new Error('وزن تعهد باید کمتر از وزن شروع باشد.');
+
     const row = {
       user_id: u.id,
-      round_id: round.id,
-      start_weight: Number(startWeight),
-      promised_weight: Number(promisedWeight),
-      target_bmi: targetBmi ? Number(targetBmi) : null,
-      promise_kg: promiseKg,
+      round_key: round.round_key,
+      start_weight: start,
+      promised_weight: promised,
+      promise_kg: Number((start - promised).toFixed(1)),
       created_at: new Date().toISOString(),
     };
-    const saved = await this.db.upsert(`${CONFIG.prefix}pledges`, row, 'user_id,round_id');
+    const saved = await this.db.upsert(CONFIG.tables.pledges, row, 'user_id,round_key');
     await this.reload();
     return saved[0] || row;
   },
 
   /* ---------------------------------------------------------- entries */
 
-  async saveEntry({ date = new Date(), weight, hour, stomach, note = '' }) {
+  async saveEntry({ date = new Date(), weight, hour, stomach = 'empty' }) {
     const u = this.requireUser();
-    const round = await this.ensureRound();
-    const iso = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-    const row = {
-      user_id: u.id,
-      round_id: round.id,
-      entry_date: iso,
-      shamsi_date: jalaliISO(date),
-      weight: Number(weight),
-      measure_hour: Number(hour),
-      stomach,
-      note: note || '',
-      created_at: new Date().toISOString(),
-    };
-    if (!(row.weight > 20 && row.weight < 400)) throw new Error('وزن وارد‌شده معتبر نیست.');
-    const saved = await this.db.upsert(`${CONFIG.prefix}entries`, row, 'user_id,entry_date');
+    const iso = isoDate(date);
+    const value = Number(weight);
+    if (!(value > 20 && value < 400)) throw new Error('وزن وارد‌شده معتبر نیست.');
+
+    const stamp = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Number(hour) || 8, 0, 0);
+    const existing = state.entries.find((e) => e.user_id === u.id && e.entry_date === iso);
+
+    if (existing) {
+      await this.db.update(CONFIG.tables.weights, { weight_kg: value, recorded_at: stamp.toISOString() }, { id: existing.id });
+    } else {
+      await this.db.insert(CONFIG.tables.weights, {
+        user_id: u.id,
+        weight_kg: value,
+        recorded_at: stamp.toISOString(),
+      });
+    }
+
+    await this.saveStomach(u.id, iso, stomach);
     await this.reload();
-    return saved[0] || row;
+  },
+
+  /** وضعیت معده در daily_logs ذخیره می‌شود (بدون جدول تازه). */
+  async saveStomach(userId, iso, stomach) {
+    const index = STOMACH_STATES.indexOf(stomach);
+    const value = index < 0 ? 0 : index;
+    const rows = await safe(this.db.select(CONFIG.tables.logs, {
+      eq: { user_id: userId, log_date: iso, item_type: 'weight_stomach' },
+    }));
+    if (rows.length) {
+      await this.db.update(CONFIG.tables.logs, { value, updated_at: new Date().toISOString() }, { id: rows[0].id });
+    } else {
+      await this.db.insert(CONFIG.tables.logs, {
+        user_id: userId,
+        log_date: iso,
+        item_type: 'weight_stomach',
+        value,
+        score: 0,
+      });
+    }
   },
 
   async deleteEntry(id) {
     this.requireUser();
-    await this.db.remove(`${CONFIG.prefix}entries`, { id });
+    const entry = state.entries.find((e) => e.id === id);
+    await this.db.remove(CONFIG.tables.weights, { id });
+    if (entry) {
+      const meta = await safe(this.db.select(CONFIG.tables.logs, {
+        eq: { user_id: entry.user_id, log_date: entry.entry_date, item_type: 'weight_stomach' },
+      }));
+      for (const row of meta) await safe(this.db.remove(CONFIG.tables.logs, { id: row.id }));
+    }
     await this.reload();
   },
 
@@ -333,35 +445,35 @@ export const store = {
 
   async submitPayment({ method = 'کارت به کارت', ref = '' } = {}) {
     const u = this.requireUser();
-    const round = await this.ensureRound();
-    const existing = state.payments.find((p) => p.user_id === u.id && p.round_id === round.id);
+    const round = state.round;
+    const existing = state.payments.find((p) => p.user_id === u.id && p.round_id === round.round_key);
     if (existing) return existing;
     const row = {
       user_id: u.id,
-      round_id: round.id,
+      round_key: round.round_key,
       amount: round.fee || CONFIG.defaultFee,
       status: 'pending',
       method,
-      ref: ref || `TRZ-${Math.floor(Math.random() * 9000 + 1000)}`,
+      ref: ref || `CH-${Math.floor(Math.random() * 9000 + 1000)}`,
       paid_at: null,
       created_at: new Date().toISOString(),
     };
-    const saved = await this.db.insert(`${CONFIG.prefix}payments`, row);
+    const saved = await this.db.insert(CONFIG.tables.payments, row);
     await this.reload();
     return saved[0] || row;
   },
 
-  async confirmPayment(userId, roundId = state.round?.id) {
+  async confirmPayment(userId, roundKey = state.round?.round_key) {
     this.requireUser();
-    if (!this.isAdmin && state.backend !== 'demo') throw new Error('فقط مدیر دوره می‌تواند پرداخت را تأیید کند.');
-    const existing = state.payments.find((p) => p.user_id === userId && p.round_id === roundId);
+    if (!this.isAdmin) throw new Error('فقط مدیر دوره می‌تواند پرداخت را تأیید کند.');
+    const existing = state.payments.find((p) => p.user_id === userId && p.round_id === roundKey);
     if (existing) {
-      await this.db.update(`${CONFIG.prefix}payments`, { status: 'paid', paid_at: new Date().toISOString() }, { id: existing.id });
+      await this.db.update(CONFIG.tables.payments, { status: 'paid', paid_at: new Date().toISOString() }, { id: existing.id });
     } else {
-      const round = state.rounds.find((r) => r.id === roundId) || state.round;
-      await this.db.insert(`${CONFIG.prefix}payments`, {
+      const round = state.rounds.find((r) => r.round_key === roundKey) || state.round;
+      await this.db.insert(CONFIG.tables.payments, {
         user_id: userId,
-        round_id: roundId,
+        round_key: roundKey,
         amount: round?.fee || CONFIG.defaultFee,
         status: 'paid',
         method: 'تأیید مدیر',
@@ -375,14 +487,16 @@ export const store = {
 
   /* ------------------------------------------------------- settlement */
 
-  async settleRound(roundId = state.round?.id) {
-    const round = state.rounds.find((r) => r.id === roundId) || state.round;
+  async settleRound(roundKey = state.round?.round_key) {
+    this.requireUser();
+    if (!this.isAdmin) throw new Error('فقط مدیر دوره می‌تواند دوره را تسویه کند.');
+    const round = state.rounds.find((r) => r.round_key === roundKey) || state.round;
     if (!round) throw new Error('دوره‌ای برای تسویه پیدا نشد.');
     if (round.status === 'settled') throw new Error('این دوره قبلاً تسویه شده است.');
-    const rows = this.board(round.id);
+    const rows = this.board(round.round_key);
     if (!rows.length) throw new Error('شرکت‌کننده‌ای برای تسویه وجود ندارد.');
-    const pool = this.poolForRound(round.id);
-    const seed = `${round.round_key || round.id}-${round.seed || 1}-${round.id}`;
+    const pool = this.poolForRound(round.round_key);
+    const seed = `${round.round_key}-${round.seed || 1}`;
     const draw = drawWinner(rows.map((r) => ({
       id: r.userId,
       name: r.name,
@@ -392,7 +506,7 @@ export const store = {
     })), seed);
 
     const settlementRows = rows.map((r) => ({
-      round_id: round.id,
+      round_key: round.round_key,
       user_id: r.userId,
       final_weight: r.current,
       promised_weight: r.promised,
@@ -402,13 +516,7 @@ export const store = {
       created_at: new Date().toISOString(),
     }));
 
-    await this.db.insert(`${CONFIG.prefix}settlements`, settlementRows);
-    await this.db.update(`${CONFIG.prefix}rounds`, {
-      status: 'settled',
-      winner_user_id: draw.winner?.id || null,
-      prize_pool: pool,
-      settled_at: new Date().toISOString(),
-    }, { id: round.id });
+    await this.db.insert(CONFIG.tables.settlements, settlementRows);
     await this.reload();
     return { draw, pool, round };
   },
@@ -416,37 +524,42 @@ export const store = {
   /* ---------------------------------------------------------- selectors */
 
   roundById(id) {
-    return state.rounds.find((r) => r.id === id) || state.round;
+    return state.rounds.find((r) => r.round_key === id) || state.round;
   },
 
-  paidPayments(roundId = state.round?.id) {
-    return state.payments.filter((p) => p.round_id === roundId && p.status === 'paid');
+  paidPayments(roundKey = state.round?.round_key) {
+    return state.payments.filter((p) => p.round_id === roundKey && p.status === 'paid');
   },
 
-  poolForRound(roundId = state.round?.id) {
-    const round = state.rounds.find((r) => r.id === roundId);
+  poolForRound(roundKey = state.round?.round_key) {
+    const round = state.rounds.find((r) => r.round_key === roundKey);
     if (round?.status === 'settled' && round.prize_pool) return Number(round.prize_pool);
-    return sum(this.paidPayments(roundId), (p) => p.amount || 0);
+    return sum(this.paidPayments(roundKey), (p) => p.amount || 0);
   },
 
-  myPledge(roundId = state.round?.id) {
+  myPledge(roundKey = state.round?.round_key) {
     if (!state.sessionUser) return null;
-    return state.pledges.find((p) => p.user_id === state.sessionUser.id && p.round_id === roundId) || null;
+    return state.pledges.find((p) => p.user_id === state.sessionUser.id && p.round_id === roundKey) || null;
   },
 
-  myPayment(roundId = state.round?.id) {
+  myPayment(roundKey = state.round?.round_key) {
     if (!state.sessionUser) return null;
-    return state.payments.find((p) => p.user_id === state.sessionUser.id && p.round_id === roundId) || null;
+    return state.payments.find((p) => p.user_id === state.sessionUser.id && p.round_id === roundKey) || null;
   },
 
-  entriesFor(userId, roundId = state.round?.id) {
+  /** ثبت‌های یک کاربر در بازه‌ی دوره */
+  entriesFor(userId, roundKey = state.round?.round_key) {
+    const round = this.roundById(roundKey);
+    const from = round?.starts_on || '';
+    const to = round?.ends_on || '';
     return state.entries
-      .filter((e) => e.user_id === userId && (!roundId || e.round_id === roundId))
+      .filter((e) => e.user_id === userId
+        && (!round || (String(e.entry_date) >= from && String(e.entry_date) <= to)))
       .sort((a, b) => String(a.entry_date).localeCompare(String(b.entry_date)));
   },
 
-  latestEntry(userId, roundId = state.round?.id) {
-    return this.entriesFor(userId, roundId).at(-1) || null;
+  latestEntry(userId, roundKey = state.round?.round_key) {
+    return this.entriesFor(userId, roundKey).at(-1) || null;
   },
 
   profileById(id) {
@@ -460,27 +573,33 @@ export const store = {
   /**
    * جدول اصلی: یک ردیف برای هر شرکت‌کننده با وزن شروع، وزن فعلی و تعهد پایان ماه.
    */
-  board(roundId = state.round?.id) {
-    const round = this.roundById(roundId);
+  board(roundKey = state.round?.round_key) {
+    const round = this.roundById(roundKey);
     if (!round) return [];
-    const pledges = state.pledges.filter((p) => p.round_id === roundId);
-    const payments = state.payments.filter((p) => p.round_id === roundId);
+    const pledges = state.pledges.filter((p) => p.round_id === roundKey);
+    const payments = state.payments.filter((p) => p.round_id === roundKey);
     const rows = pledges.map((pledge) => {
-      const profile = this.profileById(pledge.user_id) || { full_name: 'شرکت‌کننده', height_cm: null };
-      const entries = this.entriesFor(pledge.user_id, roundId);
+      const profile = this.profileById(pledge.user_id) || { full_name: 'شرکت‌کننده', height_cm: null, bmi_public: true };
+      const entries = this.entriesFor(pledge.user_id, roundKey);
       const analysis = analyze({ profile, pledge, entries, round });
       const payment = payments.find((p) => p.user_id === pledge.user_id) || null;
+      const showBmi = profile.bmi_public !== false;
+      const promiseKg = Number(pledge.promise_kg ?? Math.max(0, pledge.start_weight - pledge.promised_weight));
       return {
         ...analysis,
+        bmi: showBmi ? analysis.bmi : null,
+        band: showBmi ? analysis.band : { label: 'خصوصی', tone: 'muted' },
+        bmiHidden: !showBmi,
         userId: pledge.user_id,
         name: profile.full_name,
         city: profile.city || '',
         heightCm: profile.height_cm,
         paid: payment?.status === 'paid',
         paymentStatus: payment?.status || 'none',
+        payment,
         feeAmount: payment?.amount || round.fee || CONFIG.defaultFee,
-        promiseKg: Number(pledge.promise_kg ?? Math.max(0, pledge.start_weight - pledge.promised_weight)),
-        chance: chancesFor(pledge.promise_kg ?? Math.max(0, pledge.start_weight - pledge.promised_weight)),
+        promiseKg,
+        chance: chancesFor(promiseKg),
       };
     });
     rows.sort((a, b) => (b.progress - a.progress) || (a.remaining - b.remaining));
@@ -490,14 +609,13 @@ export const store = {
 
   myAnalysis() {
     if (!state.sessionUser) return null;
-    const row = this.board().find((r) => r.userId === state.sessionUser.id);
-    return row || null;
+    return this.board().find((r) => r.userId === state.sessionUser.id) || null;
   },
 
   /** نقاط نمودار وزن کاربر */
-  seriesFor(userId, roundId = state.round?.id) {
-    const round = this.roundById(roundId);
-    const entries = this.entriesFor(userId, roundId);
+  seriesFor(userId, roundKey = state.round?.round_key) {
+    const round = this.roundById(roundKey);
+    const entries = this.entriesFor(userId, roundKey);
     if (!round || !entries.length) return [];
     const startDate = new Date(`${round.starts_on}T00:00:00`);
     return entries.map((e) => {
@@ -514,33 +632,27 @@ export const store = {
   },
 
   settledRounds() {
-    return [...state.rounds].filter((r) => r.status === 'settled').sort((a, b) => String(b.starts_on).localeCompare(String(a.starts_on)));
+    return [...state.rounds]
+      .filter((r) => r.status === 'settled')
+      .sort((a, b) => String(b.starts_on).localeCompare(String(a.starts_on)));
   },
 
-  settlementsFor(roundId) {
-    return state.settlements.filter((s) => s.round_id === roundId);
+  settlementsFor(roundKey) {
+    return state.settlements.filter((s) => s.round_id === roundKey);
   },
 
-  winnerOf(roundId) {
-    const round = state.rounds.find((r) => r.id === roundId);
+  winnerOf(roundKey) {
+    const round = state.rounds.find((r) => r.round_key === roundKey);
     if (!round?.winner_user_id) return null;
     return {
       round,
       profile: this.profileById(round.winner_user_id),
-      settlement: state.settlements.find((s) => s.round_id === roundId && s.user_id === round.winner_user_id),
+      settlement: state.settlements.find((s) => s.round_id === roundKey && s.user_id === round.winner_user_id),
     };
   },
 
   roundLabel(round) {
     return round?.title || (round?.round_key ? round.round_key : 'دوره');
-  },
-
-  async resetDemo() {
-    if (this.db.kind !== 'demo') return;
-    this.db.reset();
-    state.sessionUser = null;
-    state.profile = null;
-    await this.reload();
   },
 };
 

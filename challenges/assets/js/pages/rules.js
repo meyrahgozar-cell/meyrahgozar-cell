@@ -1,10 +1,10 @@
 /** قوانین چالش، نحوه‌ی تقسیم جایزه و ماشین‌حساب شانس. */
-import { state, store } from '../store.js';
+import { store } from '../store.js';
 import { CONFIG } from '../config.js';
 import {
   h, icon, field, fmt, money, faDigits, num, modal,
 } from '../utils.js';
-import { pageHead, sectionHead, showSetupHelp } from '../ui/shell.js';
+import { pageHead, sectionHead } from '../ui/shell.js';
 import { currentRoundRange, formatJalali } from '../jalali.js';
 
 const RULES = [
@@ -168,14 +168,4 @@ export async function render(root) {
       h('p.small.muted.mt-8', {}, a),
     ))),
   );
-
-  if (state.backend === 'demo') {
-    root.append(
-      h('div.alert.warn.mt-24', {},
-        h('span', { html: icon('alert', 18) }),
-        h('div.grow', {}, 'این نسخه با داده‌ی نمایشی کار می‌کند. برای فعال‌سازی پایگاه‌داده‌ی واقعی، جدول‌های weight_ را در Supabase بساز.'),
-        h('button.btn.sm.ghost', { onClick: showSetupHelp }, 'راهنمای راه‌اندازی'),
-      ),
-    );
-  }
 }

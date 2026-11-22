@@ -49,7 +49,7 @@ export async function render(root) {
   const me = store.myAnalysis();
 
   root.append(pageHead(
-    'مربی هوشمند ترازو',
+    'مربی هوشمند',
     'تحلیل داده‌ی وزن، BMI، روند، کالری و شانس جایزه — همه در مرورگر و روی داده‌ی خودت.',
     [h('a.btn.ghost', { href: '#/profile' }, icon('user', 16), 'شرایط BMI')],
   ));
@@ -127,7 +127,7 @@ export async function render(root) {
     h('div.chat-head', {},
       h('span.avatar.brand', {}, icon('sparkles', 18)),
       h('div.grow', {},
-        h('div.strong', {}, 'مربی ترازو'),
+        h('div.strong', {}, 'مربی هوشمند'),
         h('div.tiny.muted', {}, 'تحلیل محلی بر اساس داده‌ی ثبت‌شده‌ی شما'),
       ),
       h('button.icon-btn', {

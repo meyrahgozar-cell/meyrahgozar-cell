@@ -1,4 +1,4 @@
-/** ثبت وزن روزانه: وزن، ساعت اندازه‌گیری، وضعیت معده و یادداشت. */
+/** ثبت وزن روزانه: وزن، ساعت اندازه‌گیری و وضعیت معده. */
 import { state, store } from '../store.js';
 import { CONFIG } from '../config.js';
 import {
@@ -48,7 +48,6 @@ export async function render(root) {
     type: 'number', step: '0.1', inputmode: 'decimal', min: '25', max: '300',
     placeholder: 'مثلاً ۷۸٫۴', style: { fontSize: '20px', fontWeight: '750', textAlign: 'center' },
   });
-  const noteInput = h('textarea.input', { rows: 2, placeholder: 'مثلاً: بعد از پیاده‌روی صبحگاهی، خواب خوب' });
   let selectedHour = 8;
   let selectedStomach = 'empty';
 
@@ -104,7 +103,6 @@ export async function render(root) {
       weightInput.value = found.weight;
       selectedHour = Number(found.measure_hour) || 8;
       selectedStomach = found.stomach || 'empty';
-      noteInput.value = found.note || '';
       renderHours();
       renderStomach();
     }
@@ -151,7 +149,6 @@ export async function render(root) {
         weight,
         hour: selectedHour,
         stomach: selectedStomach,
-        note: noteInput.value,
       });
       toast('وزن ثبت شد. تحلیل و جدول به‌روز شد.', 'success');
       saveBtn.disabled = false;
@@ -187,7 +184,6 @@ export async function render(root) {
       ),
       h('div', {}, h('span.field-label', {}, 'ساعت اندازه‌گیری'), hourWrap),
       h('div', {}, h('span.field-label', {}, 'وضعیت معده'), stomachWrap),
-      field('یادداشت (اختیاری)', noteInput, 'خواب، ورزش، مهمانی یا هر چیزی که ممکن است روی عدد اثر بگذارد.'),
       saveBtn,
     ),
   );

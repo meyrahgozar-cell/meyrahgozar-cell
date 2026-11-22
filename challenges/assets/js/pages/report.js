@@ -92,7 +92,7 @@ export async function render(root) {
       prev = Number(e.weight);
     }
     const csv = rows.map((r) => r.map(csvEscape).join(',')).join('\n');
-    downloadFile(`tarazoo-report-${round.round_key || 'round'}.csv`, csv);
+    downloadFile(`challenge-report-${round.round_key || 'round'}.csv`, csv);
     toast('فایل CSV دانلود شد.', 'success');
   }
 

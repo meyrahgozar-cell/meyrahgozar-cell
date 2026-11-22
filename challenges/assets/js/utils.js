@@ -307,3 +307,18 @@ export function avatarTone(seed) {
   const tones = ['brand', 'sky', 'gold', 'violet', 'rose', 'mint'];
   return tones[hashString(String(seed)) % tones.length];
 }
+
+/**
+ * مولد شبه‌تصادفی قطعی (mulberry32).
+ * با بذر ثابت، قرعه‌کشی هر بار همان نتیجه را می‌دهد.
+ */
+export function mulberry32(seed) {
+  let a = Number(seed) || 0;
+  return function rand() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}

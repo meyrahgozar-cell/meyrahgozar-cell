@@ -1,6 +1,5 @@
 /** قرعه‌کشی وزنی: هر کیلوگرم تعهد = یک بلیت، فقط بین کسانی که به تعهد رسیده‌اند. */
-import { hashString } from './utils.js';
-import { mulberry32 } from './demo-data.js';
+import { hashString, mulberry32 } from './utils.js';
 
 export function chancesFor(promiseKg) {
   const kg = Number(promiseKg) || 0;

@@ -3,18 +3,23 @@
  * کلیدها همان کلید عمومی (publishable) پروژه‌ی Supabase هستند و برای اجرا در مرورگر امن‌اند.
  */
 export const CONFIG = {
-  appName: 'ترازو',
-  appTagline: 'چالش گروهی کاهش وزن',
+  appName: 'چالش کاهش وزن',
+  appTagline: 'رقابت گروهی ماهانه',
   supabaseUrl: 'https://zlvsmjhwyzfdecfyhxal.supabase.co',
   supabaseKey: 'sb_publishable_dwpPjAJGmMQbwXdqLeeQ4Q_CSEca0cm',
-  prefix: 'weight_',
+  // جدول‌های موجود پروژه که چالش روی آن‌ها سوار می‌شود
+  tables: {
+    profiles: 'profiles',
+    weights: 'user_weights',
+    logs: 'daily_logs',
+    settings: 'app_settings',
+    pledges: 'challenge_pledges',
+    payments: 'challenge_payments',
+    settlements: 'challenge_settlements',
+  },
+  feeSettingKey: 'challenge_fee',
   defaultFee: 250000,
   currency: 'تومان',
-  supportHandle: '@tarazoo_support',
-  demo: {
-    email: 'demo@tarazoo.app',
-    password: 'demo1234',
-  },
   measurementHours: [
     '۰۶:۰۰', '۰۷:۰۰', '۰۸:۰۰', '۰۹:۰۰', '۱۰:۰۰', '۱۱:۰۰', '۱۲:۰۰',
     '۱۳:۰۰', '۱۴:۰۰', '۱۵:۰۰', '۱۶:۰۰', '۱۷:۰۰', '۱۸:۰۰', '۱۹:۰۰',
@@ -48,13 +53,4 @@ export const CONFIG = {
       { max: 99, label: 'چاقی درجه ۳', tone: 'danger' },
     ],
   },
-  tableNames: [
-    'weight_profiles',
-    'weight_rounds',
-    'weight_pledges',
-    'weight_entries',
-    'weight_payments',
-    'weight_settlements',
-    'weight_notes',
-  ],
 };

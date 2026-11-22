@@ -45,7 +45,8 @@ export async function render(root) {
 
   /* ---------------------------------------------------------- identity card */
   const nameInput = h('input.input', { value: p.full_name || '', placeholder: 'نام و نام خانوادگی' });
-  const cityInput = h('input.input', { value: p.city || '', placeholder: 'شهر' });
+  const bmiPublicInput = h('input', { type: 'checkbox' });
+  bmiPublicInput.checked = p.bmi_public !== false;
   const genderSel = selectEl(CONFIG.genders, p.gender || 'female', null);
   const birthSel = (() => {
     const { jy } = toJalali(new Date());
@@ -57,17 +58,11 @@ export async function render(root) {
     type: 'number', inputmode: 'numeric', min: '100', max: '230', step: '1',
     value: p.height_cm || '', placeholder: 'مثلاً ۱۶۸',
   });
-  const activitySel = selectEl(
-    CONFIG.activityLevels.map((a) => ({ value: a.value, label: a.label })),
-    p.activity_level || 'light',
-    null,
-  );
-
   const identity = h('div.card', {},
     h('div.profile-head.mb-16', {},
       h('span', { class: `avatar lg ${avatarTone(p.id)}` }, initials(p.full_name)),
       h('div.profile-id.grow', {},
-        h('h2', {}, p.full_name || 'کاربر ترازو'),
+        h('h2', {}, p.full_name || 'کاربر'),
         h('p.small.muted', {}, state.sessionUser.email || ''),
         h('div.chip-row.mt-8', {},
           h('span', { class: `badge ${p.role === 'admin' ? 'gold' : 'muted'}` }, p.role === 'admin' ? 'مدیر دوره' : 'شرکت‌کننده'),
@@ -77,13 +72,16 @@ export async function render(root) {
       ),
     ),
     h('div.stack', {},
-      h('div.field-row', {}, field('نام و نام خانوادگی', nameInput), field('شهر', cityInput)),
       h('div.field-row-3', {},
+        field('نام و نام خانوادگی', nameInput),
         field('جنسیت', genderSel),
         field('سال تولد (شمسی)', birthSel),
-        field('قد (سانتی‌متر)', heightInput),
       ),
-      field('سطح فعالیت روزانه', activitySel, 'برای محاسبه‌ی کالری روزانه (TDEE) استفاده می‌شود.'),
+      h('div.field-row', {},
+        field('قد (سانتی‌متر)', heightInput),
+        h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-2)', paddingTop: '24px' } },
+          bmiPublicInput, h('span', {}, 'BMI من در جدول عمومی نمایش داده شود')),
+      ),
       h('button.btn.primary', { onClick: saveIdentity }, icon('check', 17), 'ذخیره‌ی اطلاعات'),
     ),
   );
@@ -96,11 +94,10 @@ export async function render(root) {
     try {
       await store.saveProfile({
         full_name: name,
-        city: cityInput.value.trim(),
         gender: genderSel.value,
         birth_year: Number(birthSel.value),
         height_cm: heightVal || null,
-        activity_level: activitySel.value,
+        bmi_public: bmiPublicInput.checked,
       });
       toast('پروفایل ذخیره شد.', 'success');
     } catch (err) {
@@ -111,40 +108,6 @@ export async function render(root) {
   /* -------------------------------------------------------------- BMI card */
   const bmiPercent = bmi ? Math.min(100, Math.max(0, ((bmi - 15) / 25) * 100)) : 0;
   const targetWeight = ideal && bmi ? weightNow : null;
-
-  const targetBmiInput = h('input.input', {
-    type: 'number', step: '0.1', min: '17', max: '35',
-    value: p.target_bmi || (bmi ? Math.max(CONFIG.bmi.safeMin + 1, bmi - 3).toFixed(1) : ''),
-  });
-  const targetPreview = h('div.target-preview');
-  const targetHint = h('div.small.muted');
-
-  function updateTargetPreview() {
-    const tb = num(targetBmiInput.value);
-    const w = bmiValue(weightNow, height);
-    if (!tb || !height) {
-      targetPreview.replaceChildren(h('span.muted', {}, 'قد را وارد کن تا وزن هدف محاسبه شود.'));
-      return;
-    }
-    const targetW = Number((tb * (height / 100) ** 2).toFixed(1));
-    const diff = weightNow ? Number((weightNow - targetW).toFixed(1)) : null;
-    const unsafe = tb < CONFIG.bmi.safeMin || tb > 40;
-    targetPreview.replaceChildren(
-      h('span.muted', {}, 'وزن متناظر با این BMI'),
-      h('div.row.gap-8', {},
-        h('strong', { style: { color: 'var(--brand)' } }, `${fmt(targetW)} کیلو`),
-        diff !== null ? h('span.badge', { class: diff > 0 ? 'gold' : 'sky' }, `${diff > 0 ? 'کاهش' : 'افزایش'} ${fmt(Math.abs(diff))} کیلو`) : null,
-        h('span.badge', { class: unsafe ? 'danger' : 'brand' }, unsafe ? 'خارج از محدوده سالم' : 'محدوده سالم'),
-      ),
-    );
-    targetHint.replaceChildren(
-      bmi
-        ? h('span', {}, `BMI فعلی: ${fmt(bmi)} (${band.label}) — قد ${fmt(height, 0)} سانتی‌متر`)
-        : h('span', {}, 'برای محاسبه‌ی BMI، قد و وزن لازم است.'),
-    );
-  }
-  targetBmiInput.addEventListener('input', updateTargetPreview);
-  heightInput.addEventListener('input', updateTargetPreview);
 
   const bmiCard = h('div.card', {},
     h('div.card-head', {},
@@ -174,29 +137,16 @@ export async function render(root) {
       h('div', {}, 'BMI = وزن (کیلوگرم) ÷ قد² (متر)'),
       h('div.tiny.muted', {}, 'برای شرکت در چالش، BMI هدف باید حداقل ۱۸٫۵ باشد. برنامه هدف‌های زیر ۱۸٫۵ را نمی‌پذیرد.'),
     ),
-    h('div.mt-16', {},
-      h('span.field-label', {}, 'BMI هدف من'),
-      h('div.row.gap-8', {}, targetBmiInput, h('span.input-suffix', {}, 'kg/m²')),
+    h('div.target-preview.mt-16', {},
+      h('span.muted', {}, 'BMI هدف این دوره (از وزن تعهد)'),
+      h('strong', { style: { color: 'var(--brand)' } }, pledge?.target_bmi ? `${fmt(pledge.target_bmi)} kg/m²` : '—'),
     ),
-    targetPreview,
-    targetHint,
-    h('button.btn.ghost.mt-12', { onClick: saveTarget }, icon('target', 16), 'ذخیره‌ی BMI هدف'),
+    h('div.tiny.muted.mt-8', {}, 'برای تغییر BMI هدف، وزن تعهد پایان ماه را در «ویرایش تعهد» عوض کن.'),
   );
-
-  async function saveTarget() {
-    const tb = num(targetBmiInput.value);
-    if (!tb || tb < CONFIG.bmi.safeMin) return toast('BMI هدف باید حداقل ۱۸٫۵ باشد.', 'error');
-    try {
-      await store.saveProfile({ target_bmi: tb });
-      toast('BMI هدف ذخیره شد.', 'success');
-    } catch (err) {
-      toast(err.message || 'ذخیره ناموفق بود.', 'error');
-    }
-  }
 
   /* ---------------------------------------------------------- calories card */
   const b = bmr({ gender: p.gender || genderSel.value, weight: weightNow, heightCm: height, age });
-  const tdee = tdeeValue({ ...p, height_cm: height, birth_year: Number(birthSel.value), activity_level: activitySel.value }, weightNow);
+  const tdee = tdeeValue({ ...p, height_cm: height, birth_year: Number(birthSel.value) }, weightNow);
   const calories = h('div.card', {},
     h('div.card-head', {},
       h('h3.card-title', {}, icon('flame', 18), 'نیاز کالری روزانه'),
@@ -255,7 +205,7 @@ export async function render(root) {
     h('div.stack', {},
       h('div.kv', {},
         h('div.kv-row', {}, h('span', {}, 'ایمیل'), h('strong', { class: 'mono' }, state.sessionUser.email || '—')),
-        h('div.kv-row', {}, h('span', {}, 'وضعیت پایگاه‌داده'), h('strong', {}, state.backend === 'supabase' ? 'Supabase' : 'نمایشی (مرورگر)')),
+        h('div.kv-row', {}, h('span', {}, 'وضعیت پایگاه‌داده'), h('strong', {}, state.backend === 'supabase' ? 'Supabase' : 'متصل نیست')),
       ),
       h('div.row.gap-8', {},
         h('button.btn.ghost.sm', {
@@ -265,17 +215,6 @@ export async function render(root) {
             location.hash = '#/';
           },
         }, icon('logout', 15), 'خروج'),
-        state.backend === 'demo'
-          ? h('button.btn.danger.sm', {
-            onClick: async () => {
-              if (await confirmDialog('همه‌ی داده‌های نمایشی بازنشانی شود؟', { danger: true, okText: 'بازنشانی' })) {
-                await store.resetDemo();
-                toast('داده‌ی نمایشی بازنشانی شد.', 'info');
-                location.hash = '#/';
-              }
-            },
-          }, icon('refresh', 15), 'بازنشانی داده‌ی نمایشی')
-          : null,
       ),
     ),
   );

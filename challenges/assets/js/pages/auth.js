@@ -1,6 +1,5 @@
-/** ورود و ثبت‌نام (Supabase Auth یا حساب آزمایشی). */
+/** ورود و ثبت‌نام با Supabase Auth. */
 import { state, store } from '../store.js';
-import { CONFIG } from '../config.js';
 import { h, icon, field, toast } from '../utils.js';
 import { pageHead } from '../ui/shell.js';
 
@@ -32,7 +31,7 @@ export async function render(root, { params } = {}) {
   const emailInput = h('input.input', { type: 'email', placeholder: 'you@example.com', autocomplete: 'email', dir: 'ltr' });
   const passInput = h('input.input', { type: 'password', placeholder: 'حداقل ۶ کاراکتر', autocomplete: 'current-password' });
   const nameField = field('نام و نام خانوادگی', nameInput);
-  const titleEl = h('h2', { style: { fontSize: '20px' } }, 'ورود به ترازو');
+  const titleEl = h('h2', { style: { fontSize: '20px' } }, 'ورود به حساب');
   const subEl = h('p.small.muted', {}, 'برای ثبت وزن، تعهد و دیدن گزارش شخصی وارد شو.');
   const submitBtn = h('button.btn.primary.lg.block', { type: 'submit' }, icon('lock', 17), 'ورود');
   const switchBtn = h('button', { type: 'button' }, 'ثبت‌نام کن');
@@ -40,7 +39,7 @@ export async function render(root, { params } = {}) {
   function setMode(nextMode) {
     mode = nextMode;
     const signup = mode === 'signup';
-    titleEl.textContent = signup ? 'ساخت حساب جدید' : 'ورود به ترازو';
+    titleEl.textContent = signup ? 'ساخت حساب جدید' : 'ورود به حساب';
     subEl.textContent = signup
       ? 'با ثبت‌نام، اولین تعهد وزن خودت را ثبت کن.'
       : 'برای ثبت وزن، تعهد و دیدن گزارش شخصی وارد شو.';
@@ -109,28 +108,6 @@ export async function render(root, { params } = {}) {
     h('div.mb-16', {}, titleEl, subEl),
     form,
     h('div.auth-switch', {}, mode === 'login' ? 'حساب نداری؟ ' : 'حساب داری؟ ', switchBtn),
-    state.backend === 'demo'
-      ? h('div.demo-box.mt-16', {},
-        h('div.row', {}, h('strong', {}, 'حساب آزمایشی'), h('span.badge.gold', {}, 'حالت نمایشی')),
-        h('div', {}, 'برای دیدن سریع برنامه با داده‌ی نمونه وارد شو:'),
-        h('div.row.justify-between', {},
-          h('span.mono', { dir: 'ltr' }, `${CONFIG.demo.email} / ${CONFIG.demo.password}`),
-        ),
-        h('button.btn.sm.gold', {
-          type: 'button',
-          onClick: async () => {
-            try {
-              await store.signInDemo();
-              toast('با حساب آزمایشی وارد شدی.', 'success');
-              location.hash = `#${next}`;
-            } catch (err) {
-              toast(err.message || 'ورود آزمایشی ناموفق بود.', 'error');
-            }
-          },
-        }, icon('sparkles', 14), 'ورود سریع آزمایشی'),
-        h('div.tiny.muted', {}, 'داده‌ها فقط در همین مرورگر ذخیره می‌شوند. برای فعال‌سازی پایگاه‌داده واقعی، راهنمای Supabase را بخوان.'),
-      )
-      : null,
   );
 
   const aside = h('div.auth-aside', {},

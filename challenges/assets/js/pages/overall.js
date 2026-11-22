@@ -320,21 +320,6 @@ function adminPanel(board) {
         )))
         : h('p.small.muted', {}, 'همه‌ی پرداخت‌ها تأیید شده‌اند.'),
     ),
-    state.backend === 'demo'
-      ? h('div.card', {},
-        h('div.card-head', {}, h('h3.card-title', {}, icon('info', 18), 'حالت نمایشی')),
-        h('p.small.muted', {}, 'داده‌ها در همین مرورگر ذخیره می‌شوند. برای اجرای واقعی، فایل supabase/schema.sql را در پروژه‌ی Supabase اجرا کنید.'),
-        h('button.btn.danger.sm.mt-8', {
-          onClick: async () => {
-            if (await confirmDialog('داده‌ی نمایشی بازنشانی شود؟', { danger: true, okText: 'بازنشانی' })) {
-              await store.resetDemo();
-              toast('بازنشانی شد.', 'info');
-              location.hash = '#/';
-            }
-          },
-        }, icon('refresh', 15), 'بازنشانی داده‌ی نمایشی'),
-      )
-      : null,
   );
 }
 
@@ -354,7 +339,7 @@ export async function render(root) {
             r.rank, r.name, r.city || '', r.start, r.current, r.promised,
             (r.start - r.current).toFixed(1), r.bmi || '', Math.round(r.progress), r.chance, r.paid ? 'پرداخت‌شده' : 'در انتظار',
           ]));
-          downloadFile(`tarazoo-board-${round.round_key || 'round'}.csv`, rows.map((row) => row.map(csvEscape).join(',')).join('\n'));
+          downloadFile(`challenge-board-${round.round_key || 'round'}.csv`, rows.map((row) => row.map(csvEscape).join(',')).join('\n'));
           toast('فایل CSV جدول دانلود شد.', 'success');
         },
       }, icon('download', 16), 'خروجی CSV'),
